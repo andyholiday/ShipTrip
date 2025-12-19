@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShipTrip - Datenschutzerklärung / Privacy Policy</title>
+    <style>
+        :root {
+            --primary: #0A84FF;
+            --bg: #f5f5f7;
+            --text: #1d1d1f;
+            --card: #ffffff;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #000000;
+                --text: #f5f5f7;
+                --card: #1c1c1e;
+            }
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            padding: 40px 0;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        h3 {
+            font-size: 1.2rem;
+            margin: 20px 0 10px;
+        }
+        p, li {
+            margin-bottom: 10px;
+        }
+        ul {
+            padding-left: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(128,128,128,0.2);
+        }
+        th {
+            font-weight: 600;
+        }
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .lang-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: var(--card);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .section { display: none; }
+        .section.active { display: block; }
+        a {
+            color: var(--primary);
+        }
+        .contact {
+            text-align: center;
+            padding: 20px;
+        }
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚢 ShipTrip</h1>
+            <p class="subtitle">Datenschutzerklärung / Privacy Policy</p>
+        </header>
+
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="showLang('de')">🇩🇪 Deutsch</button>
+            <button class="lang-btn" onclick="showLang('en')">🇬🇧 English</button>
+        </div>
+
+        <!-- DEUTSCH -->
+        <div id="de" class="section active">
+            <div class="card">
+                <h2>Einleitung</h2>
+                <p>ShipTrip ("wir", "uns", "unsere App") respektiert Ihre Privatsphäre. Diese Datenschutzerklärung erläutert, welche Daten wir erheben, wie wir sie verwenden und welche Rechte Sie haben.</p>
+            </div>
+
+            <div class="card">
+                <h2>Welche Daten werden erhoben?</h2>
+                <h3>Lokal gespeicherte Daten (nur auf Ihrem Gerät)</h3>
+                <ul>
+                    <li>Kreuzfahrt-Informationen (Titel, Daten, Schiff, Route)</li>
+                    <li>Fotos, die Sie hinzufügen</li>
+                    <li>Ausgaben und Notizen</li>
+                    <li>Einstellungen und Präferenzen</li>
+                </ul>
+
+                <h3>Optional: Gemini API (nur bei Nutzung der KI-Import-Funktion)</h3>
+                <ul>
+                    <li>Text aus Buchungsbestätigungen wird an Google Gemini gesendet</li>
+                    <li>Der API-Key wird verschlüsselt im iOS Keychain gespeichert</li>
+                    <li>Google verarbeitet diese Daten gemäß der <a href="https://policies.google.com/privacy">Google Privacy Policy</a></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Wo werden die Daten gespeichert?</h2>
+                <ul>
+                    <li><strong>Lokal:</strong> Alle Ihre Kreuzfahrtdaten werden ausschließlich auf Ihrem Gerät gespeichert</li>
+                    <li><strong>Keine Cloud:</strong> Wir betreiben keine eigenen Server</li>
+                    <li><strong>Keine Accounts:</strong> Es gibt kein Benutzerkonto</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Welche Daten werden an Dritte übermittelt?</h2>
+                <table>
+                    <tr><th>Dienst</th><th>Daten</th><th>Wann</th></tr>
+                    <tr><td>Google Gemini API</td><td>Buchungstext</td><td>Nur bei KI-Import (optional)</td></tr>
+                    <tr><td>Apple</td><td>Crash-Reports</td><td>Nur bei Absturz (iOS Standard)</td></tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Ihre Rechte</h2>
+                <ul>
+                    <li><strong>Löschen:</strong> Alle Daten können in Einstellungen → Daten verwalten gelöscht werden</li>
+                    <li><strong>Export:</strong> Sie können Ihre Daten jederzeit als JSON exportieren</li>
+                    <li><strong>Keine Werbung:</strong> Die App enthält keine Werbung</li>
+                    <li><strong>Kein Tracking:</strong> Wir tracken Sie nicht</li>
+                </ul>
+            </div>
+
+            <div class="card contact">
+                <h2>Kontakt</h2>
+                <p>Bei Fragen zur Datenschutzerklärung:</p>
+                <p><a href="mailto:andreajaszka@gmail.com">📧 andreajaszka@gmail.com</a></p>
+            </div>
+        </div>
+
+        <!-- ENGLISH -->
+        <div id="en" class="section">
+            <div class="card">
+                <h2>Introduction</h2>
+                <p>ShipTrip ("we", "us", "our app") respects your privacy. This privacy policy explains what data we collect, how we use it, and what rights you have.</p>
+            </div>
+
+            <div class="card">
+                <h2>What data is collected?</h2>
+                <h3>Locally stored data (only on your device)</h3>
+                <ul>
+                    <li>Cruise information (title, dates, ship, route)</li>
+                    <li>Photos you add</li>
+                    <li>Expenses and notes</li>
+                    <li>Settings and preferences</li>
+                </ul>
+
+                <h3>Optional: Gemini API (only when using AI import feature)</h3>
+                <ul>
+                    <li>Text from booking confirmations is sent to Google Gemini</li>
+                    <li>The API key is stored encrypted in iOS Keychain</li>
+                    <li>Google processes this data according to the <a href="https://policies.google.com/privacy">Google Privacy Policy</a></li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Where is data stored?</h2>
+                <ul>
+                    <li><strong>Locally:</strong> All your cruise data is stored exclusively on your device</li>
+                    <li><strong>No Cloud:</strong> We do not operate our own servers</li>
+                    <li><strong>No Accounts:</strong> There is no user account</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>What data is shared with third parties?</h2>
+                <table>
+                    <tr><th>Service</th><th>Data</th><th>When</th></tr>
+                    <tr><td>Google Gemini API</td><td>Booking text</td><td>Only during AI import (optional)</td></tr>
+                    <tr><td>Apple</td><td>Crash reports</td><td>Only on crash (iOS standard)</td></tr>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Your rights</h2>
+                <ul>
+                    <li><strong>Delete:</strong> All data can be deleted in Settings → Manage Data</li>
+                    <li><strong>Export:</strong> You can export your data as JSON at any time</li>
+                    <li><strong>No Ads:</strong> The app contains no advertising</li>
+                    <li><strong>No Tracking:</strong> We do not track you</li>
+                </ul>
+            </div>
+
+            <div class="card contact">
+                <h2>Contact</h2>
+                <p>For questions about this privacy policy:</p>
+                <p><a href="mailto:andreajaszka@gmail.com">📧 andreajaszka@gmail.com</a></p>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2024 André Jaszka · ShipTrip</p>
+            <p>Zuletzt aktualisiert / Last updated: December 2024</p>
+        </footer>
+    </div>
+
+    <script>
+        function showLang(lang) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(lang).classList.add('active');
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
