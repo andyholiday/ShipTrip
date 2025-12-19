@@ -308,6 +308,13 @@ struct DataManagementView: View {
     @Query private var deals: [Deal]
     
     @State private var showingDeleteAlert = false
+    @State private var showingExportSheet = false
+    @State private var showingImportPicker = false
+    @State private var isExporting = false
+    @State private var isImporting = false
+    @State private var exportURL: URL?
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
     
     var body: some View {
         Form {
@@ -327,6 +334,41 @@ struct DataManagementView: View {
                 }
             }
             
+            // Export
+            Section(header: Text("Export"),
+                    footer: Text("Exportiert alle Kreuzfahrten als JSON-Datei.")) {
+                Button {
+                    exportData()
+                } label: {
+                    HStack {
+                        Label("Daten exportieren", systemImage: "square.and.arrow.up")
+                        Spacer()
+                        if isExporting {
+                            ProgressView()
+                        }
+                    }
+                }
+                .disabled(cruises.isEmpty || isExporting)
+            }
+            
+            // Import
+            Section(header: Text("Import"),
+                    footer: Text("Importiert Kreuzfahrten aus einer ZIP-Datei (Web-App kompatibel).")) {
+                Button {
+                    showingImportPicker = true
+                } label: {
+                    HStack {
+                        Label("Daten importieren", systemImage: "square.and.arrow.down")
+                        Spacer()
+                        if isImporting {
+                            ProgressView()
+                        }
+                    }
+                }
+                .disabled(isImporting)
+            }
+            
+            // Löschen
             Section {
                 Button("Alle Daten löschen", role: .destructive) {
                     showingDeleteAlert = true
@@ -342,6 +384,99 @@ struct DataManagementView: View {
         } message: {
             Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Angebote werden gelöscht.")
         }
+        .alert("Info", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
+        }
+        .sheet(isPresented: $showingExportSheet) {
+            if let url = exportURL {
+                ShareSheet(items: [url])
+            }
+        }
+        .fileImporter(
+            isPresented: $showingImportPicker,
+            allowedContentTypes: [.zip, .json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleImport(result: result)
+        }
+    }
+    
+    private func exportData() {
+        isExporting = true
+        
+        Task {
+            do {
+                let url = try ExportImportService.shared.exportToJSON(cruises: cruises)
+                await MainActor.run {
+                    isExporting = false
+                    exportURL = url
+                    showingExportSheet = true
+                }
+            } catch {
+                await MainActor.run {
+                    isExporting = false
+                    alertMessage = "Export fehlgeschlagen: \(error.localizedDescription)"
+                    showingAlert = true
+                }
+            }
+        }
+    }
+    
+    private func handleImport(result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            
+            isImporting = true
+            
+            // Security-scoped resource access
+            guard url.startAccessingSecurityScopedResource() else {
+                alertMessage = "Zugriff auf Datei nicht möglich"
+                showingAlert = true
+                isImporting = false
+                return
+            }
+            
+            let isZip = url.pathExtension.lowercased() == "zip"
+            
+            Task {
+                defer {
+                    url.stopAccessingSecurityScopedResource()
+                }
+                
+                do {
+                    let count: Int
+                    if isZip {
+                        count = try ExportImportService.shared.importFromZip(
+                            url: url,
+                            modelContext: modelContext
+                        )
+                    } else {
+                        count = try ExportImportService.shared.importFromJSON(
+                            url: url,
+                            modelContext: modelContext
+                        )
+                    }
+                    await MainActor.run {
+                        isImporting = false
+                        alertMessage = "✓ \(count) Kreuzfahrt(en) importiert"
+                        showingAlert = true
+                    }
+                } catch {
+                    await MainActor.run {
+                        isImporting = false
+                        alertMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
+                        showingAlert = true
+                    }
+                }
+            }
+            
+        case .failure(let error):
+            alertMessage = "Dateiauswahl fehlgeschlagen: \(error.localizedDescription)"
+            showingAlert = true
+        }
     }
     
     private func deleteAllData() {
@@ -352,6 +487,17 @@ struct DataManagementView: View {
             modelContext.delete(deal)
         }
     }
+}
+
+/// Share Sheet für Export
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 /// Developer-Einstellungen (versteckt)
