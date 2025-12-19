@@ -86,6 +86,17 @@ ShipTrip/
 └── Assets.xcassets/               # App Icon & Assets
 ```
 
+## 📚 Dokumentation
+
+| Dokument | Beschreibung |
+|----------|--------------|
+| [Setup Guide](docs/SETUP.md) | Installation & Einrichtung |
+| [Architektur](docs/ARCHITECTURE.md) | Technische Architektur |
+| [Datenmodelle](docs/MODELS.md) | SwiftData Models |
+| [API Integration](docs/API.md) | Gemini, Keychain, Notifications |
+| [Contributing](docs/CONTRIBUTING.md) | Beitragsrichtlinien |
+| [Changelog](CHANGELOG.md) | Versionshistorie |
+
 ## 🚀 Installation
 
 ### Voraussetzungen
