@@ -187,17 +187,21 @@ struct CruiseDetailView: View {
             } else {
                 ForEach(cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })) { port in
                     HStack(spacing: 12) {
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 12, height: 12)
+                        // Symbol: Anker für Hafen, Wellen für Seetag
+                        Image(systemName: port.isSeaDay ? "water.waves" : "mappin.circle.fill")
+                            .foregroundStyle(port.isSeaDay ? .cyan : .blue)
+                            .font(.system(size: 20))
+                            .frame(width: 24)
                         
                         VStack(alignment: .leading) {
                             Text(port.name)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                            Text(port.country)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                            if !port.isSeaDay {
+                                Text(port.country)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         
                         Spacer()
@@ -210,13 +214,6 @@ struct CruiseDetailView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         selectedPort = port
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            deletePort(port)
-                        } label: {
-                            Label("Löschen", systemImage: "trash")
-                        }
                     }
                 }
             }
@@ -278,13 +275,6 @@ struct CruiseDetailView: View {
                     .contentShape(Rectangle())
                     .onTapGesture {
                         selectedExpense = expense
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            deleteExpense(expense)
-                        } label: {
-                            Label("Löschen", systemImage: "trash")
-                        }
                     }
                 }
             }

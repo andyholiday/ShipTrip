@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 extension Color {
     // MARK: - Brand Colors
@@ -59,7 +60,7 @@ extension View {
     /// Card-Style mit Schatten
     func cardStyle() -> some View {
         self
-            .background(Color(.secondarySystemBackground))
+            .background(Color(UIColor.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }

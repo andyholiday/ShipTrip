@@ -70,11 +70,11 @@ struct SettingsView: View {
                 
                 // iCloud
                 Section(header: Text("Synchronisation"),
-                        footer: Text("Deine Daten werden automatisch mit iCloud synchronisiert.")) {
+                        footer: Text("iCloud-Sync ist für eine zukünftige Version geplant.")) {
                     HStack {
                         Label("iCloud Sync", systemImage: "icloud")
                         Spacer()
-                        Text("Aktiv")
+                        Text("Geplant")
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -102,7 +102,7 @@ struct SettingsView: View {
                     HStack {
                         Text("Version")
                         Spacer()
-                        Text("1.0.0")
+                        Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                             .foregroundStyle(.secondary)
                             .onTapGesture {
                                 versionTapCount += 1

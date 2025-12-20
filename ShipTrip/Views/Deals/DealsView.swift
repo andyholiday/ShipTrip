@@ -211,7 +211,7 @@ struct DealFormView: View {
                 Section("Link") {
                     TextField("URL zur Buchungsseite", text: $url)
                         .keyboardType(.URL)
-                        .autocapitalization(.none)
+                        .textInputAutocapitalization(.never)
                 }
                 
                 Section("Notizen") {

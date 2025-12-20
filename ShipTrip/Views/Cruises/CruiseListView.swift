@@ -76,7 +76,7 @@ struct CruiseListView: View {
                 }
                 
                 if !cruises.isEmpty {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .navigationBarLeading) {
                         filterMenu
                     }
                 }

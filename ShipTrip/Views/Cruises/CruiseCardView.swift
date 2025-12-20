@@ -80,7 +80,7 @@ struct CruiseCardView: View {
                     // Route
                     if !cruise.route.isEmpty {
                         Label(
-                            cruise.route.map { $0.name }.joined(separator: " → "),
+                            cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { $0.name }.joined(separator: " → "),
                             systemImage: "mappin.and.ellipse"
                         )
                         .font(.caption)

@@ -56,7 +56,7 @@ struct StatsView: View {
             
             StatCard(
                 icon: "calendar",
-                title: "Seetage",
+                title: "Reisetage",
                 value: "\(totalSeaDays)",
                 color: .cyan
             )
@@ -203,7 +203,7 @@ struct StatsView: View {
     }
     
     private var uniqueCountries: Int {
-        Set(cruises.flatMap { $0.route.map { $0.country } }).count
+        Set(cruises.flatMap { $0.route.filter { !$0.country.isEmpty }.map { $0.country } }).count
     }
     
     private var totalExpenses: Double {
