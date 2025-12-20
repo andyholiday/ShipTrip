@@ -8,13 +8,34 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 ## [Unreleased]
 
 ### Geplant
-- Export/Import Funktion (JSON)
 - CloudKit iCloud-Sync
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
-- Auto-Import von Reederei-Angeboten
+- App Store Screenshots
+- App Store Veröffentlichung
 
 ---
+
+## [1.0.1] - 2024-12-19
+
+### Hinzugefügt
+- 📦 **Export/Import Funktion**
+  - Export als JSON mit Base64-Fotos
+  - Import von ZIP (Web-App kompatibel) und JSON
+  - Duplikat-Erkennung beim Import
+  - Native ZIP-Parsing ohne externe Dependencies
+
+- 📜 **App Store Vorbereitung**
+  - Privacy Policy (DE/EN) auf GitHub Pages
+  - App Store Beschreibung und Keywords
+  - Apple Developer Account & Zertifikate
+  - TestFlight Build hochgeladen
+
+### Geändert
+- Bundle ID: `com.andre.ShipTrip`
+
+---
+
 
 ## [1.0.0] - 2024-12-19
 
