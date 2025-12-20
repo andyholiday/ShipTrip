@@ -23,8 +23,8 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
   - Häfen mit Ankunfts-/Abfahrtszeiten
   - Seetage
 
-### ~200 Häfen weltweit
-- 🌍 Europa, Karibik, Asien, Ozeanien, Afrika
+### 🛳️ **~1.800 Häfen weltweit**
+- 🌍 Europa, Karibik, Asien, Ozeanien, Afrika, VAE/Oman
 - Autocomplete bei der Hafen-Suche
 - Automatische Koordinaten-Zuordnung
 
@@ -65,7 +65,7 @@ ShipTrip/
 │   ├── Deal.swift                 # Angebote-Model
 │   ├── Photo.swift                # Foto-Model
 │   ├── ShippingLine.swift         # Reederei-Daten
-│   └── PortSuggestion.swift       # ~200 Hafen-Datenbank
+│   └── PortSuggestion.swift       # ~1.800 Hafen-Datenbank
 ├── Views/
 │   ├── Cruises/
 │   │   ├── CruiseListView.swift   # Übersicht
@@ -137,7 +137,7 @@ ShipTrip/
 - [x] Karten-Integration
 - [x] KI-Import
 - [x] Statistiken
-- [x] ~200 Häfen
+- [x] ~1.800 Häfen (Wikidata Import)
 
 ### v2.0 (geplant)
 - [ ] Export/Import (JSON)

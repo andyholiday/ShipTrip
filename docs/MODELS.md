@@ -178,7 +178,7 @@ Ein Kreuzfahrt-Angebot.
 
 ### PortSuggestion
 
-Statische Hafen-Datenbank für Autocomplete (~200 Häfen).
+Statische Hafen-Datenbank für Autocomplete (~1.800 Häfen weltweit via Wikidata).
 
 ```swift
 struct PortSuggestion: Identifiable, Hashable {

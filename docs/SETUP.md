@@ -36,8 +36,8 @@ Oder in Xcode: File → Open → ShipTrip.xcodeproj auswählen
 4. Bundle Identifier ggf. anpassen (muss eindeutig sein)
 
 ```
-Original: com.shiptrip.app
-Dein Bundle: com.DEINNAME.shiptrip
+Original: com.andre.ShipTrip
+Dein Bundle: com.DEINNAME.ShipTrip
 ```
 
 ### 4. Build & Run
@@ -149,7 +149,7 @@ print("Debug: \(variable)")
 Oder mit Logger:
 ```swift
 import os
-let logger = Logger(subsystem: "com.shiptrip.app", category: "debug")
+let logger = Logger(subsystem: "com.andre.ShipTrip", category: "debug")
 logger.info("Info message")
 logger.error("Error: \(error)")
 ```

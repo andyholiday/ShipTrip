@@ -127,30 +127,26 @@ Download now and start your cruise collection! 🌊
 
 ---
 
-## What's New (Version 1.0)
+## What's New (Version 1.0.2)
 
 **DE:**
 ```
-🚀 Erste Version von ShipTrip!
+🗺️ Hafendatenbank massiv erweitert!
 
-• Kreuzfahrten erstellen und verwalten
-• Interaktive Weltkarte mit Routen
-• KI-Import von Buchungsbestätigungen
-• Statistiken und Ausgaben-Tracking
-• ~200 Häfen weltweit
-• Export/Import Funktion
+• Von ~290 auf ~1.800 Häfen (Wikidata Import)
+• Karibik, Norwegen, VAE/Oman, Asien komplett
+• Verbesserte Route-Anzeige mit 📍 und 🌊
+• Diverse Bugfixes und UI-Verbesserungen
 ```
 
 **EN:**
 ```
-🚀 First version of ShipTrip!
+🗺️ Massive port database expansion!
 
-• Create and manage cruises
-• Interactive world map with routes
-• AI import of booking confirmations
-• Statistics and expense tracking
-• ~200 ports worldwide
-• Export/Import feature
+• From ~290 to ~1,800 ports (Wikidata import)
+• Caribbean, Norway, UAE/Oman, Asia complete
+• Improved route display with 📍 and 🌊
+• Various bugfixes and UI improvements
 ```
 
 ---
