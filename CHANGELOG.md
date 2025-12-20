@@ -11,8 +11,31 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - CloudKit iCloud-Sync
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
-- App Store Screenshots
-- App Store Veröffentlichung
+
+---
+
+## [1.0.2] - 2024-12-20
+
+### Hinzugefügt
+- 🗺️ **Hafendatenbank massiv erweitert**
+  - Von ~290 auf ~1.800 Häfen (Wikidata Import)
+  - Karibik, Norwegen, VAE/Oman, Asien komplett abgedeckt
+  - Beliebte Kreuzfahrt-Häfen mit gängigen Namen
+  - Aliase für verschiedene Schreibweisen (z.B. "Willemstad (Curacao)")
+
+- 🎨 **UI-Verbesserungen**
+  - Route-Symbole: 📍 Mappin für Häfen, 🌊 Wellen für Seetage
+  - Land wird bei Seetagen ausgeblendet
+
+### Behoben
+- 🔧 Compiler-Fehler in Color+Theme.swift
+- 🔧 "Seetage" → "Reisetage" in Statistik (war irreführend)
+- 🔧 Länder-Zählung zählt keine leeren Strings mehr
+- 🔧 Route in Cards wird jetzt sortiert angezeigt
+- 🔧 Version wird dynamisch aus Bundle gelesen
+- 🔧 iCloud zeigt "Geplant" statt fälschlich "Aktiv"
+- 🔧 macOS-Kompatibilität (ToolbarItem Placement)
+- 🔧 Deprecated `autocapitalization` API ersetzt
 
 ---
 
