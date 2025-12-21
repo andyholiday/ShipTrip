@@ -22,6 +22,133 @@ struct PortSuggestion: Identifiable, Hashable {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
     
+    /// Findet den besten passenden Hafen aus der Datenbank
+    /// Priorität: 1) Vollständiger Match inkl. Klammer, 2) Exakter Name, 3) Fuzzy-Match mit Hint/Land-Präferenz
+    static func findBestMatch(name: String, country: String? = nil) -> PortSuggestion? {
+        let searchName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !searchName.isEmpty else { return nil }
+        
+        // Normalisiere Akzente für besseres Matching (z.B. "Argostóli" -> "Argostoli")
+        let normalizedSearch = searchName.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+        
+        // Extrahiere Hauptname und Klammer-Zusatz (z.B. "San Sebastián (La Gomera)" -> "San Sebastián" + "La Gomera")
+        let mainName = searchName.components(separatedBy: "(").first?.trimmingCharacters(in: .whitespaces) ?? searchName
+        let normalizedMainName = mainName.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+        
+        // Extrahiere Hint aus Klammern (z.B. "La Gomera" aus "San Sebastián (La Gomera)")
+        var parentheticalHint: String? = nil
+        if let openParen = searchName.firstIndex(of: "("),
+           let closeParen = searchName.firstIndex(of: ")") {
+            let hintStart = searchName.index(after: openParen)
+            if hintStart < closeParen {
+                parentheticalHint = String(searchName[hintStart..<closeParen]).trimmingCharacters(in: .whitespaces)
+            }
+        }
+        let normalizedHint = parentheticalHint?.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+        
+        // 0. Vollständiger Match inkl. Klammer (höchste Priorität)
+        let fullMatches = popular.filter { suggestion in
+            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+            return normalizedSuggestion == normalizedSearch
+        }
+        if let match = fullMatches.first {
+            return match
+        }
+        
+        // 1. Exakter Hauptname-Match mit Hint-Prüfung
+        let exactMainMatches = popular.filter { suggestion in
+            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+            return normalizedSuggestion == normalizedMainName ||
+                   normalizedSuggestion.hasPrefix(normalizedMainName + " ") ||
+                   normalizedSuggestion.hasSuffix(" " + normalizedMainName)
+        }
+        
+        if !exactMainMatches.isEmpty {
+            // Wenn Hint vorhanden, bevorzuge Matches die den Hint enthalten
+            if let hint = normalizedHint, !hint.isEmpty {
+                let hintMatches = exactMainMatches.filter { suggestion in
+                    let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+                    return normalizedSuggestion.contains(hint)
+                }
+                if let match = hintMatches.first {
+                    return match
+                }
+            }
+            
+            // Wenn Land angegeben, bevorzuge Match mit passendem Land
+            if let country = country, !country.isEmpty {
+                if let matchWithCountry = exactMainMatches.first(where: {
+                    $0.country.localizedCaseInsensitiveContains(country) ||
+                    country.localizedCaseInsensitiveContains($0.country)
+                }) {
+                    return matchWithCountry
+                }
+            }
+            return exactMainMatches.first
+        }
+        
+        // 2. Enthält den Suchbegriff als Wort (z.B. "Hamburg" findet "Hamburger Hafen")
+        let containsMatches = popular.filter { suggestion in
+            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+            return normalizedSuggestion.contains(normalizedMainName) ||
+                   normalizedMainName.contains(normalizedSuggestion)
+        }
+        
+        if !containsMatches.isEmpty {
+            // Wenn Hint vorhanden, bevorzuge Matches die den Hint enthalten
+            if let hint = normalizedHint, !hint.isEmpty {
+                let hintMatches = containsMatches.filter { suggestion in
+                    let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+                    return normalizedSuggestion.contains(hint)
+                }
+                if !hintMatches.isEmpty {
+                    return bestMatch(from: hintMatches, for: normalizedMainName)
+                }
+            }
+            
+            // Wenn Land angegeben, bevorzuge Matches mit passendem Land
+            if let country = country, !country.isEmpty {
+                let countryMatches = containsMatches.filter {
+                    $0.country.localizedCaseInsensitiveContains(country) ||
+                    country.localizedCaseInsensitiveContains($0.country)
+                }
+                if !countryMatches.isEmpty {
+                    return bestMatch(from: countryMatches, for: normalizedMainName)
+                }
+            }
+            
+            // Wähle den besten Match basierend auf Namensähnlichkeit
+            return bestMatch(from: containsMatches, for: normalizedMainName)
+        }
+        
+        return nil
+    }
+    
+    /// Wählt den besten Match basierend auf Namensähnlichkeit
+    private static func bestMatch(from matches: [PortSuggestion], for searchTerm: String) -> PortSuggestion? {
+        // Score-Funktion: Niedrigerer Score = besserer Match
+        // Bevorzuge: 1) Exakte Übereinstimmung, 2) Name beginnt mit Suchbegriff, 3) Kürzere Namen
+        return matches.min { a, b in
+            let aName = a.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+            let bName = b.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+            
+            // Exakte Übereinstimmung hat höchste Priorität
+            let aExact = aName == searchTerm
+            let bExact = bName == searchTerm
+            if aExact != bExact { return aExact }
+            
+            // Name beginnt mit Suchbegriff
+            let aStarts = aName.hasPrefix(searchTerm)
+            let bStarts = bName.hasPrefix(searchTerm)
+            if aStarts != bStarts { return aStarts }
+            
+            // Längendifferenz zum Suchbegriff (näher = besser)
+            let aDiff = abs(aName.count - searchTerm.count)
+            let bDiff = abs(bName.count - searchTerm.count)
+            return aDiff < bDiff
+        }
+    }
+    
     /// Kreuzfahrt-Häfen weltweit (Wikidata Import - 1600+ Häfen)
     static let popular: [PortSuggestion] = [
         // Albanien
@@ -1932,13 +2059,166 @@ struct PortSuggestion: Identifiable, Hashable {
         PortSuggestion(name: "Marseille", country: "Frankreich", latitude: 43.2965, longitude: 5.3698),
         PortSuggestion(name: "Monaco", country: "Monaco", latitude: 43.7384, longitude: 7.4246),
         
-        // Kanaren & Madeira
+        // Kanaren & Madeira - Komplett
         PortSuggestion(name: "Las Palmas", country: "Spanien", latitude: 28.1235, longitude: -15.4363),
+        PortSuggestion(name: "Las Palmas (Gran Canaria)", country: "Spanien", latitude: 28.1235, longitude: -15.4363),
+        PortSuggestion(name: "Gran Canaria", country: "Spanien", latitude: 28.1235, longitude: -15.4363),
+        
+        // Teneriffa
         PortSuggestion(name: "Teneriffa (Santa Cruz)", country: "Spanien", latitude: 28.4636, longitude: -16.2518),
+        PortSuggestion(name: "Santa Cruz (Teneriffa)", country: "Spanien", latitude: 28.4636, longitude: -16.2518),
+        PortSuggestion(name: "Santa Cruz de Tenerife", country: "Spanien", latitude: 28.4636, longitude: -16.2518),
+        
+        // Lanzarote
         PortSuggestion(name: "Lanzarote (Arrecife)", country: "Spanien", latitude: 28.9638, longitude: -13.5477),
+        PortSuggestion(name: "Arrecife (Lanzarote)", country: "Spanien", latitude: 28.9638, longitude: -13.5477),
+        PortSuggestion(name: "Arrecife", country: "Spanien", latitude: 28.9638, longitude: -13.5477),
+        
+        // Fuerteventura
         PortSuggestion(name: "Fuerteventura", country: "Spanien", latitude: 28.3587, longitude: -14.0537),
+        PortSuggestion(name: "Puerto del Rosario", country: "Spanien", latitude: 28.5004, longitude: -13.8627),
+        PortSuggestion(name: "Puerto del Rosario (Fuerteventura)", country: "Spanien", latitude: 28.5004, longitude: -13.8627),
+        
+        // La Palma
         PortSuggestion(name: "La Palma", country: "Spanien", latitude: 28.6846, longitude: -17.7644),
+        PortSuggestion(name: "Santa Cruz (La Palma)", country: "Spanien", latitude: 28.6846, longitude: -17.7644),
+        PortSuggestion(name: "Santa Cruz de La Palma", country: "Spanien", latitude: 28.6846, longitude: -17.7644),
+        
+        // La Gomera
+        PortSuggestion(name: "La Gomera", country: "Spanien", latitude: 28.0916, longitude: -17.1133),
+        PortSuggestion(name: "San Sebastián (La Gomera)", country: "Spanien", latitude: 28.0916, longitude: -17.1133),
+        PortSuggestion(name: "San Sebastián de La Gomera", country: "Spanien", latitude: 28.0916, longitude: -17.1133),
+        
+        // El Hierro
+        PortSuggestion(name: "El Hierro", country: "Spanien", latitude: 27.7564, longitude: -17.8936),
+        PortSuggestion(name: "Valverde", country: "Spanien", latitude: 27.8089, longitude: -17.9158),
+        
+        // Madeira
         PortSuggestion(name: "Funchal (Madeira)", country: "Portugal", latitude: 32.6508, longitude: -16.9084),
+        PortSuggestion(name: "Funchal", country: "Portugal", latitude: 32.6508, longitude: -16.9084),
+        PortSuggestion(name: "Madeira", country: "Portugal", latitude: 32.6508, longitude: -16.9084),
+        PortSuggestion(name: "Porto Santo", country: "Portugal", latitude: 33.0608, longitude: -16.3500),
+        
+        // Marokko
+        PortSuggestion(name: "Agadir", country: "Marokko", latitude: 30.4278, longitude: -9.5981),
+        PortSuggestion(name: "Casablanca", country: "Marokko", latitude: 33.5731, longitude: -7.5898),
+        PortSuggestion(name: "Tanger", country: "Marokko", latitude: 35.7595, longitude: -5.8340),
+        PortSuggestion(name: "Tangier", country: "Marokko", latitude: 35.7595, longitude: -5.8340),
+        PortSuggestion(name: "Safi", country: "Marokko", latitude: 32.2994, longitude: -9.2372),
+        PortSuggestion(name: "Essaouira", country: "Marokko", latitude: 31.5085, longitude: -9.7595),
+        
+        // Türkei
+        PortSuggestion(name: "Bodrum", country: "Türkei", latitude: 37.0344, longitude: 27.4305),
+        PortSuggestion(name: "Istanbul", country: "Türkei", latitude: 41.0082, longitude: 28.9784),
+        PortSuggestion(name: "Kusadasi", country: "Türkei", latitude: 37.8579, longitude: 27.2610),
+        PortSuggestion(name: "Kuşadası", country: "Türkei", latitude: 37.8579, longitude: 27.2610),
+        PortSuggestion(name: "Izmir", country: "Türkei", latitude: 38.4237, longitude: 27.1428),
+        PortSuggestion(name: "Antalya", country: "Türkei", latitude: 36.8969, longitude: 30.7133),
+        PortSuggestion(name: "Marmaris", country: "Türkei", latitude: 36.8510, longitude: 28.2741),
+        PortSuggestion(name: "Alanya", country: "Türkei", latitude: 36.5444, longitude: 31.9956),
+        PortSuggestion(name: "Dikili", country: "Türkei", latitude: 39.0719, longitude: 26.8892),
+        PortSuggestion(name: "Fethiye", country: "Türkei", latitude: 36.6216, longitude: 29.1091),
+        
+        // Griechische Inseln - Ergänzungen
+        PortSuggestion(name: "Argostoli", country: "Griechenland", latitude: 38.1747, longitude: 20.4892),
+        PortSuggestion(name: "Argostóli", country: "Griechenland", latitude: 38.1747, longitude: 20.4892),
+        PortSuggestion(name: "Heraklion", country: "Griechenland", latitude: 35.3387, longitude: 25.1442),
+        PortSuggestion(name: "Iraklio", country: "Griechenland", latitude: 35.3387, longitude: 25.1442),
+        PortSuggestion(name: "Kreta", country: "Griechenland", latitude: 35.3387, longitude: 25.1442),
+        PortSuggestion(name: "Rhodos", country: "Griechenland", latitude: 36.4349, longitude: 28.2176),
+        PortSuggestion(name: "Rhodes", country: "Griechenland", latitude: 36.4349, longitude: 28.2176),
+        PortSuggestion(name: "Korfu", country: "Griechenland", latitude: 39.6243, longitude: 19.9217),
+        PortSuggestion(name: "Corfu", country: "Griechenland", latitude: 39.6243, longitude: 19.9217),
+        PortSuggestion(name: "Kos", country: "Griechenland", latitude: 36.8936, longitude: 27.0920),
+        PortSuggestion(name: "Patmos", country: "Griechenland", latitude: 37.3094, longitude: 26.5478),
+        PortSuggestion(name: "Zakynthos", country: "Griechenland", latitude: 37.7873, longitude: 20.8984),
+        PortSuggestion(name: "Chania", country: "Griechenland", latitude: 35.5138, longitude: 24.0180),
+        PortSuggestion(name: "Volos", country: "Griechenland", latitude: 39.3666, longitude: 22.9507),
+        PortSuggestion(name: "Thessaloniki", country: "Griechenland", latitude: 40.6401, longitude: 22.9444),
+        PortSuggestion(name: "Kavala", country: "Griechenland", latitude: 40.9396, longitude: 24.4128),
+        
+        // Deutschland - Ergänzungen
+        PortSuggestion(name: "Bremerhaven", country: "Deutschland", latitude: 53.5396, longitude: 8.5809),
+        PortSuggestion(name: "Hamburg", country: "Deutschland", latitude: 53.5511, longitude: 9.9937),
+        PortSuggestion(name: "Kiel", country: "Deutschland", latitude: 54.3233, longitude: 10.1228),
+        PortSuggestion(name: "Warnemünde", country: "Deutschland", latitude: 54.1780, longitude: 12.0833),
+        
+        // Portugal - Ergänzungen
+        PortSuggestion(name: "Lissabon", country: "Portugal", latitude: 38.7223, longitude: -9.1393),
+        PortSuggestion(name: "Lisbon", country: "Portugal", latitude: 38.7223, longitude: -9.1393),
+        PortSuggestion(name: "Lisboa", country: "Portugal", latitude: 38.7223, longitude: -9.1393),
+        PortSuggestion(name: "Porto", country: "Portugal", latitude: 41.1579, longitude: -8.6291),
+        PortSuggestion(name: "Leixões", country: "Portugal", latitude: 41.1847, longitude: -8.7016),
+        
+        // Spanien - Ergänzungen
+        PortSuggestion(name: "Cádiz", country: "Spanien", latitude: 36.5271, longitude: -6.2886),
+        PortSuggestion(name: "Cadiz", country: "Spanien", latitude: 36.5271, longitude: -6.2886),
+        PortSuggestion(name: "A Coruña", country: "Spanien", latitude: 43.3623, longitude: -8.4115),
+        PortSuggestion(name: "La Coruña", country: "Spanien", latitude: 43.3623, longitude: -8.4115),
+        PortSuggestion(name: "Coruna", country: "Spanien", latitude: 43.3623, longitude: -8.4115),
+        PortSuggestion(name: "Vigo", country: "Spanien", latitude: 42.2406, longitude: -8.7207),
+        PortSuggestion(name: "Bilbao", country: "Spanien", latitude: 43.2630, longitude: -2.9350),
+        PortSuggestion(name: "Málaga", country: "Spanien", latitude: 36.7213, longitude: -4.4214),
+        PortSuggestion(name: "Malaga", country: "Spanien", latitude: 36.7213, longitude: -4.4214),
+        PortSuggestion(name: "Valencia", country: "Spanien", latitude: 39.4699, longitude: -0.3763),
+        PortSuggestion(name: "Alicante", country: "Spanien", latitude: 38.3452, longitude: -0.4810),
+        PortSuggestion(name: "Cartagena", country: "Spanien", latitude: 37.6257, longitude: -0.9966),
+        PortSuggestion(name: "Ibiza", country: "Spanien", latitude: 38.9067, longitude: 1.4206),
+        PortSuggestion(name: "Palma", country: "Spanien", latitude: 39.5696, longitude: 2.6502),
+        PortSuggestion(name: "Mahón", country: "Spanien", latitude: 39.8886, longitude: 4.2658),
+        PortSuggestion(name: "Mahon", country: "Spanien", latitude: 39.8886, longitude: 4.2658),
+        
+        // Frankreich - Ergänzungen
+        PortSuggestion(name: "Le Havre", country: "Frankreich", latitude: 49.4944, longitude: 0.1079),
+        PortSuggestion(name: "Cannes", country: "Frankreich", latitude: 43.5528, longitude: 7.0174),
+        PortSuggestion(name: "Nizza", country: "Frankreich", latitude: 43.7102, longitude: 7.2620),
+        PortSuggestion(name: "Nice", country: "Frankreich", latitude: 43.7102, longitude: 7.2620),
+        PortSuggestion(name: "Toulon", country: "Frankreich", latitude: 43.1242, longitude: 5.9280),
+        PortSuggestion(name: "Saint-Tropez", country: "Frankreich", latitude: 43.2727, longitude: 6.6406),
+        PortSuggestion(name: "Ajaccio", country: "Frankreich", latitude: 41.9192, longitude: 8.7386),
+        PortSuggestion(name: "Bastia", country: "Frankreich", latitude: 42.6973, longitude: 9.4509),
+        PortSuggestion(name: "Bordeaux", country: "Frankreich", latitude: 44.8378, longitude: -0.5792),
+        
+        // Italien - Ergänzungen
+        PortSuggestion(name: "Genua", country: "Italien", latitude: 44.4056, longitude: 8.9463),
+        PortSuggestion(name: "Genova", country: "Italien", latitude: 44.4056, longitude: 8.9463),
+        PortSuggestion(name: "Livorno", country: "Italien", latitude: 43.5485, longitude: 10.3106),
+        PortSuggestion(name: "La Spezia", country: "Italien", latitude: 44.1024, longitude: 9.8240),
+        PortSuggestion(name: "Savona", country: "Italien", latitude: 44.3091, longitude: 8.4772),
+        PortSuggestion(name: "Bari", country: "Italien", latitude: 41.1171, longitude: 16.8719),
+        PortSuggestion(name: "Ravenna", country: "Italien", latitude: 44.4184, longitude: 12.2035),
+        PortSuggestion(name: "Triest", country: "Italien", latitude: 45.6495, longitude: 13.7768),
+        PortSuggestion(name: "Trieste", country: "Italien", latitude: 45.6495, longitude: 13.7768),
+        PortSuggestion(name: "Catania", country: "Italien", latitude: 37.5079, longitude: 15.0830),
+        PortSuggestion(name: "Palermo", country: "Italien", latitude: 38.1157, longitude: 13.3615),
+        PortSuggestion(name: "Messina", country: "Italien", latitude: 38.1938, longitude: 15.5540),
+        PortSuggestion(name: "Cagliari", country: "Italien", latitude: 39.2238, longitude: 9.1217),
+        PortSuggestion(name: "Olbia", country: "Italien", latitude: 40.9226, longitude: 9.5015),
+        PortSuggestion(name: "Amalfi", country: "Italien", latitude: 40.6340, longitude: 14.6027),
+        PortSuggestion(name: "Sorrent", country: "Italien", latitude: 40.6263, longitude: 14.3758),
+        PortSuggestion(name: "Sorrento", country: "Italien", latitude: 40.6263, longitude: 14.3758),
+        PortSuggestion(name: "Capri", country: "Italien", latitude: 40.5531, longitude: 14.2224),
+        
+        // Kroatien - Ergänzungen
+        PortSuggestion(name: "Split", country: "Kroatien", latitude: 43.5081, longitude: 16.4402),
+        PortSuggestion(name: "Zadar", country: "Kroatien", latitude: 44.1194, longitude: 15.2314),
+        PortSuggestion(name: "Rijeka", country: "Kroatien", latitude: 45.3271, longitude: 14.4422),
+        PortSuggestion(name: "Hvar", country: "Kroatien", latitude: 43.1729, longitude: 16.4412),
+        PortSuggestion(name: "Korčula", country: "Kroatien", latitude: 42.9597, longitude: 17.1358),
+        
+        // Weitere beliebte Häfen
+        PortSuggestion(name: "Southampton", country: "Großbritannien", latitude: 50.9097, longitude: -1.4044),
+        PortSuggestion(name: "Dover", country: "Großbritannien", latitude: 51.1279, longitude: 1.3134),
+        PortSuggestion(name: "Amsterdam", country: "Niederlande", latitude: 52.3676, longitude: 4.9041),
+        PortSuggestion(name: "Rotterdam", country: "Niederlande", latitude: 51.9225, longitude: 4.4792),
+        PortSuggestion(name: "Kopenhagen", country: "Dänemark", latitude: 55.6761, longitude: 12.5683),
+        PortSuggestion(name: "Copenhagen", country: "Dänemark", latitude: 55.6761, longitude: 12.5683),
+        PortSuggestion(name: "Oslo", country: "Norwegen", latitude: 59.9139, longitude: 10.7522),
+        PortSuggestion(name: "Stockholm", country: "Schweden", latitude: 59.3293, longitude: 18.0686),
+        PortSuggestion(name: "Helsinki", country: "Finnland", latitude: 60.1699, longitude: 24.9384),
+        PortSuggestion(name: "Tallinn", country: "Estland", latitude: 59.4370, longitude: 24.7536),
+        PortSuggestion(name: "St. Petersburg", country: "Russland", latitude: 59.9343, longitude: 30.3351),
+        PortSuggestion(name: "Sankt Petersburg", country: "Russland", latitude: 59.9343, longitude: 30.3351),
     ]
     
     /// Sucht Häfen nach Name oder Land

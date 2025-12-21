@@ -437,10 +437,11 @@ struct CruiseFormView: View {
                             let isSeaDay = extractedPort.isSeaDay ?? false
                             
                             if !isSeaDay {
-                                if let suggestion = PortSuggestion.popular.first(where: { 
-                                    $0.name.localizedCaseInsensitiveContains(extractedPort.name) ||
-                                    extractedPort.name.localizedCaseInsensitiveContains($0.name)
-                                }) {
+                                // Verwende verbesserte Suche mit Land-Prüfung
+                                if let suggestion = PortSuggestion.findBestMatch(
+                                    name: extractedPort.name,
+                                    country: extractedPort.country
+                                ) {
                                     lat = suggestion.latitude
                                     lon = suggestion.longitude
                                 }
@@ -650,10 +651,10 @@ struct TempPortFormSheet: View {
     }
     
     private func savePort() {
-        // Find coordinates from suggestions
+        // Verwende verbesserte Suche mit Land-Prüfung
         var lat: Double? = nil
         var lon: Double? = nil
-        if let suggestion = PortSuggestion.popular.first(where: { $0.name == name }) {
+        if let suggestion = PortSuggestion.findBestMatch(name: name, country: country) {
             lat = suggestion.latitude
             lon = suggestion.longitude
         }

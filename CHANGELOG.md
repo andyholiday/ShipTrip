@@ -14,6 +14,31 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [1.0.3] - 2024-12-21
+
+### Hinzugefügt
+- 🗺️ **~120 neue Häfen hinzugefügt**
+  - **Kanarische Inseln komplett**: Alle Inseln mit allen Namensvarianten (Santa Cruz, Arrecife, Puerto del Rosario, San Sebastián de La Gomera, etc.)
+  - **Türkei**: Bodrum, Istanbul, Kusadasi, Izmir, Antalya, Marmaris, etc.
+  - **Marokko**: Agadir, Casablanca, Tanger, Essaouira
+  - **Deutschland**: Bremerhaven, Hamburg, Kiel, Warnemünde
+  - **Portugal**: Lissabon, Porto, Leixões
+  - **Spanien**: Cádiz, A Coruña, Vigo, Bilbao, Málaga, Valencia, etc.
+  - **Frankreich**: Le Havre, Cannes, Nizza, Ajaccio, Bastia
+  - **Italien**: Genua, Livorno, Bari, Triest, Palermo, Messina, etc.
+  - **Nordeuropa**: Southampton, Amsterdam, Kopenhagen, Oslo, Stockholm
+
+### Behoben
+- 🐛 **Kritischer Bug**: Häfen wurden auf Karte nicht angezeigt (Issue #1)
+- 🐛 **Kritischer Bug**: Häfen wurden an falschen Orten angezeigt (Issue #2)
+- 🔧 **Verbessertes Port-Matching**:
+  - Klammer-Hinweise werden jetzt verwendet (z.B. "San Sebastián (La Gomera)" findet korrekten Hafen)
+  - Akzent-Normalisierung (z.B. "Argostóli" findet "Argostoli")
+  - Vollständige Matches haben höchste Priorität
+  - Länder-Prüfung verbessert
+
+---
+
 ## [1.0.2] - 2024-12-20
 
 ### Hinzugefügt
