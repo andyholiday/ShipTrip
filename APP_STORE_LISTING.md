@@ -127,26 +127,26 @@ Download now and start your cruise collection! 🌊
 
 ---
 
-## What's New (Version 1.0.2)
+## What's New (Version 1.0.3)
 
 **DE:**
 ```
-🗺️ Hafendatenbank massiv erweitert!
+🐛 Bug-Fixes & neue Häfen!
 
-• Von ~290 auf ~1.800 Häfen (Wikidata Import)
-• Karibik, Norwegen, VAE/Oman, Asien komplett
-• Verbesserte Route-Anzeige mit 📍 und 🌊
-• Diverse Bugfixes und UI-Verbesserungen
+• Kritische Karten-Bugs behoben
+• ~120 neue Häfen: Kanaren, Türkei, Marokko, Portugal, und mehr
+• Verbessertes Port-Matching (Klammer-Hinweise, Akzente)
+• Alle Kanarischen Inseln mit allen Namensvarianten
 ```
 
 **EN:**
 ```
-🗺️ Massive port database expansion!
+🐛 Bug fixes & new ports!
 
-• From ~290 to ~1,800 ports (Wikidata import)
-• Caribbean, Norway, UAE/Oman, Asia complete
-• Improved route display with 📍 and 🌊
-• Various bugfixes and UI improvements
+• Critical map bugs fixed
+• ~120 new ports: Canaries, Turkey, Morocco, Portugal, and more
+• Improved port matching (parenthetical hints, accents)
+• All Canary Islands with all name variants
 ```
 
 ---
