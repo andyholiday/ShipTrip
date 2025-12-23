@@ -8,10 +8,32 @@
 import SwiftUI
 import SwiftData
 import MapKit
+import CoreLocation
+
+/// Location Manager für Standort-Berechtigung
+class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    
+    override init() {
+        super.init()
+        manager.delegate = self
+        authorizationStatus = manager.authorizationStatus
+    }
+    
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        authorizationStatus = manager.authorizationStatus
+    }
+}
 
 /// Interaktive Weltkarte mit allen Kreuzfahrt-Routen
 struct MapView: View {
     @Query(sort: \Cruise.startDate, order: .reverse) private var cruises: [Cruise]
+    @StateObject private var locationManager = LocationManager()
     
     @State private var position: MapCameraPosition = .automatic
     @State private var selectedCruise: Cruise?
@@ -80,6 +102,12 @@ struct MapView: View {
                     } label: {
                         Image(systemName: showingLegend ? "list.bullet.circle.fill" : "list.bullet.circle")
                     }
+                }
+            }
+            .onAppear {
+                // Request location permission if not determined
+                if locationManager.authorizationStatus == .notDetermined {
+                    locationManager.requestPermission()
                 }
             }
         }

@@ -14,6 +14,20 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [1.0.4] - 2024-12-23
+
+### Behoben
+- 🐛 **Dark Mode**: App startete immer im Light Mode, obwohl Dark Mode gewählt (Issue #12)
+- 🐛 **Export/Import**: Hafenzeiten wurden nicht korrekt übertragen (Issue #11)
+- 🐛 **Karten-Standort**: Location-Button funktioniert jetzt korrekt (Issue #10)
+- 🐛 **Reederei-Erkennung**: KI erkennt jetzt Reederei aus Schiffsnamen (Issue #6)
+
+### Verbessert
+- 📍 **Routen-Anzeige**: Komplette Liegezeiten (Ankunft – Abfahrt) in Detailansicht
+- 🚢 **100+ Schiffe** zu Reederei-Datenbank hinzugefügt für bessere Auto-Detection
+
+---
+
 ## [1.0.3] - 2024-12-21
 
 ### Hinzugefügt

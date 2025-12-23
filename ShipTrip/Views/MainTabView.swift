@@ -10,6 +10,15 @@ import SwiftUI
 /// Haupt-Tab-Navigation der App
 struct MainTabView: View {
     @State private var selectedTab = 0
+    @AppStorage("colorScheme") private var colorScheme = "system"
+    
+    private var colorSchemeValue: ColorScheme? {
+        switch colorScheme {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -44,6 +53,7 @@ struct MainTabView: View {
                 .tag(4)
         }
         .tint(.accentColor)
+        .preferredColorScheme(colorSchemeValue)
     }
 }
 

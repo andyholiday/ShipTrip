@@ -206,9 +206,16 @@ struct CruiseDetailView: View {
                         
                         Spacer()
                         
-                        Text(port.formattedArrival)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            if !port.isSeaDay {
+                                Text("\(port.arrival.formatted(date: .omitted, time: .shortened)) – \(port.departure.formatted(date: .omitted, time: .shortened))")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
                     }
                     .padding(.vertical, 4)
                     .contentShape(Rectangle())

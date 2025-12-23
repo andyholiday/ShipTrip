@@ -368,6 +368,14 @@ struct CruiseFormView: View {
                     if let extractedShip = extracted.ship {
                         ship = extractedShip
                         filledCount += 1
+                        
+                        // Bug #6 Fix: If no shipping line was detected, try to find it by ship name
+                        if selectedShippingLine == nil {
+                            if let detectedLine = ShippingLine.findByShipName(extractedShip) {
+                                selectedShippingLine = detectedLine
+                                filledCount += 1
+                            }
+                        }
                     }
                     
                     if let extractedCabinType = extracted.cabinType {

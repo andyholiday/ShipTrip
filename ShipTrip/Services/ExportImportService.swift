@@ -63,6 +63,12 @@ class ExportImportService {
         return df
     }()
     
+    private let dateTimeFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        return df
+    }()
+    
     private let isoFormatter: ISO8601DateFormatter = {
         let df = ISO8601DateFormatter()
         df.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -86,8 +92,8 @@ class ExportImportService {
                     country: port.isSeaDay ? nil : port.country,
                     lat: port.isSeaDay ? nil : String(format: "%.8f", port.latitude),
                     lng: port.isSeaDay ? nil : String(format: "%.8f", port.longitude),
-                    arrival: dateFormatter.string(from: port.arrival),
-                    departure: dateFormatter.string(from: port.departure),
+                    arrival: dateTimeFormatter.string(from: port.arrival),
+                    departure: dateTimeFormatter.string(from: port.departure),
                     imageUrl: nil,
                     excursions: port.excursions
                 )
@@ -256,10 +262,11 @@ class ExportImportService {
                     longitude: lng
                 )
                 
-                if let arrivalDate = dateFormatter.date(from: exportPort.arrival) {
+                // Try datetime format first, fallback to date-only
+                if let arrivalDate = dateTimeFormatter.date(from: exportPort.arrival) ?? dateFormatter.date(from: exportPort.arrival) {
                     port.arrival = arrivalDate
                 }
-                if let departureDate = dateFormatter.date(from: exportPort.departure) {
+                if let departureDate = dateTimeFormatter.date(from: exportPort.departure) ?? dateFormatter.date(from: exportPort.departure) {
                     port.departure = departureDate
                 }
                 

@@ -6,7 +6,7 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
 ![iOS](https://img.shields.io/badge/iOS-17.0+-blue)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-5.0-green)
 ![SwiftData](https://img.shields.io/badge/SwiftData-1.0-purple)
-![Version](https://img.shields.io/badge/Version-1.0.3-brightgreen)
+![Version](https://img.shields.io/badge/Version-1.0.4-brightgreen)
 
 📋 **[Changelog](CHANGELOG.md)** | 📖 **[Dokumentation](docs/)**
 
