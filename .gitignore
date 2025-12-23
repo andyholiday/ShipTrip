@@ -71,3 +71,6 @@ playground.xcworkspace
 # Archives
 *.xcarchive/
 Testexport/
+
+# Local coding standards
+.codingstandards/

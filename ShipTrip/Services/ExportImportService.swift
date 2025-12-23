@@ -22,6 +22,7 @@ struct ExportCruise: Codable {
     let shippingLine: String
     let ship: String
     let cabinType: String?
+    let cabinNumber: String?
     let bookingNumber: String?
     let notes: String?
     let rating: Int
@@ -129,6 +130,7 @@ class ExportImportService {
                 shippingLine: cruise.shippingLine,
                 ship: cruise.ship,
                 cabinType: cruise.cabinType.isEmpty ? nil : cruise.cabinType,
+                cabinNumber: cruise.cabinNumber.isEmpty ? nil : cruise.cabinNumber,
                 bookingNumber: cruise.bookingNumber.isEmpty ? nil : cruise.bookingNumber,
                 notes: cruise.notes.isEmpty ? nil : cruise.notes,
                 rating: Int(cruise.rating),
@@ -240,6 +242,7 @@ class ExportImportService {
                 ship: exportCruise.ship
             )
             cruise.cabinType = exportCruise.cabinType ?? ""
+            cruise.cabinNumber = exportCruise.cabinNumber ?? ""
             cruise.bookingNumber = exportCruise.bookingNumber ?? ""
             cruise.notes = exportCruise.notes ?? ""
             cruise.rating = Double(exportCruise.rating)

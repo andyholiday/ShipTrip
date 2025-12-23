@@ -14,6 +14,20 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [1.4.1] - 2024-12-23
+
+### Neu
+- 🏷️ **Coming Soon Badge**: Zukünftige Reisen werden mit "Coming Soon" markiert
+- 🚪 **Kabinennummer**: Neues Feld für die Kabinennummer (Issue #4)
+- 🚢 **Schiff-Auswahl**: Dropdown mit Schiffen der gewählten Reederei (Issue #5)
+- 📤 **Export/Import**: Kabinennummer wird mit exportiert/importiert
+- 🤖 **KI-Erfassung**: Kabinennummer wird automatisch erkannt
+
+### Behoben
+- 🐛 SwiftData Migration für neue Felder
+
+---
+
 ## [1.0.4] - 2024-12-23
 
 ### Behoben

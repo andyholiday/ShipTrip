@@ -153,8 +153,11 @@ struct CruiseDetailView: View {
                 InfoCard(icon: "calendar", title: "Zeitraum", value: "\(dateFormatter.string(from: cruise.startDate)) - \(dateFormatter.string(from: cruise.endDate))")
                 InfoCard(icon: "clock", title: "Dauer", value: "\(cruise.duration) Tage")
                 
-                if !cruise.cabinType.isEmpty {
-                    InfoCard(icon: "bed.double", title: "Kabine", value: cruise.cabinType)
+                if !cruise.cabinType.isEmpty || !cruise.cabinNumber.isEmpty {
+                    let cabinValue = [cruise.cabinType, cruise.cabinNumber]
+                        .filter { !$0.isEmpty }
+                        .joined(separator: " · ")
+                    InfoCard(icon: "bed.double", title: "Kabine", value: cabinValue)
                 }
                 
                 if !cruise.bookingNumber.isEmpty {

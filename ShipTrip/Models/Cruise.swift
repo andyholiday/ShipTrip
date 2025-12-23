@@ -31,6 +31,9 @@ final class Cruise {
     /// Kabinentyp (z.B. "Balkonkabine")
     var cabinType: String
     
+    /// Kabinennummer (z.B. "8042")
+    var cabinNumber: String = ""
+    
     /// Buchungsnummer
     var bookingNumber: String
     
@@ -75,6 +78,7 @@ final class Cruise {
         self.shippingLine = shippingLine
         self.ship = ship
         self.cabinType = ""
+        self.cabinNumber = ""
         self.bookingNumber = ""
         self.notes = ""
         self.rating = 0

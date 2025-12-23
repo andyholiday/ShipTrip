@@ -61,6 +61,7 @@ class GeminiService {
             "startDate": "YYYY-MM-DD",
             "endDate": "YYYY-MM-DD",
             "cabinType": "Art der Kabine",
+            "cabinNumber": "Kabinennummer",
             "bookingNumber": "Buchungsnummer",
             "ports": [
                 {
@@ -235,6 +236,7 @@ struct ExtractedCruiseData: Codable {
     let startDate: String?
     let endDate: String?
     let cabinType: String?
+    let cabinNumber: String?
     let bookingNumber: String?
     let ports: [ExtractedPort]?
 }

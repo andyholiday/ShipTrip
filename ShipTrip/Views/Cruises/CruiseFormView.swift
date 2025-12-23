@@ -35,6 +35,7 @@ struct CruiseFormView: View {
     @State private var selectedShippingLine: ShippingLine?
     @State private var ship = ""
     @State private var cabinType = ""
+    @State private var cabinNumber = ""
     @State private var bookingNumber = ""
     @State private var notes = ""
     @State private var rating: Double = 0
@@ -84,7 +85,6 @@ struct CruiseFormView: View {
                     
                     DatePicker("Enddatum", selection: $endDate, in: startDate..., displayedComponents: .date)
                 }
-                
                 // Schiff & Reederei
                 Section("Schiff & Reederei") {
                     Picker("Reederei", selection: $selectedShippingLine) {
@@ -93,13 +93,30 @@ struct CruiseFormView: View {
                             Text("\(line.logo) \(line.name)").tag(line as ShippingLine?)
                         }
                     }
+                    .onChange(of: selectedShippingLine) { _, newValue in
+                        // Schiff zurücksetzen wenn Reederei gewechselt wird
+                        if let line = newValue, !line.ships.contains(ship) {
+                            ship = ""
+                        }
+                    }
                     
-                    TextField("Schiffsname", text: $ship)
+                    // Schiff Picker wenn Reederei gewählt, sonst TextField
+                    if let shippingLine = selectedShippingLine, !shippingLine.ships.isEmpty {
+                        Picker("Schiff", selection: $ship) {
+                            Text("Wählen...").tag("")
+                            ForEach(shippingLine.ships, id: \.self) { shipName in
+                                Text(shipName).tag(shipName)
+                            }
+                        }
+                    } else {
+                        TextField("Schiffsname", text: $ship)
+                    }
                 }
                 
                 // Kabine & Buchung
                 Section("Buchungsdetails") {
                     TextField("Kabinentyp", text: $cabinType)
+                    TextField("Kabinennummer", text: $cabinNumber)
                     TextField("Buchungsnummer", text: $bookingNumber)
                 }
                 
@@ -285,6 +302,7 @@ struct CruiseFormView: View {
         selectedShippingLine = ShippingLine.all.first { $0.name == cruise.shippingLine }
         ship = cruise.ship
         cabinType = cruise.cabinType
+        cabinNumber = cruise.cabinNumber
         bookingNumber = cruise.bookingNumber
         notes = cruise.notes
         rating = cruise.rating
@@ -380,6 +398,11 @@ struct CruiseFormView: View {
                     
                     if let extractedCabinType = extracted.cabinType {
                         cabinType = extractedCabinType
+                        filledCount += 1
+                    }
+                    
+                    if let extractedCabinNumber = extracted.cabinNumber {
+                        cabinNumber = extractedCabinNumber
                         filledCount += 1
                     }
                     
@@ -508,6 +531,7 @@ struct CruiseFormView: View {
             existingCruise.shippingLine = selectedShippingLine?.name ?? ""
             existingCruise.ship = ship
             existingCruise.cabinType = cabinType
+            existingCruise.cabinNumber = cabinNumber
             existingCruise.bookingNumber = bookingNumber
             existingCruise.notes = notes
             existingCruise.rating = rating
@@ -535,6 +559,7 @@ struct CruiseFormView: View {
                 ship: ship
             )
             newCruise.cabinType = cabinType
+            newCruise.cabinNumber = cabinNumber
             newCruise.bookingNumber = bookingNumber
             newCruise.notes = notes
             newCruise.rating = rating

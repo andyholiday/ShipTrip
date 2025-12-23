@@ -49,6 +49,18 @@ struct CruiseCardView: View {
                     
                     Spacer()
                     
+                    // Coming Soon Badge für zukünftige Reisen
+                    if cruise.isUpcoming {
+                        Text("Coming Soon")
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.blue.opacity(0.2))
+                            .foregroundStyle(.blue)
+                            .clipShape(Capsule())
+                    }
+                    
                     if cruise.rating > 0 {
                         RatingBadge(rating: cruise.rating)
                     }
