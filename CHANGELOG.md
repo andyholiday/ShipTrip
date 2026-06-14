@@ -7,6 +7,36 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+- **Demo-Modus** (nur Debug-Build): Beispiel-Kreuzfahrten und -Angebote koennen
+  ueber die Einstellungen geladen und sauber entfernt werden
+  (`DemoDataService`, `isDemo`-Tag auf Cruise und Deal).
+- **Test-Grundgeruest**: 17 Unit-Tests (Swift Testing) fuer Cruise, Deal, Expense,
+  PortSuggestion, Export/Import-Roundtrip und Notification-Praefix-Logik;
+  3 UI-Tests — als Sicherheitsnetz fuer alle weiteren Phasen.
+
+### Behoben
+- **Benachrichtigungen**: Erinnerungen werden jetzt tatsaechlich geplant und
+  entfernt. `NotificationService` uebergibt nur noch Werttypen (keine
+  `@Model`-Objekte ueber Aktorgrenzen); respektiert Einstellungen
+  `notifyBeforeCruise`, `notifyOnCruiseDay` und `reminderDaysBefore`.
+  Aufruf beim Speichern, Bearbeiten und Loeschen einer Reise.
+- **Stiller Import-Datenverlust**: `ExportImportService` liefert jetzt
+  `ImportResult` mit Zaehlung importierter, doppelter und ungueltig
+  uebersprungener Eintraege; der Nutzer sieht nach dem Import einen
+  informativen Alert.
+- **Enddatum-Validierung**: `saveCruise` erzwingt `endDate >= startDate` und
+  zeigt bei Verstoss einen Alert (deckt auch den KI-Import-Pfad ab).
+- **GitHub-Link in Einstellungen**: Korrigiert auf
+  `https://github.com/andyholiday/ShipTrip`.
+
+### Geaendert
+- Debug-Logs entfernt: 3 `print("DEBUG: …")`-Aufrufe aus `GeminiService` (x2)
+  und `CruiseFormView` (x1) entfernt — diese loggten im Release-Build sensible
+  Daten.
+- Tote `DeveloperSettingsView` und das 5-Tap-Easter-Egg aus den Einstellungen
+  entfernt.
+
 ### Geplant
 - CloudKit iCloud-Sync
 - Wetter-API Integration

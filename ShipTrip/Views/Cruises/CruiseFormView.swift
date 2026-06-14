@@ -58,6 +58,7 @@ struct CruiseFormView: View {
     
     // Validation
     @State private var showingValidationAlert = false
+    @State private var validationMessage = ""
     
     private var isEditing: Bool { cruise != nil }
     
@@ -252,7 +253,7 @@ struct CruiseFormView: View {
             .alert("Fehler", isPresented: $showingValidationAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text("Bitte fülle alle Pflichtfelder aus (Titel, Schiff).")
+                Text(validationMessage)
             }
             .sheet(isPresented: $showingAISheet) {
                 AIImportSheet(
@@ -366,7 +367,6 @@ struct CruiseFormView: View {
                 
                 await MainActor.run {
                     var filledCount = 0
-                    print("DEBUG: Processing extracted data...")
                     
                     if let extractedTitle = extracted.title {
                         title = extractedTitle
@@ -518,12 +518,19 @@ struct CruiseFormView: View {
     
     private func saveCruise() {
         guard !title.isEmpty, !ship.isEmpty else {
+            validationMessage = "Bitte fülle alle Pflichtfelder aus (Titel, Schiff)."
             showingValidationAlert = true
             return
         }
-        
+
+        guard endDate >= startDate else {
+            validationMessage = "Das Enddatum darf nicht vor dem Startdatum liegen."
+            showingValidationAlert = true
+            return
+        }
+
         let targetCruise: Cruise
-        
+
         if let existingCruise = cruise {
             existingCruise.title = title
             existingCruise.startDate = startDate
@@ -537,12 +544,12 @@ struct CruiseFormView: View {
             existingCruise.rating = rating
             existingCruise.updatedAt = Date()
             targetCruise = existingCruise
-            
+
             // Remove all existing ports and re-add
             for port in existingCruise.route {
                 modelContext.delete(port)
             }
-            
+
             // Remove deleted photos
             let existingPhotoSet = Set(existingPhotos.map { ObjectIdentifier($0) })
             for photo in existingCruise.photos {
@@ -566,7 +573,7 @@ struct CruiseFormView: View {
             modelContext.insert(newCruise)
             targetCruise = newCruise
         }
-        
+
         // Add ports
         for (index, tempPort) in tempPorts.enumerated() {
             let port = Port(
@@ -582,7 +589,7 @@ struct CruiseFormView: View {
             port.cruise = targetCruise
             modelContext.insert(port)
         }
-        
+
         // Add new photos
         let startOrder = existingPhotos.count
         for (index, data) in photoDataList.enumerated() {
@@ -590,7 +597,33 @@ struct CruiseFormView: View {
             photo.cruise = targetCruise
             modelContext.insert(photo)
         }
-        
+
+        // Cruise dauerhaft speichern, damit persistentModelID final ist
+        do {
+            try modelContext.save()
+        } catch {
+            validationMessage = "Speichern fehlgeschlagen: \(error.localizedDescription)"
+            showingValidationAlert = true
+            return
+        }
+
+        // Wertdaten synchron auf dem MainActor lesen – kein @Model über Aktorgrenzen
+        let cruiseID = String(describing: targetCruise.persistentModelID)
+        let cruiseTitle = targetCruise.title
+        let cruiseStart = targetCruise.startDate
+        let wasEditing = cruise != nil
+
+        Task {
+            if wasEditing {
+                await NotificationService.shared.removeReminders(cruiseID: cruiseID)
+            }
+            await NotificationService.shared.scheduleAllReminders(
+                cruiseID: cruiseID,
+                title: cruiseTitle,
+                startDate: cruiseStart
+            )
+        }
+
         dismiss()
     }
 }

@@ -11,15 +11,16 @@ import SwiftData
 /// Einstellungen und Mehr
 struct SettingsView: View {
     @AppStorage("colorScheme") private var colorScheme = "system"
-    
+
     @State private var showingApiKeySheet = false
     @State private var isValidatingKey = false
     @State private var keyValidationResult: Bool?
     @State private var hasApiKey = false
-    
-    // Developer Mode
-    @State private var versionTapCount = 0
-    @State private var showingDeveloperSettings = false
+
+    #if DEBUG
+    @Environment(\.modelContext) private var modelContext
+    @State private var hasDemoData = false
+    #endif
     
     var body: some View {
         NavigationStack {
@@ -97,6 +98,27 @@ struct SettingsView: View {
                     }
                 }
                 
+                // Demo (nur Debug)
+                #if DEBUG
+                Section("Demo (nur Debug)") {
+                    if hasDemoData {
+                        Button(role: .destructive) {
+                            DemoDataService.removeDemoData(from: modelContext)
+                            hasDemoData = DemoDataService.hasDemoData(in: modelContext)
+                        } label: {
+                            Label("Beispieldaten entfernen", systemImage: "trash")
+                        }
+                    } else {
+                        Button {
+                            DemoDataService.loadDemoData(into: modelContext)
+                            hasDemoData = DemoDataService.hasDemoData(in: modelContext)
+                        } label: {
+                            Label("Beispieldaten laden", systemImage: "square.and.arrow.down")
+                        }
+                    }
+                }
+                #endif
+
                 // Info
                 Section("Info") {
                     HStack {
@@ -104,16 +126,9 @@ struct SettingsView: View {
                         Spacer()
                         Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                             .foregroundStyle(.secondary)
-                            .onTapGesture {
-                                versionTapCount += 1
-                                if versionTapCount >= 5 {
-                                    showingDeveloperSettings = true
-                                    versionTapCount = 0
-                                }
-                            }
                     }
-                    
-                    Link(destination: URL(string: "https://github.com")!) {
+
+                    Link(destination: URL(string: "https://github.com/andyholiday/ShipTrip")!) {
                         Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
                 }
@@ -124,11 +139,11 @@ struct SettingsView: View {
                     hasApiKey = GeminiService.shared.isConfigured
                 })
             }
-            .sheet(isPresented: $showingDeveloperSettings) {
-                DeveloperSettingsView()
-            }
             .onAppear {
                 hasApiKey = GeminiService.shared.isConfigured
+                #if DEBUG
+                hasDemoData = DemoDataService.hasDemoData(in: modelContext)
+                #endif
             }
             .preferredColorScheme(colorSchemeValue)
         }
@@ -447,21 +462,28 @@ struct DataManagementView: View {
                 }
                 
                 do {
-                    let count: Int
+                    let result: ImportResult
                     if isZip {
-                        count = try ExportImportService.shared.importFromZip(
+                        result = try ExportImportService.shared.importFromZip(
                             url: url,
                             modelContext: modelContext
                         )
                     } else {
-                        count = try ExportImportService.shared.importFromJSON(
+                        result = try ExportImportService.shared.importFromJSON(
                             url: url,
                             modelContext: modelContext
                         )
                     }
                     await MainActor.run {
                         isImporting = false
-                        alertMessage = "✓ \(count) Kreuzfahrt(en) importiert"
+                        var msg = "✓ \(result.imported) importiert"
+                        if result.skippedDuplicates > 0 {
+                            msg += " · \(result.skippedDuplicates) Duplikate übersprungen"
+                        }
+                        if result.skippedInvalid > 0 {
+                            msg += " · \(result.skippedInvalid) mit ungültigem Datum übersprungen"
+                        }
+                        alertMessage = msg
                         showingAlert = true
                     }
                 } catch {
@@ -498,26 +520,6 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
-/// Developer-Einstellungen (versteckt)
-struct DeveloperSettingsView: View {
-    @AppStorage("developerApiOverride") private var apiOverride = ""
-    
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section(header: Text("API Override"),
-                        footer: Text("Überschreibt die Standard-API-URL für Entwicklungszwecke.")) {
-                    TextField("Backend-URL", text: $apiOverride)
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.URL)
-                }
-            }
-            .navigationTitle("Developer")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
 }
 
 #Preview {

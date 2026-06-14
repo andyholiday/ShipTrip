@@ -45,6 +45,9 @@ final class Deal {
     
     /// Zeitpunkt der Speicherung
     var createdAt: Date
+
+    /// Markiert Demo-Daten für sauberes Entfernen
+    var isDemo: Bool = false
     
     // MARK: - Initialization
     

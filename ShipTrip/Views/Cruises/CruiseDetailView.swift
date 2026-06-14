@@ -311,6 +311,9 @@ struct CruiseDetailView: View {
     // MARK: - Actions
     
     private func deleteCruise() {
+        // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
+        let cruiseID = String(describing: cruise.persistentModelID)
+        Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
         modelContext.delete(cruise)
         dismiss()
     }

@@ -184,6 +184,9 @@ struct CruiseListView: View {
     private func deleteCruises(at offsets: IndexSet) {
         for index in offsets {
             let cruise = filteredCruises[index]
+            // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
+            let cruiseID = String(describing: cruise.persistentModelID)
+            Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
             modelContext.delete(cruise)
         }
     }

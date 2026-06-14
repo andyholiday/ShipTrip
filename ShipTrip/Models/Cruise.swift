@@ -45,9 +45,12 @@ final class Cruise {
     
     /// Erstellungsdatum
     var createdAt: Date
-    
+
     /// Letztes Änderungsdatum
     var updatedAt: Date
+
+    /// Markiert Demo-Daten für sauberes Entfernen
+    var isDemo: Bool = false
     
     // MARK: - Relationships
     

@@ -53,6 +53,14 @@ struct ExportExpense: Codable {
     let createdAt: String
 }
 
+// MARK: - Import Result
+
+struct ImportResult {
+    let imported: Int
+    let skippedDuplicates: Int
+    let skippedInvalid: Int
+}
+
 // MARK: - Export/Import Service
 
 class ExportImportService {
@@ -155,7 +163,7 @@ class ExportImportService {
     // MARK: - Import
     
     /// Importiert Kreuzfahrten aus einer ZIP-Datei (Web-App Format)
-    func importFromZip(url: URL, modelContext: ModelContext) throws -> Int {
+    func importFromZip(url: URL, modelContext: ModelContext) throws -> ImportResult {
         // Kopiere die Datei in ein temporäres Verzeichnis
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("shiptrip-import-\(UUID().uuidString)")
@@ -198,12 +206,12 @@ class ExportImportService {
     }
     
     /// Importiert Kreuzfahrten aus einer JSON-Datei
-    func importFromJSON(url: URL, modelContext: ModelContext) throws -> Int {
+    func importFromJSON(url: URL, modelContext: ModelContext) throws -> ImportResult {
         let jsonData = try Data(contentsOf: url)
         return try importFromJSONData(data: jsonData, imagesDir: nil, modelContext: modelContext)
     }
-    
-    private func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> Int {
+
+    private func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
         let decoder = JSONDecoder()
         let exportCruises = try decoder.decode([ExportCruise].self, from: data)
         
@@ -212,24 +220,32 @@ class ExportImportService {
         let existingCruises = (try? modelContext.fetch(descriptor)) ?? []
         
         var importedCount = 0
-        var skippedCount = 0
-        
+        var skippedDuplicates = 0
+        var skippedInvalid = 0
+
         for exportCruise in exportCruises {
             // Parse dates
             guard let startDate = dateFormatter.date(from: exportCruise.startDate),
                   let endDate = dateFormatter.date(from: exportCruise.endDate) else {
+                skippedInvalid += 1
                 continue
             }
-            
+
+            // Ungültige Datumsreihenfolge abfangen
+            guard endDate >= startDate else {
+                skippedInvalid += 1
+                continue
+            }
+
             // Duplikat-Check: Prüfe ob Kreuzfahrt mit gleichem Titel, Startdatum und Schiff existiert
             let isDuplicate = existingCruises.contains { existing in
                 existing.title == exportCruise.title &&
                 Calendar.current.isDate(existing.startDate, inSameDayAs: startDate) &&
                 existing.ship.lowercased() == exportCruise.ship.lowercased()
             }
-            
+
             if isDuplicate {
-                skippedCount += 1
+                skippedDuplicates += 1
                 continue
             }
             
@@ -331,7 +347,7 @@ class ExportImportService {
         }
         
         try modelContext.save()
-        return importedCount
+        return ImportResult(imported: importedCount, skippedDuplicates: skippedDuplicates, skippedInvalid: skippedInvalid)
     }
     
     private func mapCategory(_ rawCategory: String) -> ExpenseCategory {

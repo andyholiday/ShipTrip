@@ -111,13 +111,10 @@ class GeminiService {
         }
         
         jsonString = jsonString.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        print("DEBUG: Extracted JSON: \(jsonString)")
-        
+
         // Parse JSON response
         guard let jsonData = jsonString.data(using: .utf8),
               let extracted = try? JSONDecoder().decode(ExtractedCruiseData.self, from: jsonData) else {
-            print("DEBUG: Failed to parse JSON")
             throw GeminiError.invalidResponse
         }
         
