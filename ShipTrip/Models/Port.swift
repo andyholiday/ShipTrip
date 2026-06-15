@@ -13,28 +13,31 @@ import CoreLocation
 @Model
 final class Port {
     // MARK: - Properties
-    
+
+    /// Stabile App-seitige ID (kein Unique-Constraint; CloudKit-kompatibel)
+    var id: UUID = UUID()
+
     /// Name des Hafens
-    var name: String
-    
+    var name: String = ""
+
     /// Land
-    var country: String
-    
+    var country: String = ""
+
     /// Breitengrad
-    var latitude: Double
-    
+    var latitude: Double = 0
+
     /// Längengrad
-    var longitude: Double
-    
+    var longitude: Double = 0
+
     /// Ankunftsdatum/-zeit
-    var arrival: Date
-    
+    var arrival: Date = Date()
+
     /// Abfahrtsdatum/-zeit
-    var departure: Date
-    
+    var departure: Date = Date()
+
     /// Sortierreihenfolge in der Route
-    var sortOrder: Int
-    
+    var sortOrder: Int = 0
+
     /// Ist dies ein Seetag (kein Landgang)?
     var isSeaDay: Bool = false
     
@@ -44,7 +47,10 @@ final class Port {
     
     /// Geplante Ausflüge (kommasepariert)
     var excursionsRaw: String = ""
-    
+
+    /// Letztes Änderungsdatum (für Last-Writer-Wins bei CloudKit-Sync)
+    var updatedAt: Date = Date()
+
     /// Ausflüge als Array
     var excursions: [String] {
         get {

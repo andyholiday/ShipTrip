@@ -7,15 +7,66 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geplant
+
+- iCloud-Backup/Sync via CloudKit (Datenmodell bereits vorbereitet; Aktivierung
+  in separatem Build nach manuellem Xcode-Capability-Setup und Smoke-Test — siehe
+  [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- Wetter-API Integration
+- Hafen-Bilder mit KI-Generierung
+
+---
+
+## [1.5.0] - 2026-06-15
+
 ### Hinzugefuegt
+
 - **Demo-Modus** (nur Debug-Build): Beispiel-Kreuzfahrten und -Angebote koennen
   ueber die Einstellungen geladen und sauber entfernt werden
   (`DemoDataService`, `isDemo`-Tag auf Cruise und Deal).
-- **Test-Grundgeruest**: 17 Unit-Tests (Swift Testing) fuer Cruise, Deal, Expense,
+- **Test-Grundgeruest**: 27 Unit-Tests (Swift Testing) fuer Cruise, Deal, Expense,
   PortSuggestion, Export/Import-Roundtrip und Notification-Praefix-Logik;
   3 UI-Tests — als Sicherheitsnetz fuer alle weiteren Phasen.
+- **ZIP-Export** (`ExportImportService`): Neue Export-Option erzeugt ein
+  ZIP-Archiv mit `data.json` und externalen Bilddateien unter `images/`; Fotos
+  werden als Rohbytes ohne Re-Encoding gespeichert (verlustfrei). Stabile IDs
+  (`cruise.id`, `port.id`, `expense.id`) werden im Export mitgefuehrt und beim
+  Import unveraendert uebernommen.
+  ([ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- **Foto-Thumbnails**: `ImageDownsampler` (ImageIO, max. 600 px) erzeugt
+  Vorschaubilder fuer Listenansichten; einmaliger Launch-Backfill (`ThumbnailBackfill`)
+  befuellt bestehende Fotos ohne Thumbnails im Hintergrund.
+- **Zweisprachigkeit DE/EN**: String Catalog (`Localizable.xcstrings`) mit 177
+  uebersetzten Strings; Entwicklungssprache ist Deutsch.
+
+### Geaendert
+
+- **Stabile Modell-IDs und CloudKit-ready-Schema**: Alle persistenten Modelle
+  (`Cruise`, `Deal`, `Expense`, `Photo`, `Port`) erhalten `var id: UUID = UUID()`,
+  explizite `inverse:`-Beziehungen, Default-Werte auf allen Attributen und
+  `updatedAt: Date` fuer Last-Writer-Wins. CloudKit-Sync ist bewusst **nicht**
+  aktiviert (kein `cloudKitDatabase` in `ModelConfiguration`, keine iCloud-Entitlements);
+  die Aktivierung folgt als separater Build.
+  ([ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- **Waehrung geraetebasiert**: `Expense.formattedAmount` nutzt
+  `Locale.current.currency` statt hartem `"EUR"`.
+- **Tab umbenannt**: „Angebote" heisst jetzt „Merkliste" (ehrlichere Benennung;
+  `MainTabView`, `DealsView`).
+- **SwiftData-Reaktivitaet**: `refreshID = UUID()`-Redraw-Hack in
+  `CruiseDetailView` entfernt; Property ist jetzt `@Bindable var cruise: Cruise`.
+- **Stabiles Store-Laden**: `ShipTripApp` versucht beim Start den persistenten
+  Store; schlaegt dieser fehl, wird auf einen In-Memory-Store ausgewichen und der
+  Nutzer erhaelt einen Alert. Schlaegt auch der Fallback fehl, zeigt eine
+  `ContentUnavailableView` (`StoreUnavailableView`) einen klaren Fehlerhinweis —
+  kein `fatalError` mehr.
+- Debug-Logs entfernt: 3 `print("DEBUG: …")`-Aufrufe aus `GeminiService` (x2)
+  und `CruiseFormView` (x1) entfernt — diese loggten im Release-Build sensible
+  Daten.
+- Tote `DeveloperSettingsView` und das 5-Tap-Easter-Egg aus den Einstellungen
+  entfernt.
 
 ### Behoben
+
 - **Benachrichtigungen**: Erinnerungen werden jetzt tatsaechlich geplant und
   entfernt. `NotificationService` uebergibt nur noch Werttypen (keine
   `@Model`-Objekte ueber Aktorgrenzen); respektiert Einstellungen
@@ -29,18 +80,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   zeigt bei Verstoss einen Alert (deckt auch den KI-Import-Pfad ab).
 - **GitHub-Link in Einstellungen**: Korrigiert auf
   `https://github.com/andyholiday/ShipTrip`.
-
-### Geaendert
-- Debug-Logs entfernt: 3 `print("DEBUG: …")`-Aufrufe aus `GeminiService` (x2)
-  und `CruiseFormView` (x1) entfernt — diese loggten im Release-Build sensible
-  Daten.
-- Tote `DeveloperSettingsView` und das 5-Tap-Easter-Egg aus den Einstellungen
-  entfernt.
-
-### Geplant
-- CloudKit iCloud-Sync
-- Wetter-API Integration
-- Hafen-Bilder mit KI-Generierung
+- **ZIP-Overflow**: Expliziter Fehler bei mehr als 65.535 ZIP-Eintraegen oder
+  einzelnen Eintraegen ueber UInt32-Grenze (kein stilles Truncaten).
+- **Legacy-Import rueckwaertskompatibel**: Alter Base64-JSON-Import wird weiterhin
+  erkannt und korrekt verarbeitet; fehlende Bilddateien in ZIP-Importen werden
+  toleriert (Photo wird uebersprungen, Cruise bleibt erhalten).
 
 ---
 
@@ -212,5 +256,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/andyholiday/ShipTrip/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/andyholiday/ShipTrip/compare/v1.0.4...v1.4.1
 [1.0.0]: https://github.com/andyholiday/ShipTrip/releases/tag/v1.0.0

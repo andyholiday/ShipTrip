@@ -137,7 +137,7 @@ struct CruiseFormView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(port.isSeaDay ? "🌊 Seetag" : port.name)
+                                Text(port.isSeaDay ? String(localized: "🌊 Seetag") : port.name)
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                                 if !port.isSeaDay {
@@ -183,7 +183,7 @@ struct CruiseFormView: View {
                         Label("Seetag hinzufügen", systemImage: "water.waves")
                     }
                 } header: {
-                    Text("Route (\(tempPorts.count) Einträge)")
+                    Text("Route (\(tempPorts.count) \(String(localized: "Einträge")))")
                 }
                 
                 // Bewertung
@@ -202,7 +202,7 @@ struct CruiseFormView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
                                 ForEach(Array(existingPhotos.enumerated()), id: \.offset) { index, photo in
-                                    if let uiImage = UIImage(data: photo.imageData) {
+                                    if let uiImage = UIImage(data: photo.thumbnailData ?? photo.imageData) {
                                         photoThumbnail(uiImage: uiImage) {
                                             existingPhotos.remove(at: index)
                                         }
@@ -337,7 +337,7 @@ struct CruiseFormView: View {
             }
         }
     }
-    
+
     private func addSeaDay() {
         // Finde das nächste Datum nach dem letzten Eintrag
         let lastDate = tempPorts.last?.arrival ?? startDate
@@ -494,9 +494,9 @@ struct CruiseFormView: View {
                     
                     // Show success message
                     if filledCount > 0 {
-                        aiError = "✓ \(filledCount) Felder/Häfen ausgefüllt!"
+                        aiError = "✓ \(filledCount) " + String(localized: "Felder/Häfen ausgefüllt!")
                     } else {
-                        aiError = "Keine Daten gefunden."
+                        aiError = String(localized: "Keine Daten gefunden.")
                     }
                     
                     isProcessingAI = false
@@ -518,13 +518,13 @@ struct CruiseFormView: View {
     
     private func saveCruise() {
         guard !title.isEmpty, !ship.isEmpty else {
-            validationMessage = "Bitte fülle alle Pflichtfelder aus (Titel, Schiff)."
+            validationMessage = String(localized: "Bitte fülle alle Pflichtfelder aus (Titel, Schiff).")
             showingValidationAlert = true
             return
         }
 
         guard endDate >= startDate else {
-            validationMessage = "Das Enddatum darf nicht vor dem Startdatum liegen."
+            validationMessage = String(localized: "Das Enddatum darf nicht vor dem Startdatum liegen.")
             showingValidationAlert = true
             return
         }
@@ -570,6 +570,7 @@ struct CruiseFormView: View {
             newCruise.bookingNumber = bookingNumber
             newCruise.notes = notes
             newCruise.rating = rating
+            newCruise.updatedAt = Date()
             modelContext.insert(newCruise)
             targetCruise = newCruise
         }
@@ -590,10 +591,12 @@ struct CruiseFormView: View {
             modelContext.insert(port)
         }
 
-        // Add new photos
+        // Neue Fotos anlegen; Thumbnail synchron erzeugen (Downsampling eines Bildes
+        // ist schnell und vermeidet das Lost-Write-Risiko eines Fire-and-forget-Tasks)
         let startOrder = existingPhotos.count
         for (index, data) in photoDataList.enumerated() {
             let photo = Photo(imageData: data, sortOrder: startOrder + index)
+            photo.thumbnailData = ImageDownsampler.thumbnail(from: data)
             photo.cruise = targetCruise
             modelContext.insert(photo)
         }
@@ -602,7 +605,7 @@ struct CruiseFormView: View {
         do {
             try modelContext.save()
         } catch {
-            validationMessage = "Speichern fehlgeschlagen: \(error.localizedDescription)"
+            validationMessage = String(localized: "Speichern fehlgeschlagen: ") + error.localizedDescription
             showingValidationAlert = true
             return
         }

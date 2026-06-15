@@ -20,9 +20,12 @@ struct CruiseCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Hero Image oder Placeholder
+            // Thumbnail-Daten bevorzugen (kleinerer Speicherbedarf beim Dekodieren);
+            // Fallback auf volle Bilddaten für ältere Fotos ohne Thumbnail.
             ZStack {
                 if let firstPhoto = cruise.sortedPhotos.first,
-                   let uiImage = UIImage(data: firstPhoto.imageData) {
+                   let imageData = firstPhoto.thumbnailData ?? firstPhoto.imageData as Data?,
+                   let uiImage = UIImage(data: imageData) {
                     Image(uiImage: uiImage)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -83,7 +86,7 @@ struct CruiseCardView: View {
                     
                     // Datum
                     Label(
-                        "\(dateFormatter.string(from: cruise.startDate)) – \(dateFormatter.string(from: cruise.endDate)) (\(cruise.duration) Tage)",
+                        "\(dateFormatter.string(from: cruise.startDate)) – \(dateFormatter.string(from: cruise.endDate)) (\(cruise.duration) \(String(localized: "Tage")))",
                         systemImage: "calendar"
                     )
                     .font(.caption)

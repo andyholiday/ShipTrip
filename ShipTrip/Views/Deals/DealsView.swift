@@ -34,7 +34,7 @@ struct DealsView: View {
                     dealsList
                 }
             }
-            .navigationTitle("Angebote")
+            .navigationTitle("Merkliste")
             .searchable(text: $searchText, prompt: "Suchen...")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -53,14 +53,14 @@ struct DealsView: View {
     
     private var emptyStateView: some View {
         ContentUnavailableView {
-            Label("Keine Angebote", systemImage: "tag")
+            Label("Keine Einträge", systemImage: "bookmark")
         } description: {
-            Text("Speichere interessante Kreuzfahrt-Angebote hier")
+            Text("Speichere interessante Kreuzfahrten auf deiner Merkliste")
         } actions: {
             Button {
                 showingAddSheet = true
             } label: {
-                Text("Angebot hinzufügen")
+                Text("Eintrag hinzufügen")
             }
             .buttonStyle(.borderedProminent)
         }
@@ -115,7 +115,7 @@ struct DealRowView: View {
                         }
                         
                         if let duration = deal.duration {
-                            Text("\(duration) Tage")
+                            Text("\(duration) \(String(localized: "Tage"))")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -192,10 +192,10 @@ struct DealFormView: View {
                 }
                 
                 Section("Preis") {
-                    TextField("Aktueller Preis (€)", text: $price)
+                    TextField("Aktueller Preis", text: $price)
                         .keyboardType(.decimalPad)
-                    
-                    TextField("Originalpreis (€)", text: $originalPrice)
+
+                    TextField("Originalpreis", text: $originalPrice)
                         .keyboardType(.decimalPad)
                 }
                 
@@ -219,7 +219,7 @@ struct DealFormView: View {
                         .frame(minHeight: 80)
                 }
             }
-            .navigationTitle(isEditing ? "Angebot bearbeiten" : "Neues Angebot")
+            .navigationTitle(isEditing ? "Eintrag bearbeiten" : "Neuer Eintrag")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -271,7 +271,8 @@ struct DealFormView: View {
         targetDeal.notes = notes.isEmpty ? nil : notes
         targetDeal.startDate = hasDateRange ? startDate : nil
         targetDeal.endDate = hasDateRange ? endDate : nil
-        
+        targetDeal.updatedAt = Date()
+
         dismiss()
     }
 }

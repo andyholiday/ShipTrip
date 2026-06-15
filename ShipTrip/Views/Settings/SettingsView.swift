@@ -279,8 +279,10 @@ struct NotificationSettingsView: View {
                     .disabled(!isAuthorized)
                 
                 if notifyBeforeCruise {
-                    Stepper("\(reminderDaysBefore) Tage vorher", value: $reminderDaysBefore, in: 1...30)
-                        .disabled(!isAuthorized)
+                    Stepper(value: $reminderDaysBefore, in: 1...30) {
+                        Text("\(reminderDaysBefore) \(String(localized: "Tage vorher"))")
+                    }
+                    .disabled(!isAuthorized)
                 }
             }
             
@@ -342,7 +344,7 @@ struct DataManagementView: View {
                 }
                 
                 HStack {
-                    Text("Angebote")
+                    Text("Merkliste")
                     Spacer()
                     Text("\(deals.count)")
                         .foregroundStyle(.secondary)
@@ -351,7 +353,7 @@ struct DataManagementView: View {
             
             // Export
             Section(header: Text("Export"),
-                    footer: Text("Exportiert alle Kreuzfahrten als JSON-Datei.")) {
+                    footer: Text("Exportiert alle Kreuzfahrten als ZIP-Archiv mit externalen Bilddateien.")) {
                 Button {
                     exportData()
                 } label: {
@@ -397,7 +399,7 @@ struct DataManagementView: View {
                 deleteAllData()
             }
         } message: {
-            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Angebote werden gelöscht.")
+            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Merkliste-Einträge werden gelöscht.")
         }
         .alert("Info", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
@@ -420,10 +422,10 @@ struct DataManagementView: View {
     
     private func exportData() {
         isExporting = true
-        
+
         Task {
             do {
-                let url = try ExportImportService.shared.exportToJSON(cruises: cruises)
+                let url = try ExportImportService.shared.exportToZip(cruises: cruises)
                 await MainActor.run {
                     isExporting = false
                     exportURL = url
@@ -432,7 +434,7 @@ struct DataManagementView: View {
             } catch {
                 await MainActor.run {
                     isExporting = false
-                    alertMessage = "Export fehlgeschlagen: \(error.localizedDescription)"
+                    alertMessage = String(localized: "Export fehlgeschlagen: ") + error.localizedDescription
                     showingAlert = true
                 }
             }
@@ -448,7 +450,7 @@ struct DataManagementView: View {
             
             // Security-scoped resource access
             guard url.startAccessingSecurityScopedResource() else {
-                alertMessage = "Zugriff auf Datei nicht möglich"
+                alertMessage = String(localized: "Zugriff auf Datei nicht möglich")
                 showingAlert = true
                 isImporting = false
                 return
@@ -476,12 +478,12 @@ struct DataManagementView: View {
                     }
                     await MainActor.run {
                         isImporting = false
-                        var msg = "✓ \(result.imported) importiert"
+                        var msg = "✓ \(result.imported) " + String(localized: "importiert")
                         if result.skippedDuplicates > 0 {
-                            msg += " · \(result.skippedDuplicates) Duplikate übersprungen"
+                            msg += " · \(result.skippedDuplicates) " + String(localized: "Duplikate übersprungen")
                         }
                         if result.skippedInvalid > 0 {
-                            msg += " · \(result.skippedInvalid) mit ungültigem Datum übersprungen"
+                            msg += " · \(result.skippedInvalid) " + String(localized: "mit ungültigem Datum übersprungen")
                         }
                         alertMessage = msg
                         showingAlert = true
@@ -489,14 +491,14 @@ struct DataManagementView: View {
                 } catch {
                     await MainActor.run {
                         isImporting = false
-                        alertMessage = "Import fehlgeschlagen: \(error.localizedDescription)"
+                        alertMessage = String(localized: "Import fehlgeschlagen: ") + error.localizedDescription
                         showingAlert = true
                     }
                 }
             }
             
         case .failure(let error):
-            alertMessage = "Dateiauswahl fehlgeschlagen: \(error.localizedDescription)"
+            alertMessage = String(localized: "Dateiauswahl fehlgeschlagen: ") + error.localizedDescription
             showingAlert = true
         }
     }

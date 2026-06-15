@@ -42,28 +42,39 @@ enum ExpenseCategory: String, Codable, CaseIterable, Identifiable {
         case .other: return "gray"
         }
     }
+
+    /// Lokalisierter Anzeigename (rawValue bleibt stabiler Speicher-Schlüssel)
+    var displayName: String {
+        String(localized: String.LocalizationValue(rawValue))
+    }
 }
 
 /// Ausgabe/Kosten für eine Kreuzfahrt
 @Model
 final class Expense {
     // MARK: - Properties
-    
+
+    /// Stabile App-seitige ID (kein Unique-Constraint; CloudKit-kompatibel)
+    var id: UUID = UUID()
+
     /// Kategorie der Ausgabe (als Raw String gespeichert)
-    var categoryRaw: String
-    
+    var categoryRaw: String = ""
+
     /// Beschreibung
-    var descriptionText: String
-    
-    /// Betrag in EUR
-    var amount: Double
-    
+    var descriptionText: String = ""
+
+    /// Betrag in Geräte-Währung
+    var amount: Double = 0
+
     /// Datum der Ausgabe (optional)
     var expenseDate: Date?
-    
+
     /// Erstellungsdatum
-    var createdAt: Date
-    
+    var createdAt: Date = Date()
+
+    /// Letztes Änderungsdatum (für Last-Writer-Wins bei CloudKit-Sync)
+    var updatedAt: Date = Date()
+
     // MARK: - Relationships
     
     /// Zugehörige Kreuzfahrt
@@ -88,6 +99,6 @@ final class Expense {
     
     /// Formatierter Betrag
     var formattedAmount: String {
-        amount.formatted(.currency(code: "EUR"))
+        amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
     }
 }

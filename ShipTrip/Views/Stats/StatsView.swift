@@ -78,7 +78,7 @@ struct StatsView: View {
             StatCard(
                 icon: "eurosign.circle",
                 title: "Ausgaben",
-                value: totalExpenses.formatted(.currency(code: "EUR")),
+                value: totalExpenses.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")),
                 color: .purple
             )
             
@@ -141,7 +141,7 @@ struct StatsView: View {
                         innerRadius: .ratio(0.5),
                         angularInset: 1.5
                     )
-                    .foregroundStyle(by: .value("Kategorie", item.category.rawValue))
+                    .foregroundStyle(by: .value("Kategorie", item.category.displayName))
                     .cornerRadius(4)
                 }
                 .frame(height: 200)
@@ -152,10 +152,10 @@ struct StatsView: View {
                         HStack(spacing: 4) {
                             Image(systemName: item.category.icon)
                                 .font(.caption)
-                            Text(item.category.rawValue)
+                            Text(item.category.displayName)
                                 .font(.caption)
                             Spacer()
-                            Text(item.total.formatted(.currency(code: "EUR")))
+                            Text(item.total.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -181,7 +181,7 @@ struct StatsView: View {
                     Text(item.name)
                         .font(.subheadline)
                     Spacer()
-                    Text("\(item.count) Reisen")
+                    Text("\(item.count) \(String(localized: "Reisen"))")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

@@ -12,58 +12,61 @@ import Foundation
 @Model
 final class Cruise {
     // MARK: - Properties
-    
+
+    /// Stabile App-seitige ID (kein Unique-Constraint; CloudKit-kompatibel)
+    var id: UUID = UUID()
+
     /// Titel der Kreuzfahrt (z.B. "Mittelmeer Kreuzfahrt 2024")
-    var title: String
-    
+    var title: String = ""
+
     /// Startdatum der Reise
-    var startDate: Date
-    
+    var startDate: Date = Date()
+
     /// Enddatum der Reise
-    var endDate: Date
-    
+    var endDate: Date = Date()
+
     /// Name der Reederei
-    var shippingLine: String
-    
+    var shippingLine: String = ""
+
     /// Name des Schiffs
-    var ship: String
-    
+    var ship: String = ""
+
     /// Kabinentyp (z.B. "Balkonkabine")
-    var cabinType: String
-    
+    var cabinType: String = ""
+
     /// Kabinennummer (z.B. "8042")
     var cabinNumber: String = ""
-    
+
     /// Buchungsnummer
-    var bookingNumber: String
-    
+    var bookingNumber: String = ""
+
     /// Persönliche Notizen
-    var notes: String
-    
+    var notes: String = ""
+
     /// Bewertung (1-5 Sterne)
-    var rating: Double
-    
+    var rating: Double = 0
+
     /// Erstellungsdatum
-    var createdAt: Date
+    var createdAt: Date = Date()
 
     /// Letztes Änderungsdatum
-    var updatedAt: Date
+    var updatedAt: Date = Date()
 
     /// Markiert Demo-Daten für sauberes Entfernen
     var isDemo: Bool = false
-    
+
     // MARK: - Relationships
-    
+
     /// Route mit allen besuchten Häfen
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \Port.cruise)
     var route: [Port] = []
-    
+
     /// Ausgaben für diese Kreuzfahrt
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \Expense.cruise)
     var expenses: [Expense] = []
-    
+
     /// Fotos der Kreuzfahrt
-    @Relationship(deleteRule: .cascade)
+    @Relationship(deleteRule: .cascade, inverse: \Photo.cruise)
     var photos: [Photo] = []
     
     // MARK: - Initialization

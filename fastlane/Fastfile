@@ -1,0 +1,41 @@
+default_platform(:ios)
+
+platform :ios do
+
+  desc "Fetch App Store provisioning profile for ShipTrip"
+  lane :fetch_profile do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_PATH"],
+      in_house: false
+    )
+    get_provisioning_profile(
+      api_key: api_key,
+      app_identifier: "com.andre.ShipTrip",
+      team_id: "LH324Y9MG7",
+      provisioning_name: "ShipTrip App Store",
+      ignore_profiles_with_different_name: false,
+      output_path: "/tmp/profiles",
+      filename: "ShipTrip_AppStore.mobileprovision",
+      readonly: false
+    )
+  end
+
+  desc "Upload IPA to TestFlight"
+  lane :upload_testflight do
+    api_key = app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_PATH"],
+      in_house: false
+    )
+    pilot(
+      api_key: api_key,
+      ipa: "build/export/ShipTrip.ipa",
+      skip_waiting_for_build_processing: true,
+      skip_submission: true
+    )
+  end
+
+end

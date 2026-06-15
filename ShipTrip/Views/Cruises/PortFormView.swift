@@ -158,6 +158,8 @@ struct PortFormView: View {
         let lat = Double(latitude) ?? 0
         let lon = Double(longitude) ?? 0
         
+        let now = Date()
+
         if let existingPort = port {
             // Update
             existingPort.name = name
@@ -166,6 +168,7 @@ struct PortFormView: View {
             existingPort.longitude = lon
             existingPort.arrival = arrival
             existingPort.departure = departure
+            existingPort.updatedAt = now
         } else {
             // Create new
             let newPort = Port(
@@ -180,7 +183,10 @@ struct PortFormView: View {
             newPort.cruise = cruise
             modelContext.insert(newPort)
         }
-        
+
+        // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
+        cruise.updatedAt = now
+
         dismiss()
     }
 }

@@ -21,8 +21,7 @@ struct CruiseDetailView: View {
     @State private var showingAddExpenseSheet = false
     @State private var selectedPort: Port?
     @State private var selectedExpense: Expense?
-    @State private var refreshID = UUID()
-    
+
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy"
@@ -51,7 +50,6 @@ struct CruiseDetailView: View {
             }
             .padding()
         }
-        .id(refreshID)
         .navigationTitle(cruise.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -76,16 +74,16 @@ struct CruiseDetailView: View {
         .sheet(isPresented: $showingEditSheet) {
             CruiseFormView(cruise: cruise)
         }
-        .sheet(isPresented: $showingAddPortSheet, onDismiss: refreshView) {
+        .sheet(isPresented: $showingAddPortSheet) {
             PortFormView(cruise: cruise, port: nil)
         }
-        .sheet(isPresented: $showingAddExpenseSheet, onDismiss: refreshView) {
+        .sheet(isPresented: $showingAddExpenseSheet) {
             ExpenseFormView(cruise: cruise, expense: nil)
         }
-        .sheet(item: $selectedPort, onDismiss: refreshView) { port in
+        .sheet(item: $selectedPort) { port in
             PortFormView(cruise: cruise, port: port)
         }
-        .sheet(item: $selectedExpense, onDismiss: refreshView) { expense in
+        .sheet(item: $selectedExpense) { expense in
             ExpenseFormView(cruise: cruise, expense: expense)
         }
         .alert("Kreuzfahrt löschen?", isPresented: $showingDeleteAlert) {
@@ -104,6 +102,8 @@ struct CruiseDetailView: View {
         Group {
             if !cruise.photos.isEmpty {
                 TabView {
+                    // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
+                    // gestochen scharfe Qualität (kein Thumbnail hier).
                     ForEach(Array(cruise.sortedPhotos.enumerated()), id: \.offset) { _, photo in
                         if let uiImage = UIImage(data: photo.imageData) {
                             Image(uiImage: uiImage)
@@ -151,7 +151,7 @@ struct CruiseDetailView: View {
                 InfoCard(icon: "ferry", title: "Schiff", value: cruise.ship)
                 InfoCard(icon: cruise.shippingLineLogo, title: "Reederei", value: cruise.shippingLine, isEmoji: true)
                 InfoCard(icon: "calendar", title: "Zeitraum", value: "\(dateFormatter.string(from: cruise.startDate)) - \(dateFormatter.string(from: cruise.endDate))")
-                InfoCard(icon: "clock", title: "Dauer", value: "\(cruise.duration) Tage")
+                InfoCard(icon: "clock", title: "Dauer", value: "\(cruise.duration) \(String(localized: "Tage"))")
                 
                 if !cruise.cabinType.isEmpty || !cruise.cabinNumber.isEmpty {
                     let cabinValue = [cruise.cabinType, cruise.cabinNumber]
@@ -240,7 +240,7 @@ struct CruiseDetailView: View {
                     .font(.headline)
                 Spacer()
                 if !cruise.expenses.isEmpty {
-                    Text(cruise.totalExpenses.formatted(.currency(code: "EUR")))
+                    Text(cruise.totalExpenses.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -266,7 +266,7 @@ struct CruiseDetailView: View {
                             .frame(width: 24)
                         
                         VStack(alignment: .leading) {
-                            Text(expense.category.rawValue)
+                            Text(expense.category.displayName)
                                 .font(.subheadline)
                             if !expense.descriptionText.isEmpty {
                                 Text(expense.descriptionText)
@@ -320,16 +320,14 @@ struct CruiseDetailView: View {
     
     private func deletePort(_ port: Port) {
         modelContext.delete(port)
-        refreshView()
+        // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
+        cruise.updatedAt = Date()
     }
-    
+
     private func deleteExpense(_ expense: Expense) {
         modelContext.delete(expense)
-        refreshView()
-    }
-    
-    private func refreshView() {
-        refreshID = UUID()
+        // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
+        cruise.updatedAt = Date()
     }
 }
 

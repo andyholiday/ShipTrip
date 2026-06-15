@@ -315,6 +315,209 @@ struct ExportImportTests {
     }
 }
 
+// MARK: - ZIP Export / Import (ADR-002)
+
+@Suite("ExportImportService ZIP")
+struct ExportImportZIPTests {
+
+    private func makeDate(_ string: String) -> Date {
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd"
+        df.timeZone = TimeZone(identifier: "UTC")
+        return df.date(from: string)!
+    }
+
+    private func makeInMemoryContainer() throws -> ModelContainer {
+        let schema = Schema([Cruise.self, CruisePort.self, Expense.self, Deal.self, Photo.self])
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        return try ModelContainer(for: schema, configurations: config)
+    }
+
+    /// (a) ZIP export→import roundtrip: Cruise-Anzahl und stabile ID bleiben erhalten.
+    @Test("ZIP export–import roundtrip preserves cruise count and stable id")
+    @MainActor
+    func zipRoundtripPreservesStableID() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(
+            title: "ZIP Roundtrip",
+            startDate: makeDate("2026-09-01"),
+            endDate: makeDate("2026-09-10"),
+            shippingLine: "TUI Cruises",
+            ship: "Mein Schiff 1"
+        )
+        context.insert(cruise)
+        try context.save()
+
+        let originalID = cruise.id
+
+        // ZIP exportieren
+        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        // Frischer Container für Import
+        let freshContainer = try makeInMemoryContainer()
+        let freshContext = freshContainer.mainContext
+
+        let result = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: freshContext)
+
+        #expect(result.imported == 1)
+        #expect(result.skippedDuplicates == 0)
+        #expect(result.skippedInvalid == 0)
+
+        let imported = try freshContext.fetch(FetchDescriptor<Cruise>())
+        #expect(imported.count == 1)
+        // Stabile ID muss exakt übereinstimmen
+        #expect(imported.first?.id == originalID)
+        #expect(imported.first?.title == "ZIP Roundtrip")
+        #expect(imported.first?.ship == "Mein Schiff 1")
+    }
+
+    /// (b) Re-Import desselben ZIP ist idempotent: 0 neue, alles Duplikate (via stable id).
+    @Test("Re-importing the same ZIP is idempotent: 0 new, all duplicates by id")
+    @MainActor
+    func zipReimportIsIdempotent() throws {
+        // Quell-Container: Kreuzfahrt anlegen und ZIP exportieren
+        let sourceContainer = try makeInMemoryContainer()
+        let sourceContext = sourceContainer.mainContext
+
+        let cruise = Cruise(
+            title: "Idempotent Test",
+            startDate: makeDate("2026-10-01"),
+            endDate: makeDate("2026-10-07"),
+            shippingLine: "Costa",
+            ship: "Costa Smeralda"
+        )
+        sourceContext.insert(cruise)
+        try sourceContext.save()
+
+        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        // Ziel-Container: frisch, leer
+        let targetContainer = try makeInMemoryContainer()
+        let targetContext = targetContainer.mainContext
+
+        // Erster Import: 1 neu
+        let result1 = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: targetContext)
+        #expect(result1.imported == 1)
+        #expect(result1.skippedDuplicates == 0)
+
+        // Zweiter Import (selbes ZIP, selber Ziel-Context): 0 neu, 1 Duplikat via stable id
+        let result2 = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: targetContext)
+        #expect(result2.imported == 0)
+        #expect(result2.skippedDuplicates == 1)
+
+        // Nur 1 Kreuzfahrt im Ziel-Store
+        let all = try targetContext.fetch(FetchDescriptor<Cruise>())
+        #expect(all.count == 1)
+    }
+
+    /// (c) Legacy Base64-JSON importiert weiterhin korrekt.
+    @Test("Legacy Base64 JSON import still works")
+    @MainActor
+    func legacyBase64JSONImport() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        // Minimales, gültiges Base64-JSON (kein Foto-Daten, leerer String simuliert Fehler beim Dekodiern;
+        // deshalb nutzen wir ein 1×1 weißes PNG als echte Base64-Payload)
+        // 1×1 weißes PNG (67 Bytes), als Base64:
+        let tiny1x1PngBase64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg=="
+
+        let json = """
+        [
+          {
+            "id": "cruise_legacy-base64",
+            "title": "Legacy Base64 Cruise",
+            "startDate": "2026-11-01",
+            "endDate": "2026-11-07",
+            "shippingLine": "MSC",
+            "ship": "MSC Grandiosa",
+            "cabinType": null,
+            "cabinNumber": null,
+            "bookingNumber": null,
+            "notes": null,
+            "rating": 5,
+            "route": [],
+            "photos": ["data:image/png;base64,\(tiny1x1PngBase64)"],
+            "expenses": []
+          }
+        ]
+        """.data(using: .utf8)!
+
+        let tempURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("legacy-base64-\(UUID().uuidString).json")
+        try json.write(to: tempURL)
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let result = try ExportImportService.shared.importFromJSON(url: tempURL, modelContext: context)
+
+        #expect(result.imported == 1)
+        #expect(result.skippedDuplicates == 0)
+        #expect(result.skippedInvalid == 0)
+
+        let imported = try context.fetch(FetchDescriptor<Cruise>())
+        #expect(imported.count == 1)
+        #expect(imported.first?.title == "Legacy Base64 Cruise")
+
+        // Foto muss importiert worden sein
+        let photos = try context.fetch(FetchDescriptor<Photo>())
+        #expect(photos.count == 1)
+        #expect(!photos[0].imageData.isEmpty)
+    }
+
+    /// (d) ZIP-Export mit Foto: imageData round-trippt verlustfrei; thumbnailData ist nach Import nicht nil.
+    @Test("ZIP export with photo: imageData is lossless and thumbnailData is set after import")
+    @MainActor
+    func zipPhotoRoundtripLosslessAndThumbnail() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        // Minimales gültiges PNG (1×1 weißes Pixel, 67 Bytes) als Testbild.
+        // Rohdaten werden direkt in Photo.imageData gespeichert — das ist genau
+        // was exportToZip ohne Re-Encoding in die ZIP schreibt.
+        let rawImageBytes = Data(base64Encoded:
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg=="
+        )!
+
+        let cruise = Cruise(
+            title: "Photo Roundtrip",
+            startDate: makeDate("2026-12-01"),
+            endDate: makeDate("2026-12-07"),
+            shippingLine: "Hapag-Lloyd",
+            ship: "Europa 2"
+        )
+        context.insert(cruise)
+
+        let photo = Photo(imageData: rawImageBytes, sortOrder: 0)
+        photo.cruise = cruise
+        context.insert(photo)
+        try context.save()
+
+        // ZIP exportieren
+        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        // Frischer Container für Import
+        let freshContainer = try makeInMemoryContainer()
+        let freshContext = freshContainer.mainContext
+
+        let result = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: freshContext)
+        #expect(result.imported == 1)
+
+        // (a) imageData muss byte-identisch zum Original sein (verlustlos)
+        let importedPhotos = try freshContext.fetch(FetchDescriptor<Photo>())
+        #expect(importedPhotos.count == 1)
+        if let importedPhoto = importedPhotos.first {
+            #expect(importedPhoto.imageData == rawImageBytes)
+            // (b) thumbnailData muss nach Import gesetzt sein
+            #expect(importedPhoto.thumbnailData != nil)
+        }
+    }
+}
+
 // MARK: - Notification Removal by Prefix
 
 /// NOTE on notification testing scope:

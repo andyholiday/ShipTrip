@@ -12,9 +12,12 @@ import Foundation
 @Model
 final class Deal {
     // MARK: - Properties
-    
+
+    /// Stabile App-seitige ID (kein Unique-Constraint; CloudKit-kompatibel)
+    var id: UUID = UUID()
+
     /// Titel des Angebots
-    var title: String
+    var title: String = ""
     
     /// Reederei (optional)
     var shippingLine: String?
@@ -44,7 +47,10 @@ final class Deal {
     var notes: String?
     
     /// Zeitpunkt der Speicherung
-    var createdAt: Date
+    var createdAt: Date = Date()
+
+    /// Letztes Änderungsdatum (für Last-Writer-Wins bei CloudKit-Sync)
+    var updatedAt: Date = Date()
 
     /// Markiert Demo-Daten für sauberes Entfernen
     var isDemo: Bool = false
@@ -81,12 +87,12 @@ final class Deal {
     
     /// Formatierter Preis
     var formattedPrice: String? {
-        price?.formatted(.currency(code: "EUR"))
+        price?.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
     }
-    
+
     /// Formatierter Originalpreis
     var formattedOriginalPrice: String? {
-        originalPrice?.formatted(.currency(code: "EUR"))
+        originalPrice?.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
     }
     
     /// Dauer in Tagen (falls Start- und Enddatum vorhanden)

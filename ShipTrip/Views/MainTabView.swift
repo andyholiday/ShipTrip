@@ -36,7 +36,7 @@ struct MainTabView: View {
             
             DealsView()
                 .tabItem {
-                    Label("Angebote", systemImage: "tag")
+                    Label("Merkliste", systemImage: "bookmark")
                 }
                 .tag(2)
             

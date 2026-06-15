@@ -32,7 +32,7 @@ struct ExpenseFormView: View {
                 Section("Kategorie") {
                     Picker("Kategorie", selection: $category) {
                         ForEach(ExpenseCategory.allCases) { cat in
-                            Label(cat.rawValue, systemImage: cat.icon)
+                            Label(cat.displayName, systemImage: cat.icon)
                                 .tag(cat)
                         }
                     }
@@ -41,12 +41,8 @@ struct ExpenseFormView: View {
                 
                 // Betrag
                 Section("Betrag") {
-                    HStack {
-                        TextField("0,00", text: $amount)
-                            .keyboardType(.decimalPad)
-                        Text("€")
-                            .foregroundStyle(.secondary)
-                    }
+                    TextField("0,00", text: $amount)
+                        .keyboardType(.decimalPad)
                 }
                 
                 // Beschreibung
@@ -97,12 +93,15 @@ struct ExpenseFormView: View {
         let normalizedAmount = amount.replacingOccurrences(of: ",", with: ".")
         guard let parsedAmount = Double(normalizedAmount), parsedAmount > 0 else { return }
         
+        let now = Date()
+
         if let existingExpense = expense {
             // Update
             existingExpense.category = category
             existingExpense.amount = parsedAmount
             existingExpense.descriptionText = descriptionText
             existingExpense.expenseDate = hasDate ? expenseDate : nil
+            existingExpense.updatedAt = now
         } else {
             // Create new
             let newExpense = Expense(category: category, amount: parsedAmount, description: descriptionText)
@@ -110,7 +109,10 @@ struct ExpenseFormView: View {
             newExpense.cruise = cruise
             modelContext.insert(newExpense)
         }
-        
+
+        // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
+        cruise.updatedAt = now
+
         dismiss()
     }
 }
