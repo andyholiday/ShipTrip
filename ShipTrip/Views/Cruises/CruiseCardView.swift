@@ -7,113 +7,103 @@
 
 import SwiftUI
 
-/// iOS-Style Card für eine Kreuzfahrt in der Liste
+/// Foto-zentrierte Card für eine Kreuzfahrt in der Liste.
+/// Das Cover-Foto (oder ein Farbverlauf-Fallback) füllt die gesamte Karte;
+/// der Text liegt als dunkles Overlay über dem unteren Bereich.
 struct CruiseCardView: View {
     let cruise: Cruise
-    
+
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "dd.MM.yyyy"
         return formatter
     }()
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Hero Image oder Placeholder
-            // Thumbnail-Daten bevorzugen (kleinerer Speicherbedarf beim Dekodieren);
-            // Fallback auf volle Bilddaten für ältere Fotos ohne Thumbnail.
-            ZStack {
-                if let firstPhoto = cruise.sortedPhotos.first,
-                   let imageData = firstPhoto.thumbnailData ?? firstPhoto.imageData as Data?,
-                   let uiImage = UIImage(data: imageData) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.2))
-                        .overlay {
-                            Image(systemName: "ferry")
-                                .font(.system(size: 40))
-                                .foregroundStyle(.secondary)
-                        }
+        ZStack(alignment: .bottom) {
+            // MARK: Hintergrundbild oder Farbverlauf-Fallback
+            if let firstPhoto = cruise.sortedPhotos.first,
+               let imageData = firstPhoto.thumbnailData ?? firstPhoto.imageData as Data?,
+               let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                LinearGradient(
+                    colors: [Color.oceanBlue, Color.navyDark],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .overlay {
+                    Image(systemName: "ferry")
+                        .font(.system(size: 48))
+                        .foregroundStyle(.white.opacity(0.35))
                 }
             }
-            .frame(height: 180)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            // Content
-            VStack(alignment: .leading, spacing: 8) {
-                // Titel und Rating
-                HStack(alignment: .top) {
-                    Text(cruise.title)
-                        .font(.headline)
-                        .lineLimit(2)
-                    
-                    Spacer()
-                    
-                    // Coming Soon Badge für zukünftige Reisen
-                    if cruise.isUpcoming {
-                        Text("Coming Soon")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.blue.opacity(0.2))
-                            .foregroundStyle(.blue)
-                            .clipShape(Capsule())
-                    }
-                    
-                    if cruise.rating > 0 {
-                        RatingBadge(rating: cruise.rating)
-                    }
-                }
-                
-                // Reederei
+
+            // MARK: Dunkler Scrim für Text-Lesbarkeit
+            LinearGradient(
+                colors: [.black.opacity(0.0), .black.opacity(0.65)],
+                startPoint: .center,
+                endPoint: .bottom
+            )
+
+            // MARK: Text-Overlay unten
+            VStack(alignment: .leading, spacing: 4) {
+                Text(cruise.title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
                 HStack(spacing: 4) {
                     Text(cruise.shippingLineLogo)
                     Text(cruise.shippingLine)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.85))
                 }
-                
-                // Details
-                VStack(alignment: .leading, spacing: 4) {
-                    // Schiff
-                    Label(cruise.ship, systemImage: "ferry")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    
-                    // Datum
-                    Label(
-                        "\(dateFormatter.string(from: cruise.startDate)) – \(dateFormatter.string(from: cruise.endDate)) (\(cruise.duration) \(String(localized: "Tage")))",
-                        systemImage: "calendar"
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    
-                    // Route
-                    if !cruise.route.isEmpty {
-                        Label(
-                            cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { $0.name }.joined(separator: " → "),
-                            systemImage: "mappin.and.ellipse"
-                        )
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    }
+
+                Label(cruise.ship, systemImage: "ferry")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.85))
+
+                Text(
+                    "\(dateFormatter.string(from: cruise.startDate)) – \(dateFormatter.string(from: cruise.endDate)) (\(cruise.duration) \(String(localized: "Tage")))"
+                )
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.75))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+        }
+        .frame(height: 210)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        // MARK: Badges oben rechts
+        .overlay(alignment: .topTrailing) {
+            HStack(spacing: 6) {
+                if cruise.isUpcoming {
+                    Text(String(localized: "Coming Soon"))
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(.blue.opacity(0.85))
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                }
+
+                if cruise.rating > 0 {
+                    RatingBadge(rating: cruise.rating)
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(10)
         }
-        .padding(.vertical, 8)
     }
 }
 
 /// Kleine Rating-Badge
 struct RatingBadge: View {
     let rating: Double
-    
+
     var body: some View {
         HStack(spacing: 2) {
             Image(systemName: "star.fill")
@@ -139,7 +129,7 @@ struct RatingBadge: View {
         ship: "Mein Schiff 4"
     )
     cruise.rating = 4.5
-    
+
     return List {
         CruiseCardView(cruise: cruise)
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))

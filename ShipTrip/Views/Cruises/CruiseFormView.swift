@@ -101,11 +101,15 @@ struct CruiseFormView: View {
                         }
                     }
                     
-                    // Schiff Picker wenn Reederei gewählt, sonst TextField
+                    // Schiff Picker wenn Reederei gewählt, sonst TextField.
+                    // Beim Bearbeiten: historisches Schiff (nicht in ships) als Extra-Option ergänzen.
                     if let shippingLine = selectedShippingLine, !shippingLine.ships.isEmpty {
+                        let pickerOptions: [String] = shippingLine.ships.contains(ship) || ship.isEmpty
+                            ? shippingLine.ships
+                            : shippingLine.ships + [ship]
                         Picker("Schiff", selection: $ship) {
                             Text("Wählen...").tag("")
-                            ForEach(shippingLine.ships, id: \.self) { shipName in
+                            ForEach(pickerOptions, id: \.self) { shipName in
                                 Text(shipName).tag(shipName)
                             }
                         }

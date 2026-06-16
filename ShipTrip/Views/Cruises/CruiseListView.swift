@@ -84,9 +84,11 @@ struct CruiseListView: View {
             .sheet(isPresented: $showingAddSheet) {
                 CruiseFormView(cruise: nil)
             }
-            // Einmalige Backfill-Migration: setzt thumbnailData für Fotos aus
-            // älteren App-Versionen, die noch kein Vorschaubild gespeichert haben.
+            // Einmalige Start-Reparaturen (Altdaten-Migration):
+            // 1. IdBackfill: korrigiert UUID-Kollisionen aus Lightweight-Migration v1.5.0
+            // 2. ThumbnailBackfill: setzt thumbnailData für Fotos ohne Vorschaubild
             .task {
+                IdBackfill.run(context: modelContext)
                 await ThumbnailBackfill.run(context: modelContext)
             }
         }

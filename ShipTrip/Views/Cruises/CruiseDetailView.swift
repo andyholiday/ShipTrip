@@ -33,7 +33,10 @@ struct CruiseDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Hero Image
                 heroImageSection
-                
+
+                // Eckdaten-Zeile
+                statsSection
+
                 // Info Section
                 infoSection
                 
@@ -98,38 +101,95 @@ struct CruiseDetailView: View {
     
     // MARK: - Sections
     
+    /// Titeloverlay (unten-links) – wird sowohl im Foto- als auch im Platzhalter-Hero verwendet.
+    private var heroTitleOverlay: some View {
+        LinearGradient(
+            colors: [.black.opacity(0.0), .black.opacity(0.6)],
+            startPoint: .center,
+            endPoint: .bottom
+        )
+        .overlay(alignment: .bottomLeading) {
+            Text(cruise.title)
+                .font(.title2.bold())
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 14)
+        }
+    }
+
     private var heroImageSection: some View {
         Group {
             if !cruise.photos.isEmpty {
-                TabView {
-                    // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
-                    // gestochen scharfe Qualität (kein Thumbnail hier).
-                    ForEach(Array(cruise.sortedPhotos.enumerated()), id: \.offset) { _, photo in
-                        if let uiImage = UIImage(data: photo.imageData) {
-                            Image(uiImage: uiImage)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
+                // ZStack: Pager im Hintergrund, Titel-Overlay darüber (einmal, nicht pro Seite)
+                ZStack(alignment: .bottomLeading) {
+                    TabView {
+                        // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
+                        // gestochen scharfe Qualität (kein Thumbnail hier).
+                        ForEach(Array(cruise.sortedPhotos.enumerated()), id: \.offset) { _, photo in
+                            if let uiImage = UIImage(data: photo.imageData) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            }
                         }
                     }
+                    .tabViewStyle(.page)
+
+                    heroTitleOverlay
                 }
-                .frame(height: 250)
+                .frame(height: 280)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .tabViewStyle(.page)
             } else {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.secondary.opacity(0.2))
-                    .frame(height: 200)
-                    .overlay {
-                        VStack {
-                            Image(systemName: "photo.on.rectangle")
-                                .font(.largeTitle)
-                            Text("Keine Fotos")
-                                .font(.caption)
-                        }
-                        .foregroundStyle(.secondary)
-                    }
+                ZStack(alignment: .bottomLeading) {
+                    LinearGradient(
+                        colors: [Color.oceanBlue, Color.navyDark],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+
+                    // Dezentes Symbol oben rechts
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.white.opacity(0.25))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+                    heroTitleOverlay
+                }
+                .frame(height: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             }
         }
+    }
+
+    /// Eckdaten-Zeile: Tage · Häfen · Länder · Ausgaben
+    private var statsSection: some View {
+        HStack(spacing: 0) {
+            StatCell(
+                value: "\(cruise.duration)",
+                caption: String(localized: "Tage")
+            )
+            StatCell(
+                value: "\(cruise.route.count)",
+                caption: String(localized: "Häfen")
+            )
+            StatCell(
+                value: "\(cruise.countriesVisited.count)",
+                caption: String(localized: "Länder")
+            )
+            StatCell(
+                value: cruise.totalExpenses.formatted(
+                    .currency(code: Locale.current.currency?.identifier ?? "EUR")
+                ),
+                caption: String(localized: "Ausgaben"),
+                compactValue: true
+            )
+        }
+        .padding(.vertical, 12)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     
     private var infoSection: some View {
@@ -188,13 +248,14 @@ struct CruiseDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
             } else {
-                ForEach(cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })) { port in
+                let sortedPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })
+                let firstSortOrder = sortedPorts.first?.sortOrder
+                ForEach(sortedPorts) { port in
                     HStack(spacing: 12) {
-                        // Symbol: Anker für Hafen, Wellen für Seetag
-                        Image(systemName: port.isSeaDay ? "water.waves" : "mappin.circle.fill")
-                            .foregroundStyle(port.isSeaDay ? .cyan : .blue)
-                            .font(.system(size: 20))
-                            .frame(width: 24)
+                        PortPinView(type: PortPinType(
+                            isSeaDay: port.isSeaDay,
+                            isFirst: port.sortOrder == firstSortOrder
+                        ))
                         
                         VStack(alignment: .leading) {
                             Text(port.name)
@@ -328,6 +389,26 @@ struct CruiseDetailView: View {
         modelContext.delete(expense)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
         cruise.updatedAt = Date()
+    }
+}
+
+/// Einzelne Zelle in der Eckdaten-Zeile (Tage / Häfen / Länder / Ausgaben)
+private struct StatCell: View {
+    let value: String
+    let caption: String
+    var compactValue: Bool = false
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(compactValue ? .subheadline.bold() : .title3.bold())
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            Text(caption)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

@@ -40,10 +40,7 @@ struct MapView: View {
     @State private var hiddenCruiseIndices: Set<Int> = []
     @State private var showingLegend = true
     
-    // Farben für verschiedene Routen
-    private let routeColors: [Color] = [
-        .blue, .orange, .green, .purple, .pink, .cyan, .indigo, .mint
-    ]
+    // Routenfarben aus zentraler Quelle (Color+Theme)
     
     var body: some View {
         NavigationStack {
@@ -59,16 +56,17 @@ struct MapView: View {
                             // Route-Linie
                             if validPorts.count > 1 {
                                 MapPolyline(coordinates: validPorts.map { $0.coordinate })
-                                    .stroke(routeColors[index % routeColors.count], lineWidth: 3)
+                                    .stroke(Color.routeColor(at: index), lineWidth: 3)
                             }
                             
-                            // Hafen-Marker
+                            // Hafen-Marker — einheitliches Icon (mappin.circle.fill),
+                            // Routenfarbe zur Unterscheidung mehrerer Reisen auf der Karte
                             ForEach(Array(validPorts.enumerated()), id: \.offset) { portIndex, port in
                                 Annotation(port.name, coordinate: port.coordinate) {
                                     VStack(spacing: 2) {
-                                        Image(systemName: portIndex == 0 ? "ferry.fill" : "mappin.circle.fill")
+                                        Image(systemName: "mappin.circle.fill")
                                             .font(.title2)
-                                            .foregroundStyle(routeColors[index % routeColors.count])
+                                            .foregroundStyle(Color.routeColor(at: index))
                                         Text(port.name)
                                             .font(.caption2)
                                             .padding(.horizontal, 4)
@@ -123,7 +121,7 @@ struct MapView: View {
                     ForEach(Array(cruises.enumerated()), id: \.offset) { index, cruise in
                         HStack {
                             Circle()
-                                .fill(routeColors[index % routeColors.count])
+                                .fill(Color.routeColor(at: index))
                                 .frame(width: 12, height: 12)
                             
                             Text(cruise.title)

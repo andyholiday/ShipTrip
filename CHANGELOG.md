@@ -15,6 +15,39 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Behoben
+
+- **Doppelte Anzeige von Reisen nach Update auf 1.5.0**: Beim Update aus älteren
+  Versionen erhielten alle bestehenden Datensätze durch SwiftDatas
+  Lightweight-Migration denselben `id`-Default-Wert; dadurch erschienen Reisen
+  (und Häfen/Ausgaben/Fotos) in Listen mehrfach als ein identischer Eintrag.
+  Einmalige Start-Reparatur `IdBackfill` vergibt kollidierenden Datensätzen
+  wieder eindeutige UUIDs (idempotent, ohne Datenverlust).
+  ([ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+
+### Geändert (Phase 2 — Visuelle Politur, in Arbeit)
+
+- **Einheitlicher Hafen-Pin**: gemeinsame `PortPinView`-Komponente für alle
+  Hafen-Kontexte (Karte, Detailansicht); Pin-Farben als semantische Token in der
+  zentralen Farbquelle `Color+Theme` (`portPin`, `homePortPin`, `seaDayPin`).
+  Ersetzt verstreute, hartkodierte Icon-/Farb-Duplikate.
+- **Schiffslisten aktualisiert (Stand Juni 2026)**: neue Schiffe ergänzt (u.a.
+  Mein Schiff Relax/Flow, AIDAstella, Disney Treasure/Destiny/Adventure). Aus
+  ihren Flotten ausgeschiedene Schiffe (Mein Schiff Herz, AIDAcara/vita/aura,
+  Costa Firenze) wandern in eine neue `historicalShips`-Liste: nicht mehr in der
+  Auswahl für neue Reisen, aber für Bestandsreisen aus der Vergangenheit
+  weiterhin korrekt aufgelöst (Reederei-Logo) und beim Bearbeiten erhalten.
+- **Foto-zentrierte Reise-Karten (Welle 2)**: `CruiseCardView` zeigt das erste
+  Foto der Reise (`thumbnailData ?? imageData`) als vollflächiges Cover-Foto
+  (210 pt). Titel, Reederei, Schiff und Datum liegen als weißes Text-Overlay
+  über einem dunklen Scrim. Ohne Foto: Verlauf oceanBlue → navy mit
+  Ferry-Symbol. Rating- und „Coming Soon"-Badge oben rechts beibehalten.
+- **Hero-Header im Reise-Detail (Welle 3)**: `CruiseDetailView` erhält einen
+  großen Hero-Header (280 pt Foto-Pager / 220 pt Verlauf-Fallback). Titel-
+  Overlay erscheint einmal unterhalb des Headers, nicht pro Pager-Seite.
+  Darunter eine neue Eckdaten-Zeile mit vier Kern-Zahlen: Reisetage, Häfen,
+  Länder und Gesamtausgaben (Betrag in Geräte-Locale-Währung).
+
 ---
 
 ## [1.5.0] - 2026-06-15
