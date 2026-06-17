@@ -11,6 +11,8 @@ enum PortPinType {
     case port
     /// Erster Hafen / Heimathafen
     case homePort
+    /// Letzter Hafen / Endpunkt
+    case endPort
     /// Seetag (kein Landgang)
     case seaDay
 }
@@ -35,6 +37,7 @@ struct PortPinView: View {
     private var iconName: String {
         switch type {
         case .port, .homePort: return "mappin.circle.fill"
+        case .endPort:         return "mappin.and.ellipse.circle.fill"
         case .seaDay:          return "water.waves"
         }
     }
@@ -43,6 +46,7 @@ struct PortPinView: View {
         switch type {
         case .port:     return .portPin
         case .homePort: return .homePortPin
+        case .endPort:  return .endPortPin
         case .seaDay:   return .seaDayPin
         }
     }
@@ -51,6 +55,7 @@ struct PortPinView: View {
         switch type {
         case .port:     return String(localized: "Hafen")
         case .homePort: return String(localized: "Heimathafen")
+        case .endPort:  return String(localized: "Endhafen")
         case .seaDay:   return String(localized: "Seetag")
         }
     }
@@ -61,11 +66,14 @@ struct PortPinView: View {
 extension PortPinType {
     /// Leitet den Pin-Typ vom Port-Modell ab.
     /// `isFirst`: `true` wenn der Port den niedrigsten sortOrder in der Route hat.
-    init(isSeaDay: Bool, isFirst: Bool) {
+    /// `isLast`: `true` wenn der Port den höchsten sortOrder unter den Nicht-Seetag-Häfen hat.
+    init(isSeaDay: Bool, isFirst: Bool, isLast: Bool) {
         if isSeaDay {
             self = .seaDay
         } else if isFirst {
             self = .homePort
+        } else if isLast {
+            self = .endPort
         } else {
             self = .port
         }
@@ -78,6 +86,7 @@ extension PortPinType {
     HStack(spacing: 24) {
         PortPinView(type: .homePort)
         PortPinView(type: .port)
+        PortPinView(type: .endPort)
         PortPinView(type: .seaDay)
     }
     .padding()

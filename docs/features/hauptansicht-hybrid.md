@@ -158,6 +158,53 @@ referenziert ihn von dort.
 
 ---
 
+## Politur-Wave (2026-06-17)
+
+### Zeitstrahl-Zeilen gerahmt
+
+`CruiseTimelineRowView` erhaelt ein Card-Treatment: Hintergrund
+`secondarySystemBackground`, `cornerRadius 10`, passend zum Stats-Strip und zur
+Hero-Card. `CruiseListView` reduziert den vertikalen `listRowInsets`-Wert von 6
+auf 4 Pt fuer kompaktere Zeilenabstaende.
+
+Beruehrte Dateien:
+
+- `ShipTrip/Views/Cruises/CruiseTimelineRowView.swift`
+- `ShipTrip/Views/Cruises/CruiseListView.swift`
+
+### Differenzierte Hafen-Nadeln nach Rolle
+
+Alle drei Hafen-Kontexte unterscheiden jetzt visuell zwischen Start, Zwischen-
+stopp und Endpunkt.
+
+**Detail-Route-Liste (`PortPinView`):** Neuer Typ `endPort` mit Token
+`endPortPin = seaGreen` und Icon `mappin.and.ellipse.circle.fill`. Typ-Auswahl
+ueber die Factory `PortPinType.init(isSeaDay:isFirst:isLast:)`:
+
+| Rolle | Farbe | Icon |
+|---|---|---|
+| Heimathafen (Start) | orange (`homePortPin`) | `mappin.circle.fill` |
+| Zwischenhafen | blau (`portPin`) | `mappin.circle.fill` |
+| Endpunkt | gruen (`endPortPin`) | `mappin.and.ellipse.circle.fill` |
+| Seetag | seaDay-Blau (`seaDayPin`) | `water.waves` |
+
+**Geo-Route in der Hero-Card (`CruiseGeoFallbackView`):** Start (orange) und
+Endpunkt (gruen) als groessere Kreise mit weissem Ring; Zwischenstopps als
+kleine weisse Punkte ohne Ring.
+
+**Weltkarte (`MapView`):** Start = vertikaler Pin, Zwischenhaefen = kleine
+Punkte, Endpunkt = `flag.checkered.circle.fill` — die pro-Reise-Farbe bleibt
+unveraendert.
+
+Beruehrte Dateien:
+
+- `ShipTrip/Views/Cruises/PortPinView.swift` (neuer Typ `endPort`, neue Factory)
+- `ShipTrip/Views/Cruises/CruiseGeoFallbackView.swift` (Start-/End-Marker)
+- `ShipTrip/Views/Map/MapView.swift` (Start-Pin, Punkte, Zielflagge)
+- `ShipTrip/Utilities/Color+Theme.swift` (Token `endPortPin`)
+
+---
+
 ## Verwandte Entscheidungen
 
 Kein neuer ADR benoetigt. Das Redesign ist eine reine UI-Umstrukturierung, die das

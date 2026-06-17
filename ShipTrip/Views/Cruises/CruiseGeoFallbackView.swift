@@ -123,10 +123,35 @@ struct CruiseGeoFallbackView: View {
             )
 
             // MARK: Hafen-Punkte
-            let dotR: CGFloat = 3.5
-            for pt in canvasPoints {
+            // Zeichenreihenfolge: erst Zwischen-Punkte, dann Start/Endpunkt,
+            // damit die Ringe nicht von Zwischen-Punkten verdeckt werden.
+
+            // Zwischen-Punkte (weder erster noch letzter)
+            let midPoints = canvasPoints.dropFirst().dropLast()
+            for pt in midPoints {
+                let dotR: CGFloat = 3.5
                 let dotRect = CGRect(x: pt.x - dotR, y: pt.y - dotR, width: dotR * 2, height: dotR * 2)
                 context.fill(Path(ellipseIn: dotRect), with: .color(.white.opacity(0.6)))
+            }
+
+            // Startpunkt: sunsetOrange mit weißem Ring
+            if let startPt = canvasPoints.first {
+                let dotR: CGFloat = 5.0
+                let ringR: CGFloat = dotR + 2.0
+                let ringRect = CGRect(x: startPt.x - ringR, y: startPt.y - ringR, width: ringR * 2, height: ringR * 2)
+                context.stroke(Path(ellipseIn: ringRect), with: .color(.white), style: StrokeStyle(lineWidth: 2))
+                let dotRect = CGRect(x: startPt.x - dotR, y: startPt.y - dotR, width: dotR * 2, height: dotR * 2)
+                context.fill(Path(ellipseIn: dotRect), with: .color(Color.sunsetOrange))
+            }
+
+            // Endpunkt: seaGreen mit weißem Ring
+            if let endPt = canvasPoints.last, canvasPoints.count >= 2 {
+                let dotR: CGFloat = 5.0
+                let ringR: CGFloat = dotR + 2.0
+                let ringRect = CGRect(x: endPt.x - ringR, y: endPt.y - ringR, width: ringR * 2, height: ringR * 2)
+                context.stroke(Path(ellipseIn: ringRect), with: .color(.white), style: StrokeStyle(lineWidth: 2))
+                let dotRect = CGRect(x: endPt.x - dotR, y: endPt.y - dotR, width: dotR * 2, height: dotR * 2)
+                context.fill(Path(ellipseIn: dotRect), with: .color(Color.seaGreen))
             }
         }
     }

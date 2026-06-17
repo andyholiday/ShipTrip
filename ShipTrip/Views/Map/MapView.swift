@@ -59,14 +59,27 @@ struct MapView: View {
                                     .stroke(Color.routeColor(at: index), lineWidth: 3)
                             }
                             
-                            // Hafen-Marker — einheitliches Icon (mappin.circle.fill),
-                            // Routenfarbe zur Unterscheidung mehrerer Reisen auf der Karte
+                            // Hafen-Marker — Form/Icon nach Position (Farbe = Reise, Form = Rolle):
+                            // Start: klassischer Pin · Zwischenhalt: kleiner Punkt · Endpunkt: Zielflagge
                             ForEach(Array(validPorts.enumerated()), id: \.offset) { portIndex, port in
                                 Annotation(port.name, coordinate: port.coordinate) {
                                     VStack(spacing: 2) {
-                                        Image(systemName: "mappin.circle.fill")
-                                            .font(.title2)
-                                            .foregroundStyle(Color.routeColor(at: index))
+                                        if portIndex == 0 {
+                                            // Starthafen
+                                            Image(systemName: "mappin.circle.fill")
+                                                .font(.title2)
+                                                .foregroundStyle(Color.routeColor(at: index))
+                                        } else if portIndex == validPorts.count - 1 {
+                                            // Endhafen (nur wenn mehr als 1 Hafen)
+                                            Image(systemName: "flag.checkered.circle.fill")
+                                                .font(.title2)
+                                                .foregroundStyle(Color.routeColor(at: index))
+                                        } else {
+                                            // Zwischen-Häfen
+                                            Image(systemName: "circle.fill")
+                                                .font(.caption)
+                                                .foregroundStyle(Color.routeColor(at: index))
+                                        }
                                         Text(port.name)
                                             .font(.caption2)
                                             .padding(.horizontal, 4)

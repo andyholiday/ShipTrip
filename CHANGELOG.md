@@ -39,6 +39,21 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Zeitstrahl-Zeilen gerahmt**: `CruiseTimelineRowView` erhaelt ein
+  Card-Treatment (`secondarySystemBackground`, cornerRadius 10), passend zum
+  Statistik-Strip und zur Hero-Card. `CruiseListView` reduziert den vertikalen
+  `listRowInsets`-Abstand von 6 auf 4 Pt fuer kompaktere Optik.
+- **Differenzierte Hafen-Nadeln nach Rolle** in drei Kontexten:
+  - Detail-Route-Liste (`PortPinView`): neuer Typ `endPort` (Token
+    `endPortPin = seaGreen`, Icon `mappin.and.ellipse.circle.fill`); Start =
+    Heimathafen (orange), Hafen (blau), Endpunkt (gruen), Seetag (Wellen).
+    Factory `PortPinType.init(isSeaDay:isFirst:isLast:)`.
+  - Geo-Route in der Hero-Card (`CruiseGeoFallbackView`): Start (orange) und
+    Endpunkt (gruen) als groessere Punkte mit weissem Ring; Zwischenstopps als
+    kleine weisse Punkte.
+  - Weltkarte (`MapView`): Start = Pin, Zwischenhaefen = kleine Punkte,
+    Endpunkt = Zielflagge (`flag.checkered.circle.fill`) — Farbe bleibt pro
+    Reise unveraendert.
 - **Einheitlicher Hafen-Pin**: Gemeinsame `PortPinView`-Komponente fuer alle
   Hafen-Kontexte (Karte, Detailansicht); Pin-Farben als semantische Token in
   `Color+Theme` (`portPin`, `homePortPin`, `seaDayPin`). Ersetzt verstreute,

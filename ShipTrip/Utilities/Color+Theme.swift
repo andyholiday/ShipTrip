@@ -36,6 +36,9 @@ extension Color {
 
     /// Seetag-Pin: oceanLight (helles Blau)
     static let seaDayPin = Color.oceanLight
+
+    /// Endhafen-Pin: seaGreen (kontrastiert gut im Dark Mode gegen Ozean-Verlauf)
+    static let endPortPin = Color.seaGreen
     
     // MARK: - Expense Category Colors
     

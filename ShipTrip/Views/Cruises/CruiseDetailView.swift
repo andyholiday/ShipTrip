@@ -249,12 +249,14 @@ struct CruiseDetailView: View {
                     .padding(.vertical, 20)
             } else {
                 let sortedPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })
-                let firstSortOrder = sortedPorts.first?.sortOrder
+                let firstSortOrder = sortedPorts.filter { !$0.isSeaDay }.first?.sortOrder
+                let lastSortOrder = sortedPorts.filter { !$0.isSeaDay }.last?.sortOrder
                 ForEach(sortedPorts) { port in
                     HStack(spacing: 12) {
                         PortPinView(type: PortPinType(
                             isSeaDay: port.isSeaDay,
-                            isFirst: port.sortOrder == firstSortOrder
+                            isFirst: port.sortOrder == firstSortOrder,
+                            isLast: port.sortOrder == lastSortOrder
                         ))
                         
                         VStack(alignment: .leading) {

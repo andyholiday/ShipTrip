@@ -154,6 +154,140 @@ final class HauptansichtScreenshotTests: XCTestCase {
         try write(screenshot: XCUIScreen.main.screenshot(), name: "meine-reisen-\(suffix)-scrolled")
     }
 
+    // MARK: - Detail-Ansicht mit differenzierten Pins (Light)
+
+    /// Öffnet eine Kreuzfahrt-Detailansicht mit Demo-Daten und screenshottet die Hafen-Pin-Liste.
+    @MainActor
+    func testScreenshot_DetailPins_Light() throws {
+        try captureDetailView(suffix: "light")
+    }
+
+    // MARK: - Detail-Ansicht mit differenzierten Pins (Dark)
+
+    @MainActor
+    func testScreenshot_DetailPins_Dark() throws {
+        try captureDetailView(suffix: "dark")
+    }
+
+    // MARK: - Geo-Route Hero (Light + Dark)
+
+    /// Hero-Karte mit Geo-Route: benutzt die Upstream-Demo-Reise „Norwegische Fjorde"
+    /// (kein Foto, aber Hafen-Koordinaten vorhanden) — zeigt CruiseGeoFallbackView
+    /// mit differenzierten Start/End-Punkten.
+    @MainActor
+    func testScreenshot_GeoHero_Light() throws {
+        try captureGeoHero(suffix: "light")
+    }
+
+    @MainActor
+    func testScreenshot_GeoHero_Dark() throws {
+        try captureGeoHero(suffix: "dark")
+    }
+
+    // MARK: - Core helper: Detail-Pins
+
+    @MainActor
+    private func captureDetailView(suffix: String) throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // 1. Demo-Daten laden (Mehr-Tab → Beispieldaten laden)
+        try loadDemoData(app: app)
+
+        // 2. Zum Reisen-Tab wechseln
+        let reisenTab = app.tabBars.buttons["Reisen"]
+        XCTAssertTrue(reisenTab.waitForExistence(timeout: 5))
+        reisenTab.tap()
+
+        // 3. Timeline-Row antippen: Demo enthält "Westliches Mittelmeer 2025"
+        //    als erste Timeline-Zeile unter dem Hero.
+        //    StaticText mit dem Reisetitel suchen.
+        let cruiseList = app.collectionViews.firstMatch
+        XCTAssertTrue(cruiseList.waitForExistence(timeout: 8))
+
+        // Scrollen damit Timeline-Zeilen sichtbar sind
+        cruiseList.swipeUp(velocity: .slow)
+        sleep(1)
+
+        // Ersten sichtbaren Timeline-Text antippen
+        let timelineTitle = app.staticTexts["Westliches Mittelmeer 2025"]
+        if timelineTitle.waitForExistence(timeout: 5) {
+            timelineTitle.tap()
+        } else {
+            // Fallback: nächste sichtbare Zelle nach Hero antippen
+            let cells = cruiseList.cells
+            for i in 0..<cells.count {
+                let cell = cells.element(boundBy: i)
+                if cell.exists && cell.isHittable {
+                    cell.tap()
+                    break
+                }
+            }
+        }
+
+        // 4. Auf Detailansicht warten (NavigationLink öffnet sich)
+        sleep(2)
+
+        // 5. In der Detailansicht nach unten scrollen um Hafen-Pin-Liste zu sehen
+        let detailView = app.collectionViews.firstMatch
+        if detailView.waitForExistence(timeout: 5) {
+            detailView.swipeUp(velocity: .slow)
+        } else {
+            app.swipeUp(velocity: .slow)
+        }
+        sleep(1)
+
+        // 6. Screenshot
+        try write(screenshot: XCUIScreen.main.screenshot(), name: "detail-pins-\(suffix)")
+    }
+
+    // MARK: - Core helper: Geo-Hero
+
+    @MainActor
+    private func captureGeoHero(suffix: String) throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        try loadDemoData(app: app)
+
+        let reisenTab = app.tabBars.buttons["Reisen"]
+        XCTAssertTrue(reisenTab.waitForExistence(timeout: 5))
+        reisenTab.tap()
+
+        // Warten bis Hero-Card geladen ist
+        let cruiseList = app.collectionViews.firstMatch
+        XCTAssertTrue(cruiseList.waitForExistence(timeout: 8))
+        _ = cruiseList.cells.firstMatch.waitForExistence(timeout: 5)
+
+        try write(screenshot: XCUIScreen.main.screenshot(), name: "geo-hero-\(suffix)")
+    }
+
+    // MARK: - Demo-Daten-Loader (shared)
+
+    @MainActor
+    private func loadDemoData(app: XCUIApplication) throws {
+        let moreTab = app.tabBars.buttons["Mehr"]
+        XCTAssertTrue(moreTab.waitForExistence(timeout: 8))
+        moreTab.tap()
+
+        let settingsList = app.collectionViews.firstMatch
+        if settingsList.waitForExistence(timeout: 5) {
+            settingsList.swipeUp()
+        } else {
+            app.swipeUp()
+        }
+
+        let removeButton = app.buttons["Beispieldaten entfernen"]
+        if removeButton.waitForExistence(timeout: 3) {
+            removeButton.tap()
+            if settingsList.exists { settingsList.swipeUp() } else { app.swipeUp() }
+        }
+
+        let loadButton = app.buttons["Beispieldaten laden"]
+        XCTAssertTrue(loadButton.waitForExistence(timeout: 12))
+        loadButton.tap()
+    }
+
     // MARK: - Hilfsfunktion
 
     private func write(screenshot: XCUIScreenshot, name: String) throws {
