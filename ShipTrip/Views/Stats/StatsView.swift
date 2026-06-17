@@ -57,7 +57,7 @@ struct StatsView: View {
             StatCard(
                 icon: "calendar",
                 title: "Reisetage",
-                value: "\(totalSeaDays)",
+                value: "\(totalTravelDays)",
                 color: .cyan
             )
             
@@ -194,8 +194,8 @@ struct StatsView: View {
     
     // MARK: - Computed Stats
     
-    private var totalSeaDays: Int {
-        cruises.totalSeaDays
+    private var totalTravelDays: Int {
+        cruises.totalTravelDays
     }
     
     private var uniquePorts: Int {

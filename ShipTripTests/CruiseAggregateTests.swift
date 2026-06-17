@@ -154,6 +154,46 @@ struct CruiseAggregateTests {
         #expect(cruises.totalPortStops == 2)
     }
 
+    // MARK: totalTravelDays
+
+    @Test("totalTravelDays summiert duration aller Kreuzfahrten")
+    @MainActor
+    func totalTravelDaysSumsDuration() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        // 1.–7. Januar → duration = 7
+        let cruise1 = Cruise(
+            title: "Test1",
+            startDate: makeDate("2025-01-01"),
+            endDate: makeDate("2025-01-07"),
+            shippingLine: "MSC",
+            ship: "Seashore"
+        )
+        context.insert(cruise1)
+
+        // 1.–3. März → duration = 3
+        let cruise2 = Cruise(
+            title: "Test2",
+            startDate: makeDate("2025-03-01"),
+            endDate: makeDate("2025-03-03"),
+            shippingLine: "AIDA",
+            ship: "AIDAmar"
+        )
+        context.insert(cruise2)
+
+        try context.save()
+
+        let cruises = [cruise1, cruise2]
+        #expect(cruises.totalTravelDays == 10)
+    }
+
+    @Test("totalTravelDays mit leerem Array ist 0")
+    func totalTravelDaysEmptyArray() {
+        let cruises: [Cruise] = []
+        #expect(cruises.totalTravelDays == 0)
+    }
+
     @Test("totalSeaDays und totalPortStops über mehrere Kreuzfahrten summieren korrekt")
     @MainActor
     func aggregatesAcrossMultipleCruises() throws {

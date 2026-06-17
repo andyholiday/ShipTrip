@@ -62,8 +62,21 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **Filter-Leer-Zustand**: `ContentUnavailableView.search` ersetzt den leeren
   Bildschirm, wenn ein Suchfilter keine Treffer liefert.
 
+### Entfernt
+
+- **`CruiseCardView` entfernt**: Die 139-Zeilen-Komponente war seit dem
+  Hybrid-Redesign in der Produktion nicht mehr referenziert. Der genutzte
+  Helfer `RatingBadge` wurde zuvor in eine eigene Datei
+  `ShipTrip/Views/Cruises/RatingBadge.swift` ausgelagert, die weiterhin von
+  `CruiseHeroCardView` verwendet wird.
+
 ### Behoben
 
+- **Statistik-Tab „Reisetage" zeigte faelschlich Seetage-Anzahl**: Die Kachel
+  summierte `totalSeaDays` (Ports mit `isSeaDay == true`), was haeufig 0
+  ergab. Sie nutzt jetzt das neue Array-Aggregat `[Cruise].totalTravelDays`
+  (Summe der `duration`-Werte) und zeigt damit die echte Gesamt-Reisedauer
+  ueber alle Kreuzfahrten.
 - **Doppelte Anzeige von Reisen nach Update auf 1.5.0**: SwiftDatas
   Lightweight-Migration vergab allen Altdatensaetzen denselben `id`-Default-Wert.
   Einmalige Start-Reparatur `IdBackfill` weist kollidierenden Datensaetzen

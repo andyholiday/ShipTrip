@@ -142,18 +142,19 @@ Unit-Tests in `DemoDataServiceTests` sichern Idempotenz und Reset-Verhalten ab.
 
 ---
 
-## Bekannte Einschraenkungen / Offene Punkte
+## Nachgezogene Aenderungen (2026-06-17)
 
-**(a) Seetage-Definition weicht von StatsView ab**  
-Der Strip zaehlt Ports mit `isSeaDay == true` (port-basiert, dieses Feature).
-`StatsView` summiert die Gesamtdauer der Reisen als „Reisetage" / „Seetage" — eine
-andere Definition. Es ist offen, welche Zahl als kanonisch gilt. Produktentscheid
-ausstehend.
+**(a) Reisetage-Fix in StatsView — erledigt**  
+`StatsView` nutzt jetzt `[Cruise].totalTravelDays` (Summe der `duration`-Werte) statt
+`totalSeaDays`. Die Statistik-Kachel „Reisetage" zeigt damit die echte Gesamt-Reisedauer
+und nicht die Seetage-Anzahl. Das neue Aggregat liegt als Extension auf `Array where
+Element == Cruise` in `Cruise.swift`.
 
-**(b) `CruiseCardView.swift` ist orphaned**  
-`CruiseCardView` wird seit diesem Redesign in der Produktion nicht mehr referenziert.
-Die Datei bleibt per Surgical-Changes-Policy ungeanderter in der Codebase und ist fuer
-einen kuenftigen Housekeeping-Pass markiert.
+**(b) `CruiseCardView.swift` entfernt — erledigt**  
+Die verwaiste `CruiseCardView` (139 Zeilen) wurde aus der Codebase entfernt. Der
+weiterhin benoetigte `RatingBadge`-Helfer wurde vorab in
+`ShipTrip/Views/Cruises/RatingBadge.swift` ausgelagert; `CruiseHeroCardView`
+referenziert ihn von dort.
 
 ---
 

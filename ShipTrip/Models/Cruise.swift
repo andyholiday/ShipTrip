@@ -155,4 +155,9 @@ extension Array where Element == Cruise {
     var totalPortStops: Int {
         flatMap { $0.route }.filter { !$0.isSeaDay }.count
     }
+
+    /// Gesamtanzahl Reisetage (Reisedauer) über alle Kreuzfahrten
+    var totalTravelDays: Int {
+        reduce(0) { $0 + $1.duration }
+    }
 }
