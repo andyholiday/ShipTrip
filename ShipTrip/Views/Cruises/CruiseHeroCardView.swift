@@ -12,15 +12,13 @@ import SwiftUI
 struct CruiseHeroCardView: View {
     let cruise: Cruise
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "dd.MM.yy"
-        return f
-    }()
-
-    /// Tage bis zum Start (nur positiv sinnvoll; negativ = bereits vorbei)
+    /// Tage bis zum Start (kalendarisch normalisiert; verhindert „In 0 Tagen" für morgen)
     private var daysUntilStart: Int {
-        Calendar.current.dateComponents([.day], from: .now, to: cruise.startDate).day ?? 0
+        Calendar.current.dateComponents(
+            [.day],
+            from: Calendar.current.startOfDay(for: .now),
+            to: Calendar.current.startOfDay(for: cruise.startDate)
+        ).day ?? 0
     }
 
     var body: some View {
@@ -58,7 +56,7 @@ struct CruiseHeroCardView: View {
             // Badges oben
             .overlay(alignment: .topLeading) {
                 if cruise.isUpcoming {
-                    Text(String(localized: "In") + " \(daysUntilStart) " + String(localized: "Tagen"))
+                    Text(String(localized: "In \(daysUntilStart) Tagen"))
                         .font(.caption2)
                         .fontWeight(.semibold)
                         .padding(.horizontal, 8)
@@ -105,8 +103,7 @@ struct CruiseHeroCardView: View {
     @ViewBuilder
     private var mediaBackground: some View {
         if let photo = cruise.sortedPhotos.first,
-           let data = photo.thumbnailData ?? photo.imageData,
-           let uiImage = UIImage(data: data) {
+           let uiImage = UIImage(data: photo.thumbnailData ?? photo.imageData) {
             Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
@@ -116,8 +113,8 @@ struct CruiseHeroCardView: View {
     }
 
     private var subline: String {
-        let start = Self.dateFormatter.string(from: cruise.startDate)
-        let end = Self.dateFormatter.string(from: cruise.endDate)
+        let start = cruise.startDate.formatted(date: .abbreviated, time: .omitted)
+        let end = cruise.endDate.formatted(date: .abbreviated, time: .omitted)
         return "\(cruise.shippingLineLogo) \(cruise.shippingLine) · \(cruise.ship) · \(start)–\(end)"
     }
 

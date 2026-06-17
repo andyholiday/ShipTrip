@@ -136,3 +136,23 @@ final class Cruise {
         photos.sorted { $0.sortOrder < $1.sortOrder }
     }
 }
+
+// MARK: - Array<Cruise> Aggregat-Helfer
+
+extension Array where Element == Cruise {
+
+    /// Anzahl eindeutiger Länder über alle Kreuzfahrten (Seetage mit leerem Land ausgeschlossen)
+    var uniqueCountryCount: Int {
+        Set(flatMap { $0.countriesVisited }).filter { !$0.isEmpty }.count
+    }
+
+    /// Gesamtanzahl Seetage über alle Kreuzfahrten
+    var totalSeaDays: Int {
+        flatMap { $0.route }.filter { $0.isSeaDay }.count
+    }
+
+    /// Gesamtanzahl Hafenanlaufpunkte (keine Seetage) über alle Kreuzfahrten
+    var totalPortStops: Int {
+        flatMap { $0.route }.filter { !$0.isSeaDay }.count
+    }
+}

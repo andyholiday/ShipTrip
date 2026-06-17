@@ -1404,6 +1404,17 @@
       }
     },
 
+    "Seetage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sea Days"
+          }
+        }
+      }
+    },
+
     "Sonstiges" : {
       "comment" : "ExpenseCategory display name",
       "localizations" : {
@@ -1801,17 +1812,6 @@
       }
     },
 
-    "Reisen" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "trips"
-          }
-        }
-      }
-    },
-
     "Einträge" : {
       "localizations" : {
         "en" : {
@@ -1961,6 +1961,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cannot access file"
+          }
+        }
+      }
+    },
+
+    "In %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld days"
+          }
+        }
+      }
+    },
+
+    "Details →" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Details →"
+          }
+        }
+      }
+    },
+
+    "%lldT" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lldd"
+          }
+        }
+      }
+    },
+
+    "Keine Treffer" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Results"
           }
         }
       }

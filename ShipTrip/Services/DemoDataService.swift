@@ -9,6 +9,7 @@
 #if DEBUG
 import SwiftData
 import Foundation
+import UIKit
 
 /// Verwaltet realistische Demo-Daten für manuelle Tests.
 /// Alle Aktionen sind idempotent.
@@ -140,6 +141,16 @@ enum DemoDataService {
                    description: "Kreuzfahrtbuchung – Fjorde Reise", daysOffset: -60, context: context)
         addExpense(cruise: cruise, category: .flight, amount: 198.00,
                    description: "Flug Hamburg → Kiel (Transfer)", daysOffset: -30, context: context)
+
+        // Demo-Coverfoto: einfacher Blau-Grün-Verlauf symbolisiert norwegische Fjorde
+        if let data = makeDemoGradientImage(size: CGSize(width: 800, height: 450),
+                                            colors: [UIColor(red: 0.05, green: 0.25, blue: 0.55, alpha: 1),
+                                                     UIColor(red: 0.15, green: 0.55, blue: 0.45, alpha: 1)]) {
+            let photo = Photo(imageData: data, sortOrder: 0)
+            photo.cruise = cruise
+            context.insert(photo)
+            cruise.photos.append(photo)
+        }
     }
 
     // Vergangene Kurzkreuzfahrt Karibik – für Statistik-Vielfalt
@@ -216,6 +227,24 @@ enum DemoDataService {
     }
 
     // MARK: - Hilfsmethoden
+
+    /// Erzeugt ein einfaches Verlaufsbild als PNG-Daten für Demo-Cover-Fotos.
+    private static func makeDemoGradientImage(size: CGSize, colors: [UIColor]) -> Data? {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { ctx in
+            let cgColors = colors.map(\.cgColor) as CFArray
+            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                            colors: cgColors,
+                                            locations: nil) else { return }
+            ctx.cgContext.drawLinearGradient(
+                gradient,
+                start: CGPoint(x: 0, y: 0),
+                end: CGPoint(x: size.width, y: size.height),
+                options: []
+            )
+        }
+        return image.pngData()
+    }
 
     private static func addPorts(
         _ entries: [(name: String, country: String, offset: Int, isSeaDay: Bool)],

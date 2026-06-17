@@ -52,7 +52,21 @@ struct CruiseListView: View {
     private var availableShippingLines: [String] {
         Array(Set(cruises.map { $0.shippingLine })).sorted()
     }
-    
+
+    /// Schwerpunkt-Reise: laufende Reise zuerst, dann nächste bevorstehende, sonst zuletzt vergangene.
+    private var heroCruise: Cruise? {
+        filteredCruises.first { $0.isOngoing }
+            ?? filteredCruises.filter { $0.isUpcoming }.min { $0.startDate < $1.startDate }
+            ?? filteredCruises.first { !$0.isUpcoming }
+            ?? filteredCruises.first
+    }
+
+    /// Übrige Reisen für den Zeitstrahl (ohne die Hero-Reise), nach Jahr gruppiert (neueste zuerst).
+    private var timelineCruises: [Cruise] {
+        guard let hero = heroCruise else { return filteredCruises }
+        return filteredCruises.filter { $0.id != hero.id }
+    }
+
     // MARK: - Body
     
     var body: some View {
@@ -60,6 +74,8 @@ struct CruiseListView: View {
             Group {
                 if cruises.isEmpty {
                     emptyStateView
+                } else if filteredCruises.isEmpty {
+                    ContentUnavailableView.search(text: searchText.isEmpty ? String(localized: "Keine Treffer") : searchText)
                 } else {
                     cruiseList
                 }
@@ -98,14 +114,52 @@ struct CruiseListView: View {
     
     private var cruiseList: some View {
         List {
-            ForEach(filteredCruises) { cruise in
-                NavigationLink(value: cruise) {
-                    CruiseCardView(cruise: cruise)
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowSeparator(.hidden)
+            // 1. Stats-Strip: immer mit dem vollständigen Cruise-Set (Lifetime-Totals)
+            Section {
+                CruiseStatsStripView(cruises: cruises)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
             }
-            .onDelete(perform: deleteCruises)
+
+            // 2. Hero-Karte
+            if let hero = heroCruise {
+                Section {
+                    NavigationLink(value: hero) {
+                        CruiseHeroCardView(cruise: hero)
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            deleteCruise(hero)
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+                    }
+                }
+            }
+
+            // 3. Zeitstrahl: nach Jahr gruppiert, neueste zuerst
+            let yearGroups = Dictionary(grouping: timelineCruises, by: { $0.year })
+            let sortedYears = yearGroups.keys.sorted(by: >)
+            ForEach(sortedYears, id: \.self) { year in
+                Section(header: CruiseYearDivider(year: year).listRowInsets(EdgeInsets())) {
+                    ForEach(yearGroups[year] ?? []) { cruise in
+                        NavigationLink(value: cruise) {
+                            CruiseTimelineRowView(cruise: cruise)
+                        }
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                deleteCruise(cruise)
+                            } label: {
+                                Label("Löschen", systemImage: "trash")
+                            }
+                        }
+                    }
+                }
+            }
         }
         .listStyle(.plain)
         .navigationDestination(for: Cruise.self) { cruise in
@@ -188,14 +242,11 @@ struct CruiseListView: View {
     
     // MARK: - Actions
     
-    private func deleteCruises(at offsets: IndexSet) {
-        for index in offsets {
-            let cruise = filteredCruises[index]
-            // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
-            let cruiseID = String(describing: cruise.persistentModelID)
-            Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
-            modelContext.delete(cruise)
-        }
+    private func deleteCruise(_ cruise: Cruise) {
+        // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
+        let cruiseID = String(describing: cruise.persistentModelID)
+        Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
+        modelContext.delete(cruise)
     }
 }
 

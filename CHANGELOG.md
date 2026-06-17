@@ -15,38 +15,66 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefuegt
+
+- **Hybrid-Hauptansicht „Meine Reisen"**: Die flache Liste gleichfoermiger
+  Full-Bleed-Karten wurde durch ein dreischichtiges Layout ersetzt:
+  ein schlanker Statistik-Strip (lifetime-Totals: Reisen, Laender, Seetage,
+  Haefen), eine redaktionelle Hero-Card fuer die Fokus-Reise, und kompakte
+  Timeline-Zeilen gruppiert nach Jahrestrennern.
+  ([Feature-Doku](docs/features/hauptansicht-hybrid.md))
+- **Hero-Card mit Cover-Foto und Geo-SVG-Fallback**: Die Hero-Card zeigt das
+  erste Reisefoto als Hintergrundbild mit Scrim-Overlay. Ohne Foto rendert
+  `CruiseGeoFallbackView` eine Routenlinie aus Port-Koordinaten auf Ozeanblau-
+  Verlauf — kein Placeholder-Icon.
+- **Fokus-Reise-Priorisierung**: `heroCruise` waehlt laufende Reise
+  (`isOngoing`) > naechste bevorstehende > zuletzt vergangene.
+- **Lifetime-Aggregatwerte**: Neue Array-Extension auf `Cruise` liefert
+  `uniqueCountryCount`, `totalSeaDays` und `totalPortStops` fuer den Stats-Strip.
+- **Neue Unit-Tests (52 gesamt)**: `CruiseAggregateTests` und
+  `HeroSelectionTests` testen alle drei Aggregat-Properties und die Hero-
+  Auswahl-Prioritaet; `DemoDataServiceTests` sichert Demo-Seeding-Idempotenz.
+- **Screenshot-Tests**: `HauptansichtScreenshotTests` verifizieren Photo-Hero-
+  und Geo-Fallback-Branch in Light und Dark Mode.
+
+### Geaendert
+
+- **Einheitlicher Hafen-Pin**: Gemeinsame `PortPinView`-Komponente fuer alle
+  Hafen-Kontexte (Karte, Detailansicht); Pin-Farben als semantische Token in
+  `Color+Theme` (`portPin`, `homePortPin`, `seaDayPin`). Ersetzt verstreute,
+  hartkodierte Icon-/Farb-Duplikate.
+- **Schiffslisten aktualisiert (Stand Juni 2026)**: Neue Schiffe ergaenzt (u.a.
+  Mein Schiff Relax/Flow, AIDAstella, Disney Treasure/Destiny/Adventure).
+  Ausgeschiedene Schiffe (Mein Schiff Herz, AIDAcara/vita/aura, Costa Firenze)
+  wandern in eine `historicalShips`-Liste: nicht mehr in der Auswahl fuer neue
+  Reisen, fuer Bestandsreisen aber weiterhin korrekt aufgeloest (Reederei-Logo).
+- **Foto-zentrierte Reise-Karten**: `CruiseCardView` zeigt das erste Reisefoto
+  als vollflaechi­ges Cover (210 pt) mit Text-Overlay und Scrim. Ohne Foto:
+  Verlauf oceanBlue → navy mit Ferry-Symbol.
+- **Hero-Header im Reise-Detail**: `CruiseDetailView` erhaelt einen grossen
+  Hero-Header (280 pt Foto-Pager / 220 pt Verlauf-Fallback) und eine
+  Eckdaten-Zeile mit Reisetagen, Hafen, Laendern und Gesamtausgaben.
+- **Hero-Datumsformat geraetebasiert**: `.formatted(date: .abbreviated, time: .omitted)`
+  ersetzt den statischen `DateFormatter("dd.MM.yy")`.
+- **Lokalisierung Hero-Card und Timeline**: Vier neue String-Catalog-Schluessel
+  (`"In %lld Tagen"`, `"%lldT"`, `"Details →"`, `"Keine Treffer"`) mit DE/EN-
+  Uebersetzung; Countdown-Badge nutzt einen einzigen interpolierten Schuessel.
+- **Filter-Leer-Zustand**: `ContentUnavailableView.search` ersetzt den leeren
+  Bildschirm, wenn ein Suchfilter keine Treffer liefert.
+
 ### Behoben
 
-- **Doppelte Anzeige von Reisen nach Update auf 1.5.0**: Beim Update aus älteren
-  Versionen erhielten alle bestehenden Datensätze durch SwiftDatas
-  Lightweight-Migration denselben `id`-Default-Wert; dadurch erschienen Reisen
-  (und Häfen/Ausgaben/Fotos) in Listen mehrfach als ein identischer Eintrag.
-  Einmalige Start-Reparatur `IdBackfill` vergibt kollidierenden Datensätzen
-  wieder eindeutige UUIDs (idempotent, ohne Datenverlust).
+- **Doppelte Anzeige von Reisen nach Update auf 1.5.0**: SwiftDatas
+  Lightweight-Migration vergab allen Altdatensaetzen denselben `id`-Default-Wert.
+  Einmalige Start-Reparatur `IdBackfill` weist kollidierenden Datensaetzen
+  neue eindeutige UUIDs zu (idempotent, ohne Datenverlust).
   ([ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
-
-### Geändert (Phase 2 — Visuelle Politur, in Arbeit)
-
-- **Einheitlicher Hafen-Pin**: gemeinsame `PortPinView`-Komponente für alle
-  Hafen-Kontexte (Karte, Detailansicht); Pin-Farben als semantische Token in der
-  zentralen Farbquelle `Color+Theme` (`portPin`, `homePortPin`, `seaDayPin`).
-  Ersetzt verstreute, hartkodierte Icon-/Farb-Duplikate.
-- **Schiffslisten aktualisiert (Stand Juni 2026)**: neue Schiffe ergänzt (u.a.
-  Mein Schiff Relax/Flow, AIDAstella, Disney Treasure/Destiny/Adventure). Aus
-  ihren Flotten ausgeschiedene Schiffe (Mein Schiff Herz, AIDAcara/vita/aura,
-  Costa Firenze) wandern in eine neue `historicalShips`-Liste: nicht mehr in der
-  Auswahl für neue Reisen, aber für Bestandsreisen aus der Vergangenheit
-  weiterhin korrekt aufgelöst (Reederei-Logo) und beim Bearbeiten erhalten.
-- **Foto-zentrierte Reise-Karten (Welle 2)**: `CruiseCardView` zeigt das erste
-  Foto der Reise (`thumbnailData ?? imageData`) als vollflächiges Cover-Foto
-  (210 pt). Titel, Reederei, Schiff und Datum liegen als weißes Text-Overlay
-  über einem dunklen Scrim. Ohne Foto: Verlauf oceanBlue → navy mit
-  Ferry-Symbol. Rating- und „Coming Soon"-Badge oben rechts beibehalten.
-- **Hero-Header im Reise-Detail (Welle 3)**: `CruiseDetailView` erhält einen
-  großen Hero-Header (280 pt Foto-Pager / 220 pt Verlauf-Fallback). Titel-
-  Overlay erscheint einmal unterhalb des Headers, nicht pro Pager-Seite.
-  Darunter eine neue Eckdaten-Zeile mit vier Kern-Zahlen: Reisetage, Häfen,
-  Länder und Gesamtausgaben (Betrag in Geräte-Locale-Währung).
+- **Hero-Card zeigte Cover-Foto nicht nach Stale Demo-Daten**: Der
+  Idempotenz-Guard in `loadDemoData` verhinderte das erneute Seeden bei
+  aelteren Demo-Datensaetzen ohne Foto. `HauptansichtScreenshotTests` setzt
+  nun vor jedem Lauf Demo-Daten zurueck und laed frisch nach.
+- **Flaky UI-Tests**: `Thread.sleep(forTimeInterval:)` in
+  `HauptansichtScreenshotTests` durch `waitForExistence(timeout:)` ersetzt.
 
 ---
 

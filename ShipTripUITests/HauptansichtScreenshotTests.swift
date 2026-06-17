@@ -56,21 +56,17 @@ final class HauptansichtScreenshotTests: XCTestCase {
         let settingsList = app.collectionViews.firstMatch
         if settingsList.waitForExistence(timeout: 5) {
             settingsList.swipeUp()
-            Thread.sleep(forTimeInterval: 0.5)
         } else {
             // Fallback: einfach die App nach oben swipen
             app.swipeUp()
-            Thread.sleep(forTimeInterval: 0.5)
         }
 
         // 3. Falls Demo-Daten vorhanden (Restbestand), erst entfernen
         let removeButton = app.buttons["Beispieldaten entfernen"]
         if removeButton.waitForExistence(timeout: 5) {
             removeButton.tap()
-            Thread.sleep(forTimeInterval: 2.5)
-            // Nach dem Entfernen wieder nach unten scrollen, um Lade-Button zu sehen
+            // Nach dem Entfernen warten bis Lade-Button erscheint
             if settingsList.exists { settingsList.swipeUp() } else { app.swipeUp() }
-            Thread.sleep(forTimeInterval: 0.5)
         }
 
         // 4. Lade-Button muss jetzt sichtbar sein (leerer Store)
@@ -79,16 +75,16 @@ final class HauptansichtScreenshotTests: XCTestCase {
                       "Lade-Button 'Beispieldaten laden' nicht erschienen – Demo-Sektion fehlt oder nicht sichtbar?")
         loadButton.tap()
 
-        // 4. Warten bis alle SwiftData-Objekte inkl. Photo (Gradient-PNG) gespeichert sind
-        Thread.sleep(forTimeInterval: 4.0)
-
-        // 5. Zum Reisen-Tab wechseln
+        // 5. Zum Reisen-Tab wechseln (Existenz des Tabs signalisiert, dass App bereit ist)
         let reisenTab = app.tabBars.buttons["Reisen"]
         XCTAssertTrue(reisenTab.waitForExistence(timeout: 8))
         reisenTab.tap()
-        Thread.sleep(forTimeInterval: 2.0)
 
-        // 6. Screenshot als hero-photo-clean speichern
+        // 6. Warten bis Hero-Card geladen ist (Stats-Strip oder erste Cell sichtbar)
+        let firstCell = app.collectionViews.firstMatch.cells.firstMatch
+        _ = firstCell.waitForExistence(timeout: 10)
+
+        // 7. Screenshot als hero-photo-clean speichern
         let screenshot = XCUIScreen.main.screenshot()
         let outURL = outputDir.appending(component: "meine-reisen-hero-photo-clean.png")
         try screenshot.pngRepresentation.write(to: outURL)
@@ -116,42 +112,44 @@ final class HauptansichtScreenshotTests: XCTestCase {
         } else {
             app.swipeUp()
         }
-        Thread.sleep(forTimeInterval: 0.5)
 
         let loadButton = app.buttons["Beispieldaten laden"]
         let removeButton = app.buttons["Beispieldaten entfernen"]
 
         if removeButton.waitForExistence(timeout: 5) {
             removeButton.tap()
-            // Warten bis SwiftData persistiert und SwiftUI re-rendert (Lade-Button erscheint)
-            Thread.sleep(forTimeInterval: 2.0)
+            // Warten bis SwiftData persistiert und der Lade-Button erscheint
             if settingsList.exists { settingsList.swipeUp() } else { app.swipeUp() }
-            Thread.sleep(forTimeInterval: 0.5)
         }
 
         // Nach dem Entfernen (oder bei leerem Store) muss der Lade-Button sichtbar sein.
         XCTAssertTrue(loadButton.waitForExistence(timeout: 12))
         loadButton.tap()
-        // Warten bis SwiftData + Photo-Seed gespeichert hat (inkl. Gradient-Bild)
-        Thread.sleep(forTimeInterval: 3.5)
 
         // 3. Zum Reisen-Tab wechseln
         let reisenTab = app.tabBars.buttons["Reisen"]
         XCTAssertTrue(reisenTab.waitForExistence(timeout: 5))
         reisenTab.tap()
-        Thread.sleep(forTimeInterval: 1.5)
 
-        // 4. Screenshot oben (Hero-Card + Stats-Strip sichtbar)
+        // 4. Warten bis die Liste geladen ist (erste Cell sichtbar)
+        let cruiseList = app.collectionViews.firstMatch
+        let firstCell = cruiseList.cells.firstMatch
+        XCTAssertTrue(firstCell.waitForExistence(timeout: 10),
+                      "Reise-Liste hat keine Zellen — Demo-Daten wurden nicht geladen?")
+
+        // 5. Screenshot oben (Hero-Card + Stats-Strip sichtbar)
         try write(screenshot: XCUIScreen.main.screenshot(), name: "meine-reisen-\(suffix)")
 
-        // 5. Nach unten scrollen für Timeline-Rows
-        let list = app.collectionViews.firstMatch
-        if list.exists {
-            list.swipeUp(velocity: .slow)
+        // 6. Nach unten scrollen für Timeline-Rows
+        if cruiseList.exists {
+            cruiseList.swipeUp(velocity: .slow)
         } else {
             app.swipeUp(velocity: .slow)
         }
-        Thread.sleep(forTimeInterval: 0.8)
+
+        // Warten bis Scroll-Animation abgeschlossen (nächste Cell muss existieren)
+        let secondCell = cruiseList.cells.element(boundBy: 1)
+        _ = secondCell.waitForExistence(timeout: 5)
 
         try write(screenshot: XCUIScreen.main.screenshot(), name: "meine-reisen-\(suffix)-scrolled")
     }

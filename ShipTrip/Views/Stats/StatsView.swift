@@ -195,7 +195,7 @@ struct StatsView: View {
     // MARK: - Computed Stats
     
     private var totalSeaDays: Int {
-        cruises.reduce(0) { $0 + $1.duration }
+        cruises.totalSeaDays
     }
     
     private var uniquePorts: Int {
