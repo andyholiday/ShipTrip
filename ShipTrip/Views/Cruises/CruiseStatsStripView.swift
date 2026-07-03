@@ -50,6 +50,8 @@ private struct StatCell: View {
     let label: String
     let color: Color
 
+    @ScaledMetric(relativeTo: .title3) private var cellHeight: CGFloat = 58
+
         var body: some View {
             VStack(spacing: 2) {
                 Text("\(value)")
@@ -58,15 +60,15 @@ private struct StatCell: View {
                     .foregroundStyle(.primary)
                     .monospacedDigit()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.85)
                 Text(label)
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.85)
             }
-        .frame(height: 58)
+        .frame(minHeight: cellHeight)
         .frame(maxWidth: .infinity)
         .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 18))

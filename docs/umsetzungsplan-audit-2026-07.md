@@ -65,18 +65,18 @@
   Datei: `SettingsView.swift`. ✓ Manuell: nach Löschen keine Reminder, Key-Wahl respektiert.
 
 ### Welle A2 · UX-Fixes (Findings: Notifications inert [M], Hero-VoiceOver [M], Dynamic Type [M], kein Einzel-Löschen [M], Karte Empty/Location [M], Komma-Parsing [M], Ausgaben-Sortierung [M], Foto-Grid Full-Res [M])
-- [ ] **A2.1** Notification-Permission kontextuell beim ersten Speichern einer
+- [x] **A2.1** ✅ 2026-07-03 (Statusmaschine + isSaving-Sperre) — Notification-Permission kontextuell beim ersten Speichern einer
   zukünftigen Reise anfragen (mit Begründungs-Sheet). `CruiseFormView`/`NotificationService`.
-- [ ] **A2.2** Hero-Karte als `Button` + `accessibilityLabel("Reise <Titel> öffnen")`. `CruiseListView`.
-- [ ] **A2.3** Fixe Höhen → `minHeight`/`@ScaledMetric` (StatsStrip 58, Hero 286,
+- [x] **A2.2** ✅ 2026-07-03 (Hero-Button + heroCard-Identifier, UI-Test grün) — Hero-Karte als `Button` + `accessibilityLabel("Reise <Titel> öffnen")`. `CruiseListView`.
+- [x] **A2.3** ✅ 2026-07-03 (@ScaledMetric) — Fixe Höhen → `minHeight`/`@ScaledMetric` (StatsStrip 58, Hero 286,
   StatCells); AX-Preview-Check. 
-- [ ] **A2.4** Swipe-to-Delete für Häfen/Ausgaben — vorhandene `deletePort`/
+- [x] **A2.4** ✅ 2026-07-03 (contextMenu-Delete) — Swipe-to-Delete für Häfen/Ausgaben — vorhandene `deletePort`/
   `deleteExpense` anbinden. `CruiseDetailView`.
-- [ ] **A2.5** MapView: Empty-State-Overlay; `CLLocationManager`-Anfrage entfernen
+- [x] **A2.5** ✅ 2026-07-03 (Location komplett entfernt) — MapView: Empty-State-Overlay; `CLLocationManager`-Anfrage entfernen
   (kein Feature braucht sie) inkl. Info.plist-Key-Prüfung.
-- [ ] **A2.6** Ausgaben-Eingabe locale-basiert (`.currency`-Format statt `,`→`.`);
+- [x] **A2.6** ✅ 2026-07-03 (currency/number-Fallback + Sortierung) — Ausgaben-Eingabe locale-basiert (`.currency`-Format statt `,`→`.`);
   Ausgaben nach Datum sortiert, Datum default-an. `ExpenseFormView`, `CruiseDetailView`.
-- [ ] **A2.7** Foto-Galerie Detail: Thumbnails im Grid/Pager, Full-Res nur Zoom;
+- [x] **A2.7** ✅ 2026-07-03 (Thumbnails + AsyncPhotoView + Zoom) — Foto-Galerie Detail: Thumbnails im Grid/Pager, Full-Res nur Zoom;
   async Decoding + Platzhalter-State. `CruiseDetailView`.
 
 ### Welle A3 · Code-Politur (Findings: Key-in-URL [L-M], kSecAttrAccessible [L-M], print-PII [L], Status-Sniffing [L], Häfen-Zählung [L], Radius-Wildwuchs [M], PortSuggestion-Scans [L], Export-Temp [L], IdBackfill-Flag [L], Int:Identifiable [L], toter Code [M/L], God-File [M])
@@ -95,6 +95,9 @@
 - [ ] **A3.9** `Int: @retroactive Identifiable` → Wrapper-Typ.
 - [ ] **A3.10** Toten Code auflösen: EmptyStateView (nutzen oder löschen),
   Expense-Farb-Duplikat, TimelineRow gemäß 0.3-Entscheidung.
+- [ ] **A3.11a** EUR-Fallback-Muster (`?? "EUR"`) an 6 Anzeige-Stellen
+  (Expense.swift:102, Deal.swift:90/95, StatsView:115/192, CruiseDetailView:213/345)
+  auf locale-neutrales Format angleichen — Befund aus A2.6-Review.
 - [ ] **A3.11** ZIP-Stack extrahieren: `ZipArchiveWriter.swift`/`ZipArchiveReader.swift`/
   `CRC32.swift` — reine Verschiebung, Tests bleiben grün.
 

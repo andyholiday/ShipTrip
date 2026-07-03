@@ -128,18 +128,23 @@ struct CruiseListView: View {
 
                 // 2. Hero-Karte: nur laufende oder nächste Reise
                 if let hero = heroCruise {
-                    CruiseHeroCardView(cruise: hero)
-                        .contentShape(RoundedRectangle(cornerRadius: 30))
-                        .onTapGesture {
-                            navigationPath.append(hero)
+                    Button {
+                        navigationPath.append(hero)
+                    } label: {
+                        CruiseHeroCardView(cruise: hero)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(RoundedRectangle(cornerRadius: 30))
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deleteCruise(hero)
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
                         }
-                        .contextMenu {
-                            Button(role: .destructive) {
-                                deleteCruise(hero)
-                            } label: {
-                                Label("Löschen", systemImage: "trash")
-                            }
-                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(String(localized: "Reise \(hero.title) öffnen"))
+                    .accessibilityIdentifier("heroCard")
                 }
 
                 // 3. Reiselogbuch: nach Jahr gruppiert, neueste zuerst

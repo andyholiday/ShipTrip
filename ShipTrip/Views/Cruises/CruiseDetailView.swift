@@ -21,6 +21,7 @@ struct CruiseDetailView: View {
     @State private var showingAddExpenseSheet = false
     @State private var selectedPort: Port?
     @State private var selectedExpense: Expense?
+    @State private var zoomedPhoto: Photo?
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -91,6 +92,9 @@ struct CruiseDetailView: View {
         .sheet(item: $selectedExpense) { expense in
             ExpenseFormView(cruise: cruise, expense: expense)
         }
+        .fullScreenCover(item: $zoomedPhoto) { photo in
+            PhotoZoomView(photos: cruise.sortedPhotos, initialPhoto: photo)
+        }
         .alert("Kreuzfahrt löschen?", isPresented: $showingDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
@@ -140,17 +144,17 @@ struct CruiseDetailView: View {
         GeometryReader { proxy in
             ZStack(alignment: .bottomLeading) {
                 if !cruise.photos.isEmpty {
-                    // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
-                    // gestochen scharfe Qualität (kein Thumbnail hier).
+                    // Detail-Pager zeigt Vorschaubilder (schnell, speicherschonend);
+                    // volle Auflösung gibt es erst beim Antippen in PhotoZoomView.
                     TabView {
-                        ForEach(Array(cruise.sortedPhotos.enumerated()), id: \.offset) { _, photo in
-                            if let uiImage = UIImage(data: photo.imageData) {
-                                Image(uiImage: uiImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: proxy.size.width, height: proxy.size.height)
-                                    .clipped()
-                            }
+                        ForEach(cruise.sortedPhotos) { photo in
+                            AsyncPhotoView(imageData: photo.thumbnailData ?? photo.imageData)
+                                .frame(width: proxy.size.width, height: proxy.size.height)
+                                .clipped()
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    zoomedPhoto = photo
+                                }
                         }
                     }
                     .tabViewStyle(.page)
@@ -316,6 +320,13 @@ struct CruiseDetailView: View {
                     .onTapGesture {
                         selectedPort = port
                     }
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deletePort(port)
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -323,7 +334,7 @@ struct CruiseDetailView: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
-    
+
     private var expensesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -350,7 +361,7 @@ struct CruiseDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
             } else {
-                ForEach(cruise.expenses) { expense in
+                ForEach(ExpenseSorting.sorted(cruise.expenses)) { expense in
                     HStack {
                         Image(systemName: expense.category.icon)
                             .foregroundStyle(.secondary)
@@ -377,6 +388,13 @@ struct CruiseDetailView: View {
                     .onTapGesture {
                         selectedExpense = expense
                     }
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deleteExpense(expense)
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+                    }
                 }
             }
         }
@@ -384,7 +402,7 @@ struct CruiseDetailView: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
-    
+
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Notizen")
@@ -419,6 +437,110 @@ struct CruiseDetailView: View {
         modelContext.delete(expense)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
         cruise.updatedAt = Date()
+    }
+}
+
+/// Sortiert Ausgaben chronologisch aufsteigend nach Datum. Ausgaben ohne Datum
+/// stehen am Ende. Reine Funktion (kein SwiftData-Zugriff) – testbar in
+/// ShipTripTests/ExpenseSortingTests.swift.
+enum ExpenseSorting {
+    static func sorted(_ expenses: [Expense]) -> [Expense] {
+        expenses.sorted { lhs, rhs in
+            switch (lhs.expenseDate, rhs.expenseDate) {
+            case let (l?, r?):
+                if l != r { return l < r }
+            case (nil, .some):
+                return false
+            case (.some, nil):
+                return true
+            case (nil, nil):
+                break
+            }
+            // Stabiler Tie-Breaker bei gleichem/fehlendem Datum: Erstellungszeitpunkt,
+            // zuletzt die UUID (deterministisch statt undefinierter Sortierreihenfolge).
+            if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }
+    }
+}
+
+/// Dekodiert Bilddaten abseits des Main-Threads und zeigt Lade-/Fehler-Platzhalter,
+/// solange kein Bild verfügbar ist. `Data` wird synchron übergeben – nie eine
+/// @Model-Instanz über eine Task-Grenze reichen (siehe ThumbnailBackfill.swift).
+private struct AsyncPhotoView: View {
+    let imageData: Data
+    var contentMode: ContentMode = .fill
+
+    @State private var uiImage: UIImage?
+    @State private var didFail = false
+
+    var body: some View {
+        Group {
+            if let uiImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else {
+                Color(.tertiarySystemBackground)
+                    .overlay {
+                        if didFail {
+                            Image(systemName: "photo.badge.exclamationmark")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ProgressView()
+                        }
+                    }
+            }
+        }
+        .task(id: imageData) {
+            let data = imageData
+            let decoded = await Task.detached(priority: .userInitiated) {
+                UIImage(data: data)
+            }.value
+            if let decoded {
+                uiImage = decoded
+            } else {
+                didFail = true
+            }
+        }
+    }
+}
+
+/// Vollbild-Zoomansicht für Kreuzfahrt-Fotos – lädt volle Auflösung (im Gegensatz
+/// zum Pager in CruiseDetailView, der nur Vorschaubilder zeigt).
+private struct PhotoZoomView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let photos: [Photo]
+    @State private var selection: Photo.ID
+
+    init(photos: [Photo], initialPhoto: Photo) {
+        self.photos = photos
+        _selection = State(initialValue: initialPhoto.id)
+    }
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+
+            TabView(selection: $selection) {
+                ForEach(photos) { photo in
+                    AsyncPhotoView(imageData: photo.imageData, contentMode: .fit)
+                        .tag(photo.id)
+                }
+            }
+            .tabViewStyle(.page)
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.white, .black.opacity(0.4))
+            }
+            .padding()
+        }
     }
 }
 

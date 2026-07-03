@@ -10,31 +10,10 @@ import SwiftData
 import MapKit
 import CoreLocation
 
-/// Location Manager für Standort-Berechtigung
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
-    
-    override init() {
-        super.init()
-        manager.delegate = self
-        authorizationStatus = manager.authorizationStatus
-    }
-    
-    func requestPermission() {
-        manager.requestWhenInUseAuthorization()
-    }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        authorizationStatus = manager.authorizationStatus
-    }
-}
-
 /// Interaktive Weltkarte mit allen Kreuzfahrt-Routen
 struct MapView: View {
     @Query(sort: \Cruise.startDate, order: .reverse) private var cruises: [Cruise]
-    @StateObject private var locationManager = LocationManager()
-    
+
     @State private var position: MapCameraPosition = .automatic
     @State private var selectedRouteIDs: Set<UUID> = []
     @State private var primaryCruiseID: UUID?
@@ -75,18 +54,19 @@ struct MapView: View {
                 .mapStyle(.standard)
 
                 mapHeader
-                
-                if !displayedRoutes.isEmpty {
+
+                if routableCruises.isEmpty {
+                    ContentUnavailableView {
+                        Label(String(localized: "Keine Häfen auf der Karte"), systemImage: "map")
+                    } description: {
+                        Text(String(localized: "Füge Häfen zu deinen Reisen hinzu, um sie hier zu sehen"))
+                    }
+                } else if !displayedRoutes.isEmpty {
                     routeSelectionCard(routes: displayedRoutes)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
             .onAppear {
-                // Request location permission if not determined
-                if !skipsLocationPermissionRequestForUITests,
-                   locationManager.authorizationStatus == .notDetermined {
-                    locationManager.requestPermission()
-                }
                 syncRouteSelectionIfNeeded()
                 zoomTo(routes: displayedRoutes)
             }
@@ -124,14 +104,6 @@ struct MapView: View {
             return route
         }
         return displayedRoutes.count == 1 ? displayedRoutes.first : nil
-    }
-
-    private var skipsLocationPermissionRequestForUITests: Bool {
-#if DEBUG
-        ProcessInfo.processInfo.arguments.contains("-uiTestingResetAndLoadDemoData")
-#else
-        false
-#endif
     }
 
     private func validPorts(for cruise: Cruise) -> [Port] {

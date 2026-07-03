@@ -146,7 +146,18 @@ struct CruiseFormView: View {
     // Validation
     @State private var showingValidationAlert = false
     @State private var validationMessage = ""
-    
+
+    // Verhindert Doppel-Save waehrend des Notification-Permission-Tails nach dem Save
+    @State private var isSaving = false
+
+    // Notification Permission (A2.1): kontextuelles Sheet vor dem nativen Prompt
+    // bzw. dezenter Hinweis, wenn der Nutzer bereits abgelehnt hat.
+    @State private var showingReminderPermissionSheet = false
+    @State private var showingDeniedHint = false
+    @State private var pendingReminderCruiseID: String?
+    @State private var pendingReminderTitle: String?
+    @State private var pendingReminderStartDate: Date?
+
     private var isEditing: Bool { cruise != nil }
     
     var body: some View {
@@ -326,13 +337,14 @@ struct CruiseFormView: View {
                     Button("Abbrechen") {
                         dismiss()
                     }
+                    .disabled(isSaving)
                 }
-                
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern") {
                         saveCruise()
                     }
-                    .disabled(title.isEmpty || ship.isEmpty)
+                    .disabled(title.isEmpty || ship.isEmpty || isSaving)
                 }
             }
             .onAppear {
@@ -359,6 +371,26 @@ struct CruiseFormView: View {
             }
             .sheet(item: $editingPortIndex) { index in
                 TempPortFormSheet(ports: $tempPorts, editingIndex: index)
+            }
+            .sheet(isPresented: $showingReminderPermissionSheet) {
+                ReminderPermissionSheet(
+                    onEnable: handleReminderPermissionEnable,
+                    onLater: handleReminderPermissionLater
+                )
+                .interactiveDismissDisabled()
+            }
+            .alert("Erinnerungen deaktiviert", isPresented: $showingDeniedHint) {
+                Button("Einstellungen öffnen") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                    finishAfterDeniedHint()
+                }
+                Button("Weiter", role: .cancel) {
+                    finishAfterDeniedHint()
+                }
+            } message: {
+                Text("Benachrichtigungen sind für ShipTrip deaktiviert. Aktiviere sie in den Systemeinstellungen, um Reise-Erinnerungen zu erhalten.")
             }
         }
     }
@@ -684,12 +716,14 @@ struct CruiseFormView: View {
         }
 
         // Cruise dauerhaft speichern, damit persistentModelID final ist
+        isSaving = true
         do {
             try modelContext.save()
         } catch {
             // Gestagte Route-/Cruise-/Foto-Änderungen zurücknehmen, damit ein späterer
             // Save sie nicht doch noch persistiert.
             modelContext.rollback()
+            isSaving = false
             validationMessage = String(localized: "Speichern fehlgeschlagen: ") + error.localizedDescription
             showingValidationAlert = true
             return
@@ -705,14 +739,139 @@ struct CruiseFormView: View {
             if wasEditing {
                 await NotificationService.shared.removeReminders(cruiseID: cruiseID)
             }
-            await NotificationService.shared.scheduleAllReminders(
-                cruiseID: cruiseID,
-                title: cruiseTitle,
-                startDate: cruiseStart
-            )
+
+            // Ohne gewünschte Erinnerung oder bei bereits vergangenem Startdatum gibt es
+            // nichts zu planen und nichts zu erfragen – Formular wie bisher schließen.
+            guard NotificationService.shared.remindersEnabledInSettings, cruiseStart > Date() else {
+                await MainActor.run { dismiss() }
+                return
+            }
+
+            let status = await NotificationService.shared.authorizationStatus()
+
+            switch status {
+            case .authorized, .provisional, .ephemeral:
+                await NotificationService.shared.scheduleAllReminders(
+                    cruiseID: cruiseID,
+                    title: cruiseTitle,
+                    startDate: cruiseStart
+                )
+                await MainActor.run { dismiss() }
+
+            case .notDetermined:
+                // Erst Kontext-Sheet zeigen, dann ggf. den nativen Prompt – das Formular
+                // bleibt dafür bewusst offen (robuster als ein Sheet auf dem
+                // präsentierenden Kontext nach dem Dismiss zu koordinieren).
+                await MainActor.run {
+                    pendingReminderCruiseID = cruiseID
+                    pendingReminderTitle = cruiseTitle
+                    pendingReminderStartDate = cruiseStart
+                    showingReminderPermissionSheet = true
+                }
+
+            case .denied:
+                await MainActor.run {
+                    if UserDefaults.standard.bool(forKey: "hasShownNotificationDeniedHint") {
+                        dismiss()
+                    } else {
+                        showingDeniedHint = true
+                    }
+                }
+
+            @unknown default:
+                await MainActor.run { dismiss() }
+            }
+        }
+    }
+
+    // MARK: - Notification Permission Flow (A2.1)
+
+    private func handleReminderPermissionEnable() {
+        let cruiseID = pendingReminderCruiseID
+        let cruiseTitle = pendingReminderTitle
+        let cruiseStart = pendingReminderStartDate
+        resetPendingReminderState()
+
+        guard let cruiseID, let cruiseTitle, let cruiseStart else {
+            dismiss()
+            return
         }
 
+        Task {
+            let granted = await NotificationService.shared.requestAuthorization()
+            if granted {
+                await NotificationService.shared.scheduleAllReminders(
+                    cruiseID: cruiseID,
+                    title: cruiseTitle,
+                    startDate: cruiseStart
+                )
+            }
+            await MainActor.run { dismiss() }
+        }
+    }
+
+    private func handleReminderPermissionLater() {
+        resetPendingReminderState()
         dismiss()
+    }
+
+    private func resetPendingReminderState() {
+        showingReminderPermissionSheet = false
+        pendingReminderCruiseID = nil
+        pendingReminderTitle = nil
+        pendingReminderStartDate = nil
+    }
+
+    private func finishAfterDeniedHint() {
+        UserDefaults.standard.set(true, forKey: "hasShownNotificationDeniedHint")
+        showingDeniedHint = false
+        dismiss()
+    }
+}
+
+// MARK: - Reminder Permission Sheet
+
+/// Kontext-Sheet vor der System-Berechtigungsabfrage für Benachrichtigungen (A2.1): erklärt
+/// kurz den Nutzen, bevor der native Prompt erscheint, statt ihn kommentarlos zu zeigen.
+private struct ReminderPermissionSheet: View {
+    let onEnable: () -> Void
+    let onLater: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "bell.badge")
+                .font(.system(size: 44))
+                .foregroundStyle(Color.oceanBlue)
+                .padding(.top, 32)
+
+            Text("Erinnerung aktivieren?")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text("Wir erinnern dich rechtzeitig vor der Abreise – dafür brauchen wir deine Erlaubnis für Benachrichtigungen.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Spacer()
+
+            Button {
+                onEnable()
+            } label: {
+                Text("Erinnerungen aktivieren")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal, 24)
+
+            Button("Später") {
+                onLater()
+            }
+            .padding(.bottom, 24)
+        }
+        .presentationDetents([.height(320)])
     }
 }
 

@@ -82,7 +82,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
         reisenTab.tap()
 
         // 6. Warten bis Hero-Card geladen ist
-        XCTAssertTrue(app.staticTexts["Norwegische Fjorde"].waitForExistence(timeout: 10),
+        XCTAssertTrue(heroCard(app).waitForExistence(timeout: 10),
                       "Hero-Reise ist nicht sichtbar")
         RunLoop.current.run(until: Date().addingTimeInterval(0.8))
 
@@ -107,7 +107,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
         reisenTab.tap()
 
         // 2. Warten bis die Hauptansicht geladen ist
-        XCTAssertTrue(app.staticTexts["Norwegische Fjorde"].waitForExistence(timeout: 10),
+        XCTAssertTrue(heroCard(app).waitForExistence(timeout: 10),
                       "Hero-Reise ist nicht sichtbar — Demo-Daten wurden nicht geladen?")
         RunLoop.current.run(until: Date().addingTimeInterval(0.8))
 
@@ -186,7 +186,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
         //    als erste Timeline-Zeile unter dem Hero.
         //    StaticText mit dem Reisetitel suchen.
         // Scrollen damit Timeline-Zeilen sichtbar sind
-        XCTAssertTrue(app.staticTexts["Norwegische Fjorde"].waitForExistence(timeout: 8))
+        XCTAssertTrue(heroCard(app).waitForExistence(timeout: 8))
         app.swipeUp(velocity: .slow)
         RunLoop.current.run(until: Date().addingTimeInterval(0.8))
 
@@ -225,7 +225,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
         reisenTab.tap()
 
         // Warten bis Hero-Card geladen ist
-        XCTAssertTrue(app.staticTexts["Norwegische Fjorde"].waitForExistence(timeout: 8))
+        XCTAssertTrue(heroCard(app).waitForExistence(timeout: 8))
 
         try write(screenshot: XCUIScreen.main.screenshot(), name: "geo-hero-\(suffix)")
     }
@@ -284,5 +284,11 @@ final class HauptansichtScreenshotTests: XCTestCase {
         let url = outputDir.appending(component: "\(name).png")
         try screenshot.pngRepresentation.write(to: url)
         print("[Screenshot] \(url.path)")
+    }
+
+    /// Hero-Card unabhängig vom XCUIElement-Typ (Button vs. otherElement) anhand
+    /// des accessibilityIdentifier "heroCard" finden.
+    private func heroCard(_ app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: "heroCard").firstMatch
     }
 }

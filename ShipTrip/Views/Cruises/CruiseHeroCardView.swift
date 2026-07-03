@@ -12,6 +12,9 @@ import SwiftUI
 struct CruiseHeroCardView: View {
     let cruise: Cruise
 
+    /// Skalierte Basis-Höhe der Karte (bleibt pro Rendering stabil, wächst mit Dynamic Type)
+    @ScaledMetric(relativeTo: .title) private var heroHeight: CGFloat = 286
+
     /// Tage bis zum Start (kalendarisch normalisiert; verhindert „In 0 Tagen" für morgen)
     private var daysUntilStart: Int {
         Calendar.current.dateComponents(
@@ -23,7 +26,7 @@ struct CruiseHeroCardView: View {
 
     var body: some View {
         heroContent
-            .frame(height: 286)
+            .frame(height: heroHeight)
             .clipShape(RoundedRectangle(cornerRadius: 30))
             .shadow(color: Color.navyDark.opacity(0.22), radius: 17, y: 10)
     }
@@ -62,13 +65,13 @@ struct CruiseHeroCardView: View {
                             .fontWeight(.heavy)
                             .foregroundStyle(.white)
                             .lineLimit(2)
-                            .minimumScaleFactor(0.82)
+                            .minimumScaleFactor(0.85)
 
                         Text(subline)
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.8))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.78)
+                            .minimumScaleFactor(0.85)
                     }
 
                     HStack {
@@ -77,7 +80,7 @@ struct CruiseHeroCardView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.white.opacity(0.92))
                             .lineLimit(1)
-                            .minimumScaleFactor(0.72)
+                            .minimumScaleFactor(0.85)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(.white.opacity(0.16))

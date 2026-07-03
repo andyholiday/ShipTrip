@@ -83,6 +83,35 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Uebersetzung; Countdown-Badge nutzt einen einzigen interpolierten Schuessel.
 - **Filter-Leer-Zustand**: `ContentUnavailableView.search` ersetzt den leeren
   Bildschirm, wenn ein Suchfilter keine Treffer liefert.
+- **Erinnerungs-Anfrage kontextuell**: Die Benachrichtigungs-Berechtigung wird
+  beim Speichern zukuenftiger Reisen jetzt zustandsabhaengig angefragt: bei
+  bereits erteilter (auch `provisional`/`ephemeral`) Berechtigung wird direkt
+  geplant, bei `notDetermined` zeigt ein Begruendungs-Sheet den Zweck vor dem
+  System-Prompt, bei `denied` erscheint einmalig ein Hinweis mit
+  Einstellungen-Link statt eines wirkungslosen erneuten Anfrageversuchs.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Barrierefreiheit Hauptansicht**: Die Hero-Card ist jetzt ein echter Button
+  mit beschreibendem `accessibilityLabel`; Stats-Strip und Hero-Card nutzen
+  `@ScaledMetric` und `minimumScaleFactor` fuer Dynamic Type.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Einzel-Loeschen fuer Haefen/Ausgaben**: Ein `contextMenu` pro Zeile in der
+  Reise-Detailansicht erlaubt das direkte Loeschen einzelner Haefen und
+  Ausgaben, ohne die gesamte Reise zu bearbeiten.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Karte ohne Standort-Berechtigung**: `MapView` benoetigt keine
+  Standortdaten des Nutzers mehr; `CLLocationManager` und die zugehoerigen
+  Berechtigungsschluessel wurden entfernt. Ein Empty-State-Overlay erscheint,
+  wenn keine kartierbaren Haefen vorhanden sind.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Ausgaben-Eingabe locale-basiert**: Die Betrag-Eingabe nutzt jetzt
+  `.currency`-Formatierung nach Geraete-Locale (neutrales Zahlenformat ohne
+  Waehrung, falls die Locale keine besitzt); die Anzeige sortiert Ausgaben
+  chronologisch, undatierte Eintraege zuletzt.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Fluessigere Foto-Galerie**: Ein Pager auf Thumbnail-Basis mit asynchronem
+  Decoding (Lade-/Fehler-Platzhalter) sowie eine Zoom-Vollbildansicht
+  (`PhotoZoomView`) mit Full-Res-Nachladen.
+  ([Feature-Doku](docs/features/ux-fixes-a2.md))
 
 ### Entfernt
 

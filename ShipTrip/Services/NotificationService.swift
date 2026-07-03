@@ -29,12 +29,31 @@ class NotificationService {
         }
     }
     
-    /// Prüft ob Benachrichtigungen erlaubt sind
+    /// Prüft ob Benachrichtigungen erlaubt sind (inkl. provisional/ephemeral – dort dürfen
+    /// Notifications ebenfalls zugestellt werden, nur .denied/.notDetermined blocken)
     func isAuthorized() async -> Bool {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
-        return settings.authorizationStatus == .authorized
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral:
+            return true
+        default:
+            return false
+        }
     }
-    
+
+    /// Aktueller System-Berechtigungsstatus (für kontextuelle Anfrage vor dem nativen Prompt)
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
+    /// Ob der Nutzer Erinnerungen überhaupt möchte (Settings-Toggles), unabhängig von der
+    /// System-Berechtigung. Gleiche Defaults/Keys wie `scheduleAllReminders`.
+    var remindersEnabledInSettings: Bool {
+        let notifyBefore = UserDefaults.standard.object(forKey: "notifyBeforeCruise") as? Bool ?? true
+        let notifyOnDay = UserDefaults.standard.object(forKey: "notifyOnCruiseDay") as? Bool ?? true
+        return notifyBefore || notifyOnDay
+    }
+
     // MARK: - Cruise Reminders
 
     /// Plant Erinnerung anhand reiner Wertdaten (kein @Model-Objekt über Aktorgrenzen)

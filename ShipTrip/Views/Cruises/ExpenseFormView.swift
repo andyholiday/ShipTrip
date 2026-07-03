@@ -18,13 +18,21 @@ struct ExpenseFormView: View {
     
     // Form State
     @State private var category: ExpenseCategory = .cruise
-    @State private var amount = ""
+    @State private var amount: Double = 0
     @State private var descriptionText = ""
     @State private var expenseDate: Date = Date()
-    @State private var hasDate = false
-    
+    @State private var hasDate: Bool
+
     private var isEditing: Bool { expense != nil }
-    
+
+    init(cruise: Cruise, expense: Expense?) {
+        self.cruise = cruise
+        self.expense = expense
+        // Neue Ausgaben starten mit Datum an (heute); beim Bearbeiten übernimmt
+        // loadExistingData() den tatsächlichen Stand, ohne heimlich ein Datum zu setzen.
+        _hasDate = State(initialValue: expense == nil)
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -41,8 +49,7 @@ struct ExpenseFormView: View {
                 
                 // Betrag
                 Section("Betrag") {
-                    TextField("0,00", text: $amount)
-                        .keyboardType(.decimalPad)
+                    amountField
                 }
                 
                 // Beschreibung
@@ -68,43 +75,54 @@ struct ExpenseFormView: View {
                 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern") { saveExpense() }
-                        .disabled(amount.isEmpty)
+                        .disabled(amount <= 0)
                 }
             }
             .onAppear { loadExistingData() }
         }
     }
-    
+
+    /// Betragsfeld: Currency-Format, falls die Geräte-Locale eine Währung kennt;
+    /// sonst neutrales Zahlenformat statt eines hartkodierten EUR-Fallbacks.
+    @ViewBuilder
+    private var amountField: some View {
+        if let currencyCode = Locale.current.currency?.identifier {
+            TextField("Betrag", value: $amount, format: .currency(code: currencyCode))
+                .keyboardType(.decimalPad)
+        } else {
+            TextField("Betrag", value: $amount, format: .number.precision(.fractionLength(2)))
+                .keyboardType(.decimalPad)
+        }
+    }
+
     // MARK: - Data
     
     private func loadExistingData() {
         guard let expense = expense else { return }
         category = expense.category
-        amount = String(format: "%.2f", expense.amount).replacingOccurrences(of: ".", with: ",")
+        amount = expense.amount
         descriptionText = expense.descriptionText
         if let date = expense.expenseDate {
             expenseDate = date
             hasDate = true
         }
     }
-    
+
     private func saveExpense() {
-        // Parse amount (handle German comma format)
-        let normalizedAmount = amount.replacingOccurrences(of: ",", with: ".")
-        guard let parsedAmount = Double(normalizedAmount), parsedAmount > 0 else { return }
-        
+        guard amount > 0 else { return }
+
         let now = Date()
 
         if let existingExpense = expense {
             // Update
             existingExpense.category = category
-            existingExpense.amount = parsedAmount
+            existingExpense.amount = amount
             existingExpense.descriptionText = descriptionText
             existingExpense.expenseDate = hasDate ? expenseDate : nil
             existingExpense.updatedAt = now
         } else {
             // Create new
-            let newExpense = Expense(category: category, amount: parsedAmount, description: descriptionText)
+            let newExpense = Expense(category: category, amount: amount, description: descriptionText)
             newExpense.expenseDate = hasDate ? expenseDate : nil
             newExpense.cruise = cruise
             modelContext.insert(newExpense)
