@@ -115,7 +115,7 @@
 - [x] **A4.3** ✅ 2026-07-03 (GeminiServiceTests neu: Erfolg/401/429/kaputtes JSON via URLSession-Injection + Keychain-Roundtrip; Import-Härtungs-Tests existierten aus A1.3; final 84 Unit + 12 UI grün) — Test-Lücken minimal schließen: GeminiService (URLProtocol-Mock:
   Erfolg, 401, 429, kaputtes JSON), KeychainService-Roundtrip,
   Import-Härtungs-Tests aus A1.3.
-- [ ] **A4.4 Release:** Version 1.6.0, CHANGELOG, TestFlight via Fastlane.
+- [x] **A4.4 Release:** ✅ 2026-07-03 (`d4d0492`, Build 12 zu TestFlight hochgeladen, Andres Go lag vor) — Version 1.6.0, CHANGELOG, TestFlight via Fastlane.
 
 ## Phase B — Richtung 2 „Echtes Reisetagebuch" (3–5 Wochen) → TestFlight 1.7.0
 
