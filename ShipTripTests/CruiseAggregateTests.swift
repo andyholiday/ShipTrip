@@ -9,6 +9,7 @@
 import Testing
 import Foundation
 import SwiftData
+import UIKit
 @testable import ShipTrip
 
 private typealias CruisePort = ShipTrip.Port
@@ -250,8 +251,6 @@ struct CruiseAggregateTests {
 private func selectHero(from cruises: [Cruise]) -> Cruise? {
     cruises.first { $0.isOngoing }
         ?? cruises.filter { $0.isUpcoming }.min { $0.startDate < $1.startDate }
-        ?? cruises.first { !$0.isUpcoming }
-        ?? cruises.first
 }
 
 @Suite("Hero-Auswahl-Priorität")
@@ -327,8 +326,8 @@ struct HeroSelectionTests {
                 "Hero muss die nächste bevorstehende sein, gefunden: \(hero?.title ?? "<nil>")")
     }
 
-    @Test("ohne bevorstehende Reisen wird die zuerst gefundene vergangene bevorzugt")
-    func firstNonUpcomingWhenNoOngoingOrUpcoming() {
+    @Test("ohne laufende oder bevorstehende Reisen bleibt Hero leer")
+    func noHeroWhenOnlyPastTrips() {
         let now = Date()
 
         let past1 = Cruise(
@@ -346,9 +345,50 @@ struct HeroSelectionTests {
             ship: "AIDAmar"
         )
 
-        // selectHero gibt first { !$0.isUpcoming } zurück — also die erste aus der Liste
         let hero = selectHero(from: [past1, past2])
-        #expect(hero?.title == "Vergangen1",
-                "Hero muss erste vergangene sein, gefunden: \(hero?.title ?? "<nil>")")
+        #expect(hero == nil, "Vergangene Reisen sollen im Jahres-Logbuch bleiben, gefunden: \(hero?.title ?? "<nil>")")
+    }
+}
+
+@Suite("Cruise-Cover-Fallback")
+struct CruiseCoverFallbackTests {
+
+    @Test("Cover-Kandidaten priorisieren stabilen Reederei-Pool vor Legacy-Covern")
+    func coverCandidatesPreferStableLinePoolThenLegacyCovers() {
+        let candidates = ShippingLine.coverAssetCandidates(
+            shippingLine: "AIDA Cruises",
+            ship: "AIDAnova"
+        )
+
+        #expect(candidates.first?.hasPrefix("cover_line_aida_") == true)
+        #expect(candidates.contains("cover_line_aida"))
+        #expect(candidates.contains("cover_ship_aidanova"))
+        #expect(candidates.last == "cover_ocean_route")
+    }
+
+    @Test("Cover-Pool-Zuordnung ist pro Schiff stabil")
+    func coverPoolAssignmentIsStablePerShip() {
+        let first = ShippingLine.coverAssetCandidates(
+            shippingLine: "MSC Cruises",
+            ship: "MSC Seaside"
+        ).first
+        let second = ShippingLine.coverAssetCandidates(
+            shippingLine: "MSC Cruises",
+            ship: "MSC Seaside"
+        ).first
+
+        #expect(first == second)
+        #expect(first?.hasPrefix("cover_line_msc_") == true)
+    }
+
+    @Test("AIDAnova Hero-Cover-Kandidat ist aus Assets ladbar")
+    func aidaHeroCoverCandidateLoadsFromAssetCatalog() {
+        let candidates = ShippingLine.coverAssetCandidates(
+            shippingLine: "AIDA Cruises",
+            ship: "AIDAnova"
+        )
+
+        #expect(candidates.first == "cover_line_aida_1")
+        #expect(candidates.first.flatMap { UIImage(named: $0) } != nil)
     }
 }

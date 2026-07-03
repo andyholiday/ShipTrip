@@ -22,80 +22,96 @@ struct CruiseHeroCardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // MARK: Obere Medienzone
-            ZStack(alignment: .bottom) {
+        heroContent
+            .frame(height: 286)
+            .clipShape(RoundedRectangle(cornerRadius: 30))
+            .shadow(color: Color.navyDark.opacity(0.22), radius: 17, y: 10)
+    }
+
+    private var heroContent: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .bottomLeading) {
                 mediaBackground
-                    .frame(height: 190)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .clipped()
 
                 // Scrim für Text-Lesbarkeit
                 LinearGradient(
-                    colors: [.clear, .black.opacity(0.8)],
+                    colors: [.clear, .black.opacity(0.84)],
                     startPoint: .center,
                     endPoint: .bottom
                 )
+                .frame(width: proxy.size.width, height: proxy.size.height)
 
                 // Text im Scrim
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(cruise.title)
-                        .font(.title3)
-                        .fontWeight(.heavy)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
+                VStack(alignment: .leading, spacing: 12) {
+                    if cruise.isUpcoming {
+                        Text(String(localized: "In \(daysUntilStart) Tagen"))
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.sunsetOrange)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
 
-                    Text(subline)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(cruise.title)
+                            .font(.title)
+                            .fontWeight(.heavy)
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.82)
+
+                        Text(subline)
+                            .font(.caption)
+                            .foregroundStyle(.white.opacity(0.8))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                    }
+
+                    HStack {
+                        Text(metaLine)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white.opacity(0.92))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.72)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(.white.opacity(0.16))
+                            .clipShape(Capsule())
+
+                        Spacer(minLength: 8)
+
+                        HStack(spacing: 5) {
+                            Text(String(localized: "Reise öffnen"))
+                            Image(systemName: "arrow.right")
+                                .font(.caption2.weight(.bold))
+                        }
                         .font(.caption)
-                        .foregroundStyle(.white.opacity(0.8))
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.navyDark)
                         .lineLimit(1)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
-            }
-            .clipped()
-            // Badges oben
-            .overlay(alignment: .topLeading) {
-                if cruise.isUpcoming {
-                    Text(String(localized: "In \(daysUntilStart) Tagen"))
-                        .font(.caption2)
-                        .fontWeight(.semibold)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.sunsetOrange)
-                        .foregroundStyle(.white)
+                        .minimumScaleFactor(0.85)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.white)
                         .clipShape(Capsule())
-                        .padding(10)
+                    }
                 }
+                .padding(18)
+                .frame(width: proxy.size.width, alignment: .leading)
             }
+            // Bewertung oben rechts
             .overlay(alignment: .topTrailing) {
                 if cruise.rating > 0 {
                     RatingBadge(rating: cruise.rating)
-                        .padding(10)
+                        .padding(14)
                 }
             }
-
-            // MARK: Untere Meta-Leiste
-            HStack {
-                Text(metaLine)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                Spacer()
-
-                Text(String(localized: "Details →"))
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(Color.oceanBlue)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color(UIColor.secondarySystemBackground))
-            .overlay(alignment: .top) {
-                Divider()
-            }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Hilfs-Properties
@@ -107,24 +123,45 @@ struct CruiseHeroCardView: View {
             Image(uiImage: uiImage)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
+        } else if let assetImage = coverAssetImage {
+            assetImage
+                .resizable()
+                .aspectRatio(contentMode: .fill)
         } else {
             CruiseGeoFallbackView(ports: cruise.route)
         }
     }
 
+    private var coverAssetImage: Image? {
+        ShippingLine.coverAssetCandidates(
+            shippingLine: cruise.shippingLine,
+            ship: cruise.ship
+        )
+        .lazy
+        .compactMap { UIImage(named: $0) }
+        .first
+        .map { Image(uiImage: $0) }
+    }
+
     private var subline: String {
         let start = cruise.startDate.formatted(date: .abbreviated, time: .omitted)
         let end = cruise.endDate.formatted(date: .abbreviated, time: .omitted)
-        return "\(cruise.shippingLineLogo) \(cruise.shippingLine) · \(cruise.ship) · \(start)–\(end)"
+        let ports = cruise.route
+            .filter { !$0.isSeaDay }
+            .sorted { $0.sortOrder < $1.sortOrder }
+            .prefix(3)
+            .map(\.name)
+            .joined(separator: ", ")
+        if ports.isEmpty {
+            return "\(cruise.ship) · \(start)–\(end)"
+        }
+        return "\(cruise.ship) · \(start)–\(end) · \(ports)"
     }
 
     private var metaLine: String {
         let countryCount = cruise.countriesVisited.filter { !$0.isEmpty }.count
         let portCount = cruise.route.filter { !$0.isSeaDay }.count
-        let expenses = cruise.totalExpenses.formatted(
-            .currency(code: Locale.current.currency?.identifier ?? "EUR")
-        )
-        return "\(countryCount) \(String(localized: "Länder")) · \(portCount) \(String(localized: "Häfen")) · \(expenses)"
+        return "\(portCount) \(String(localized: "Häfen")) · \(countryCount) \(String(localized: "Länder"))"
     }
 }
 

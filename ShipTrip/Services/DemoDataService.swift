@@ -9,7 +9,6 @@
 #if DEBUG
 import SwiftData
 import Foundation
-import UIKit
 
 /// Verwaltet realistische Demo-Daten für manuelle Tests.
 /// Alle Aktionen sind idempotent.
@@ -19,7 +18,11 @@ enum DemoDataService {
 
     /// Legt Demo-Kreuzfahrten und -Angebote an, falls noch keine vorhanden sind.
     static func loadDemoData(into context: ModelContext) {
-        guard !hasDemoData(in: context) else { return }
+        guard !hasDemoData(in: context) else {
+            removeDemoCruisePhotos(in: context)
+            try? context.save()
+            return
+        }
 
         insertCruises(into: context)
         insertDeals(into: context)
@@ -41,6 +44,15 @@ enum DemoDataService {
     static func hasDemoData(in context: ModelContext) -> Bool {
         !fetch(Cruise.self, where: \.isDemo, in: context).isEmpty ||
         !fetch(Deal.self, where: \.isDemo, in: context).isEmpty
+    }
+
+    /// Entfernt alte künstliche Demo-Fotos, damit die Asset-Cover-Fallbacks sichtbar werden.
+    static func removeDemoCruisePhotos(in context: ModelContext) {
+        let demoCruises = fetch(Cruise.self, where: \.isDemo, in: context)
+        for cruise in demoCruises where !cruise.photos.isEmpty {
+            cruise.photos.forEach { context.delete($0) }
+            cruise.photos.removeAll()
+        }
     }
 
     // MARK: - Private Helpers
@@ -142,15 +154,7 @@ enum DemoDataService {
         addExpense(cruise: cruise, category: .flight, amount: 198.00,
                    description: "Flug Hamburg → Kiel (Transfer)", daysOffset: -30, context: context)
 
-        // Demo-Coverfoto: einfacher Blau-Grün-Verlauf symbolisiert norwegische Fjorde
-        if let data = makeDemoGradientImage(size: CGSize(width: 800, height: 450),
-                                            colors: [UIColor(red: 0.05, green: 0.25, blue: 0.55, alpha: 1),
-                                                     UIColor(red: 0.15, green: 0.55, blue: 0.45, alpha: 1)]) {
-            let photo = Photo(imageData: data, sortOrder: 0)
-            photo.cruise = cruise
-            context.insert(photo)
-            cruise.photos.append(photo)
-        }
+        // Kein Demo-Foto einhängen: ohne ausgewähltes Foto soll das schiffsspezifische Cover greifen.
     }
 
     // Vergangene Kurzkreuzfahrt Karibik – für Statistik-Vielfalt
@@ -227,24 +231,6 @@ enum DemoDataService {
     }
 
     // MARK: - Hilfsmethoden
-
-    /// Erzeugt ein einfaches Verlaufsbild als PNG-Daten für Demo-Cover-Fotos.
-    private static func makeDemoGradientImage(size: CGSize, colors: [UIColor]) -> Data? {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let image = renderer.image { ctx in
-            let cgColors = colors.map(\.cgColor) as CFArray
-            guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                            colors: cgColors,
-                                            locations: nil) else { return }
-            ctx.cgContext.drawLinearGradient(
-                gradient,
-                start: CGPoint(x: 0, y: 0),
-                end: CGPoint(x: size.width, y: size.height),
-                options: []
-            )
-        }
-        return image.pngData()
-    }
 
     private static func addPorts(
         _ entries: [(name: String, country: String, offset: Int, isSeaDay: Bool)],

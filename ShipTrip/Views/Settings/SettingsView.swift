@@ -25,6 +25,12 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    moreHeader
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+                        .listRowBackground(Color.clear)
+                }
+
                 // Erscheinungsbild
                 Section("Erscheinungsbild") {
                     Picker("Farbschema", selection: $colorScheme) {
@@ -147,6 +153,41 @@ struct SettingsView: View {
             }
             .preferredColorScheme(colorSchemeValue)
         }
+    }
+
+    private var moreHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Image(systemName: "ferry.fill")
+                .font(.title2)
+                .foregroundStyle(.white)
+                .frame(width: 54, height: 54)
+                .background(
+                    LinearGradient(
+                        colors: [Color.oceanBlue, Color.navyDark],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+
+            Text(String(localized: "Dein Kreuzfahrt-Archiv"))
+                .font(.title3)
+                .fontWeight(.heavy)
+
+            Text(String(localized: "Archiv, Komfort und Premium-Funktionen an einem Ort."))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [Color(UIColor.secondarySystemBackground), Color.oceanBlue.opacity(0.10)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 28))
     }
     
     private var colorSchemeValue: ColorScheme? {
@@ -344,7 +385,7 @@ struct DataManagementView: View {
                 }
                 
                 HStack {
-                    Text("Merkliste")
+                    Text("Wunschreisen")
                     Spacer()
                     Text("\(deals.count)")
                         .foregroundStyle(.secondary)
@@ -399,7 +440,7 @@ struct DataManagementView: View {
                 deleteAllData()
             }
         } message: {
-            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Merkliste-Einträge werden gelöscht.")
+            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht.")
         }
         .alert("Info", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }

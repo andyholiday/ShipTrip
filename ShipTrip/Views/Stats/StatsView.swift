@@ -18,6 +18,8 @@ struct StatsView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    balanceHero
+
                     // Quick Stats Grid
                     quickStatsGrid
                     
@@ -38,9 +40,41 @@ struct StatsView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Statistik")
+            .navigationTitle("Bilanz")
             .background(Color(.systemGroupedBackground))
         }
+    }
+
+    private var balanceHero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(String(localized: "Gesamterinnerung"))
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundStyle(.white.opacity(0.72))
+
+            Spacer(minLength: 22)
+
+            Text("\(totalTravelDays) \(String(localized: "Tage"))")
+                .font(.system(size: 44, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.75)
+                .lineLimit(1)
+
+            Text(String(localized: "Dein persönliches Kreuzfahrt-Archiv: \(uniqueCountries) Länder, \(uniquePorts) Häfen und \(cruises.count) Reisen."))
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.78))
+                .lineLimit(3)
+        }
+        .frame(maxWidth: .infinity, minHeight: 190, alignment: .leading)
+        .padding(22)
+        .background(
+            LinearGradient(
+                colors: [Color.navyDark, Color.oceanBlue],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 30))
     }
     
     // MARK: - Quick Stats
@@ -51,42 +85,42 @@ struct StatsView: View {
                 icon: "ferry",
                 title: "Kreuzfahrten",
                 value: "\(cruises.count)",
-                color: .blue
+                color: .oceanBlue
             )
             
             StatCard(
                 icon: "calendar",
                 title: "Reisetage",
                 value: "\(totalTravelDays)",
-                color: .cyan
+                color: .oceanLight
             )
             
             StatCard(
                 icon: "mappin.and.ellipse",
                 title: "Häfen",
                 value: "\(uniquePorts)",
-                color: .orange
+                color: .sunsetOrange
             )
             
             StatCard(
                 icon: "globe",
                 title: "Länder",
                 value: "\(uniqueCountries)",
-                color: .green
+                color: .seaGreen
             )
             
             StatCard(
                 icon: "eurosign.circle",
                 title: "Ausgaben",
                 value: totalExpenses.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")),
-                color: .purple
+                color: .navyDark
             )
             
             StatCard(
                 icon: "star.fill",
                 title: "Ø Bewertung",
                 value: averageRating > 0 ? String(format: "%.1f", averageRating) : "-",
-                color: .yellow
+                color: .sunsetOrange
             )
         }
     }
@@ -109,7 +143,7 @@ struct StatsView: View {
                         x: .value("Jahr", String(item.year)),
                         y: .value("Anzahl", item.count)
                     )
-                    .foregroundStyle(.blue.gradient)
+                    .foregroundStyle(Color.oceanBlue.gradient)
                     .cornerRadius(4)
                 }
                 .frame(height: 200)
@@ -117,7 +151,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 22))
     }
     
     // MARK: - Expenses by Category Chart
@@ -165,7 +199,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 22))
     }
     
     // MARK: - Top Shipping Lines
@@ -189,7 +223,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 22))
     }
     
     // MARK: - Computed Stats
@@ -258,8 +292,8 @@ struct StatCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(Color(.secondarySystemBackground).opacity(0.78))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
     }
 }
 

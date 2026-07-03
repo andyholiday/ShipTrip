@@ -7,31 +7,23 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// Hauptansicht: Liste aller Kreuzfahrten
 struct CruiseListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Cruise.startDate, order: .reverse) private var cruises: [Cruise]
     
-    @State private var searchText = ""
     @State private var showingAddSheet = false
     @State private var selectedYear: Int?
     @State private var selectedShippingLine: String?
+    @State private var navigationPath = NavigationPath()
     
     // MARK: - Computed Properties
     
     private var filteredCruises: [Cruise] {
         var result = cruises
-        
-        // Textsuche
-        if !searchText.isEmpty {
-            result = result.filter {
-                $0.title.localizedCaseInsensitiveContains(searchText) ||
-                $0.ship.localizedCaseInsensitiveContains(searchText) ||
-                $0.shippingLine.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-        
+
         // Jahr-Filter
         if let year = selectedYear {
             result = result.filter { $0.year == year }
@@ -53,12 +45,11 @@ struct CruiseListView: View {
         Array(Set(cruises.map { $0.shippingLine })).sorted()
     }
 
-    /// Schwerpunkt-Reise: laufende Reise zuerst, dann nächste bevorstehende, sonst zuletzt vergangene.
+    /// Schwerpunkt-Reise: laufende Reise zuerst, dann nächste bevorstehende.
+    /// Vergangene Reisen bleiben vollständig im nach Jahren gruppierten Reiselogbuch.
     private var heroCruise: Cruise? {
         filteredCruises.first { $0.isOngoing }
             ?? filteredCruises.filter { $0.isUpcoming }.min { $0.startDate < $1.startDate }
-            ?? filteredCruises.first { !$0.isUpcoming }
-            ?? filteredCruises.first
     }
 
     /// Übrige Reisen für den Zeitstrahl (ohne die Hero-Reise), nach Jahr gruppiert (neueste zuerst).
@@ -67,36 +58,36 @@ struct CruiseListView: View {
         return filteredCruises.filter { $0.id != hero.id }
     }
 
+    private var nextUpcomingCruise: Cruise? {
+        cruises.filter(\.isUpcoming).min { $0.startDate < $1.startDate }
+    }
+
+    private var appSubline: String {
+        if let nextUpcomingCruise {
+            let days = Calendar.current.dateComponents(
+                [.day],
+                from: Calendar.current.startOfDay(for: .now),
+                to: Calendar.current.startOfDay(for: nextUpcomingCruise.startDate)
+            ).day ?? 0
+            return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · nächste Reise in \(days) Tagen")
+        }
+        return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · Reiselogbuch")
+    }
+
     // MARK: - Body
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             Group {
                 if cruises.isEmpty {
                     emptyStateView
                 } else if filteredCruises.isEmpty {
-                    ContentUnavailableView.search(text: searchText.isEmpty ? String(localized: "Keine Treffer") : searchText)
+                    ContentUnavailableView(String(localized: "Keine Treffer"), systemImage: "line.3.horizontal.decrease.circle")
                 } else {
                     cruiseList
                 }
             }
-            .navigationTitle("Meine Reisen")
-            .searchable(text: $searchText, prompt: "Suchen...")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-                
-                if !cruises.isEmpty {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        filterMenu
-                    }
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingAddSheet) {
                 CruiseFormView(cruise: nil)
             }
@@ -113,60 +104,128 @@ struct CruiseListView: View {
     // MARK: - Subviews
     
     private var cruiseList: some View {
-        List {
-            // 1. Stats-Strip: immer mit dem vollständigen Cruise-Set (Lifetime-Totals)
-            Section {
-                CruiseStatsStripView(cruises: cruises)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-            }
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                topActions
 
-            // 2. Hero-Karte
-            if let hero = heroCruise {
-                Section {
-                    NavigationLink(value: hero) {
-                        CruiseHeroCardView(cruise: hero)
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowSeparator(.hidden)
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            deleteCruise(hero)
-                        } label: {
-                            Label("Löschen", systemImage: "trash")
-                        }
-                    }
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(String(localized: "Meine Reisen"))
+                        .font(.largeTitle)
+                        .fontWeight(.heavy)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.82)
+
+                    Text(appSubline)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
-            }
+                .padding(.bottom, 4)
 
-            // 3. Zeitstrahl: nach Jahr gruppiert, neueste zuerst
-            let yearGroups = Dictionary(grouping: timelineCruises, by: { $0.year })
-            let sortedYears = yearGroups.keys.sorted(by: >)
-            ForEach(sortedYears, id: \.self) { year in
-                Section(header: CruiseYearDivider(year: year).listRowInsets(EdgeInsets())) {
-                    ForEach(yearGroups[year] ?? []) { cruise in
-                        NavigationLink(value: cruise) {
-                            CruiseTimelineRowView(cruise: cruise)
+                // 1. Ruhige Lebenszeit-Bilanz
+                CruiseStatsStripView(cruises: cruises)
+                    .padding(.bottom, 6)
+
+                // 2. Hero-Karte: nur laufende oder nächste Reise
+                if let hero = heroCruise {
+                    CruiseHeroCardView(cruise: hero)
+                        .contentShape(RoundedRectangle(cornerRadius: 30))
+                        .onTapGesture {
+                            navigationPath.append(hero)
                         }
-                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                        .listRowSeparator(.hidden)
-                        .swipeActions(edge: .trailing) {
+                        .contextMenu {
                             Button(role: .destructive) {
-                                deleteCruise(cruise)
+                                deleteCruise(hero)
                             } label: {
                                 Label("Löschen", systemImage: "trash")
                             }
                         }
-                    }
                 }
+
+                // 3. Reiselogbuch: nach Jahr gruppiert, neueste zuerst
+                journalList
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            .padding(.bottom, 128)
         }
-        .listStyle(.plain)
+        .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
+        .overlay(alignment: .top) {
+            Color(UIColor.systemGroupedBackground)
+                .frame(height: 62)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
+        }
         .navigationDestination(for: Cruise.self) { cruise in
             CruiseDetailView(cruise: cruise)
         }
     }
-    
+
+    private var topActions: some View {
+        HStack {
+            filterMenu
+
+            Spacer()
+
+            Button {
+                showingAddSheet = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.title2.weight(.semibold))
+                    .frame(width: 42, height: 42)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .shadow(color: Color.navyDark.opacity(0.08), radius: 11, y: 4)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(Text(String(localized: "Neue Reise")))
+        }
+        .padding(.bottom, 14)
+    }
+
+    private var journalList: some View {
+        let yearGroups = Dictionary(grouping: timelineCruises, by: { $0.year })
+        let sortedYears = yearGroups.keys.sorted(by: >)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Reiselogbuch"))
+                .font(.caption)
+                .fontWeight(.heavy)
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.top, 14)
+                .padding(.bottom, 2)
+
+            ForEach(sortedYears, id: \.self) { year in
+                let yearCruises = yearGroups[year] ?? []
+
+                CruiseYearDivider(year: year, count: yearCruises.count)
+
+                ForEach(Array(yearCruises.enumerated()), id: \.element.id) { offset, cruise in
+                    Button {
+                        navigationPath.append(cruise)
+                    } label: {
+                        CruiseHeroCardView(cruise: cruise)
+                    }
+                    .buttonStyle(.plain)
+                    .contentShape(RoundedRectangle(cornerRadius: 30))
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            deleteCruise(cruise)
+                        } label: {
+                            Label("Löschen", systemImage: "trash")
+                        }
+                    }
+
+                    if offset < yearCruises.count - 1 {
+                        Color.clear
+                            .frame(height: 2)
+                    }
+                }
+            }
+        }
+    }
+
     private var emptyStateView: some View {
         ContentUnavailableView {
             Label("Keine Kreuzfahrten", systemImage: "ferry")
@@ -185,8 +244,8 @@ struct CruiseListView: View {
     private var filterMenu: some View {
         Menu {
             // Jahr-Filter
-            Menu("Jahr") {
-                Button("Alle Jahre") {
+            Menu(String(localized: "Jahr")) {
+                Button(String(localized: "Alle Jahre")) {
                     selectedYear = nil
                 }
                 Divider()
@@ -205,8 +264,8 @@ struct CruiseListView: View {
             }
             
             // Reederei-Filter
-            Menu("Reederei") {
-                Button("Alle Reedereien") {
+            Menu(String(localized: "Reederei")) {
+                Button(String(localized: "Alle Reedereien")) {
                     selectedShippingLine = nil
                 }
                 Divider()
@@ -226,13 +285,18 @@ struct CruiseListView: View {
             
             if selectedYear != nil || selectedShippingLine != nil {
                 Divider()
-                Button("Filter zurücksetzen", role: .destructive) {
+                Button(String(localized: "Filter zurücksetzen"), role: .destructive) {
                     selectedYear = nil
                     selectedShippingLine = nil
                 }
             }
         } label: {
             Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                .font(.title2.weight(.semibold))
+                .frame(width: 42, height: 42)
+                .background(.ultraThinMaterial)
+                .clipShape(Circle())
+                .shadow(color: Color.navyDark.opacity(0.08), radius: 11, y: 4)
         }
     }
     

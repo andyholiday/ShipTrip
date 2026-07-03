@@ -105,5 +105,71 @@ struct ShippingLine: Identifiable, Hashable {
             (line.ships + line.historicalShips).contains { $0.lowercased() == normalizedShip }
         }
     }
+
+    /// Asset-Name für das Reederei-Cover.
+    var coverAssetName: String {
+        "cover_line_\(id)"
+    }
+
+    /// Fünf fotorealistische Cover-Varianten pro Reederei.
+    var coverPoolAssetNames: [String] {
+        (1...5).map { "cover_line_\(id)_\($0)" }
+    }
+
+    /// Stabiler, schiffsgebundener Cover-Slot innerhalb der Reederei.
+    func coverPoolAssetName(for ship: String) -> String {
+        let anchor = ship.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? name : ship
+        let index = Self.stableIndex(for: "\(id)|\(Self.coverSlug(for: anchor))", count: coverPoolAssetNames.count)
+        return coverPoolAssetNames[index]
+    }
+
+    /// Asset-Name für ein schiffsspezifisches Cover.
+    static func shipCoverAssetName(for ship: String) -> String? {
+        let normalizedShip = ship.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedShip.isEmpty else { return nil }
+        return "cover_ship_\(coverSlug(for: normalizedShip))"
+    }
+
+    /// Priorisierte Cover-Kandidaten: stabiler Reederei-Pool vor Legacy-Covern vor neutralem Ocean-Fallback.
+    static func coverAssetCandidates(shippingLine: String, ship: String) -> [String] {
+        var candidates: [String] = []
+
+        if let line = find(byName: shippingLine) ?? findByShipName(ship) {
+            candidates.append(line.coverPoolAssetName(for: ship))
+            candidates.append(line.coverAssetName)
+        }
+
+        if let shipAsset = shipCoverAssetName(for: ship) {
+            candidates.append(shipAsset)
+        }
+
+        candidates.append("cover_ocean_route")
+        return Array(dictOrderedKeys: candidates)
+    }
+
+    /// Stabiler Asset-Slug, passend zu den generierten Cover-Namen.
+    private static func coverSlug(for value: String) -> String {
+        let folded = value
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .lowercased()
+        return folded
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .joined(separator: "_")
+    }
+
+    private static func stableIndex(for value: String, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        let checksum = value.unicodeScalars.reduce(0) { partial, scalar in
+            (partial &* 31 &+ Int(scalar.value)) & 0x7fffffff
+        }
+        return checksum % count
+    }
 }
 
+private extension Array where Element == String {
+    init(dictOrderedKeys keys: [String]) {
+        var seen = Set<String>()
+        self = keys.filter { seen.insert($0).inserted }
+    }
+}

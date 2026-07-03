@@ -36,13 +36,13 @@ struct MainTabView: View {
             
             DealsView()
                 .tabItem {
-                    Label("Merkliste", systemImage: "bookmark")
+                    Label("Wunschreisen", systemImage: "bookmark")
                 }
                 .tag(2)
             
             StatsView()
                 .tabItem {
-                    Label("Statistik", systemImage: "chart.bar")
+                    Label("Bilanz", systemImage: "chart.bar")
                 }
                 .tag(3)
             

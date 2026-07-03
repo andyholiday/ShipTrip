@@ -17,43 +17,29 @@ struct CruiseTimelineRowView: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            // MARK: Spine-Punkt
-            spineDot
+            // MARK: Thumbnail
+            thumbnail
 
             // MARK: Textblock
             textBlock
 
             Spacer(minLength: 0)
 
-            // MARK: Thumbnail + Bewertung
+            // MARK: Bewertung
             VStack(alignment: .trailing, spacing: 4) {
-                thumbnail
                 if cruise.rating > 0 {
                     Text("★ \(cruise.rating, format: .number.precision(.fractionLength(1)))")
                         .font(.caption2)
+                        .fontWeight(.bold)
                         .foregroundStyle(Color.seaGreen)
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     // MARK: Subviews
-
-    /// Kleiner gefüllter Kreis als visueller Ankerpunkt
-    private var spineDot: some View {
-        let color: Color = {
-            if cruise.isUpcoming { return Color.sunsetOrange }
-            if cruise.rating > 0 { return Color.oceanBlue }
-            return Color.gray
-        }()
-        return Circle()
-            .fill(color)
-            .frame(width: 10, height: 10)
-    }
 
     /// Zweizeiliger (plus optionaler dritter Zeile) Textblock
     private var textBlock: some View {
@@ -70,18 +56,19 @@ struct CruiseTimelineRowView: View {
                 .font(.subheadline)
                 .fontWeight(.bold)
                 .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
-            Text("\(cruise.shippingLine) 🚢 · \(String(localized: "\(cruise.duration)T")) · \(cruise.countriesVisited.filter { !$0.isEmpty }.count) \(String(localized: "Länder"))")
+            Text(DateInterval(start: cruise.startDate, end: cruise.endDate).formatted)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.82)
 
-            if !portPreview.isEmpty {
-                Text(portPreview)
-                    .font(.caption2)
-                    .foregroundStyle(Color.seaGreen)
-                    .lineLimit(1)
-            }
+            Text("\(cruise.duration) \(String(localized: "Tage")) · \(portPreview.isEmpty ? cruise.shippingLine : portPreview)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
         }
     }
 
@@ -94,20 +81,29 @@ struct CruiseTimelineRowView: View {
                 Image(uiImage: uiImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+            } else if let assetImage = coverAssetImage {
+                assetImage
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
             } else {
-                LinearGradient(
-                    colors: [Color.navyDark, Color.oceanBlue],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .overlay {
-                    Text(cruise.shippingLineLogo)
-                        .font(.system(size: 16))
-                }
+                Image("cover_ocean_route")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
             }
         }
-        .frame(width: 34, height: 34)
-        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .frame(width: 42, height: 42)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var coverAssetImage: Image? {
+        ShippingLine.coverAssetCandidates(
+            shippingLine: cruise.shippingLine,
+            ship: cruise.ship
+        )
+        .lazy
+        .compactMap { UIImage(named: $0) }
+        .first
+        .map { Image(uiImage: $0) }
     }
 }
 
@@ -116,17 +112,25 @@ struct CruiseTimelineRowView: View {
 /// Kleiner Abschnitts-Header mit Jahreszahl und horizontaler Trennlinie.
 struct CruiseYearDivider: View {
     let year: Int
+    var count: Int? = nil
 
     var body: some View {
         HStack(spacing: 8) {
             Text(verbatim: "\(year)")
-                .font(.caption)
+                .font(.footnote)
                 .fontWeight(.heavy)
                 .foregroundStyle(.secondary)
                 .padding(.leading, 10)
 
             Divider()
                 .frame(height: 0.5)
+
+            if let count {
+                Text("\(count) \(count == 1 ? String(localized: "Reise") : String(localized: "Reisen"))")
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .padding(.top, 6)
         .padding(.bottom, 4)

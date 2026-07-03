@@ -6,56 +6,39 @@
 import SwiftUI
 
 /// Horizontaler Stats-Streifen mit 4 aggregierten Kennzahlen über alle Kreuzfahrten.
-/// Zellen in fester Reihenfolge: Reisen · Länder · Seetage · Häfen.
+/// Zellen in fester Reihenfolge: Reisen · Tage · Länder · Häfen.
 struct CruiseStatsStripView: View {
     let cruises: [Cruise]
 
     var body: some View {
         // Aggregation einmalig — nicht pro Zelle
         let reisen = cruises.count
+        let tage = cruises.totalTravelDays
         let laender = cruises.uniqueCountryCount
-        let seetage = cruises.totalSeaDays
         let haefen = cruises.totalPortStops
 
-        HStack(spacing: 0) {
+        HStack(spacing: 8) {
             StatCell(
                 value: reisen,
                 label: String(localized: "Reisen"),
                 color: .oceanBlue
             )
-            Divider()
-                .frame(width: 0.5)
-                .background(Color(UIColor.separator))
+            StatCell(
+                value: tage,
+                label: String(localized: "Tage"),
+                color: .oceanLight
+            )
             StatCell(
                 value: laender,
                 label: String(localized: "Länder"),
-                color: .oceanLight
-            )
-            Divider()
-                .frame(width: 0.5)
-                .background(Color(UIColor.separator))
-            StatCell(
-                value: seetage,
-                label: String(localized: "Seetage"),
                 color: .seaGreen
             )
-            Divider()
-                .frame(width: 0.5)
-                .background(Color(UIColor.separator))
             StatCell(
                 value: haefen,
                 label: String(localized: "Häfen"),
                 color: .sunsetOrange
             )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(Color(UIColor.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color(UIColor.separator), lineWidth: 0.5)
-        )
     }
 }
 
@@ -67,19 +50,30 @@ private struct StatCell: View {
     let label: String
     let color: Color
 
-    var body: some View {
-        VStack(spacing: 2) {
-            Text("\(value)")
-                .font(.title3)
-                .fontWeight(.heavy)
-                .foregroundStyle(color)
-                .monospacedDigit()
-            Text(label)
-                .font(.caption2)
-                .fontWeight(.semibold)
-                .foregroundStyle(.secondary)
-        }
+        var body: some View {
+            VStack(spacing: 2) {
+                Text("\(value)")
+                    .font(.title3)
+                    .fontWeight(.heavy)
+                    .foregroundStyle(.primary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text(label)
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+        .frame(height: 58)
         .frame(maxWidth: .infinity)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18)
+                .strokeBorder(Color(UIColor.separator).opacity(0.16), lineWidth: 0.5)
+        }
     }
 }
 

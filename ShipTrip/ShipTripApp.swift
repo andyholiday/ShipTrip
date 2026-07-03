@@ -32,12 +32,21 @@ struct ShipTripApp: App {
         let persistentConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            modelContainer = try ModelContainer(for: schema, configurations: [persistentConfig])
+            let container = try ModelContainer(for: schema, configurations: [persistentConfig])
+#if DEBUG
+            Self.cleanupDemoDataIfNeeded(in: container)
+            Self.prepareUITestDataIfNeeded(in: container)
+#endif
+            modelContainer = container
             usingTemporaryStore = false
         } catch {
             logger.error("Persistenter Store nicht verfügbar, versuche In-Memory-Fallback: \(error)")
             let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             if let fallback = try? ModelContainer(for: schema, configurations: [memoryConfig]) {
+#if DEBUG
+                Self.cleanupDemoDataIfNeeded(in: fallback)
+                Self.prepareUITestDataIfNeeded(in: fallback)
+#endif
                 modelContainer = fallback
                 usingTemporaryStore = true
             } else {
@@ -47,6 +56,23 @@ struct ShipTripApp: App {
             }
         }
     }
+
+#if DEBUG
+    private static func cleanupDemoDataIfNeeded(in container: ModelContainer) {
+        let context = ModelContext(container)
+        DemoDataService.removeDemoCruisePhotos(in: context)
+        try? context.save()
+    }
+
+    private static func prepareUITestDataIfNeeded(in container: ModelContainer) {
+        guard ProcessInfo.processInfo.arguments.contains("-uiTestingResetAndLoadDemoData") else { return }
+
+        let context = ModelContext(container)
+        DemoDataService.removeDemoData(from: context)
+        DemoDataService.loadDemoData(into: context)
+        try? context.save()
+    }
+#endif
 
     // MARK: - UI
 

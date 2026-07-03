@@ -51,7 +51,9 @@ struct CruiseDetailView: View {
                     notesSection
                 }
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 128)
         }
         .navigationTitle(cruise.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -104,64 +106,87 @@ struct CruiseDetailView: View {
     /// Titeloverlay (unten-links) – wird sowohl im Foto- als auch im Platzhalter-Hero verwendet.
     private var heroTitleOverlay: some View {
         LinearGradient(
-            colors: [.black.opacity(0.0), .black.opacity(0.6)],
+            colors: [.black.opacity(0.05), .black.opacity(0.78)],
             startPoint: .center,
             endPoint: .bottom
         )
         .overlay(alignment: .bottomLeading) {
-            Text(cruise.title)
-                .font(.title2.bold())
-                .foregroundStyle(.white)
-                .lineLimit(2)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 14)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(String(localized: "Reisejournal")) · \(cruise.startDate.formatted(.dateTime.month(.wide).year()))")
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.white.opacity(0.88))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.16))
+                    .clipShape(Capsule())
+
+                Text(cruise.title)
+                    .font(.title.bold())
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+
+                Text("\(cruise.ship) · \(cruise.duration) \(String(localized: "Tage")) · \(cruise.route.filter { !$0.isSeaDay }.count) \(String(localized: "Häfen"))")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.82))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 18)
+            .padding(.bottom, 18)
         }
     }
 
     private var heroImageSection: some View {
-        Group {
-            if !cruise.photos.isEmpty {
-                // ZStack: Pager im Hintergrund, Titel-Overlay darüber (einmal, nicht pro Seite)
-                ZStack(alignment: .bottomLeading) {
+        GeometryReader { proxy in
+            ZStack(alignment: .bottomLeading) {
+                if !cruise.photos.isEmpty {
+                    // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
+                    // gestochen scharfe Qualität (kein Thumbnail hier).
                     TabView {
-                        // Detail-Pager zeigt ein Foto auf einmal – volle Auflösung für
-                        // gestochen scharfe Qualität (kein Thumbnail hier).
                         ForEach(Array(cruise.sortedPhotos.enumerated()), id: \.offset) { _, photo in
                             if let uiImage = UIImage(data: photo.imageData) {
                                 Image(uiImage: uiImage)
                                     .resizable()
                                     .aspectRatio(contentMode: .fill)
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .frame(width: proxy.size.width, height: proxy.size.height)
                                     .clipped()
                             }
                         }
                     }
                     .tabViewStyle(.page)
-
-                    heroTitleOverlay
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                } else if let assetImage = coverAssetImage {
+                    assetImage
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
+                } else {
+                    CruiseGeoFallbackView(ports: cruise.route)
+                        .frame(width: proxy.size.width, height: proxy.size.height)
+                        .clipped()
                 }
-                .frame(height: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            } else {
-                ZStack(alignment: .bottomLeading) {
-                    LinearGradient(
-                        colors: [Color.oceanBlue, Color.navyDark],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
 
-                    // Dezentes Symbol oben rechts
-                    Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: 40))
-                        .foregroundStyle(.white.opacity(0.25))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-
-                    heroTitleOverlay
-                }
-                .frame(height: 220)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                heroTitleOverlay
+                    .frame(width: proxy.size.width, height: proxy.size.height)
             }
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .frame(height: 312)
+        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: .black.opacity(0.12), radius: 18, y: 10)
+    }
+
+    private var coverAssetImage: Image? {
+        ShippingLine.coverAssetCandidates(
+            shippingLine: cruise.shippingLine,
+            ship: cruise.ship
+        )
+        .lazy
+        .compactMap { UIImage(named: $0) }
+        .first
+        .map { Image(uiImage: $0) }
     }
 
     /// Eckdaten-Zeile: Tage · Häfen · Länder · Ausgaben
@@ -189,7 +214,10 @@ struct CruiseDetailView: View {
         }
         .padding(.vertical, 12)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.08), radius: 14, y: 8)
+        .padding(.horizontal, 10)
+        .padding(.top, -42)
     }
     
     private var infoSection: some View {

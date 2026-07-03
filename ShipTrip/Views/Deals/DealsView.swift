@@ -30,11 +30,13 @@ struct DealsView: View {
             Group {
                 if deals.isEmpty {
                     emptyStateView
+                } else if filteredDeals.isEmpty {
+                    ContentUnavailableView.search(text: searchText)
                 } else {
                     dealsList
                 }
             }
-            .navigationTitle("Merkliste")
+            .navigationTitle("Wunschreisen")
             .searchable(text: $searchText, prompt: "Suchen...")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -55,7 +57,7 @@ struct DealsView: View {
         ContentUnavailableView {
             Label("Keine Einträge", systemImage: "bookmark")
         } description: {
-            Text("Speichere interessante Kreuzfahrten auf deiner Merkliste")
+            Text("Speichere interessante Kreuzfahrten als Wunschreisen")
         } actions: {
             Button {
                 showingAddSheet = true
@@ -68,18 +70,132 @@ struct DealsView: View {
     
     private var dealsList: some View {
         List {
-            ForEach(filteredDeals) { deal in
+            if let featuredDeal = filteredDeals.first {
+                DealHeroView(deal: featuredDeal)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 12, trailing: 16))
+                    .listRowSeparator(.hidden)
+            }
+
+            ForEach(Array(filteredDeals.dropFirst())) { deal in
                 DealRowView(deal: deal)
             }
-            .onDelete(perform: deleteDeals)
+            .onDelete(perform: deleteListDeals)
         }
         .listStyle(.plain)
     }
     
-    private func deleteDeals(at offsets: IndexSet) {
+    private func deleteListDeals(at offsets: IndexSet) {
         for index in offsets {
-            modelContext.delete(filteredDeals[index])
+            modelContext.delete(filteredDeals[index + 1])
         }
+    }
+}
+
+/// Größere Wunschreise-Karte für den besten/obersten Merkliste-Eintrag.
+struct DealHeroView: View {
+    let deal: Deal
+
+    @State private var showingEditSheet = false
+
+    var body: some View {
+        Button {
+            showingEditSheet = true
+        } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                coverImage
+                    .frame(height: 154)
+                    .frame(maxWidth: .infinity)
+                    .clipped()
+                    .overlay(alignment: .topLeading) {
+                        if deal.discountPercent != nil {
+                            Text(String(localized: "Beste Option"))
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.sunsetOrange)
+                                .clipShape(Capsule())
+                                .padding(12)
+                        }
+                    }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(deal.title)
+                        .font(.headline)
+                        .lineLimit(2)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+                    HStack(alignment: .lastTextBaseline) {
+                        if let discount = deal.discountPercent {
+                            Text("-\(discount)%")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(Color.seaGreen)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.seaGreen.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+
+                        Spacer()
+
+                        if let price = deal.formattedPrice {
+                            Text(price)
+                                .font(.title3)
+                                .fontWeight(.heavy)
+                        }
+                    }
+                }
+                .padding(15)
+                .background(Color(UIColor.secondarySystemBackground))
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .shadow(color: .black.opacity(0.10), radius: 16, y: 8)
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showingEditSheet) {
+            DealFormView(deal: deal)
+        }
+    }
+
+    @ViewBuilder
+    private var coverImage: some View {
+        if let image = coverAssetImage {
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else {
+            Image("cover_ocean_route")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        }
+    }
+
+    private var coverAssetImage: Image? {
+        ShippingLine.coverAssetCandidates(
+            shippingLine: deal.shippingLine ?? "",
+            ship: deal.ship ?? ""
+        )
+        .lazy
+        .compactMap { UIImage(named: $0) }
+        .first
+        .map { Image(uiImage: $0) }
+    }
+
+    private var subtitle: String {
+        [
+            deal.ship,
+            deal.destination,
+            deal.duration.map { "\($0) \(String(localized: "Tage"))" }
+        ]
+        .compactMap { $0 }
+        .filter { !$0.isEmpty }
+        .joined(separator: " · ")
     }
 }
 
