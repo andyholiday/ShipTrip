@@ -132,8 +132,9 @@
   Folgetag des letzten Stopps nach `sortOrder`, leere Route → Reise-Startdatum) — Auto-Datum bei
   neuem Hafen.
   ([Feature-Doku](features/feedback-fixes-a5.md#a53--auto-datum-bei-neuem-hafen))
-- [ ] **A5.4 Release:** TestFlight 1.6.1 (Build 13) mit Test-Hinweisen + externer Testerin
-  (Vorab-Go von Andre 2026-07-03: Release nach verifizierter Welle ohne erneuten Stopp).
+- [x] **A5.4 Release** ✅ 2026-07-03 — TestFlight 1.6.1 (Build 13) hochgeladen (VALID),
+  Test-Hinweise gesetzt, externe Testerin der Gruppe „VIP Extern" zugeordnet, Build zur
+  Beta-Review eingereicht (WAITING_FOR_REVIEW). (Vorab-Go von Andre 2026-07-03.)
 
 ## Phase B — Richtung 2 „Echtes Reisetagebuch" (3–5 Wochen) → TestFlight 1.7.0
 
