@@ -154,7 +154,7 @@ struct DealHeroView: View {
                 .padding(15)
                 .background(Color(UIColor.secondarySystemBackground))
             }
-            .clipShape(RoundedRectangle(cornerRadius: 28))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
             .shadow(color: .black.opacity(0.10), radius: 16, y: 8)
         }
         .buttonStyle(.plain)
@@ -215,7 +215,7 @@ struct DealRowView: View {
                     .font(.title)
                     .frame(width: 44, height: 44)
                     .background(Color.secondary.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
                 
                 // Content
                 VStack(alignment: .leading, spacing: 4) {

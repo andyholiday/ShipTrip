@@ -178,7 +178,7 @@ struct CruiseDetailView: View {
         }
         .frame(height: 312)
         .clipped()
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
         .shadow(color: .black.opacity(0.12), radius: 18, y: 10)
     }
 
@@ -201,7 +201,7 @@ struct CruiseDetailView: View {
                 caption: String(localized: "Tage")
             )
             StatCell(
-                value: "\(cruise.route.count)",
+                value: "\(cruise.route.filter { !$0.isSeaDay }.count)",
                 caption: String(localized: "Häfen")
             )
             StatCell(
@@ -209,16 +209,14 @@ struct CruiseDetailView: View {
                 caption: String(localized: "Länder")
             )
             StatCell(
-                value: cruise.totalExpenses.formatted(
-                    .currency(code: Locale.current.currency?.identifier ?? "EUR")
-                ),
+                value: cruise.totalExpenses.formattedCurrencyOrNumber,
                 caption: String(localized: "Ausgaben"),
                 compactValue: true
             )
         }
         .padding(.vertical, 12)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
         .shadow(color: .black.opacity(0.08), radius: 14, y: 8)
         .padding(.horizontal, 10)
         .padding(.top, -42)
@@ -332,7 +330,7 @@ struct CruiseDetailView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
     }
 
     private var expensesSection: some View {
@@ -342,7 +340,7 @@ struct CruiseDetailView: View {
                     .font(.headline)
                 Spacer()
                 if !cruise.expenses.isEmpty {
-                    Text(cruise.totalExpenses.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")))
+                    Text(cruise.totalExpenses.formattedCurrencyOrNumber)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -400,7 +398,7 @@ struct CruiseDetailView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
     }
 
     private var notesSection: some View {
@@ -414,7 +412,7 @@ struct CruiseDetailView: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
     }
     
     // MARK: - Actions
@@ -593,7 +591,7 @@ struct InfoCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
     }
 }
 

@@ -31,18 +31,6 @@ enum ExpenseCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
     
-    /// Farbe für die Kategorie (als String für SwiftData-Kompatibilität)
-    var colorName: String {
-        switch self {
-        case .cruise: return "blue"
-        case .flight: return "orange"
-        case .hotel: return "purple"
-        case .excursion: return "green"
-        case .onboard: return "pink"
-        case .other: return "gray"
-        }
-    }
-
     /// Lokalisierter Anzeigename (rawValue bleibt stabiler Speicher-Schlüssel)
     var displayName: String {
         String(localized: String.LocalizationValue(rawValue))
@@ -99,6 +87,17 @@ final class Expense {
     
     /// Formatierter Betrag
     var formattedAmount: String {
-        amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
+        amount.formattedCurrencyOrNumber
+    }
+}
+
+extension Double {
+    /// Currency-Format, falls die Geräte-Locale eine Währung kennt; sonst neutrales
+    /// Zahlenformat statt eines hartkodierten EUR-Fallbacks (Muster: ExpenseFormView.amountField).
+    var formattedCurrencyOrNumber: String {
+        if let currencyCode = Locale.current.currency?.identifier {
+            return formatted(.currency(code: currencyCode))
+        }
+        return formatted(.number.precision(.fractionLength(2)))
     }
 }

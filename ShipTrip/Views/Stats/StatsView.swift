@@ -74,7 +74,7 @@ struct StatsView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 30))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
     }
     
     // MARK: - Quick Stats
@@ -112,7 +112,7 @@ struct StatsView: View {
             StatCard(
                 icon: "eurosign.circle",
                 title: "Ausgaben",
-                value: totalExpenses.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")),
+                value: totalExpenses.formattedCurrencyOrNumber,
                 color: .navyDark
             )
             
@@ -151,7 +151,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
     }
     
     // MARK: - Expenses by Category Chart
@@ -189,7 +189,7 @@ struct StatsView: View {
                             Text(item.category.displayName)
                                 .font(.caption)
                             Spacer()
-                            Text(item.total.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR")))
+                            Text(item.total.formattedCurrencyOrNumber)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -199,7 +199,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
     }
     
     // MARK: - Top Shipping Lines
@@ -223,7 +223,7 @@ struct StatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 22))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
     }
     
     // MARK: - Computed Stats
@@ -233,7 +233,7 @@ struct StatsView: View {
     }
     
     private var uniquePorts: Int {
-        Set(cruises.flatMap { $0.route.map { $0.name } }).count
+        Set(cruises.flatMap { $0.route.filter { !$0.isSeaDay }.map { $0.name } }).count
     }
     
     private var uniqueCountries: Int {
@@ -293,7 +293,7 @@ struct StatCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .background(Color(.secondarySystemBackground).opacity(0.78))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md))
     }
 }
 

@@ -112,6 +112,44 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Decoding (Lade-/Fehler-Platzhalter) sowie eine Zoom-Vollbildansicht
   (`PhotoZoomView`) mit Full-Res-Nachladen.
   ([Feature-Doku](docs/features/ux-fixes-a2.md))
+- **Einheitliche Corner-Radien (`DesignRadius`)**: Drei Radius-Stufen (sm 10 /
+  md 16 / lg 28) ersetzen verstreute Magic Numbers ueber zehn View-Dateien;
+  vormals 22er/24er-Radien wandern bewusst auf `lg = 28`. Ungenutztes
+  `cardStyle()`-Modifier entfernt.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **Einheitliche Haefen-Zaehlung**: `CruiseDetailView` und `StatsView` zaehlen
+  Haefen jetzt konsistent ohne Seetage.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **Schnellere Hafen-Suche**: `PortSuggestion` nutzt einen vorberechneten
+  Suchindex statt bis zu vier Linearscans pro Tastenanschlag; Trefferprioritaet
+  unveraendert.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **`IdBackfill` laeuft nur noch einmal**: Ein UserDefaults-Flag
+  (`idBackfillCompleted.v1`) verhindert den bisher bei jedem App-Start
+  wiederholten Reparaturlauf; das Flag wird nur bei vollstaendigem Erfolg auf
+  dem echten persistenten Store gesetzt.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **Export-Temp-Dateien mit UUID-Namen**: Werden nach Abschluss des
+  Share-Vorgangs zuverlaessig geloescht, auch bei Abbruch.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **Strukturiertes Logging statt `print`**: `NotificationService` nutzt jetzt
+  `os.Logger`; Nutzerinhalte sind als `.private` markiert.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **Typisierte Feedback-Zustaende statt String-Sniffing**: `CruiseFormView`
+  und `SettingsView` nutzen ein `FeedbackStatus`-Enum mit
+  VoiceOver-Announcement statt `contains("✓")`-Textpruefung.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **`PortEditIndex` statt `Int: @retroactive Identifiable`**: Dedizierter
+  Wrapper ersetzt die app-weite Retroactive-Konformitaet in `CruiseFormView`.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **ZIP-Stack extrahiert**: `CRC32`, `ZipArchiveWriter` und `ZipArchiveReader`
+  liegen jetzt in eigenen Dateien; `ExportImportService` deutlich verkleinert
+  (reine Extraktion, keine Verhaltensaenderung).
+  ([Feature-Doku](docs/features/code-politur-a3.md))
+- **EUR-Fallback vollstaendig entfernt**: Die letzten sechs Anzeige-Stellen
+  nutzen jetzt `Double.formattedCurrencyOrNumber` (Geraete-Locale) statt
+  `?? "EUR"`.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
 
 ### Entfernt
 
@@ -120,6 +158,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Helfer `RatingBadge` wurde zuvor in eine eigene Datei
   `ShipTrip/Views/Cruises/RatingBadge.swift` ausgelagert, die weiterhin von
   `CruiseHeroCardView` verwendet wird.
+- **Toter Code (Welle A3)**: `EmptyStateView.swift` geloescht, eine
+  referenzlose `CruiseTimelineRowView`-Struct-Leiche entfernt sowie
+  `Expense.colorName` und `Color.expenseColor` (beide ungenutzt) geloescht.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
 
 ### Behoben
 
@@ -162,6 +204,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   auf 550 MB gedeckelt. Datei-interne Cruise-ID-Duplikate werden erkannt und
   uebersprungen statt dupliziert importiert.
   ([Feature-Doku](docs/features/datenintegritaet-a1.md))
+- **Gemini-API-Key nicht mehr in der Request-URL**: Der Key wird jetzt als
+  `x-goog-api-key`-Header gesetzt (30s-Request-Timeout). Keychain-Items nutzen
+  `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` und wandern damit nicht mehr
+  in iCloud-/Geraete-Backups.
+  ([Feature-Doku](docs/features/code-politur-a3.md))
 
 ---
 

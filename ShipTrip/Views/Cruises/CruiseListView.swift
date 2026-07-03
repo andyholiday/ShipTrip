@@ -134,7 +134,7 @@ struct CruiseListView: View {
                         CruiseHeroCardView(cruise: hero)
                     }
                     .buttonStyle(.plain)
-                    .contentShape(RoundedRectangle(cornerRadius: 30))
+                    .contentShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
                     .contextMenu {
                         Button(role: .destructive) {
                             deleteCruise(hero)
@@ -213,7 +213,7 @@ struct CruiseListView: View {
                         CruiseHeroCardView(cruise: cruise)
                     }
                     .buttonStyle(.plain)
-                    .contentShape(RoundedRectangle(cornerRadius: 30))
+                    .contentShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
                     .contextMenu {
                         Button(role: .destructive) {
                             deleteCruise(cruise)

@@ -80,25 +80,25 @@
   async Decoding + Platzhalter-State. `CruiseDetailView`.
 
 ### Welle A3 · Code-Politur (Findings: Key-in-URL [L-M], kSecAttrAccessible [L-M], print-PII [L], Status-Sniffing [L], Häfen-Zählung [L], Radius-Wildwuchs [M], PortSuggestion-Scans [L], Export-Temp [L], IdBackfill-Flag [L], Int:Identifiable [L], toter Code [M/L], God-File [M])
-- [ ] **A3.1** Gemini-Key als `x-goog-api-key`-Header; Keychain-Save mit
+- [x] **A3.1** ✅ 2026-07-03 (Header+Timeout+ThisDeviceOnly) — Gemini-Key als `x-goog-api-key`-Header; Keychain-Save mit
   `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`; Request-Timeout setzen.
-- [ ] **A3.2** `print` → `os.Logger` (NotificationService, EmptyStateView);
+- [x] **A3.2** ✅ 2026-07-03 (os.Logger, alles .private) — `print` → `os.Logger` (NotificationService, EmptyStateView);
   Nutzerinhalte mit `.private`.
-- [ ] **A3.3** Status-Enum (`.success/.failure`) statt `contains("✓")` in
+- [x] **A3.3** ✅ 2026-07-03 (FeedbackStatus+Announcements) — Status-Enum (`.success/.failure`) statt `contains("✓")` in
   CruiseFormView/SettingsView/DataManagement + A11y-Announcement.
-- [ ] **A3.4** Häfen-Zählung vereinheitlichen (ohne Seetage, oder Label „Stopps").
-- [ ] **A3.5** Radius-Token (sm 10 / md 16 / lg 28) in `Color+Theme`/eigenem
+- [x] **A3.4** ✅ 2026-07-03 (ohne Seetage vereinheitlicht) — Häfen-Zählung vereinheitlichen (ohne Seetage, oder Label „Stopps").
+- [x] **A3.5** ✅ 2026-07-03 (DesignRadius sm/md/lg, cardStyle weg) — Radius-Token (sm 10 / md 16 / lg 28) in `Color+Theme`/eigenem
   DesignToken-File; `cardStyle()` konsequent nutzen oder entfernen.
-- [ ] **A3.6** PortSuggestion: normalisierten Suchindex einmalig vorberechnen.
-- [ ] **A3.7** Export-Temp: eindeutiger Dateiname + Löschen nach Share-Abschluss.
-- [ ] **A3.8** IdBackfill: UserDefaults-Flag nach Erfolg, Läufe überspringen.
-- [ ] **A3.9** `Int: @retroactive Identifiable` → Wrapper-Typ.
-- [ ] **A3.10** Toten Code auflösen: EmptyStateView (nutzen oder löschen),
+- [x] **A3.6** ✅ 2026-07-03 (statischer Suchindex) — PortSuggestion: normalisierten Suchindex einmalig vorberechnen.
+- [x] **A3.7** ✅ 2026-07-03 (UUID-Namen+Share-Cleanup) — Export-Temp: eindeutiger Dateiname + Löschen nach Share-Abschluss.
+- [x] **A3.8** ✅ 2026-07-03 (Flag v1, Gating-Funktion+Tests) — IdBackfill: UserDefaults-Flag nach Erfolg, Läufe überspringen.
+- [x] **A3.9** ✅ 2026-07-03 (PortEditIndex) — `Int: @retroactive Identifiable` → Wrapper-Typ.
+- [x] **A3.10** ✅ 2026-07-03 (EmptyStateView+TimelineRow-Struct+Farb-Duplikat weg) — Toten Code auflösen: EmptyStateView (nutzen oder löschen),
   Expense-Farb-Duplikat, TimelineRow gemäß 0.3-Entscheidung.
-- [ ] **A3.11a** EUR-Fallback-Muster (`?? "EUR"`) an 6 Anzeige-Stellen
+- [x] **A3.11a** ✅ 2026-07-03 (formattedCurrencyOrNumber, 0 EUR-Reste) — EUR-Fallback-Muster (`?? "EUR"`) an 6 Anzeige-Stellen
   (Expense.swift:102, Deal.swift:90/95, StatsView:115/192, CruiseDetailView:213/345)
   auf locale-neutrales Format angleichen — Befund aus A2.6-Review.
-- [ ] **A3.11** ZIP-Stack extrahieren: `ZipArchiveWriter.swift`/`ZipArchiveReader.swift`/
+- [x] **A3.11** ✅ 2026-07-03 (CRC32/Writer/Reader extrahiert) — ZIP-Stack extrahieren: `ZipArchiveWriter.swift`/`ZipArchiveReader.swift`/
   `CRC32.swift` — reine Verschiebung, Tests bleiben grün.
 
 ### Welle A4 · Fundament & Wahrheit (Findings: Swift-5-Drift [H], Non-Sendable [M], Doku-Drift [M], README/SETUP stale [L], Test-Lücken)

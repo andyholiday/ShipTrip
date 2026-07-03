@@ -171,7 +171,7 @@ struct CruiseGeoFallbackView: View {
 
     return CruiseGeoFallbackView(ports: [barcelona, marseille, genua, civitavecchia])
         .frame(width: 360, height: 190)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md))
 }
 
 #Preview("Keine Koordinaten") {
@@ -180,5 +180,5 @@ struct CruiseGeoFallbackView: View {
 
     return CruiseGeoFallbackView(ports: [seaDay])
         .frame(width: 360, height: 190)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md))
 }

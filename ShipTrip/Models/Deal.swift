@@ -22,7 +22,7 @@ final class Deal {
     /// Reederei (optional)
     var shippingLine: String?
     
-    /// Aktueller Preis in EUR
+    /// Aktueller Preis
     var price: Double?
     
     /// Originalpreis vor Rabatt
@@ -75,7 +75,7 @@ final class Deal {
         return Int(((original - current) / original) * 100)
     }
     
-    /// Ersparnis in EUR
+    /// Ersparnis
     var savings: Double? {
         guard let original = originalPrice,
               let current = price,
@@ -87,12 +87,12 @@ final class Deal {
     
     /// Formatierter Preis
     var formattedPrice: String? {
-        price?.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
+        price?.formattedCurrencyOrNumber
     }
 
     /// Formatierter Originalpreis
     var formattedOriginalPrice: String? {
-        originalPrice?.formatted(.currency(code: Locale.current.currency?.identifier ?? "EUR"))
+        originalPrice?.formattedCurrencyOrNumber
     }
     
     /// Dauer in Tagen (falls Start- und Enddatum vorhanden)

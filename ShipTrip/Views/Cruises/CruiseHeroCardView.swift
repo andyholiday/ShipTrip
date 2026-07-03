@@ -27,7 +27,7 @@ struct CruiseHeroCardView: View {
     var body: some View {
         heroContent
             .frame(height: heroHeight)
-            .clipShape(RoundedRectangle(cornerRadius: 30))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
             .shadow(color: Color.navyDark.opacity(0.22), radius: 17, y: 10)
     }
 

@@ -7,6 +7,9 @@
 
 import Foundation
 import UserNotifications
+import OSLog
+
+private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "notifications")
 
 /// Service für lokale Push-Benachrichtigungen
 class NotificationService {
@@ -24,7 +27,7 @@ class NotificationService {
                 .requestAuthorization(options: [.alert, .badge, .sound])
             return granted
         } catch {
-            print("Notification authorization error: \(error)")
+            logger.error("Notification authorization error: \(error, privacy: .private)")
             return false
         }
     }
@@ -93,9 +96,9 @@ class NotificationService {
 
         do {
             try await UNUserNotificationCenter.current().add(request)
-            print("Scheduled reminder for \(title) on \(date)")
+            logger.info("Scheduled reminder for \(title, privacy: .private) on \(date, privacy: .private)")
         } catch {
-            print("Failed to schedule notification: \(error)")
+            logger.error("Failed to schedule notification: \(error, privacy: .private)")
         }
     }
 
@@ -130,7 +133,7 @@ class NotificationService {
         do {
             try await UNUserNotificationCenter.current().add(request)
         } catch {
-            print("Failed to schedule departure notification: \(error)")
+            logger.error("Failed to schedule departure notification: \(error, privacy: .private)")
         }
     }
 

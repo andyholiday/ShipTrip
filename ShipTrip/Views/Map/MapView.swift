@@ -187,7 +187,7 @@ struct MapView: View {
         }
         .padding(16)
         .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
         .shadow(color: .black.opacity(0.16), radius: 18, y: 10)
         .padding(.horizontal, 16)
         .padding(.bottom, 92)

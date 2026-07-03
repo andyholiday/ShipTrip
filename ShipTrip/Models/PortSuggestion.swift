@@ -22,6 +22,27 @@ struct PortSuggestion: Identifiable, Hashable {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
     
+    /// Vorberechneter Suchindex: normalisierte Namensvarianten pro Hafen, einmalig beim ersten
+    /// Zugriff gebaut, damit `findBestMatch`/`search` nicht bei jedem Tastenanschlag alle
+    /// ~1.800 Einträge erneut normalisieren (Akzentfaltung + Kleinschreibung sind teuer).
+    private struct SearchIndexEntry {
+        let suggestion: PortSuggestion
+        /// Akzent-gefalteter, kleingeschriebener Name – für `findBestMatch` (diakritik-insensitiv).
+        let normName: String
+        /// Einfach kleingeschriebener Name/Land – für `search` (reine Substring-Suche wie bisher).
+        let lowerName: String
+        let lowerCountry: String
+    }
+
+    private static let searchIndex: [SearchIndexEntry] = popular.map { suggestion in
+        SearchIndexEntry(
+            suggestion: suggestion,
+            normName: suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased(),
+            lowerName: suggestion.name.lowercased(),
+            lowerCountry: suggestion.country.lowercased()
+        )
+    }
+
     /// Findet den besten passenden Hafen aus der Datenbank
     /// Priorität: 1) Vollständiger Match inkl. Klammer, 2) Exakter Name, 3) Fuzzy-Match mit Hint/Land-Präferenz
     static func findBestMatch(name: String, country: String? = nil) -> PortSuggestion? {
@@ -47,106 +68,92 @@ struct PortSuggestion: Identifiable, Hashable {
         let normalizedHint = parentheticalHint?.folding(options: .diacriticInsensitive, locale: .current).lowercased()
         
         // 0. Vollständiger Match inkl. Klammer (höchste Priorität)
-        let fullMatches = popular.filter { suggestion in
-            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-            return normalizedSuggestion == normalizedSearch
-        }
+        let fullMatches = searchIndex.filter { $0.normName == normalizedSearch }
         if let match = fullMatches.first {
-            return match
+            return match.suggestion
         }
-        
+
         // 1. Exakter Hauptname-Match mit Hint-Prüfung
-        let exactMainMatches = popular.filter { suggestion in
-            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-            return normalizedSuggestion == normalizedMainName ||
-                   normalizedSuggestion.hasPrefix(normalizedMainName + " ") ||
-                   normalizedSuggestion.hasSuffix(" " + normalizedMainName)
+        let exactMainMatches = searchIndex.filter { entry in
+            entry.normName == normalizedMainName ||
+                   entry.normName.hasPrefix(normalizedMainName + " ") ||
+                   entry.normName.hasSuffix(" " + normalizedMainName)
         }
-        
+
         if !exactMainMatches.isEmpty {
             // Wenn Hint vorhanden, bevorzuge Matches die den Hint enthalten
             if let hint = normalizedHint, !hint.isEmpty {
-                let hintMatches = exactMainMatches.filter { suggestion in
-                    let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-                    return normalizedSuggestion.contains(hint)
-                }
+                let hintMatches = exactMainMatches.filter { $0.normName.contains(hint) }
                 if let match = hintMatches.first {
-                    return match
+                    return match.suggestion
                 }
             }
-            
+
             // Wenn Land angegeben, bevorzuge Match mit passendem Land
             if let country = country, !country.isEmpty {
                 if let matchWithCountry = exactMainMatches.first(where: {
-                    $0.country.localizedCaseInsensitiveContains(country) ||
-                    country.localizedCaseInsensitiveContains($0.country)
+                    $0.suggestion.country.localizedCaseInsensitiveContains(country) ||
+                    country.localizedCaseInsensitiveContains($0.suggestion.country)
                 }) {
-                    return matchWithCountry
+                    return matchWithCountry.suggestion
                 }
             }
-            return exactMainMatches.first
+            return exactMainMatches.first?.suggestion
         }
-        
+
         // 2. Enthält den Suchbegriff als Wort (z.B. "Hamburg" findet "Hamburger Hafen")
-        let containsMatches = popular.filter { suggestion in
-            let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-            return normalizedSuggestion.contains(normalizedMainName) ||
-                   normalizedMainName.contains(normalizedSuggestion)
+        let containsMatches = searchIndex.filter { entry in
+            entry.normName.contains(normalizedMainName) ||
+                   normalizedMainName.contains(entry.normName)
         }
-        
+
         if !containsMatches.isEmpty {
             // Wenn Hint vorhanden, bevorzuge Matches die den Hint enthalten
             if let hint = normalizedHint, !hint.isEmpty {
-                let hintMatches = containsMatches.filter { suggestion in
-                    let normalizedSuggestion = suggestion.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-                    return normalizedSuggestion.contains(hint)
-                }
+                let hintMatches = containsMatches.filter { $0.normName.contains(hint) }
                 if !hintMatches.isEmpty {
                     return bestMatch(from: hintMatches, for: normalizedMainName)
                 }
             }
-            
+
             // Wenn Land angegeben, bevorzuge Matches mit passendem Land
             if let country = country, !country.isEmpty {
                 let countryMatches = containsMatches.filter {
-                    $0.country.localizedCaseInsensitiveContains(country) ||
-                    country.localizedCaseInsensitiveContains($0.country)
+                    $0.suggestion.country.localizedCaseInsensitiveContains(country) ||
+                    country.localizedCaseInsensitiveContains($0.suggestion.country)
                 }
                 if !countryMatches.isEmpty {
                     return bestMatch(from: countryMatches, for: normalizedMainName)
                 }
             }
-            
+
             // Wähle den besten Match basierend auf Namensähnlichkeit
             return bestMatch(from: containsMatches, for: normalizedMainName)
         }
-        
+
         return nil
     }
-    
+
     /// Wählt den besten Match basierend auf Namensähnlichkeit
-    private static func bestMatch(from matches: [PortSuggestion], for searchTerm: String) -> PortSuggestion? {
+    private static func bestMatch(from matches: [SearchIndexEntry], for searchTerm: String) -> PortSuggestion? {
         // Score-Funktion: Niedrigerer Score = besserer Match
         // Bevorzuge: 1) Exakte Übereinstimmung, 2) Name beginnt mit Suchbegriff, 3) Kürzere Namen
         return matches.min { a, b in
-            let aName = a.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-            let bName = b.name.folding(options: .diacriticInsensitive, locale: .current).lowercased()
-            
             // Exakte Übereinstimmung hat höchste Priorität
-            let aExact = aName == searchTerm
-            let bExact = bName == searchTerm
+            let aExact = a.normName == searchTerm
+            let bExact = b.normName == searchTerm
             if aExact != bExact { return aExact }
-            
+
             // Name beginnt mit Suchbegriff
-            let aStarts = aName.hasPrefix(searchTerm)
-            let bStarts = bName.hasPrefix(searchTerm)
+            let aStarts = a.normName.hasPrefix(searchTerm)
+            let bStarts = b.normName.hasPrefix(searchTerm)
             if aStarts != bStarts { return aStarts }
-            
+
             // Längendifferenz zum Suchbegriff (näher = besser)
-            let aDiff = abs(aName.count - searchTerm.count)
-            let bDiff = abs(bName.count - searchTerm.count)
+            let aDiff = abs(a.normName.count - searchTerm.count)
+            let bDiff = abs(b.normName.count - searchTerm.count)
             return aDiff < bDiff
-        }
+        }?.suggestion
     }
     
     /// Kreuzfahrt-Häfen weltweit (Wikidata Import - 1600+ Häfen)
@@ -2225,9 +2232,9 @@ struct PortSuggestion: Identifiable, Hashable {
     static func search(_ query: String) -> [PortSuggestion] {
         guard !query.isEmpty else { return popular }
         let lowercased = query.lowercased()
-        return popular.filter {
-            $0.name.lowercased().contains(lowercased) ||
-            $0.country.lowercased().contains(lowercased)
-        }
+        return searchIndex.filter {
+            $0.lowerName.contains(lowercased) ||
+            $0.lowerCountry.contains(lowercased)
+        }.map(\.suggestion)
     }
 }

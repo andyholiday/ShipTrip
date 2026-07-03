@@ -168,7 +168,7 @@ struct SettingsView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md))
 
             Text(String(localized: "Dein Kreuzfahrt-Archiv"))
                 .font(.title3)
@@ -187,7 +187,7 @@ struct SettingsView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
     }
     
     private var colorSchemeValue: ColorScheme? {
@@ -199,14 +199,31 @@ struct SettingsView: View {
     }
 }
 
+/// Ergebnis einer Validierung/Aktion: Status + Anzeige-Text statt String-Sniffing auf "✓".
+private enum FeedbackStatus {
+    case success(String)
+    case failure(String)
+
+    var message: String {
+        switch self {
+        case .success(let text), .failure(let text): return text
+        }
+    }
+
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
+    }
+}
+
 /// API-Key Eingabe Sheet
 struct ApiKeySheet: View {
     @Environment(\.dismiss) private var dismiss
     var onSaved: () -> Void
-    
+
     @State private var inputKey = ""
     @State private var isValidating = false
-    @State private var validationMessage = ""
+    @State private var validationStatus: FeedbackStatus?
     
     var body: some View {
         NavigationStack {
@@ -227,10 +244,10 @@ struct ApiKeySheet: View {
                     }
                 }
                 
-                if !validationMessage.isEmpty {
+                if let validationStatus {
                     Section {
-                        Text(validationMessage)
-                            .foregroundStyle(validationMessage.contains("✓") ? .green : .red)
+                        Text(validationStatus.message)
+                            .foregroundStyle(validationStatus.isSuccess ? .green : .red)
                     }
                 }
             }
@@ -253,17 +270,19 @@ struct ApiKeySheet: View {
     
     private func saveApiKey() {
         isValidating = true
-        validationMessage = ""
-        
+        validationStatus = nil
+
         GeminiService.shared.setApiKey(inputKey)
-        
+
         Task {
             do {
                 let valid = try await GeminiService.shared.validateApiKey()
                 await MainActor.run {
                     isValidating = false
                     if valid {
-                        validationMessage = "✓ API-Key gültig"
+                        let message = "✓ API-Key gültig"
+                        validationStatus = .success(message)
+                        AccessibilityNotification.Announcement(message).post()
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                             onSaved()
                             dismiss()
@@ -273,7 +292,9 @@ struct ApiKeySheet: View {
             } catch {
                 await MainActor.run {
                     isValidating = false
-                    validationMessage = "✗ \(error.localizedDescription)"
+                    let message = "✗ \(error.localizedDescription)"
+                    validationStatus = .failure(message)
+                    AccessibilityNotification.Announcement(message).post()
                     GeminiService.shared.clearApiKey()
                 }
             }
@@ -464,7 +485,12 @@ struct DataManagementView: View {
         }
         .sheet(isPresented: $showingExportSheet) {
             if let url = exportURL {
-                ShareSheet(items: [url])
+                ShareSheet(items: [url]) {
+                    // Temp-Export-Datei erst löschen, wenn die Activity-View-Controller-Präsentation
+                    // abgeschlossen ist (auch bei Abbruch) — nicht vorzeitig bei Sheet-Disappear.
+                    try? FileManager.default.removeItem(at: url)
+                    exportURL = nil
+                }
             }
         }
         .fileImporter(
@@ -588,14 +614,20 @@ struct DataManagementView: View {
     }
 }
 
-/// Share Sheet für Export
+/// Share Sheet für Export. `onComplete` feuert erst, wenn die Activity-View-Controller-
+/// Präsentation abgeschlossen ist (auch bei Abbruch) — nicht beim Sheet-Disappear.
 struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
-    
+    let onComplete: () -> Void
+
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            onComplete()
+        }
+        return controller
     }
-    
+
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 

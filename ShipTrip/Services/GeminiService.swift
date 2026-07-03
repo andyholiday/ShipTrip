@@ -124,13 +124,14 @@ class GeminiService {
     // MARK: - Private
     
     private func generateContent(prompt: String, apiKey: String) async throws -> String {
-        guard let url = URL(string: "\(baseURL)?key=\(apiKey)") else {
+        guard let url = URL(string: baseURL) else {
             throw GeminiError.invalidURL
         }
-        
-        var request = URLRequest(url: url)
+
+        var request = URLRequest(url: url, timeoutInterval: 30)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
         
         let body: [String: Any] = [
             "contents": [

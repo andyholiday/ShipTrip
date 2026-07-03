@@ -40,19 +40,6 @@ extension Color {
     /// Endhafen-Pin: seaGreen (kontrastiert gut im Dark Mode gegen Ozean-Verlauf)
     static let endPortPin = Color.seaGreen
     
-    // MARK: - Expense Category Colors
-    
-    static func expenseColor(for category: ExpenseCategory) -> Color {
-        switch category {
-        case .cruise: return .blue
-        case .flight: return .orange
-        case .hotel: return .purple
-        case .excursion: return .green
-        case .onboard: return .pink
-        case .other: return .gray
-        }
-    }
-    
     // MARK: - Route Colors
     
     static let routeColors: [Color] = [
@@ -71,17 +58,18 @@ extension Color {
     }
 }
 
+// MARK: - Design Radius Tokens
+
+/// Einheitliche Corner-Radien fuer Karten/Panels quer durch die App.
+enum DesignRadius {
+    static let sm: CGFloat = 10
+    static let md: CGFloat = 16
+    static let lg: CGFloat = 28
+}
+
 // MARK: - View Modifiers
 
 extension View {
-    /// Card-Style mit Schatten
-    func cardStyle() -> some View {
-        self
-            .background(Color(UIColor.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
-    }
-    
     /// iOS-Style Button
     func primaryButtonStyle() -> some View {
         self
@@ -90,6 +78,6 @@ extension View {
             .frame(maxWidth: .infinity)
             .padding()
             .background(Color.accentColor)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
     }
 }

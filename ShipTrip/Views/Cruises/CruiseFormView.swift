@@ -130,7 +130,7 @@ struct CruiseFormView: View {
     // Ports
     @State private var tempPorts: [TempPort] = []
     @State private var showingAddPortSheet = false
-    @State private var editingPortIndex: Int?
+    @State private var editingPortIndex: PortEditIndex?
     
     // Photos
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -141,7 +141,7 @@ struct CruiseFormView: View {
     @State private var showingAISheet = false
     @State private var aiImportText = ""
     @State private var isProcessingAI = false
-    @State private var aiError: String?
+    @State private var aiFeedback: FeedbackStatus?
     
     // Validation
     @State private var showingValidationAlert = false
@@ -263,7 +263,7 @@ struct CruiseFormView: View {
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            editingPortIndex = index
+                            editingPortIndex = PortEditIndex(id: index)
                         }
                     }
                     .onDelete { indexSet in
@@ -362,15 +362,15 @@ struct CruiseFormView: View {
                 AIImportSheet(
                     text: $aiImportText,
                     isProcessing: $isProcessingAI,
-                    error: $aiError,
+                    feedback: $aiFeedback,
                     onImport: processAIImport
                 )
             }
             .sheet(isPresented: $showingAddPortSheet) {
                 TempPortFormSheet(ports: $tempPorts, editingIndex: nil)
             }
-            .sheet(item: $editingPortIndex) { index in
-                TempPortFormSheet(ports: $tempPorts, editingIndex: index)
+            .sheet(item: $editingPortIndex) { editIndex in
+                TempPortFormSheet(ports: $tempPorts, editingIndex: editIndex.id)
             }
             .sheet(isPresented: $showingReminderPermissionSheet) {
                 ReminderPermissionSheet(
@@ -403,7 +403,7 @@ struct CruiseFormView: View {
             .resizable()
             .aspectRatio(contentMode: .fill)
             .frame(width: 80, height: 80)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
             .overlay(alignment: .topTrailing) {
                 Button {
                     onDelete()
@@ -485,7 +485,7 @@ struct CruiseFormView: View {
         guard !aiImportText.isEmpty else { return }
         
         isProcessingAI = true
-        aiError = nil
+        aiFeedback = nil
         
         Task {
             do {
@@ -620,20 +620,26 @@ struct CruiseFormView: View {
                     
                     // Show success message
                     if filledCount > 0 {
-                        aiError = "✓ \(filledCount) " + String(localized: "Felder/Häfen ausgefüllt!")
+                        let message = "✓ \(filledCount) " + String(localized: "Felder/Häfen ausgefüllt!")
+                        aiFeedback = .success(message)
+                        AccessibilityNotification.Announcement(message).post()
                     } else {
-                        aiError = String(localized: "Keine Daten gefunden.")
+                        let message = String(localized: "Keine Daten gefunden.")
+                        aiFeedback = .failure(message)
+                        AccessibilityNotification.Announcement(message).post()
                     }
-                    
+
                     isProcessingAI = false
-                    
+
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         showingAISheet = false
                     }
                 }
             } catch {
                 await MainActor.run {
-                    aiError = error.localizedDescription
+                    let message = error.localizedDescription
+                    aiFeedback = .failure(message)
+                    AccessibilityNotification.Announcement(message).post()
                     isProcessingAI = false
                 }
             }
@@ -1004,18 +1010,35 @@ struct TempPortFormSheet: View {
     }
 }
 
-// Make Int conform to Identifiable for sheet(item:)
-extension Int: @retroactive Identifiable {
-    public var id: Int { self }
+// Wrapper, damit sheet(item:) einen Häfen-Index adressieren kann
+private struct PortEditIndex: Identifiable {
+    let id: Int
 }
 
 // MARK: - AI Import Sheet
+
+/// Ergebnis einer Validierung/Aktion: Status + Anzeige-Text statt String-Sniffing auf "✓".
+private enum FeedbackStatus {
+    case success(String)
+    case failure(String)
+
+    var message: String {
+        switch self {
+        case .success(let text), .failure(let text): return text
+        }
+    }
+
+    var isSuccess: Bool {
+        if case .success = self { return true }
+        return false
+    }
+}
 
 struct AIImportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var text: String
     @Binding var isProcessing: Bool
-    @Binding var error: String?
+    @Binding fileprivate var feedback: FeedbackStatus?
     var onImport: () -> Void
     
     var body: some View {
@@ -1029,7 +1052,7 @@ struct AIImportSheet: View {
                 TextEditor(text: $text)
                     .frame(minHeight: 200)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: DesignRadius.sm)
                             .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                     )
                 
@@ -1042,14 +1065,14 @@ struct AIImportSheet: View {
                     .padding()
                 }
                 
-                if let error = error {
-                    Text(error)
-                        .foregroundStyle(error.contains("✓") ? .green : .red)
+                if let feedback {
+                    Text(feedback.message)
+                        .foregroundStyle(feedback.isSuccess ? .green : .red)
                         .font(.callout)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(error.contains("✓") ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .background(feedback.isSuccess ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
                 }
                 
                 Spacer()

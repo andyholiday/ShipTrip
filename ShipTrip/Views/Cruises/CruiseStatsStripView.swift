@@ -71,9 +71,9 @@ private struct StatCell: View {
         .frame(minHeight: cellHeight)
         .frame(maxWidth: .infinity)
         .background(color.opacity(0.08))
-        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.md))
         .overlay {
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: DesignRadius.md)
                 .strokeBorder(Color(UIColor.separator).opacity(0.16), lineWidth: 0.5)
         }
     }
