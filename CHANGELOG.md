@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.6.1] - 2026-07-03
+
 ### Hinzugefuegt
 
 - **Hafenbild- und Ausflüge-Erfassung**: `PortFormView` und `TempPortFormSheet`
