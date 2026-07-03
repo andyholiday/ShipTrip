@@ -117,6 +117,24 @@
   Import-Härtungs-Tests aus A1.3.
 - [x] **A4.4 Release:** ✅ 2026-07-03 (`d4d0492`, Build 12 zu TestFlight hochgeladen, Andres Go lag vor) — Version 1.6.0, CHANGELOG, TestFlight via Fastlane.
 
+### Welle A5 · Feedback-Fixes (TestFlight 1.6.0/12) (Feedback: Hafenbild/Ausflüge-Erfassung fehlt [M], Südhalbkugel-Häfen + AIDAstella-Sichtbarkeit [L], kein Auto-Datum neuer Hafen [L] — Quelle: interner Tester 2026-07-03, deckungsgleich mit App-Store-Reviews ★3 28.05. und ★2 14.05.)
+- [x] **A5.1** ✅ 2026-07-03 (PhotosPicker + Ausflüge-Editor in `PortFormView` UND
+  `TempPortFormSheet`; Thumbnail + Ausflugsliste in `CruiseDetailView`; SwiftData-Roundtrip
+  getestet) — Erfassungs-UI + Anzeige für Hafenbild & Ausflüge: `Port.imageData`/`excursionsRaw`
+  waren datenschicht-komplett, aber ohne Erfassungs-UI und Anzeige.
+  ([Feature-Doku](features/feedback-fixes-a5.md#a51--erfassungs-ui--anzeige-für-hafenbild--ausflüge))
+- [x] **A5.2** ✅ 2026-07-03 (23 neue Südhalbkugel-/Südatlantik-Häfen in `PortSuggestion.swift`;
+  `ShippingLine.findByShipName` jetzt whitespace-tolerant — AIDAstella war immer in den Daten,
+  Ursache war ein Matching-Problem der KI-Erfassung) — Referenzdaten: Südhalbkugel-Häfen
+  ergänzen, AIDAstella-Sichtbarkeit geklärt.
+  ([Feature-Doku](features/feedback-fixes-a5.md#a52--referenzdaten-südhalbkugel-häfen--aidastella-zuordnung))
+- [x] **A5.3** ✅ 2026-07-03 (`defaultArrivalDateForNewPort`/`defaultArrivalDate(afterLastOf:)`,
+  Folgetag des letzten Stopps nach `sortOrder`, leere Route → Reise-Startdatum) — Auto-Datum bei
+  neuem Hafen.
+  ([Feature-Doku](features/feedback-fixes-a5.md#a53--auto-datum-bei-neuem-hafen))
+- [ ] **A5.4 Release:** TestFlight 1.6.1 (Build 13) mit Test-Hinweisen + externer Testerin
+  (Vorab-Go von Andre 2026-07-03: Release nach verifizierter Welle ohne erneuten Stopp).
+
 ## Phase B — Richtung 2 „Echtes Reisetagebuch" (3–5 Wochen) → TestFlight 1.7.0
 
 ### Welle B1 · Erststart & Aktivierung (Findings: kein Onboarding [H], Offline-USP unbeworben [M])
@@ -144,6 +162,22 @@
 - [ ] **B3.2** PDF-Reise-Rückblick (mehrseitig: Tage + Fotos + Karte) — wird in
   C2 Premium-Feature.
 - [ ] **B3.3 Release 1.7.0** + Feature-MDs + CHANGELOG.
+
+### Welle B4 · Karten-Überarbeitung (Feedback: Route-Stops nicht erkennbar [M], Hafennamen fehlen teils [M], Start-/Endhafen nicht unterscheidbar [M] — Quelle: TestFlight-Feedback 2026-07-03; Design-Welle, Benchmark vor Umsetzung)
+- [ ] **B4.1** Design-Benchmark: State-of-the-Art-Recherche vergleichbarer Reise-/Tracking-Apps
+  (Kartendarstellung, Routen-Visualisierung) — `design-benchmark`-Skill.
+- [ ] **B4.2** Designer-Mockups: Route-Stops klar erkennbar, Hafennamen durchgängig sichtbar,
+  Start-/Endhafen visuell unterscheidbar (auch bei identischem Start=Ende).
+- [ ] **B4.3** Umsetzung nach Mockup-Freigabe (Andre) — `MapView`, ggf.
+  Routendarstellung in `CruiseDetailView`.
+
+### Welle B5 · Eigene Reedereien & Schiffe verwalten (Feedback: Custom-Reederei/Schiff fehlt [M], Referenz-Vorschläge nicht ausblendbar [M] — Quelle: TestFlight-Feedback 2026-07-03 + App-Store-Review ★3 28.05.) — **ADR-006 + Gate #4**
+- [ ] **B5.1** Datenmodell-Entscheidung: Custom-Reedereien/Schiffe neben Referenzdaten
+  (`ShippingLine`) — Speicherort, Verhalten bei Referenz-Updates, CloudKit-Konformität. → ADR-006.
+- [ ] **B5.2** Einstellungen-UI: eigene Reederei/eigenes Schiff anlegen; einzelne
+  Referenz-Vorschläge ausblenden.
+- [ ] **B5.3** Tests: Custom-Einträge in Auswahl-Listen, Ausblenden persistiert, kein Konflikt
+  mit Referenzdaten-Updates.
 
 ## Phase C — Richtung 3a „Companion & Abo" (3–4 Wochen) → TestFlight 2.0.0
 
@@ -177,6 +211,7 @@
 - [ ] **D1.3** Kosten-Monitoring + Kill-Switch; PRIVACY_POLICY aktualisieren.
 
 ### Welle D2 · iCloud/CloudKit als Premium (abh.: A1 ID-Stabilität, A4 Swift 6)
+> Prioritäts-Bestätigung: TestFlight-Feedback vom 2026-07-03 fordert Cloud-Sync explizit.
 - [ ] **D2.1** ⚠️ **iOS Hard-Pause:** Andre setzt Capability in Xcode
   (iCloud-Container `iCloud.com.andre.ShipTrip`, Background Modes, Push) — dann weiter.
 - [ ] **D2.2** `cloudKitDatabase` aktivieren; Migrations-/Sync-Smoke-Test auf

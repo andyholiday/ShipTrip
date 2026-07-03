@@ -23,6 +23,23 @@ struct TempPort: Identifiable {
     var isSeaDay: Bool = false
     var excursionsRaw: String = ""
     var imageData: Data? = nil
+
+    /// Ausflüge als Array – Format identisch zu `Port.excursions` (kommasepariert), damit
+    /// `reconcileRoute` `excursionsRaw` unverändert durchreichen kann.
+    var excursions: [String] {
+        get { excursionsRaw.isEmpty ? [] : excursionsRaw.components(separatedBy: ", ") }
+        set { excursionsRaw = newValue.joined(separator: ", ") }
+    }
+}
+
+/// Ermittelt das Standard-Ankunftsdatum für einen neuen Hafen im Routen-Formular: der Tag
+/// nach dem letzten Eintrag der aktuellen (bereits in Anzeigereihenfolge vorliegenden)
+/// Routenliste, sonst das Startdatum der Kreuzfahrt. Analog zu `addSeaDay()`.
+func defaultArrivalDate(afterLastOf ports: [TempPort], fallback: Date, calendar: Calendar = .current) -> Date {
+    guard let lastArrival = ports.last?.arrival else {
+        return fallback
+    }
+    return calendar.date(byAdding: .day, value: 1, to: lastArrival) ?? lastArrival
 }
 
 /// Gleicht die bearbeitete Route (`tempPorts`) mit den bestehenden `Port`-Objekten einer
@@ -367,10 +384,10 @@ struct CruiseFormView: View {
                 )
             }
             .sheet(isPresented: $showingAddPortSheet) {
-                TempPortFormSheet(ports: $tempPorts, editingIndex: nil)
+                TempPortFormSheet(ports: $tempPorts, editingIndex: nil, cruiseStartDate: startDate)
             }
             .sheet(item: $editingPortIndex) { editIndex in
-                TempPortFormSheet(ports: $tempPorts, editingIndex: editIndex.id)
+                TempPortFormSheet(ports: $tempPorts, editingIndex: editIndex.id, cruiseStartDate: startDate)
             }
             .sheet(isPresented: $showingReminderPermissionSheet) {
                 ReminderPermissionSheet(
@@ -887,17 +904,27 @@ struct TempPortFormSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var ports: [TempPort]
     let editingIndex: Int?
-    
+    /// Startdatum der Kreuzfahrt – Fallback für das Auto-Datum, wenn noch kein Hafen existiert.
+    let cruiseStartDate: Date
+
     @State private var name = ""
     @State private var country = ""
     @State private var arrivalDate = Date()
     @State private var departureDate = Date()
     @State private var searchText = ""
 
-    /// Der bearbeitete Hafen im Original-Zustand, um beim Speichern `id`, `excursionsRaw`,
-    /// `imageData` und `isSeaDay` zu erhalten (siehe reconcileRoute-Kontext).
+    // Hafenbild
+    @State private var imageData: Data?
+    @State private var selectedPhotoItem: PhotosPickerItem?
+
+    // Ausflüge
+    @State private var excursions: [String] = []
+    @State private var newExcursionText = ""
+
+    /// Der bearbeitete Hafen im Original-Zustand, um beim Speichern `id` und `isSeaDay`
+    /// zu erhalten (siehe reconcileRoute-Kontext).
     @State private var originalPort: TempPort?
-    
+
     private var isEditing: Bool { editingIndex != nil }
     
     private var filteredSuggestions: [PortSuggestion] {
@@ -945,6 +972,53 @@ struct TempPortFormSheet: View {
                     DatePicker("Ankunft", selection: $arrivalDate)
                     DatePicker("Abfahrt", selection: $departureDate)
                 }
+
+                // Hafenbild
+                Section(String(localized: "Hafenbild")) {
+                    if let imageData, let uiImage = UIImage(data: imageData) {
+                        HStack {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 72, height: 72)
+                                .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
+                            Spacer()
+                            Button(role: .destructive) {
+                                self.imageData = nil
+                                selectedPhotoItem = nil
+                            } label: {
+                                Label(String(localized: "Entfernen"), systemImage: "trash")
+                            }
+                        }
+                    }
+
+                    PhotosPicker(selection: $selectedPhotoItem, matching: .images) {
+                        Label(
+                            imageData == nil ? String(localized: "Bild auswählen") : String(localized: "Bild ersetzen"),
+                            systemImage: "photo.on.rectangle.angled"
+                        )
+                    }
+                }
+
+                // Ausflüge
+                Section(String(localized: "Ausflüge")) {
+                    ForEach(Array(excursions.enumerated()), id: \.offset) { _, excursion in
+                        Text(excursion)
+                    }
+                    .onDelete { excursions.remove(atOffsets: $0) }
+
+                    HStack {
+                        TextField(String(localized: "Ausflug hinzufügen"), text: $newExcursionText)
+                            .onSubmit { addExcursion() }
+                        Button {
+                            addExcursion()
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                        }
+                        .accessibilityLabel(String(localized: "Ausflug hinzufügen"))
+                        .disabled(sanitizedExcursionEntry(newExcursionText) == nil)
+                    }
+                }
             }
             .navigationTitle(isEditing ? "Hafen bearbeiten" : "Hafen hinzufügen")
             .navigationBarTitleDisplayMode(.inline)
@@ -952,7 +1026,7 @@ struct TempPortFormSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Abbrechen") { dismiss() }
                 }
-                
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern") {
                         savePort()
@@ -969,11 +1043,38 @@ struct TempPortFormSheet: View {
                     searchText = port.name
                     arrivalDate = port.arrival
                     departureDate = port.departure
+                    imageData = port.imageData
+                    excursions = port.excursions
+                } else {
+                    // Neuer Hafen: Ankunft auf den Folgetag des letzten Eintrags vorbelegen (A5.3).
+                    let defaultDate = defaultArrivalDate(afterLastOf: ports, fallback: cruiseStartDate)
+                    arrivalDate = defaultDate
+                    departureDate = defaultDate
+                }
+            }
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                loadImage(from: newItem)
+            }
+        }
+    }
+
+    private func addExcursion() {
+        guard let entry = sanitizedExcursionEntry(newExcursionText) else { return }
+        excursions.append(entry)
+        newExcursionText = ""
+    }
+
+    private func loadImage(from item: PhotosPickerItem?) {
+        guard let item else { return }
+        Task {
+            if let data = try? await item.loadTransferable(type: Data.self) {
+                await MainActor.run {
+                    imageData = data
                 }
             }
         }
     }
-    
+
     private func savePort() {
         // Verwende verbesserte Suche mit Land-Prüfung
         var lat: Double? = nil
@@ -983,8 +1084,8 @@ struct TempPortFormSheet: View {
             lon = suggestion.longitude
         }
 
-        // Beim Bearbeiten vom Original ausgehen, damit id, excursionsRaw, imageData und
-        // isSeaDay erhalten bleiben; nur die im Sheet editierbaren Felder überschreiben.
+        // Beim Bearbeiten vom Original ausgehen, damit id und isSeaDay erhalten bleiben;
+        // die im Sheet editierbaren Felder (inkl. Bild/Ausflüge) werden überschrieben.
         var port = originalPort ?? TempPort(
             name: name,
             country: country,
@@ -999,6 +1100,8 @@ struct TempPortFormSheet: View {
         port.departure = departureDate
         port.latitude = lat
         port.longitude = lon
+        port.imageData = imageData
+        port.excursions = excursions
 
         if let index = editingIndex, index < ports.count {
             ports[index] = port

@@ -117,6 +117,25 @@ struct ExpenseModelTests {
     }
 }
 
+// MARK: - ShippingLine
+
+@Suite("ShippingLine")
+struct ShippingLineTests {
+
+    @Test("AIDAstella is present in the AIDA fleet")
+    func aidaStellaIsListed() {
+        let aida = ShippingLine.find(byId: "aida")
+        #expect(aida?.ships.contains("AIDAstella") == true)
+    }
+
+    @Test("findByShipName matches AIDAstella regardless of whitespace")
+    func findByShipNameIgnoresWhitespace() {
+        #expect(ShippingLine.findByShipName("AIDAstella")?.id == "aida")
+        #expect(ShippingLine.findByShipName("AIDA Stella")?.id == "aida")
+        #expect(ShippingLine.findByShipName("aidastella")?.id == "aida")
+    }
+}
+
 // MARK: - PortSuggestion
 
 @Suite("PortSuggestion")
@@ -156,6 +175,46 @@ struct PortSuggestionTests {
     func searchEmptyReturnsAll() {
         let all = PortSuggestion.search("")
         #expect(all.count == PortSuggestion.popular.count)
+    }
+
+    @Test("findBestMatch finds newly added Southern Hemisphere ports")
+    func findBestMatchSouthernHemisphere() {
+        let expectations: [(name: String, country: String)] = [
+            ("Kapstadt", "Südafrika"),
+            ("Port Louis", "Mauritius"),
+            ("Mindelo", "Kap Verde"),
+            ("Praia", "Kap Verde")
+        ]
+        for expectation in expectations {
+            let result = PortSuggestion.findBestMatch(name: expectation.name, country: expectation.country)
+            #expect(result != nil, "Expected to find \(expectation.name)")
+            #expect(result?.country == expectation.country)
+        }
+    }
+
+    @Test("newly added Southern Hemisphere ports are unique by name+country in the full dataset")
+    func newSouthernHemisphereEntriesAreUnique() {
+        let newEntries: [(name: String, country: String)] = [
+            ("Kapstadt", "Südafrika"), ("Cape Town", "Südafrika"), ("Durban", "Südafrika"),
+            ("Port Elizabeth", "Südafrika"), ("Gqeberha", "Südafrika"), ("Mossel Bay", "Südafrika"),
+            ("Richards Bay", "Südafrika"), ("East London", "Südafrika"),
+            ("Walvis Bay", "Namibia"), ("Lüderitz", "Namibia"),
+            ("Mindelo", "Kap Verde"), ("Praia", "Kap Verde"),
+            ("Port Louis", "Mauritius"),
+            ("Victoria (Seychellen)", "Seychellen"),
+            ("Nosy Be", "Madagaskar"), ("Toamasina", "Madagaskar"),
+            ("Le Port", "Frankreich"),
+            ("Sansibar", "Tansania"),
+            ("Mombasa", "Kenia"),
+            ("Stanley", "Falklandinseln"),
+            ("Punta Arenas", "Chile"),
+            ("Buenos Aires", "Argentinien"),
+            ("Montevideo", "Uruguay")
+        ]
+        for entry in newEntries {
+            let matches = PortSuggestion.popular.filter { $0.name == entry.name && $0.country == entry.country }
+            #expect(matches.count == 1, "\(entry.name), \(entry.country) should appear exactly once, found \(matches.count)")
+        }
     }
 }
 

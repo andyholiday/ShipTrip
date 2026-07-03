@@ -282,35 +282,55 @@ struct CruiseDetailView: View {
                 let firstSortOrder = sortedPorts.filter { !$0.isSeaDay }.first?.sortOrder
                 let lastSortOrder = sortedPorts.filter { !$0.isSeaDay }.last?.sortOrder
                 ForEach(sortedPorts) { port in
-                    HStack(spacing: 12) {
-                        PortPinView(type: PortPinType(
-                            isSeaDay: port.isSeaDay,
-                            isFirst: port.sortOrder == firstSortOrder,
-                            isLast: port.sortOrder == lastSortOrder
-                        ))
-                        
-                        VStack(alignment: .leading) {
-                            Text(port.name)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            if !port.isSeaDay {
-                                Text(port.country)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            PortPinView(type: PortPinType(
+                                isSeaDay: port.isSeaDay,
+                                isFirst: port.sortOrder == firstSortOrder,
+                                isLast: port.sortOrder == lastSortOrder
+                            ))
+
+                            VStack(alignment: .leading) {
+                                Text(port.name)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                if !port.isSeaDay {
+                                    Text(port.country)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            Spacer()
+
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                if !port.isSeaDay {
+                                    Text("\(port.arrival.formatted(date: .omitted, time: .shortened)) – \(port.departure.formatted(date: .omitted, time: .shortened))")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
                         }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            if !port.isSeaDay {
-                                Text("\(port.arrival.formatted(date: .omitted, time: .shortened)) – \(port.departure.formatted(date: .omitted, time: .shortened))")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+
+                        // Hafenbild-Thumbnail + Ausflüge, nur wenn erfasst (siehe PortFormView).
+                        if port.imageData != nil || !port.excursions.isEmpty {
+                            HStack(alignment: .top, spacing: 10) {
+                                if let imageData = port.imageData {
+                                    AsyncPhotoView(imageData: imageData)
+                                        .frame(width: 44, height: 44)
+                                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
+                                }
+                                if !port.excursions.isEmpty {
+                                    Text(port.excursions.joined(separator: " · "))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+                                }
                             }
+                            .padding(.leading, 36)
                         }
                     }
                     .padding(.vertical, 4)

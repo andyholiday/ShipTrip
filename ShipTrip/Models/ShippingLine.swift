@@ -98,11 +98,17 @@ struct ShippingLine: Identifiable, Hashable {
         all.first { $0.id == id }
     }
 
-    /// Findet eine Reederei anhand des Schiffsnamens (aktive und historische Flotte)
+    /// Findet eine Reederei anhand des Schiffsnamens (aktive und historische Flotte).
+    /// Whitespace wird beim Vergleich ignoriert, damit z. B. eine KI-Erfassung mit
+    /// "AIDA Stella" weiterhin auf "AIDAstella" matcht.
     static func findByShipName(_ ship: String) -> ShippingLine? {
-        let normalizedShip = ship.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedShip = ship.lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: " ", with: "")
         return all.first { line in
-            (line.ships + line.historicalShips).contains { $0.lowercased() == normalizedShip }
+            (line.ships + line.historicalShips).contains {
+                $0.lowercased().replacingOccurrences(of: " ", with: "") == normalizedShip
+            }
         }
     }
 

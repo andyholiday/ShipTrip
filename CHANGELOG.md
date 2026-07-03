@@ -15,6 +15,29 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefuegt
+
+- **Hafenbild- und Ausflüge-Erfassung**: `PortFormView` und `TempPortFormSheet`
+  (in `CruiseFormView`) erhalten einen `PhotosPicker`-Abschnitt (wählen/ersetzen/
+  entfernen) und einen Ausflüge-Editor (hinzufügen, Swipe-to-Delete) für die
+  bereits vorhandenen, bisher aber nicht erfassbaren Felder `Port.imageData`/
+  `excursionsRaw`. `CruiseDetailView` zeigt Hafenbild-Thumbnail und Ausflugsliste
+  jetzt in der Routen-Ansicht. ([Feature-Doku](docs/features/feedback-fixes-a5.md#a51--erfassungs-ui--anzeige-für-hafenbild--ausflüge))
+- **23 neue Südhalbkugel-/Südatlantik-Häfen** in der Hafendatenbank (u. a.
+  Kapstadt, Durban, Walvis Bay, Mindelo, Praia, Port Louis, Sansibar, Mombasa,
+  Buenos Aires, Montevideo). ([Feature-Doku](docs/features/feedback-fixes-a5.md#a52--referenzdaten-südhalbkugel-häfen--aidastella-zuordnung))
+- **Auto-Datum bei neuem Hafen**: Das Ankunftsdatum wird jetzt mit dem Folgetag
+  des letzten Routen-Stopps vorbelegt (bzw. dem Reise-Startdatum bei leerer
+  Route). ([Feature-Doku](docs/features/feedback-fixes-a5.md#a53--auto-datum-bei-neuem-hafen))
+
+### Behoben
+
+- **AIDAstella-Zuordnung bei der KI-Erfassung**: `ShippingLine.findByShipName`
+  vergleicht jetzt whitespace-normalisiert, damit „AIDA Stella" (KI-Erfassung)
+  weiterhin auf „AIDAstella" (Referenzdaten) matcht. Das Schiff war zuvor bereits
+  vollständig in den Daten vorhanden — der gemeldete Fehler war ein
+  String-Matching-Problem, kein fehlender Datensatz.
+
 ---
 
 ## [1.6.0] - 2026-07-03
