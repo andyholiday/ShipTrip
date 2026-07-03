@@ -17,6 +17,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Hafenbilder im ZIP-Export**: `ExportImportService` schreibt Hafenbilder
+  jetzt unter `images/<cruiseId>/ports/<index>` und setzt `imageUrl`; Roundtrip
+  ist damit verlustfrei (Import las Hafenbilder bereits zuvor korrekt ein).
+  ([Feature-Doku](docs/features/datenintegritaet-a1.md))
+- **Bestätigungsdialog fuer API-Key-Loeschung**: „Alle Daten löschen" fragt
+  jetzt explizit, ob der Gemini-API-Key mitgelöscht werden soll, statt ihn
+  stillschweigend zu behalten oder zu entfernen.
 - **Hybrid-Hauptansicht „Meine Reisen"**: Die flache Liste gleichfoermiger
   Full-Bleed-Karten wurde durch ein dreischichtiges Layout ersetzt:
   ein schlanker Statistik-Strip (lifetime-Totals: Reisen, Laender, Seetage,
@@ -87,6 +94,18 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Edit-Datenverlust bei Reisen mit Ausflügen/Hafenbild**: Bearbeiten einer
+  Reise löschte bisher alle Häfen und legte sie neu an, wodurch importierte
+  Ausflüge (`excursionsRaw`), Hafenbilder (`imageData`) verloren gingen und
+  Port-`id`s neu vergeben wurden. `reconcileRoute()` in `CruiseFormView`
+  aktualisiert bestehende Ports jetzt in-place per stabiler `id`.
+  ([Feature-Doku](docs/features/datenintegritaet-a1.md),
+  [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- **„Alle Daten löschen" unvollstaendig**: Geplante Erinnerungen wurden nicht
+  entfernt; ein fehlschlagendes `save()` konnte inkonsistente Zustaende
+  hinterlassen. Loeschung + `save()` laufen jetzt mit Rollback bei Fehler,
+  danach werden alle geplanten Benachrichtigungen entfernt.
+  ([Feature-Doku](docs/features/datenintegritaet-a1.md))
 - **Statistik-Tab „Reisetage" zeigte faelschlich Seetage-Anzahl**: Die Kachel
   summierte `totalSeaDays` (Ports mit `isSeaDay == true`), was haeufig 0
   ergab. Sie nutzt jetzt das neue Array-Aggregat `[Cruise].totalTravelDays`
@@ -103,6 +122,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   nun vor jedem Lauf Demo-Daten zurueck und laed frisch nach.
 - **Flaky UI-Tests**: `Thread.sleep(forTimeInterval:)` in
   `HauptansichtScreenshotTests` durch `waitForExistence(timeout:)` ersetzt.
+
+### Security
+
+- **ZIP-Import gehaertet**: Ein Safe-Path-Resolver prueft ZIP-Eintraege und
+  `data.json`-Pfadreferenzen gegen Pfad-Traversal (`..`, absolute Pfade)
+  ausserhalb des Zielordners. Groessenlimits (50 MB pro Eintrag, 500 MB
+  kumuliert, je fuer komprimierte und unkomprimierte Groesse vor jeder
+  Allokation geprueft) verhindern Dekompressionsbomben; das Gesamtarchiv ist
+  auf 550 MB gedeckelt. Datei-interne Cruise-ID-Duplikate werden erkannt und
+  uebersprungen statt dupliziert importiert.
+  ([Feature-Doku](docs/features/datenintegritaet-a1.md))
 
 ---
 

@@ -11,7 +11,9 @@ import PhotosUI
 
 /// Temporärer Hafen für das Formular (vor dem Speichern)
 struct TempPort: Identifiable {
-    let id = UUID()
+    /// Stabile ID: bei neu angelegten Häfen frisch vergeben, bei bestehenden Häfen von
+    /// `Port.id` übernommen, damit `reconcileRoute` sie beim Speichern wiedererkennt.
+    var id = UUID()
     var name: String
     var country: String
     var arrival: Date
@@ -19,6 +21,91 @@ struct TempPort: Identifiable {
     var latitude: Double?
     var longitude: Double?
     var isSeaDay: Bool = false
+    var excursionsRaw: String = ""
+    var imageData: Data? = nil
+}
+
+/// Gleicht die bearbeitete Route (`tempPorts`) mit den bestehenden `Port`-Objekten einer
+/// Kreuzfahrt ab, statt sie beim Speichern zu löschen und neu anzulegen. Bestehende Ports
+/// werden anhand ihrer `id` in-place aktualisiert (Referenz, `excursionsRaw`, `imageData`
+/// und `updatedAt` bleiben dabei erhalten bzw. werden nur bei tatsächlicher Änderung
+/// aktualisiert), nur wirklich entfernte IDs werden gelöscht, neue Einträge werden angelegt.
+/// So bleiben importierte Ausflüge/Hafenbilder erhalten und die ID-Stabilität für
+/// CloudKit-Last-Writer-Wins (ADR-002) bleibt gewahrt.
+@discardableResult
+func reconcileRoute(
+    existingPorts: [Port],
+    tempPorts: [TempPort],
+    cruise: Cruise,
+    modelContext: ModelContext
+) -> [Port] {
+    // Toleranter Aufbau: im Altbestand kamen real doppelte Port-UUIDs vor (siehe
+    // IdBackfill). Der erste Treffer je ID gewinnt deterministisch, alle weiteren
+    // Duplikate unter derselben ID werden unten wie nicht mehr referenzierte Ports
+    // behandelt und gelöscht (Dedup als Nebeneffekt, kein Crash durch uniqueKeysWithValues).
+    var existingByID: [UUID: Port] = [:]
+    for port in existingPorts where existingByID[port.id] == nil {
+        existingByID[port.id] = port
+    }
+    for port in existingPorts {
+        if let kept = existingByID[port.id], kept !== port {
+            modelContext.delete(port)
+        }
+    }
+
+    // Doppelte IDs in tempPorts (z. B. inkonsistenter Zwischenzustand) deterministisch
+    // deduplizieren, damit nie zwei neue Ports mit derselben stabilen ID entstehen.
+    var seenTempIDs = Set<UUID>()
+    var dedupedTempPorts: [TempPort] = []
+    dedupedTempPorts.reserveCapacity(tempPorts.count)
+    for tempPort in tempPorts where seenTempIDs.insert(tempPort.id).inserted {
+        dedupedTempPorts.append(tempPort)
+    }
+
+    let tempIDs = Set(dedupedTempPorts.map { $0.id })
+
+    for port in existingByID.values where !tempIDs.contains(port.id) {
+        modelContext.delete(port)
+    }
+
+    var result: [Port] = []
+    result.reserveCapacity(dedupedTempPorts.count)
+
+    for (index, tempPort) in dedupedTempPorts.enumerated() {
+        let name = tempPort.isSeaDay ? "Seetag" : tempPort.name
+        let latitude = tempPort.latitude ?? 0
+        let longitude = tempPort.longitude ?? 0
+
+        if let existing = existingByID[tempPort.id] {
+            var changed = false
+            if existing.name != name { existing.name = name; changed = true }
+            if existing.country != tempPort.country { existing.country = tempPort.country; changed = true }
+            if existing.latitude != latitude { existing.latitude = latitude; changed = true }
+            if existing.longitude != longitude { existing.longitude = longitude; changed = true }
+            if existing.arrival != tempPort.arrival { existing.arrival = tempPort.arrival; changed = true }
+            if existing.departure != tempPort.departure { existing.departure = tempPort.departure; changed = true }
+            if existing.isSeaDay != tempPort.isSeaDay { existing.isSeaDay = tempPort.isSeaDay; changed = true }
+            if existing.excursionsRaw != tempPort.excursionsRaw { existing.excursionsRaw = tempPort.excursionsRaw; changed = true }
+            if existing.imageData != tempPort.imageData { existing.imageData = tempPort.imageData; changed = true }
+            if existing.sortOrder != index { existing.sortOrder = index; changed = true }
+            if changed { existing.updatedAt = Date() }
+            result.append(existing)
+        } else {
+            let port = Port(name: name, country: tempPort.country, latitude: latitude, longitude: longitude)
+            port.id = tempPort.id
+            port.arrival = tempPort.arrival
+            port.departure = tempPort.departure
+            port.sortOrder = index
+            port.isSeaDay = tempPort.isSeaDay
+            port.excursionsRaw = tempPort.excursionsRaw
+            port.imageData = tempPort.imageData
+            port.cruise = cruise
+            modelContext.insert(port)
+            result.append(port)
+        }
+    }
+
+    return result
 }
 
 /// Formular zum Erstellen/Bearbeiten einer Kreuzfahrt
@@ -316,13 +403,16 @@ struct CruiseFormView: View {
         // Load existing ports
         tempPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { port in
             TempPort(
+                id: port.id,
                 name: port.name,
                 country: port.country,
                 arrival: port.arrival,
                 departure: port.departure,
                 latitude: port.latitude,
                 longitude: port.longitude,
-                isSeaDay: port.isSeaDay
+                isSeaDay: port.isSeaDay,
+                excursionsRaw: port.excursionsRaw,
+                imageData: port.imageData
             )
         }
     }
@@ -549,11 +639,6 @@ struct CruiseFormView: View {
             existingCruise.updatedAt = Date()
             targetCruise = existingCruise
 
-            // Remove all existing ports and re-add
-            for port in existingCruise.route {
-                modelContext.delete(port)
-            }
-
             // Remove deleted photos
             let existingPhotoSet = Set(existingPhotos.map { ObjectIdentifier($0) })
             for photo in existingCruise.photos {
@@ -579,21 +664,14 @@ struct CruiseFormView: View {
             targetCruise = newCruise
         }
 
-        // Add ports
-        for (index, tempPort) in tempPorts.enumerated() {
-            let port = Port(
-                name: tempPort.isSeaDay ? "Seetag" : tempPort.name,
-                country: tempPort.country,
-                latitude: tempPort.latitude ?? 0,
-                longitude: tempPort.longitude ?? 0
-            )
-            port.arrival = tempPort.arrival
-            port.departure = tempPort.departure
-            port.sortOrder = index
-            port.isSeaDay = tempPort.isSeaDay
-            port.cruise = targetCruise
-            modelContext.insert(port)
-        }
+        // Route abgleichen: bestehende Ports per ID in-place aktualisieren, entfernte
+        // löschen, neue anlegen (statt delete-and-recreate → siehe reconcileRoute).
+        reconcileRoute(
+            existingPorts: cruise?.route ?? [],
+            tempPorts: tempPorts,
+            cruise: targetCruise,
+            modelContext: modelContext
+        )
 
         // Neue Fotos anlegen; Thumbnail synchron erzeugen (Downsampling eines Bildes
         // ist schnell und vermeidet das Lost-Write-Risiko eines Fire-and-forget-Tasks)
@@ -609,6 +687,9 @@ struct CruiseFormView: View {
         do {
             try modelContext.save()
         } catch {
+            // Gestagte Route-/Cruise-/Foto-Änderungen zurücknehmen, damit ein späterer
+            // Save sie nicht doch noch persistiert.
+            modelContext.rollback()
             validationMessage = String(localized: "Speichern fehlgeschlagen: ") + error.localizedDescription
             showingValidationAlert = true
             return
@@ -647,6 +728,10 @@ struct TempPortFormSheet: View {
     @State private var arrivalDate = Date()
     @State private var departureDate = Date()
     @State private var searchText = ""
+
+    /// Der bearbeitete Hafen im Original-Zustand, um beim Speichern `id`, `excursionsRaw`,
+    /// `imageData` und `isSeaDay` zu erhalten (siehe reconcileRoute-Kontext).
+    @State private var originalPort: TempPort?
     
     private var isEditing: Bool { editingIndex != nil }
     
@@ -713,6 +798,7 @@ struct TempPortFormSheet: View {
             .onAppear {
                 if let index = editingIndex, index < ports.count {
                     let port = ports[index]
+                    originalPort = port
                     name = port.name
                     country = port.country
                     searchText = port.name
@@ -731,8 +817,10 @@ struct TempPortFormSheet: View {
             lat = suggestion.latitude
             lon = suggestion.longitude
         }
-        
-        let port = TempPort(
+
+        // Beim Bearbeiten vom Original ausgehen, damit id, excursionsRaw, imageData und
+        // isSeaDay erhalten bleiben; nur die im Sheet editierbaren Felder überschreiben.
+        var port = originalPort ?? TempPort(
             name: name,
             country: country,
             arrival: arrivalDate,
@@ -740,13 +828,19 @@ struct TempPortFormSheet: View {
             latitude: lat,
             longitude: lon
         )
-        
+        port.name = name
+        port.country = country
+        port.arrival = arrivalDate
+        port.departure = departureDate
+        port.latitude = lat
+        port.longitude = lon
+
         if let index = editingIndex, index < ports.count {
             ports[index] = port
         } else {
             ports.append(port)
         }
-        
+
         dismiss()
     }
 }

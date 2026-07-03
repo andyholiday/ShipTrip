@@ -366,6 +366,7 @@ struct DataManagementView: View {
     @Query private var deals: [Deal]
     
     @State private var showingDeleteAlert = false
+    @State private var showingApiKeyDeleteConfirm = false
     @State private var showingExportSheet = false
     @State private var showingImportPicker = false
     @State private var isExporting = false
@@ -437,10 +438,24 @@ struct DataManagementView: View {
         .alert("Alle Daten löschen?", isPresented: $showingDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
-                deleteAllData()
+                if GeminiService.shared.isConfigured {
+                    showingApiKeyDeleteConfirm = true
+                } else {
+                    deleteAllData(alsoDeleteApiKey: false)
+                }
             }
         } message: {
             Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht.")
+        }
+        .alert("KI-API-Key auch löschen?", isPresented: $showingApiKeyDeleteConfirm) {
+            Button("Behalten", role: .cancel) {
+                deleteAllData(alsoDeleteApiKey: false)
+            }
+            Button("Löschen", role: .destructive) {
+                deleteAllData(alsoDeleteApiKey: true)
+            }
+        } message: {
+            Text("Dein Gemini-API-Key ist separat in der Keychain gespeichert und bleibt sonst erhalten.")
         }
         .alert("Info", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
@@ -544,12 +559,31 @@ struct DataManagementView: View {
         }
     }
     
-    private func deleteAllData() {
+    /// Löscht alle Kreuzfahrten und Wunschreisen. Erst nach erfolgreichem Speichern werden
+    /// geplante Erinnerungen entfernt und optional der KI-API-Key gelöscht, damit bei einem
+    /// fehlgeschlagenen Save keine Seiteneffekte ausgeführt werden.
+    private func deleteAllData(alsoDeleteApiKey: Bool) {
         for cruise in cruises {
             modelContext.delete(cruise)
         }
         for deal in deals {
             modelContext.delete(deal)
+        }
+
+        do {
+            try modelContext.save()
+        } catch {
+            // Gestagte Deletes zurücknehmen, damit ein späterer Save sie nicht doch
+            // noch persistiert.
+            modelContext.rollback()
+            alertMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
+            showingAlert = true
+            return
+        }
+
+        NotificationService.shared.removeAllPendingNotifications()
+        if alsoDeleteApiKey {
+            GeminiService.shared.clearApiKey()
         }
     }
 }

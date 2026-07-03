@@ -67,12 +67,14 @@ class ExportImportService {
 
     private let dateFormatter: DateFormatter = {
         let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd"
         return df
     }()
 
     private let dateTimeFormatter: DateFormatter = {
         let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
         return df
     }()
@@ -119,11 +121,17 @@ class ExportImportService {
         var zipEntries: [(name: String, data: Data)] = []
 
         // Baue JSON mit Pfadreferenzen (Dateiname ohne Extension; Erweiterung ist kosmetisch)
-        let exportCruises = buildExportCruises(cruises: cruises, photoEncoder: { cruise, sortedPhotos in
-            sortedPhotos.enumerated().map { index, _ in
-                "images/\(cruise.id.uuidString)/\(index)"
+        let exportCruises = buildExportCruises(
+            cruises: cruises,
+            photoEncoder: { cruise, sortedPhotos in
+                sortedPhotos.enumerated().map { index, _ in
+                    "images/\(cruise.id.uuidString)/\(index)"
+                }
+            },
+            portImageURL: { cruise, port, index in
+                port.imageData != nil ? "images/\(cruise.id.uuidString)/ports/\(index)" : nil
             }
-        })
+        )
 
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -132,6 +140,14 @@ class ExportImportService {
 
         // Füge Bilddateien als Rohdaten ein (verlustfrei, kein UIImage-Re-Encoding)
         for cruise in cruises {
+            let sortedRoute = cruise.route.sorted { $0.sortOrder < $1.sortOrder }
+            for (index, port) in sortedRoute.enumerated() {
+                if let imageData = port.imageData {
+                    let entryName = "images/\(cruise.id.uuidString)/ports/\(index)"
+                    zipEntries.append((entryName, imageData))
+                }
+            }
+
             let sortedPhotos = cruise.photos.sorted { $0.sortOrder < $1.sortOrder }
             for (index, photo) in sortedPhotos.enumerated() {
                 let entryName = "images/\(cruise.id.uuidString)/\(index)"
@@ -150,25 +166,27 @@ class ExportImportService {
 
     /// Gemeinsame Logik zum Aufbau des ExportCruise-Arrays.
     /// `photoEncoder` gibt pro Kreuzfahrt die Foto-Strings zurück (Base64 oder Pfadreferenzen).
+    /// `portImageURL` gibt pro Hafen die Bild-Pfadreferenz zurück (nil im Legacy-JSON-Format).
     private func buildExportCruises(
         cruises: [Cruise],
-        photoEncoder: (Cruise, [Photo]) -> [String]
+        photoEncoder: (Cruise, [Photo]) -> [String],
+        portImageURL: (Cruise, Port, Int) -> String? = { _, _, _ in nil }
     ) -> [ExportCruise] {
         var result: [ExportCruise] = []
 
         for cruise in cruises {
             let sortedRoute = cruise.route.sorted { $0.sortOrder < $1.sortOrder }
 
-            let exportPorts = sortedRoute.map { port in
+            let exportPorts = sortedRoute.enumerated().map { index, port in
                 ExportPort(
                     id: port.id.uuidString,
                     name: port.isSeaDay ? "Seetag" : port.name,
                     country: port.isSeaDay ? nil : port.country,
-                    lat: port.isSeaDay ? nil : String(format: "%.8f", port.latitude),
-                    lng: port.isSeaDay ? nil : String(format: "%.8f", port.longitude),
+                    lat: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.latitude),
+                    lng: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.longitude),
                     arrival: dateTimeFormatter.string(from: port.arrival),
                     departure: dateTimeFormatter.string(from: port.departure),
-                    imageUrl: nil,
+                    imageUrl: portImageURL(cruise, port, index),
                     excursions: port.excursions
                 )
             }
@@ -270,6 +288,10 @@ class ExportImportService {
         var skippedDuplicates = 0
         var skippedInvalid = 0
 
+        // ID-basierte Duplikate INNERHALB derselben Import-Datei (z.B. manipuliertes data.json
+        // mit zwei Cruises gleicher id): nur die erste wird importiert.
+        var seenCruiseIDs: Set<UUID> = []
+
         for exportCruise in exportCruises {
             // Datumsvalidierung
             guard let startDate = dateFormatter.date(from: exportCruise.startDate),
@@ -287,8 +309,8 @@ class ExportImportService {
             let exportUUID = UUID(uuidString: exportCruise.id)
             let isDuplicate: Bool
             if let exportUUID = exportUUID {
-                // Primär: ID-basierter Vergleich (stabile IDs, ZIP-Format)
-                isDuplicate = existingCruises.contains { $0.id == exportUUID }
+                // Primär: ID-basierter Vergleich (stabile IDs, ZIP-Format) + Duplikate im selben Import
+                isDuplicate = existingCruises.contains { $0.id == exportUUID } || seenCruiseIDs.contains(exportUUID)
             } else {
                 // Fallback für Legacy-Exporte ohne gültige UUID
                 isDuplicate = existingCruises.contains { existing in
@@ -313,6 +335,7 @@ class ExportImportService {
             )
             if let exportUUID = exportUUID {
                 cruise.id = exportUUID
+                seenCruiseIDs.insert(exportUUID)
             }
             cruise.cabinType = exportCruise.cabinType ?? ""
             cruise.cabinNumber = exportCruise.cabinNumber ?? ""
@@ -321,6 +344,13 @@ class ExportImportService {
             cruise.rating = Double(exportCruise.rating)
 
             modelContext.insert(cruise)
+
+            // ID-basierte Duplikate INNERHALB derselben Cruise (z.B. manipulierte Datei mit zwei
+            // Ports gleicher id): nur das erste Vorkommen übernimmt die Datei-ID, jedes weitere
+            // behält seine frische Auto-UUID aus dem Init — sonst würde die spätere
+            // Edit-Reconciliation (siehe IdBackfill) die Ports auf einen einzigen kollabieren und
+            // die Route verstümmeln.
+            var seenPortIDs: Set<UUID> = []
 
             // Häfen importieren
             for (index, exportPort) in exportCruise.route.enumerated() {
@@ -349,14 +379,15 @@ class ExportImportService {
                 port.isSeaDay = isSeaDay
                 port.excursions = exportPort.excursions
 
-                // Stabiele Port-ID übernehmen
-                if let portUUID = UUID(uuidString: exportPort.id) {
+                // Stabiele Port-ID übernehmen — nur beim ersten Vorkommen dieser ID in der Cruise
+                if let portUUID = UUID(uuidString: exportPort.id), !seenPortIDs.contains(portUUID) {
                     port.id = portUUID
+                    seenPortIDs.insert(portUUID)
                 }
 
-                // Hafen-Bild importieren
-                if let imagesDir = imagesDir, let imageUrlString = exportPort.imageUrl {
-                    let imagePath = imagesDir.appendingPathComponent(imageUrlString)
+                // Hafen-Bild importieren (Pfadreferenz aus data.json: ../-Traversal/absolute Pfade abgelehnt)
+                if let imagesDir = imagesDir, let imageUrlString = exportPort.imageUrl,
+                   let imagePath = try? resolveSafePath(imageUrlString, in: imagesDir) {
                     if let imageData = try? Data(contentsOf: imagePath) {
                         port.imageData = imageData
                     }
@@ -378,9 +409,10 @@ class ExportImportService {
                         modelContext.insert(photo)
                     }
                     // Fehlendes Bild: Photo-Objekt wird übersprungen, Cruise wird trotzdem importiert
-                } else if let imagesDir = imagesDir {
-                    // ZIP-Pfadreferenz: fehlende Datei tolerieren (nur Photo überspringen)
-                    let imagePath = imagesDir.appendingPathComponent(photoRef)
+                } else if let imagesDir = imagesDir,
+                          let imagePath = try? resolveSafePath(photoRef, in: imagesDir) {
+                    // ZIP-Pfadreferenz: fehlende Datei tolerieren (nur Photo überspringen);
+                    // ../-Traversal/absolute Pfade werden von resolveSafePath abgelehnt
                     if let imageData = try? Data(contentsOf: imagePath) {
                         let photo = Photo(imageData: imageData, sortOrder: index)
                         photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
@@ -392,6 +424,9 @@ class ExportImportService {
             }
 
             // Ausgaben importieren
+            // Gleiches Duplikat-Muster wie bei Ports: nur das erste Vorkommen einer id in dieser
+            // Cruise übernimmt die Datei-ID, jedes weitere behält seine frische Auto-UUID.
+            var seenExpenseIDs: Set<UUID> = []
             for exportExpense in exportCruise.expenses {
                 let category = mapCategory(exportExpense.category)
                 let expense = Expense(
@@ -403,9 +438,10 @@ class ExportImportService {
                    let date = dateFormatter.date(from: dateString) {
                     expense.expenseDate = date
                 }
-                // Stabile Expense-ID übernehmen
-                if let expenseUUID = UUID(uuidString: exportExpense.id) {
+                // Stabile Expense-ID übernehmen — nur beim ersten Vorkommen dieser ID in der Cruise
+                if let expenseUUID = UUID(uuidString: exportExpense.id), !seenExpenseIDs.contains(expenseUUID) {
                     expense.id = expenseUUID
+                    seenExpenseIDs.insert(expenseUUID)
                 }
                 expense.cruise = cruise
                 modelContext.insert(expense)
@@ -414,7 +450,14 @@ class ExportImportService {
             importedCount += 1
         }
 
-        try modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            // Save fehlgeschlagen: bereits gestagte Import-Objekte (Cruises/Ports/Photos/Expenses)
+            // dürfen nicht im Context verbleiben — Rollback, dann Fehler weiterreichen.
+            modelContext.rollback()
+            throw error
+        }
         return ImportResult(imported: importedCount, skippedDuplicates: skippedDuplicates, skippedInvalid: skippedInvalid)
     }
 
@@ -675,9 +718,67 @@ class ExportImportService {
         return (dosDate, dosTime)
     }
 
-    // MARK: - ZIP Extraction (bestehende Logik, unverändert)
+    // MARK: - ZIP Extraction
+
+    /// Maximale unkomprimierte Größe eines einzelnen ZIP-Eintrags (Dekompressionsbomben-Schutz).
+    private static let maxEntryUncompressedSize = 50 * 1024 * 1024
+
+    /// Maximale kumulierte unkomprimierte Größe aller Einträge eines Archivs.
+    private static let maxTotalUncompressedSize = 500 * 1024 * 1024
+
+    /// Maximale Größe der ZIP-Datei selbst (konsistent zum 500-MB-Gesamtlimit + Overhead).
+    /// Wird geprüft, BEVOR das Archiv überhaupt in den Speicher gelesen wird.
+    private static let maxArchiveFileSize = 550 * 1024 * 1024
+
+    /// Löst einen aus dem Archiv bzw. aus `data.json` stammenden, nicht vertrauenswürdigen
+    /// relativen Pfad sicher gegen ein Basisverzeichnis auf (Zip-Slip-Schutz).
+    /// Lehnt leere/absolute Pfade sowie jede Auflösung außerhalb von `baseURL` ab.
+    private func resolveSafePath(_ relativePath: String, in baseURL: URL) throws -> URL {
+        guard !relativePath.isEmpty, !relativePath.hasPrefix("/"), !relativePath.hasPrefix("~") else {
+            throw ImportError.unsafePath(relativePath)
+        }
+        guard !relativePath.contains("\\") else {
+            throw ImportError.unsafePath(relativePath)
+        }
+
+        // Rohe POSIX-Komponenten VOR jeder Standardisierung prüfen: Traversal-Aliase wie
+        // "foo/../data.json" dürfen nicht erst NACH dem Normalisieren erkannt werden, weil das
+        // Ergebnis rein zufällig wieder innerhalb von baseURL landen kann. Ein einzelner
+        // Trailing-Slash markiert ein Verzeichnis (ZIP-Konvention) und wird vorher entfernt.
+        let trimmed = relativePath.hasSuffix("/") ? String(relativePath.dropLast()) : relativePath
+        guard !trimmed.isEmpty else {
+            throw ImportError.unsafePath(relativePath)
+        }
+        for component in trimmed.split(separator: "/", omittingEmptySubsequences: false) {
+            guard !component.isEmpty, component != ".", component != ".." else {
+                throw ImportError.unsafePath(relativePath)
+            }
+        }
+
+        // Defense-in-Depth: zusätzlich sicherstellen, dass die standardisierte Auflösung
+        // innerhalb von baseURL bleibt.
+        let base = baseURL.standardizedFileURL
+        let candidate = base.appendingPathComponent(relativePath).standardizedFileURL
+
+        let baseComponents = base.pathComponents
+        let candidateComponents = candidate.pathComponents
+        guard candidateComponents.count > baseComponents.count,
+              Array(candidateComponents.prefix(baseComponents.count)) == baseComponents else {
+            throw ImportError.unsafePath(relativePath)
+        }
+
+        return candidate
+    }
 
     private func unzipFile(at sourceURL: URL, to destinationURL: URL) throws {
+        // Archiv-Dateigröße prüfen, BEVOR irgendetwas in den Speicher gelesen wird (die Datei wird
+        // sonst zweimal komplett als Data eingelesen, bevor der Central-Directory-Check greift).
+        let attributes = try FileManager.default.attributesOfItem(atPath: sourceURL.path)
+        let fileSize = attributes[.size] as? Int ?? 0
+        guard fileSize <= ExportImportService.maxArchiveFileSize else {
+            throw ImportError.archiveTooLarge(fileSize)
+        }
+
         let zipData = try Data(contentsOf: sourceURL)
         let tempZipPath = destinationURL.appendingPathComponent("temp.zip")
         try zipData.write(to: tempZipPath)
@@ -708,6 +809,8 @@ class ExportImportService {
         let numEntries = Int(data[eocd + 10]) | (Int(data[eocd + 11]) << 8)
 
         var offset = cdOffset
+        var cumulativeUncompressedSize = 0
+        var cumulativeCompressedSize = 0
         for _ in 0..<numEntries {
             guard offset + 46 <= data.count else { break }
 
@@ -726,8 +829,33 @@ class ExportImportService {
             let nameData = data[offset + 46 ..< offset + 46 + nameLength]
             let name = String(data: nameData, encoding: .utf8) ?? ""
 
+            // Größen-Limits: aus dem Header geprüft, bevor irgendetwas dekomprimiert/allokiert/kopiert wird.
+            // WICHTIG: die Extraktion liest tatsächlich `compressedSize` Bytes (Data-Kopie) und schreibt
+            // sie bei STORED direkt weg — ein Header mit kleinem uncompressedSize, aber großem
+            // compressedSize, würde die Limits sonst umgehen. Deshalb wird compressedSize genauso geprüft.
+            guard uncompressedSize <= ExportImportService.maxEntryUncompressedSize else {
+                throw ImportError.entryTooLarge(name: name, size: uncompressedSize)
+            }
+            guard compressedSize <= ExportImportService.maxEntryUncompressedSize else {
+                throw ImportError.entryTooLarge(name: name, size: compressedSize)
+            }
+            if compressionMethod == 0 {
+                // STORED: unkomprimiert, compressedSize muss zwingend uncompressedSize entsprechen.
+                guard compressedSize == uncompressedSize else {
+                    throw ImportError.sizeMismatch(name: name)
+                }
+            }
+            cumulativeUncompressedSize += uncompressedSize
+            guard cumulativeUncompressedSize <= ExportImportService.maxTotalUncompressedSize else {
+                throw ImportError.archiveTooLarge(cumulativeUncompressedSize)
+            }
+            cumulativeCompressedSize += compressedSize
+            guard cumulativeCompressedSize <= ExportImportService.maxTotalUncompressedSize else {
+                throw ImportError.archiveTooLarge(cumulativeCompressedSize)
+            }
+
             let isDirectory = name.hasSuffix("/")
-            let destinationPath = destURL.appendingPathComponent(name)
+            let destinationPath = try resolveSafePath(name, in: destURL)
 
             if isDirectory {
                 try FileManager.default.createDirectory(at: destinationPath, withIntermediateDirectories: true)
@@ -761,6 +889,11 @@ class ExportImportService {
     }
 
     private func decompressDeflate(_ data: Data, uncompressedSize: Int) -> Data? {
+        // Verteidigung in der Tiefe: der Aufrufer prüft uncompressedSize bereits gegen
+        // maxEntryUncompressedSize, bevor allokiert wird — diese Funktion darf aber nie
+        // mit einer untrusted Größe über dem Limit aufgerufen werden.
+        guard uncompressedSize > 0, uncompressedSize <= ExportImportService.maxEntryUncompressedSize else { return nil }
+
         let destBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: uncompressedSize)
         defer { destBuffer.deallocate() }
 
@@ -783,6 +916,17 @@ class ExportImportService {
     enum ImportError: LocalizedError {
         case noDataFile
         case invalidFormat
+        /// Ein Pfad (ZIP-Eintrag oder Bildreferenz aus data.json) liegt außerhalb des Zielverzeichnisses
+        /// oder ist absolut (Zip-Slip-Schutz).
+        case unsafePath(String)
+        /// Ein einzelner ZIP-Eintrag überschreitet das Größenlimit (Dekompressionsbomben-Schutz),
+        /// geprüft anhand von uncompressedSize UND compressedSize.
+        case entryTooLarge(name: String, size: Int)
+        /// Die kumulierte (un-)komprimierte Größe aller Einträge oder die Archiv-Dateigröße selbst
+        /// überschreitet das Limit.
+        case archiveTooLarge(Int)
+        /// STORED-Eintrag (Methode 0), dessen compressedSize nicht mit uncompressedSize übereinstimmt.
+        case sizeMismatch(name: String)
 
         var errorDescription: String? {
             switch self {
@@ -790,6 +934,14 @@ class ExportImportService {
                 return "Keine data.json in der ZIP-Datei gefunden"
             case .invalidFormat:
                 return "Ungültiges Dateiformat"
+            case .unsafePath(let path):
+                return "Unsicherer Pfad im Archiv abgelehnt: \(path)"
+            case .entryTooLarge(let name, let size):
+                return "ZIP-Eintrag '\(name)' überschreitet das Größenlimit (\(size) Bytes; Maximum \(ExportImportService.maxEntryUncompressedSize) Bytes)"
+            case .archiveTooLarge(let size):
+                return "ZIP-Archiv überschreitet das kumulierte Größenlimit (\(size) Bytes; Maximum \(ExportImportService.maxTotalUncompressedSize) Bytes)"
+            case .sizeMismatch(let name):
+                return "ZIP-Eintrag '\(name)': compressedSize stimmt nicht mit uncompressedSize überein (Methode STORED erfordert Gleichheit)"
             }
         }
     }

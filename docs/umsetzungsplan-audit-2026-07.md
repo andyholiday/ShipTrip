@@ -37,7 +37,9 @@
   (`find . -type f -perm 0755` auf Nicht-Executables), als eigener Commit
   „chore: restore file modes". Erfolgskriterium: `git diff` zeigt keine
   old mode/new mode-Zeilen mehr.
-- [ ] **0.3 Cover-WIP sichern** — das uncommittete „Reederei-Cover"-Feature
+- [x] **0.3 Cover-WIP sichern** ✅ 2026-07-03, Commits `eb097ba` (Feature) +
+  `0eaa335` (Docs/Audit); Tests 48/48 grün; TimelineRow = tot → A3.10 —
+  das uncommittete „Reederei-Cover"-Feature
   (ShippingLine-Cover-Pool + ~200 Imagesets + 43 geänderte Dateien) als
   Feature-Commit auf main (Build muss grün sein; Tests 48/48). Dabei klären:
   `CruiseTimelineRowView` (204 Z.) — gehört sie zur WIP oder ist sie tot?
@@ -46,19 +48,19 @@
 ## Phase A — Richtung 1 „Festigen" (1–2 Wochen) → TestFlight 1.6.0
 
 ### Welle A1 · Datenintegrität (Findings: Edit-Datenverlust [H], Port-Bild-Export [H], Zip-Slip [M], Dekompressions-Bombe [M], Delete-All [M], Import-ID-Duplikate [L])
-- [ ] **A1.1 Edit-Fix:** `TempPort` um `id`, `excursionsRaw`, `imageData` erweitern;
+- [x] **A1.1 Edit-Fix:** ✅ 2026-07-03 (reconcileRoute, duplikat-tolerant + rollback) `TempPort` um `id`, `excursionsRaw`, `imageData` erweitern;
   `saveCruise` aktualisiert Ports in-place per stabiler `id` (nur echte Removals
   löschen, Neue einfügen). Dateien: `CruiseFormView.swift`.
   ✓ Test: Edit einer Reise mit Ausflügen/Hafenbild erhält Daten + Port-UUIDs.
-- [ ] **A1.2 Port-Bilder in Export:** ZIP-Pfad `images/<cruiseId>/ports/<index>` +
+- [x] **A1.2 Port-Bilder in Export:** ✅ 2026-07-03 ZIP-Pfad `images/<cruiseId>/ports/<index>` +
   `imageUrl` setzen; Import liest bereits. Datei: `ExportImportService.swift`.
   ✓ Test: Roundtrip mit Port-Bild verlustfrei.
-- [ ] **A1.3 Import-Härtung:** Eintragsnamen normalisieren + Prefix-Check gegen
+- [x] **A1.3 Import-Härtung:** ✅ 2026-07-03 (+ Port-/Expense-ID-Dedup, Import-rollback) Eintragsnamen normalisieren + Prefix-Check gegen
   Zielordner (kein `..`/absolut); `uncompressedSize`-Limit pro Eintrag (50 MB)
   und gesamt (500 MB) — bewusst strenger als das Audit-Beispiel (200 MB);
   dateiinterne ID-Duplikate im Import erkennen.
   ✓ Tests: präpariertes Slip-ZIP abgelehnt, Bomben-Header abgelehnt, Duplikat-Datei → 1 Reise.
-- [ ] **A1.4 deleteAllData vollständig:** `removeAllPendingNotifications()` +
+- [x] **A1.4 deleteAllData vollständig:** ✅ 2026-07-03 (+ rollback bei Save-Fehler) `removeAllPendingNotifications()` +
   Dialog „auch KI-API-Key löschen?" (→ `KeychainService.delete`) + `try save()`.
   Datei: `SettingsView.swift`. ✓ Manuell: nach Löschen keine Reminder, Key-Wahl respektiert.
 
