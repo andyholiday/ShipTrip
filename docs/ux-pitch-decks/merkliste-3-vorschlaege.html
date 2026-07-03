@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Merkliste: 3 Design-Vorschlaege</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif; background: #0A0F1A; color: #F0F4F8; }
+
+  /* ── Tokens (aus _consistency-brief.md) ───────────────────────── */
+  :root {
+    --ocean-blue:   #0C8CE9;
+    --ocean-light:  #36A9F0;
+    --navy-dark:    #1A365D;
+    --sunset-orange:#FF6B35;
+    --sea-green:    #34C759;
+    --secondary-bg-light: #F2F2F7;
+    --secondary-bg-dark:  #1C1C1E;
+    --separator:    rgba(120,120,128,0.36);
+    --r-hero: 16px;
+    --r-card: 10px;
+    --r-thumb: 6px;
+    --r-capsule: 999px;
+  }
+
+  /* ── Slide Engine ──────────────────────────────────────────────── */
+  .deck { width: 100%; height: 100%; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 40px 60px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: var(--ocean-blue);
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  /* Slide counter */
+  #slide-counter {
+    position: fixed; bottom: 20px; right: 28px;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.4);
+    z-index: 100;
+  }
+
+  /* Nav arrows */
+  .nav-btn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.08); border: none; cursor: pointer;
+    color: rgba(255,255,255,0.5); font-size: 22px;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s;
+    z-index: 100;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  #nav-prev { left: 16px; }
+  #nav-next { right: 16px; }
+
+  /* ── Typography helpers ────────────────────────────────────────── */
+  .label-tiny   { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.4); }
+  .label-small  { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .heading      { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .subheading   { font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.65); margin-top: 10px; }
+  .body-text    { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.7); }
+
+  /* ── Layout helpers ────────────────────────────────────────────── */
+  .cols-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; width: 100%; max-width: 960px; }
+  .cols-3   { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 28px; width: 100%; max-width: 1100px; }
+  .cols-half{ display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; width: 100%; max-width: 960px; }
+  .col      { display: flex; flex-direction: column; gap: 12px; }
+
+  /* ── Accent bar ────────────────────────────────────────────────── */
+  .accent-bar { width: 40px; height: 4px; border-radius: 2px; background: var(--ocean-blue); margin-bottom: 16px; }
+
+  /* ── Glass panel ───────────────────────────────────────────────── */
+  .panel {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 14px;
+    padding: 20px 24px;
+  }
+
+  /* ── Finding chip ──────────────────────────────────────────────── */
+  .finding {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .finding:last-child { border-bottom: none; }
+  .severity {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+    padding: 3px 7px; border-radius: 4px; white-space: nowrap; margin-top: 2px; flex-shrink: 0;
+  }
+  .sev-high   { background: rgba(255,59,48,0.2);  color: #FF3B30; }
+  .sev-med    { background: rgba(255,159,10,0.2); color: #FF9F0A; }
+  .sev-low    { background: rgba(52,199,89,0.2);  color: #34C759; }
+  .finding-text { font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+  .finding-ref  { font-size: 10px; color: rgba(255,255,255,0.35); font-family: "SF Mono", Menlo, monospace; margin-top: 2px; }
+
+  /* ── Bullet list ───────────────────────────────────────────────── */
+  .bullets { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .bullets li { display: flex; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.75); line-height: 1.5; }
+  .bullets li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ocean-blue); margin-top: 7px; flex-shrink: 0; }
+  .bullets.orange li::before { background: var(--sunset-orange); }
+  .bullets.green  li::before { background: var(--sea-green); }
+
+  /* ── iPhone Frame ─────────────────────────────────────────────── */
+  .iphone-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .iphone-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.4); letter-spacing: 0.06em; }
+  .iphone {
+    width: 200px; height: 408px;
+    background: #1A1A1A;
+    border-radius: 36px;
+    border: 2px solid rgba(255,255,255,0.18);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12);
+    flex-shrink: 0;
+  }
+  .iphone.light { background: #F2F2F7; border-color: rgba(0,0,0,0.15); }
+
+  /* Dynamic island */
+  .dynamic-island {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 72px; height: 24px; background: #000; border-radius: 12px;
+    z-index: 10;
+  }
+  .iphone.light .dynamic-island { background: #111; }
+
+  /* Status bar row */
+  .status-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 44px; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 18px 6px;
+    z-index: 9;
+    font-size: 9px; font-weight: 600; color: rgba(255,255,255,0.6);
+  }
+  .iphone.light .status-bar { color: rgba(0,0,0,0.5); }
+
+  /* Screen area (below status bar) */
+  .screen {
+    position: absolute; top: 44px; left: 0; right: 0; bottom: 0;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* Nav bar inside phone */
+  .nav-bar {
+    padding: 6px 14px 4px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .nav-title { font-size: 17px; font-weight: 700; }
+  .nav-title.dark { color: #fff; }
+  .nav-title.light { color: #000; }
+  .nav-icon {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: var(--ocean-blue);
+  }
+
+  /* Search bar */
+  .search-bar {
+    margin: 0 10px 8px;
+    height: 28px; border-radius: 8px;
+    display: flex; align-items: center; padding: 0 8px; gap: 5px;
+    flex-shrink: 0;
+  }
+  .search-bar.dark  { background: rgba(255,255,255,0.1); }
+  .search-bar.light { background: rgba(0,0,0,0.07); }
+  .search-icon { font-size: 9px; opacity: 0.4; }
+  .search-text { font-size: 10px; opacity: 0.35; }
+  .search-bar.dark  .search-text,
+  .search-bar.dark  .search-icon { color: #fff; }
+  .search-bar.light .search-text,
+  .search-bar.light .search-icon { color: #000; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 44px; display: flex; align-items: center; justify-content: space-around;
+    border-top: 0.5px solid rgba(120,120,128,0.25);
+    flex-shrink: 0;
+  }
+  .tab-bar.dark  { background: rgba(26,26,26,0.95); }
+  .tab-bar.light { background: rgba(242,242,247,0.95); }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 16px; }
+  .tab-label { font-size: 7px; }
+  .tab-item.active .tab-label { color: var(--ocean-blue); }
+  .tab-item.active { color: var(--ocean-blue); }
+  .tab-item.inactive.dark  { color: rgba(255,255,255,0.35); }
+  .tab-item.inactive.light { color: rgba(0,0,0,0.35); }
+
+  /* Scrollable list area */
+  .list-area {
+    flex: 1; overflow: hidden;
+    padding: 0 0 44px;
+    display: flex; flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── Deal Row — IST (flat, no card) ────────────────────────────── */
+  .deal-row-ist {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 0.5px solid rgba(120,120,128,0.2);
+  }
+  .logo-ist {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(120,120,128,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .deal-row-ist .title { font-size: 11px; font-weight: 600; color: #fff; line-height: 1.2; }
+  .deal-row-ist .meta  { font-size: 9px; color: rgba(255,255,255,0.4); }
+  .deal-row-ist .price { font-size: 11px; font-weight: 700; color: #fff; text-align: right; }
+  .deal-row-ist .discount-red {
+    font-size: 8px; font-weight: 700; color: #fff;
+    background: #FF3B30; border-radius: 999px; padding: 1px 5px;
+    text-align: center;
+  }
+
+  /* ── Deal Card — SOLL A (Timeline-Row analog) ──────────────────── */
+  .deal-card-a {
+    margin: 4px 10px;
+    padding: 10px 12px;
+    border-radius: var(--r-card);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .deal-card-a.dark  { background: #1C1C1E; }
+  .deal-card-a.light { background: #F2F2F7; }
+  .logo-a {
+    width: 34px; height: 34px; border-radius: var(--r-thumb);
+    background: rgba(120,120,128,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .deal-card-a .title-a  { font-size: 11px; font-weight: 700; line-height: 1.2; }
+  .deal-card-a .meta-a   { font-size: 9px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+  .deal-card-a.light .title-a { color: #000; }
+  .deal-card-a.light .meta-a  { color: rgba(0,0,0,0.45); }
+  .deal-card-a.dark  .title-a { color: #fff; }
+  .price-a { font-size: 12px; font-weight: 700; color: var(--ocean-blue); }
+  .discount-a {
+    font-size: 8px; font-weight: 700; color: #fff;
+    background: var(--sunset-orange); border-radius: 999px; padding: 1px 5px;
+  }
+  .date-chip {
+    font-size: 8px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    background: rgba(12,140,233,0.15); color: var(--ocean-blue);
+    display: inline-block; margin-top: 3px;
+  }
+
+  /* ── Hero deal card (Vorschlag A top) ─────────────────────────── */
+  .hero-deal {
+    margin: 4px 10px;
+    border-radius: var(--r-hero);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .hero-media {
+    height: 80px;
+    position: relative;
+    display: flex; align-items: flex-end;
+  }
+  .hero-geo {
+    position: absolute; inset: 0;
+  }
+  .hero-scrim {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.7));
+  }
+  .hero-text {
+    position: relative; z-index: 2;
+    padding: 0 12px 8px;
+    display: flex; align-items: flex-end; justify-content: space-between; width: 100%;
+  }
+  .hero-title-t { font-size: 11px; font-weight: 800; color: #fff; }
+  .hero-sub-t   { font-size: 8px; color: rgba(255,255,255,0.7); }
+  .countdown-badge {
+    font-size: 8px; font-weight: 700; color: #fff;
+    background: var(--sunset-orange);
+    padding: 2px 6px; border-radius: var(--r-capsule);
+  }
+  .hero-meta-bar {
+    background: #1C1C1E;
+    padding: 6px 12px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 0.5px solid rgba(120,120,128,0.25);
+  }
+  .hero-meta-bar.light { background: #F2F2F7; }
+  .hero-meta-label { font-size: 9px; color: rgba(255,255,255,0.45); }
+  .hero-meta-bar.light .hero-meta-label { color: rgba(0,0,0,0.45); }
+  .hero-price-cta { font-size: 10px; font-weight: 700; color: var(--ocean-blue); }
+
+  /* ── Vorschlag B: Destination-Karte ────────────────────────────── */
+  .dest-card {
+    margin: 4px 10px;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .dest-media {
+    height: 56px; position: relative;
+    display: flex; align-items: flex-end;
+  }
+  .dest-meta-row {
+    padding: 6px 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dest-meta-row.dark  { background: #1C1C1E; }
+  .dest-meta-row.light { background: #F2F2F7; }
+  .dest-logo {
+    width: 26px; height: 26px; border-radius: var(--r-thumb);
+    background: rgba(120,120,128,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+  .dest-title-b { font-size: 10px; font-weight: 700; flex: 1; line-height: 1.2; }
+  .dest-price-b { font-size: 10px; font-weight: 700; color: var(--ocean-blue); }
+  .dest-meta-b  { font-size: 8px; }
+  .dark .dest-title-b  { color: #fff; }
+  .dark .dest-meta-b   { color: rgba(255,255,255,0.45); }
+  .light .dest-title-b { color: #000; }
+  .light .dest-meta-b  { color: rgba(0,0,0,0.45); }
+
+  /* ── Vorschlag C: Vergleichs-/Wunschliste ──────────────────────── */
+  .compare-card {
+    margin: 4px 10px;
+    border-radius: var(--r-card);
+    padding: 10px 12px;
+    flex-shrink: 0;
+  }
+  .compare-card.dark  { background: #1C1C1E; }
+  .compare-card.light { background: #F2F2F7; }
+  .compare-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .logo-c {
+    width: 28px; height: 28px; border-radius: var(--r-thumb);
+    background: rgba(120,120,128,0.15);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .compare-title { font-size: 10px; font-weight: 700; flex: 1; line-height: 1.2; }
+  .compare-card.dark .compare-title { color: #fff; }
+  .compare-card.light .compare-title { color: #000; }
+  .compare-divider { height: 0.5px; background: rgba(120,120,128,0.2); margin: 6px 0; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; }
+  .price-orig { font-size: 9px; text-decoration: line-through; opacity: 0.4; }
+  .price-now  { font-size: 13px; font-weight: 800; color: var(--ocean-blue); }
+  .price-save { font-size: 8px; font-weight: 700; color: var(--sea-green); }
+  .compare-meta { font-size: 8px; opacity: 0.45; margin-top: 4px; }
+  .compare-card.dark .compare-meta  { color: #fff; }
+  .compare-card.light .compare-meta { color: #000; }
+  .progress-track {
+    height: 3px; border-radius: 2px; background: rgba(120,120,128,0.2);
+    margin-top: 7px; overflow: hidden;
+  }
+  .progress-fill-b { height: 100%; border-radius: 2px; background: var(--ocean-blue); }
+  .progress-fill-g { height: 100%; border-radius: 2px; background: var(--sea-green); }
+  .progress-label { display: flex; justify-content: space-between; margin-top: 2px; }
+  .progress-label span { font-size: 7px; opacity: 0.4; }
+
+  /* ── Empty-state inside phone ──────────────────────────────────── */
+  .empty-state {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 8px; padding: 20px;
+  }
+  .empty-icon { font-size: 32px; opacity: 0.25; }
+  .empty-title { font-size: 13px; font-weight: 700; text-align: center; }
+  .empty-body  { font-size: 10px; text-align: center; opacity: 0.45; line-height: 1.5; }
+  .empty-cta {
+    margin-top: 4px; font-size: 10px; font-weight: 700; color: #fff;
+    background: var(--ocean-blue);
+    padding: 7px 16px; border-radius: var(--r-capsule);
+  }
+  .dark .empty-title  { color: #fff; }
+  .light .empty-title { color: #000; }
+
+  /* ── Geo SVG Canvas ─────────────────────────────────────────────── */
+  .geo-canvas { width: 100%; height: 100%; }
+
+  /* ── Roadmap ────────────────────────────────────────────────────── */
+  .roadmap-row {
+    display: flex; gap: 20px; width: 100%; max-width: 860px;
+  }
+  .roadmap-item {
+    flex: 1; border-radius: 12px; padding: 20px 24px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.10);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .roadmap-sprint { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ocean-blue); }
+  .roadmap-title  { font-size: 15px; font-weight: 700; color: #fff; }
+  .roadmap-effort { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+  /* ── Benchmark table ────────────────────────────────────────────── */
+  .bench-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .bench-table th { padding: 8px 12px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.4); border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .bench-table td { padding: 8px 12px; vertical-align: top; border-bottom: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.75); }
+  .bench-table tr:last-child td { border-bottom: none; }
+  .yes  { color: var(--sea-green); font-weight: 700; }
+  .part { color: var(--sunset-orange); font-weight: 700; }
+  .no   { color: rgba(255,255,255,0.25); }
+
+  /* ── Section header ─────────────────────────────────────────────── */
+  .section-header {
+    padding: 4px 14px 2px;
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    flex-shrink: 0;
+  }
+  .section-header.light { color: rgba(0,0,0,0.35); }
+
+  /* Slide-specific backgrounds */
+  #s1  { background: linear-gradient(145deg, #05090F 0%, #0D1F3C 60%, #071829 100%); }
+  #s2  { background: #060A10; }
+  #s3  { background: #060A10; }
+  #s4  { background: linear-gradient(160deg, #060A10 0%, #0A1525 100%); }
+  #s5  { background: linear-gradient(160deg, #0A0F1A 0%, #07111F 100%); }
+  #s6  { background: linear-gradient(160deg, #060A10 0%, #0D1020 100%); }
+  #s7  { background: linear-gradient(160deg, #060A10 0%, #091520 100%); }
+  #s8  { background: #060A10; }
+  #s9  { background: linear-gradient(160deg, #060A10 0%, #101818 100%); }
+  #s10 { background: #060A10; }
+  #s11 { background: linear-gradient(145deg, #05090F 0%, #0D1F3C 100%); }
+
+  /* Cover elements */
+  .cover-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: var(--r-capsule);
+    background: rgba(12,140,233,0.15);
+    border: 1px solid rgba(12,140,233,0.3);
+    font-size: 11px; font-weight: 700; color: var(--ocean-blue);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .cover-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ocean-blue); }
+  .cover-title { font-size: 52px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+  .cover-sub   { font-size: 20px; font-weight: 500; color: rgba(255,255,255,0.5); margin-top: 14px; line-height: 1.4; }
+  .cover-meta  { display: flex; gap: 24px; margin-top: 32px; }
+  .cover-meta-item { font-size: 12px; color: rgba(255,255,255,0.35); }
+  .cover-meta-val  { font-size: 14px; font-weight: 700; color: rgba(255,255,255,0.7); }
+  .token-row { display: flex; gap: 10px; margin-top: 28px; flex-wrap: wrap; }
+  .token-chip {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: var(--r-capsule);
+    background: rgba(255,255,255,0.06);
+    font-size: 11px; color: rgba(255,255,255,0.6);
+  }
+  .token-swatch { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Before/After label strip */
+  .ba-labels { display: flex; justify-content: space-between; width: 100%; margin-bottom: 10px; }
+  .ba-label  { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .ba-label.before { color: rgba(255,59,48,0.8); }
+  .ba-label.after  { color: var(--sea-green); }
+
+  .slide-title-block { text-align: center; margin-bottom: 32px; }
+  .slide-num { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ocean-blue); margin-bottom: 8px; }
+  .slide-h { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; }
+  .slide-sub { font-size: 15px; font-weight: 400; color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+  .tag-line {
+    font-size: 13px; font-weight: 600;
+    padding: 5px 14px; border-radius: var(--r-capsule);
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.65);
+    text-align: center; margin-top: 6px;
+  }
+
+  /* Category header strip in list */
+  .cat-strip {
+    padding: 3px 10px 2px;
+    font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    flex-shrink: 0;
+  }
+  .cat-strip.light { color: rgba(0,0,0,0.3); }
+
+  /* Closing slide */
+  .closing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; max-width: 700px; }
+  .closing-card {
+    border-radius: 12px; padding: 20px 22px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .closing-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .closing-card p  { font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.5; }
+
+  /* filter pill */
+  .filter-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: var(--r-capsule);
+    font-size: 8px; font-weight: 700; margin: 0 10px 6px;
+    flex-shrink: 0;
+  }
+  .filter-pill.active { background: rgba(12,140,233,0.2); color: var(--ocean-blue); border: 1px solid rgba(12,140,233,0.3); }
+  .filter-pill.inactive { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35); border: 1px solid rgba(255,255,255,0.1); }
+
+  /* sort bar */
+  .sort-bar {
+    display: flex; gap: 4px; padding: 0 10px 4px; flex-shrink: 0;
+    overflow: hidden;
+  }
+  .sort-btn {
+    font-size: 8px; font-weight: 600; padding: 2px 7px; border-radius: 5px;
+    flex-shrink: 0;
+  }
+  .sort-btn.sel { background: var(--ocean-blue); color: #fff; }
+  .sort-btn.unsel.dark  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.4); }
+  .sort-btn.unsel.light { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.4); }
+
+  /* Price progress in compare */
+  .price-track-wrap { margin-top: 6px; }
+  .price-track-labels { display: flex; justify-content: space-between; font-size: 7px; opacity: 0.4; margin-bottom: 2px; }
+  .dark .price-track-labels { color: #fff; }
+  .light .price-track-labels { color: #000; }
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+
+<div class="deck">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 1 — COVER
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide active" id="s1">
+  <div style="max-width:800px;width:100%;">
+    <div class="cover-badge"><span class="cover-dot"></span>UX-Pitch-Deck</div>
+    <div class="cover-title">Merkliste</div>
+    <div class="cover-sub">3 Design-Vorschlaege fuer die DealsView<br>konsistent zur Hauptseite &bdquo;Meine Reisen&ldquo;</div>
+    <div class="token-row">
+      <div class="token-chip"><span class="token-swatch" style="background:#0C8CE9"></span>oceanBlue #0C8CE9</div>
+      <div class="token-chip"><span class="token-swatch" style="background:#FF6B35"></span>sunsetOrange #FF6B35</div>
+      <div class="token-chip"><span class="token-swatch" style="background:#34C759"></span>seaGreen #34C759</div>
+      <div class="token-chip"><span class="token-swatch" style="background:#1A365D"></span>navyDark #1A365D</div>
+    </div>
+    <div class="cover-meta">
+      <div><div class="cover-meta-item">Scope</div><div class="cover-meta-val">DealsView</div></div>
+      <div><div class="cover-meta-item">Plattform</div><div class="cover-meta-val">iOS 18.5+ SwiftUI</div></div>
+      <div><div class="cover-meta-item">Vorschlaege</div><div class="cover-meta-val">3 Richtungen</div></div>
+      <div><div class="cover-meta-item">Datum</div><div class="cover-meta-val">2026-06-17</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 2 — PROBLEM / IST-ANALYSE
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s2">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Problem</div>
+      <div class="slide-h">IST-Analyse: DealsView</div>
+      <div class="slide-sub">Code-verankerte Findings — <code style="font-size:12px;opacity:0.6">DealsView.swift</code></div>
+    </div>
+    <div class="cols-2" style="gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="finding">
+          <span class="severity sev-high">HIGH</span>
+          <div>
+            <div class="finding-text">Keine Card-Huelle um DealRowView — flache Listenzeile bricht mit dem &bdquo;grauen Karten&ldquo;-System der Timeline-Row</div>
+            <div class="finding-ref">DealRowView — kein background/cornerRadius vorhanden · Zeile 92-154</div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-high">HIGH</span>
+          <div>
+            <div class="finding-text">Rabatt-Badge nutzt rohes <code>.red</code> statt Marken-Token sunsetOrange — verletzt Konsistenz-Regel §9.4</div>
+            <div class="finding-ref">DealRowView · Zeile 143: <code>.background(.red)</code></div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-high">HIGH</span>
+          <div>
+            <div class="finding-text">Logo-Thumbnail: cornerRadius 8 statt kanonischem r6 (Thumbnails) oder r10 (Karten)</div>
+            <div class="finding-ref">DealRowView · Zeile 103: <code>cornerRadius: 8</code></div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-med">MED</span>
+          <div>
+            <div class="finding-text">Datum/Zeitraum nicht in der Zeile sichtbar — muss in Edit-Sheet gesucht werden (Kerninfo versteckt)</div>
+            <div class="finding-ref">DealRowView zeigt <code>destination</code> + <code>duration</code>, kein <code>startDate/endDate</code></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div class="finding">
+          <span class="severity sev-med">MED</span>
+          <div>
+            <div class="finding-text">Schiffsname (<code>ship</code>) ist Kern-Attribut eines Angebots, taucht in der Zeile nicht auf</div>
+            <div class="finding-ref">DealRowView — nur title/destination/duration/price sichtbar</div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-med">MED</span>
+          <div>
+            <div class="finding-text">Preis-Darstellung: nur Endpreis, kein Durchstrich-Originalpreis — Ersparnis nicht kommuniziert</div>
+            <div class="finding-ref">Deal.formattedPrice zeigt nur <code>price</code>, <code>originalPrice</code> ignoriert</div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-low">LOW</span>
+          <div>
+            <div class="finding-text">Empty-State: solides <code>ContentUnavailableView</code>, aber keine Marken-Farbe auf dem CTA-Button</div>
+            <div class="finding-ref">Zeile 55-67: <code>.borderedProminent</code> (SystemAccent, kein oceanBlue)</div>
+          </div>
+        </div>
+        <div class="finding">
+          <span class="severity sev-low">LOW</span>
+          <div>
+            <div class="finding-text">Kein Hero-Element fuer das &bdquo;beste&ldquo; oder naechste Angebot — alle Zeilen gleichwertig</div>
+            <div class="finding-ref">Nur <code>List { ForEach { DealRowView } }</code> — kein Fokus-Objekt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 3 — BENCHMARKS
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s3">
+  <div style="max-width:920px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Benchmarks</div>
+      <div class="slide-h">Best-in-Class Merklisten 2026</div>
+      <div class="slide-sub">Pattern-Analyse fuer Travel-/Buchungs-Apps</div>
+    </div>
+    <div class="panel" style="padding:0;overflow:hidden;">
+      <table class="bench-table">
+        <thead>
+          <tr>
+            <th>Pattern</th>
+            <th>Airbnb Wishlist</th>
+            <th>Booking.com</th>
+            <th>Tripit</th>
+            <th>Hopper</th>
+            <th>Anwendbar?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Card mit Media-Zone (Foto/Map)</td>
+            <td class="yes">Ja</td><td class="yes">Ja</td><td class="no">Nein</td><td class="part">Teil</td>
+            <td class="yes">Ja — Geo-Fallback</td>
+          </tr>
+          <tr>
+            <td>Preis-Tracking / Preishistorie</td>
+            <td class="no">Nein</td><td class="part">Teil</td><td class="no">Nein</td><td class="yes">Ja</td>
+            <td class="part">Einfach: Spar-Chip</td>
+          </tr>
+          <tr>
+            <td>Sortierung / Filterleiste</td>
+            <td class="yes">Ja</td><td class="yes">Ja</td><td class="no">Nein</td><td class="part">Teil</td>
+            <td class="yes">Ja (Preis/Datum)</td>
+          </tr>
+          <tr>
+            <td>Hervorgehobener &bdquo;Top Pick&ldquo;</td>
+            <td class="yes">Ja</td><td class="no">Nein</td><td class="no">Nein</td><td class="yes">Ja</td>
+            <td class="yes">Ja — Hero-Card</td>
+          </tr>
+          <tr>
+            <td>Datum/Zeitraum in der Zeile</td>
+            <td class="yes">Ja</td><td class="yes">Ja</td><td class="yes">Ja</td><td class="yes">Ja</td>
+            <td class="yes">Ja — Pflicht</td>
+          </tr>
+          <tr>
+            <td>Inline Spar-Betrag (nicht nur %)</td>
+            <td class="no">Nein</td><td class="yes">Ja</td><td class="no">Nein</td><td class="yes">Ja</td>
+            <td class="part">Optional</td>
+          </tr>
+          <tr>
+            <td>Leerer Zustand mit Aktion</td>
+            <td class="yes">Ja</td><td class="yes">Ja</td><td class="yes">Ja</td><td class="yes">Ja</td>
+            <td class="yes">Ja — bereits gut</td>
+          </tr>
+          <tr>
+            <td>Reederei-Branding im Vordergrund</td>
+            <td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td>
+            <td class="yes">Ja — ShipTrip-USP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="body-text" style="margin-top:14px;font-size:12px;">
+      <strong style="color:rgba(255,255,255,0.8)">Fazit:</strong> Alle Top-Apps zeigen Datum, Foto/Map und sortierbaren Preis in der Zeile. ShipTrip-USP ist das Reederei-Branding (Emoji-Logo). Preis-Tracking ist ein optionaler Differenziator (Vorschlag C).
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 4 — VORSCHLAG A (Konzept)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s4">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag A</div>
+      <div class="slide-h">Kompakte Karte + Hero-Fokus</div>
+      <div class="slide-sub">Timeline-Row-DNA, bestes Angebot als Hero — minimaler Implementierungsaufwand</div>
+    </div>
+    <div class="tag-line" style="margin-bottom:24px;">&bdquo;Gleiche Card-Sprache wie Meine Reisen — sofort vertraut, null Lernkurve&ldquo;</div>
+    <div class="cols-half" style="gap:60px;align-items:flex-start;">
+      <ul class="bullets" style="margin-top:12px;">
+        <li>Deal-Zeilen werden zu echten Cards: r10, secondarySystemBackground, kein Rand/Schatten — 1:1 analog zu CruiseTimelineRowView</li>
+        <li>Erstes / guenstigstes Angebot als Hero-Card (r16) mit Geo-SVG-Hintergrund und Scrim — nutzt das Hero-Muster der Hauptseite direkt</li>
+        <li>Rabatt-Badge wechselt von rohem .red zu sunsetOrange — eine Token-Zeile Aenderung</li>
+        <li>Datum-Chip (oceanBlue, r4) erscheint unter der Meta-Zeile — zeigt Reisezeitraum auf einen Blick</li>
+        <li>Preis-Farbe: oceanBlue statt .primary — hebt den Wert hervor ohne Custom-Komponente</li>
+        <li>Empty-State behaelt ContentUnavailableView, CTA-Button erhaelt oceanBlue explizit</li>
+      </ul>
+      <div style="display:flex;flex-direction:column;gap:20px;align-items:center;">
+        <div class="ba-labels"><span class="ba-label before">Vorher</span><span class="ba-label after">Nachher</span></div>
+        <!-- phonepair -->
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+
+          <!-- IST Phone -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">IST — flache Liste</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar">
+                  <span class="nav-title dark">Merkliste</span>
+                  <span class="nav-icon">+</span>
+                </div>
+                <div class="search-bar dark">
+                  <span class="search-icon">🔍</span>
+                  <span class="search-text">Suchen...</span>
+                </div>
+                <div class="list-area">
+                  <!-- IST row 1 -->
+                  <div class="deal-row-ist">
+                    <div class="logo-ist">🚢</div>
+                    <div style="flex:1;min-width:0;">
+                      <div class="title">Norwegische Fjorde</div>
+                      <div class="meta">Fjorde · 7 Tage</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="price">ab 899 €</div>
+                      <div class="discount-red">-12%</div>
+                    </div>
+                  </div>
+                  <!-- IST row 2 -->
+                  <div class="deal-row-ist">
+                    <div class="logo-ist">🛳</div>
+                    <div style="flex:1;min-width:0;">
+                      <div class="title">Oestliche Karibik</div>
+                      <div class="meta">Karibik · 8 Tage</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="price">1.249 €</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-bar dark">
+                <div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div>
+                <div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div>
+                <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+                <div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SOLL A Phone -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">SOLL A — Hero + Cards</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar">
+                  <span class="nav-title dark">Merkliste</span>
+                  <span class="nav-icon">+</span>
+                </div>
+                <div class="search-bar dark">
+                  <span class="search-icon">🔍</span>
+                  <span class="search-text">Suchen...</span>
+                </div>
+                <div class="list-area">
+                  <!-- Hero Deal -->
+                  <div class="hero-deal" style="margin:4px 10px 0;">
+                    <div class="hero-media">
+                      <svg class="geo-canvas" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;">
+                        <defs>
+                          <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#1A365D"/>
+                            <stop offset="50%" stop-color="#0C8CE9"/>
+                            <stop offset="100%" stop-color="#36A9F0"/>
+                          </linearGradient>
+                        </defs>
+                        <rect width="200" height="80" fill="url(#gA)"/>
+                        <!-- simplified coastline suggestion -->
+                        <path d="M20,60 Q40,50 55,55 Q70,60 80,48 Q95,36 110,42 Q130,50 145,40 Q160,30 180,35" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+                        <!-- start dot -->
+                        <circle cx="30" cy="57" r="4" fill="#FF6B35"/>
+                        <circle cx="30" cy="57" r="6" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.5"/>
+                        <!-- end dot -->
+                        <circle cx="165" cy="34" r="4" fill="#34C759"/>
+                        <circle cx="165" cy="34" r="6" fill="none" stroke="#34C759" stroke-width="1.5" opacity="0.5"/>
+                        <!-- mid dots -->
+                        <circle cx="80" cy="48" r="2.5" fill="rgba(255,255,255,0.5)"/>
+                        <circle cx="120" cy="43" r="2.5" fill="rgba(255,255,255,0.5)"/>
+                      </svg>
+                      <div class="hero-scrim"></div>
+                      <div class="hero-text">
+                        <div>
+                          <div class="hero-title-t">Norwegische Fjorde</div>
+                          <div class="hero-sub-t">AIDA · AIDAnova · 7 Naechte</div>
+                        </div>
+                        <div class="countdown-badge">Jun 26</div>
+                      </div>
+                    </div>
+                    <div class="hero-meta-bar">
+                      <div>
+                        <div class="hero-meta-label">ab Preis</div>
+                        <div style="font-size:11px;font-weight:800;color:#0C8CE9;">899 €</div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="discount-a">-12%</div>
+                        <div class="hero-price-cta">Details →</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Zeilen-Section -->
+                  <div class="cat-strip" style="margin-top:4px;">Weitere Angebote</div>
+                  <div class="deal-card-a dark">
+                    <div class="logo-a">🛳</div>
+                    <div style="flex:1;min-width:0;">
+                      <div class="title-a">Oestliche Karibik</div>
+                      <div class="meta-a">MSC · MSC Seaside · 8 Naechte</div>
+                      <div class="date-chip">Jan 2027</div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div class="price-a">1.249 €</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-bar dark">
+                <div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div>
+                <div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div>
+                <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+                <div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 5 — VORSCHLAG A LEER-ZUSTAND
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s5">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag A — Erweiterung</div>
+      <div class="slide-h">Leer-Zustand (Empty State)</div>
+      <div class="slide-sub">Wenn noch keine Eintraege vorhanden sind — Light + Dark konsistent</div>
+    </div>
+    <div style="display:flex;gap:40px;align-items:flex-start;justify-content:center;margin-top:8px;">
+
+      <!-- DARK empty -->
+      <div class="iphone-wrap">
+        <div class="iphone-label">Dark Mode</div>
+        <div class="iphone dark">
+          <div class="dynamic-island"></div>
+          <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+          <div class="screen">
+            <div class="nav-bar">
+              <span class="nav-title dark">Merkliste</span>
+              <span class="nav-icon">+</span>
+            </div>
+            <div class="empty-state dark">
+              <div class="empty-icon">🔖</div>
+              <div class="empty-title dark">Keine Eintraege</div>
+              <div class="empty-body" style="color:rgba(255,255,255,0.4);">Speichere interessante Kreuzfahrten auf deiner Merkliste</div>
+              <div class="empty-cta">Eintrag hinzufuegen</div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+            <div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIGHT empty -->
+      <div class="iphone-wrap">
+        <div class="iphone-label">Light Mode</div>
+        <div class="iphone light">
+          <div class="dynamic-island"></div>
+          <div class="status-bar" style="color:rgba(0,0,0,0.5);"><span>9:41</span><span>●●●</span></div>
+          <div class="screen" style="background:#F2F2F7;">
+            <div class="nav-bar">
+              <span class="nav-title light">Merkliste</span>
+              <span class="nav-icon">+</span>
+            </div>
+            <div class="empty-state light">
+              <div class="empty-icon">🔖</div>
+              <div class="empty-title light">Keine Eintraege</div>
+              <div class="empty-body" style="color:rgba(0,0,0,0.4);">Speichere interessante Kreuzfahrten auf deiner Merkliste</div>
+              <div class="empty-cta">Eintrag hinzufuegen</div>
+            </div>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item inactive light"><span>🗺</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Karte</span></div>
+            <div class="tab-item inactive light"><span>📊</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Statistik</span></div>
+            <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+            <div class="tab-item inactive light"><span>⚙️</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bullets -->
+      <div style="max-width:280px;padding-top:40px;">
+        <div class="accent-bar"></div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Empty-State-Regeln</div>
+        <ul class="bullets" style="gap:12px;">
+          <li>ContentUnavailableView beibehalten — iOS-Standard, VoiceOver kostenlos</li>
+          <li>CTA-Button explizit auf oceanBlue toenten (tint-Modifier), nicht System-Akzent</li>
+          <li>Bookmark-Icon bleibt korrekt — aus Brief §6 bestaetigt</li>
+          <li>Text unveraendert (bereits DE/EN-Catalog-ready)</li>
+          <li>Light/Dark: systemBackground liefert den richtigen Fill automatisch</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 6 — VORSCHLAG B (Konzept)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s6">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag B</div>
+      <div class="slide-h">Destinations-Karte (visuell-reich)</div>
+      <div class="slide-sub">Jede Zeile traegt eine Mini-Geo-Zone — Reiseziel wird sichtbar, nicht nur lesbar</div>
+    </div>
+    <div class="tag-line" style="margin-bottom:24px;">&bdquo;Die Route ist das Produkt — zeig sie schon in der Liste&ldquo;</div>
+    <div class="cols-half" style="gap:60px;align-items:flex-start;">
+      <ul class="bullets orange" style="margin-top:12px;">
+        <li>Jede Deal-Card hat eine 56pt-Media-Zone oben: Geo-Gradient mit Route-Andeutung (SVG, analog Geo-Hero der Hauptseite) — kein echtes Foto noetig</li>
+        <li>Darunter eine kompakte Meta-Leiste: Logo + Titel + Preis in einer Zeile — Platz gespart, Infodichte erhalten</li>
+        <li>Datum-Chip (oceanBlue) und Nacht-Zaehler in der Meta-Leiste — Reisezeitraum sofort ablesbar</li>
+        <li>Sortierleiste (Preis / Datum / Reederei) als horizontale Pill-Row unter der Suche — Benchmark-Pattern von Airbnb/Booking</li>
+        <li>Card-Radius r10 (Zeile) — konsistent mit Timeline-Row; kein Schatten/Rand</li>
+        <li>Erhoehter Implementierungsaufwand: CruiseGeoFallbackView-Logik fuer Deals adaptieren (kein tatsaechlicher Hafen-Pfad noetig, nur Farb-Gradient)</li>
+      </ul>
+      <div style="display:flex;flex-direction:column;gap:20px;align-items:center;">
+        <div class="ba-labels"><span class="ba-label before">Vorher</span><span class="ba-label after">Nachher B</span></div>
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+
+          <!-- IST Phone (repeat for context) -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">IST</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar"><span class="nav-title dark">Merkliste</span><span class="nav-icon">+</span></div>
+                <div class="search-bar dark"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+                <div class="list-area">
+                  <div class="deal-row-ist"><div class="logo-ist">🚢</div><div style="flex:1;min-width:0;"><div class="title">Norwegische Fjorde</div><div class="meta">Fjorde · 7 Tage</div></div><div style="text-align:right;"><div class="price">ab 899 €</div><div class="discount-red">-12%</div></div></div>
+                  <div class="deal-row-ist"><div class="logo-ist">🛳</div><div style="flex:1;min-width:0;"><div class="title">Oestliche Karibik</div><div class="meta">Karibik · 8 Tage</div></div><div style="text-align:right;"><div class="price">1.249 €</div></div></div>
+                </div>
+              </div>
+              <div class="tab-bar dark"><div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div><div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div><div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div><div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div></div>
+            </div>
+          </div>
+
+          <!-- SOLL B Phone -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">SOLL B — Geo-Cards</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar"><span class="nav-title dark">Merkliste</span><span class="nav-icon">+</span></div>
+                <div class="search-bar dark"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+                <!-- Sort pills -->
+                <div class="sort-bar">
+                  <div class="sort-btn sel">Preis</div>
+                  <div class="sort-btn unsel dark">Datum</div>
+                  <div class="sort-btn unsel dark">Reederei</div>
+                </div>
+                <div class="list-area" style="gap:6px;padding:0 0 44px;">
+                  <!-- Card B1 — Fjorde -->
+                  <div class="dest-card" style="margin:0 10px;">
+                    <div class="dest-media">
+                      <svg width="100%" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;">
+                        <defs>
+                          <linearGradient id="gB1" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#1A365D"/>
+                            <stop offset="100%" stop-color="#36A9F0"/>
+                          </linearGradient>
+                        </defs>
+                        <rect width="180" height="56" fill="url(#gB1)"/>
+                        <path d="M10,38 Q30,28 50,32 Q70,36 85,24 Q105,12 130,18 Q155,24 170,15" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+                        <circle cx="15" cy="36" r="3.5" fill="#FF6B35"/>
+                        <circle cx="162" cy="16" r="3.5" fill="#34C759"/>
+                        <circle cx="85" cy="24" r="2" fill="rgba(255,255,255,0.5)"/>
+                        <!-- scrim -->
+                        <rect width="180" height="56" fill="url(#scrB1)" opacity="0.5"/>
+                      </svg>
+                      <defs><linearGradient id="scrB1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="transparent"/><stop offset="100%" stop-color="rgba(0,0,0,0.5)"/></linearGradient></defs>
+                    </div>
+                    <div class="dest-meta-row dark">
+                      <div class="dest-logo">🚢</div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2;">Norweg. Fjorde</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.4);">AIDA · AIDAnova · Jun 2026</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div style="font-size:11px;font-weight:800;color:#0C8CE9;">899 €</div>
+                        <div class="discount-a">-12%</div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card B2 — Karibik -->
+                  <div class="dest-card" style="margin:0 10px;">
+                    <div class="dest-media">
+                      <svg width="100%" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;">
+                        <defs>
+                          <linearGradient id="gB2" x1="0" y1="1" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#0C8CE9"/>
+                            <stop offset="100%" stop-color="#36A9F0"/>
+                          </linearGradient>
+                        </defs>
+                        <rect width="180" height="56" fill="url(#gB2)"/>
+                        <path d="M10,44 Q40,36 65,40 Q90,44 115,30 Q140,16 170,20" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+                        <circle cx="14" cy="42" r="3.5" fill="#FF6B35"/>
+                        <circle cx="163" cy="20" r="3.5" fill="#34C759"/>
+                      </svg>
+                    </div>
+                    <div class="dest-meta-row dark">
+                      <div class="dest-logo">🛳</div>
+                      <div style="flex:1;min-width:0;">
+                        <div style="font-size:10px;font-weight:700;color:#fff;line-height:1.2;">Oestl. Karibik</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.4);">MSC · Seaside · Jan 2027</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div style="font-size:11px;font-weight:800;color:#0C8CE9;">1.249 €</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-bar dark"><div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div><div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div><div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div><div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 7 — VORSCHLAG B LIGHT
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s7">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag B — Light Mode</div>
+      <div class="slide-h">Destinations-Karte im Tageslicht</div>
+      <div class="slide-sub">secondarySystemBackground (F2F2F7) traegt die Geo-Cards sauber — kein Schatten noetig</div>
+    </div>
+    <div style="display:flex;gap:48px;justify-content:center;align-items:flex-start;margin-top:12px;">
+      <!-- LIGHT B Phone -->
+      <div class="iphone-wrap">
+        <div class="iphone-label">Light — Geo-Cards</div>
+        <div class="iphone light">
+          <div class="dynamic-island"></div>
+          <div class="status-bar" style="color:rgba(0,0,0,0.5);"><span>9:41</span><span>●●●</span></div>
+          <div class="screen" style="background:#F2F2F7;">
+            <div class="nav-bar"><span class="nav-title light">Merkliste</span><span class="nav-icon">+</span></div>
+            <div class="search-bar light"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+            <div class="sort-bar">
+              <div class="sort-btn sel">Preis</div>
+              <div class="sort-btn unsel light">Datum</div>
+              <div class="sort-btn unsel light">Reederei</div>
+            </div>
+            <div class="list-area" style="gap:6px;padding:0 0 44px;">
+              <div class="dest-card" style="margin:0 10px;">
+                <div class="dest-media">
+                  <svg width="100%" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;">
+                    <defs><linearGradient id="gBL1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1A365D"/><stop offset="100%" stop-color="#36A9F0"/></linearGradient></defs>
+                    <rect width="180" height="56" fill="url(#gBL1)"/>
+                    <path d="M10,38 Q30,28 50,32 Q70,36 85,24 Q105,12 130,18 Q155,24 170,15" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+                    <circle cx="15" cy="36" r="3.5" fill="#FF6B35"/>
+                    <circle cx="162" cy="16" r="3.5" fill="#34C759"/>
+                  </svg>
+                </div>
+                <div class="dest-meta-row light">
+                  <div class="dest-logo">🚢</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:10px;font-weight:700;color:#000;line-height:1.2;">Norweg. Fjorde</div>
+                    <div style="font-size:8px;color:rgba(0,0,0,0.4);">AIDA · AIDAnova · Jun 2026</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:11px;font-weight:800;color:#0C8CE9;">899 €</div>
+                    <div class="discount-a">-12%</div>
+                  </div>
+                </div>
+              </div>
+              <div class="dest-card" style="margin:0 10px;">
+                <div class="dest-media">
+                  <svg width="100%" height="56" viewBox="0 0 180 56" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;">
+                    <defs><linearGradient id="gBL2" x1="0" y1="1" x2="1" y2="0"><stop offset="0%" stop-color="#0C8CE9"/><stop offset="100%" stop-color="#36A9F0"/></linearGradient></defs>
+                    <rect width="180" height="56" fill="url(#gBL2)"/>
+                    <path d="M10,44 Q40,36 65,40 Q90,44 115,30 Q140,16 170,20" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" fill="none" stroke-dasharray="4,2"/>
+                    <circle cx="14" cy="42" r="3.5" fill="#FF6B35"/>
+                    <circle cx="163" cy="20" r="3.5" fill="#34C759"/>
+                  </svg>
+                </div>
+                <div class="dest-meta-row light">
+                  <div class="dest-logo">🛳</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-size:10px;font-weight:700;color:#000;line-height:1.2;">Oestl. Karibik</div>
+                    <div style="font-size:8px;color:rgba(0,0,0,0.4);">MSC · Seaside · Jan 2027</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:11px;font-weight:800;color:#0C8CE9;">1.249 €</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item inactive light"><span>🗺</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Karte</span></div>
+            <div class="tab-item inactive light"><span>📊</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Statistik</span></div>
+            <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+            <div class="tab-item inactive light"><span>⚙️</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div style="max-width:320px;padding-top:40px;">
+        <div class="accent-bar" style="background:var(--sunset-orange);"></div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Warum besser als IST?</div>
+        <ul class="bullets orange" style="gap:12px;">
+          <li>Geo-Gradient kommuniziert Meeresthema ohne Foto-Infrastruktur (navyDark → oceanLight)</li>
+          <li>secondarySystemBackground (F2F2F7 / 1C1C1E) funktioniert auf weissem wie auf grauem Seitenhintergrund — kein Rand noetig</li>
+          <li>Sortier-Pills folgen dem Booking.com-Pattern: Preis-zuerst ist fuer Wunschlisten der Most-Used-Filter</li>
+          <li>Route-Punkte orange (Start) / gruen (End) konsistent zum Pin-Rollensystem aus Brief §3</li>
+          <li>Aufwand: M (neue DealCardView + Gradient-Konfiguration pro Destination)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 8 — VORSCHLAG C (Konzept)
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s8">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag C</div>
+      <div class="slide-h">Vergleichs-Wunschliste</div>
+      <div class="slide-sub">Preis-Tracking, Ersparnis-Visualisierung, Vergleich auf einen Blick</div>
+    </div>
+    <div class="tag-line" style="margin-bottom:24px;">&bdquo;Nicht nur merken — entscheiden. Welches Angebot ist heute die bessere Wahl?&ldquo;</div>
+    <div class="cols-half" style="gap:60px;align-items:flex-start;">
+      <ul class="bullets green" style="margin-top:12px;">
+        <li>Jede Card zeigt Originalpreis (durchgestrichen), Aktualpreis (oceanBlue, bold) und gesparten Betrag (seaGreen) — vollstaendige Preis-Story</li>
+        <li>Preis-Balken: visueller Track (Progress-View) der Ersparnis — sofort vergleichbar, kein Rechnen noetig</li>
+        <li>Schiffsname und Reederei in der Header-Zeile prominent — USP von ShipTrip bewahrt</li>
+        <li>Zeitraum-Zeile: Datum + Nacht-Zaehler in einer kompakten Meta-Row</li>
+        <li>Card-Struktur: r10 / secondarySystemBackground / kein Rand — Token-konform; Divider-Linie innerhalb der Card trennt Header von Preis-Zone</li>
+        <li>Aufwand: S-M (neue DealCompareCardView, kein neues Daten-Modell — Deal.originalPrice bereits vorhanden)</li>
+      </ul>
+      <div style="display:flex;flex-direction:column;gap:20px;align-items:center;">
+        <div class="ba-labels"><span class="ba-label before">Vorher</span><span class="ba-label after">Nachher C</span></div>
+        <div style="display:flex;gap:16px;align-items:flex-start;">
+
+          <!-- IST repeat -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">IST</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar"><span class="nav-title dark">Merkliste</span><span class="nav-icon">+</span></div>
+                <div class="search-bar dark"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+                <div class="list-area">
+                  <div class="deal-row-ist"><div class="logo-ist">🚢</div><div style="flex:1;min-width:0;"><div class="title">Norwegische Fjorde</div><div class="meta">Fjorde · 7 Tage</div></div><div style="text-align:right;"><div class="price">ab 899 €</div><div class="discount-red">-12%</div></div></div>
+                  <div class="deal-row-ist"><div class="logo-ist">🛳</div><div style="flex:1;min-width:0;"><div class="title">Oestliche Karibik</div><div class="meta">Karibik · 8 Tage</div></div><div style="text-align:right;"><div class="price">1.249 €</div></div></div>
+                </div>
+              </div>
+              <div class="tab-bar dark"><div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div><div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div><div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div><div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div></div>
+            </div>
+          </div>
+
+          <!-- SOLL C -->
+          <div class="iphone-wrap">
+            <div class="iphone-label">SOLL C — Vergleich</div>
+            <div class="iphone dark">
+              <div class="dynamic-island"></div>
+              <div class="status-bar"><span>9:41</span><span>●●●</span></div>
+              <div class="screen">
+                <div class="nav-bar"><span class="nav-title dark">Merkliste</span><span class="nav-icon">+</span></div>
+                <div class="search-bar dark"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+                <div class="list-area" style="gap:0;padding:4px 0 44px;">
+                  <!-- Compare Card 1 -->
+                  <div class="compare-card dark" style="margin:4px 10px;">
+                    <div class="compare-header">
+                      <div class="logo-c">🚢</div>
+                      <div style="flex:1;min-width:0;">
+                        <div class="compare-title">Norwegische Fjorde</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.4);">AIDA · AIDAnova · 7 Naechte</div>
+                      </div>
+                    </div>
+                    <div class="compare-divider"></div>
+                    <div class="price-row">
+                      <div>
+                        <div class="price-orig" style="color:rgba(255,255,255,0.4);">1.020 €</div>
+                        <div class="price-now">899 €</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div class="price-save">Du sparst 121 €</div>
+                        <div class="discount-a" style="margin-top:3px;">-12%</div>
+                      </div>
+                    </div>
+                    <div class="price-track-wrap">
+                      <div class="price-track-labels dark"><span>0 €</span><span>1.020 €</span></div>
+                      <div class="progress-track">
+                        <div class="progress-fill-b" style="width:88%;"></div>
+                      </div>
+                    </div>
+                    <div class="compare-meta dark">Jun 2026 · Fjorde &amp; Norwegen</div>
+                  </div>
+                  <!-- Compare Card 2 -->
+                  <div class="compare-card dark" style="margin:4px 10px;">
+                    <div class="compare-header">
+                      <div class="logo-c">🛳</div>
+                      <div style="flex:1;min-width:0;">
+                        <div class="compare-title">Oestliche Karibik</div>
+                        <div style="font-size:8px;color:rgba(255,255,255,0.4);">MSC · Seaside · 8 Naechte</div>
+                      </div>
+                    </div>
+                    <div class="compare-divider"></div>
+                    <div class="price-row">
+                      <div>
+                        <div class="price-orig" style="color:rgba(255,255,255,0.4);">—</div>
+                        <div class="price-now">1.249 €</div>
+                      </div>
+                      <div style="text-align:right;">
+                        <div class="price-save" style="color:rgba(255,255,255,0.3);">kein Vgl.-Preis</div>
+                      </div>
+                    </div>
+                    <div class="compare-meta dark">Jan 2027 · Karibik</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-bar dark"><div class="tab-item inactive dark"><span>🗺</span><span class="tab-label">Karte</span></div><div class="tab-item inactive dark"><span>📊</span><span class="tab-label">Statistik</span></div><div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div><div class="tab-item inactive dark"><span>⚙️</span><span class="tab-label">Mehr</span></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 9 — VORSCHLAG C LIGHT
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s9">
+  <div style="max-width:880px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Vorschlag C — Light Mode</div>
+      <div class="slide-h">Vergleichs-Wunschliste im Tageslicht</div>
+      <div class="slide-sub">seaGreen-Ersparnisfarbe + oceanBlue-Preis funktionieren auf hellem Fill</div>
+    </div>
+    <div style="display:flex;gap:48px;justify-content:center;align-items:flex-start;margin-top:12px;">
+
+      <div class="iphone-wrap">
+        <div class="iphone-label">Light — Vergleich</div>
+        <div class="iphone light">
+          <div class="dynamic-island"></div>
+          <div class="status-bar" style="color:rgba(0,0,0,0.5);"><span>9:41</span><span>●●●</span></div>
+          <div class="screen" style="background:#F2F2F7;">
+            <div class="nav-bar"><span class="nav-title light">Merkliste</span><span class="nav-icon">+</span></div>
+            <div class="search-bar light"><span class="search-icon">🔍</span><span class="search-text">Suchen...</span></div>
+            <div class="list-area" style="gap:0;padding:4px 0 44px;">
+              <div class="compare-card light" style="margin:4px 10px;">
+                <div class="compare-header">
+                  <div class="logo-c">🚢</div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="compare-title" style="color:#000;">Norwegische Fjorde</div>
+                    <div style="font-size:8px;color:rgba(0,0,0,0.4);">AIDA · AIDAnova · 7 Naechte</div>
+                  </div>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="price-row">
+                  <div>
+                    <div class="price-orig" style="color:rgba(0,0,0,0.3);">1.020 €</div>
+                    <div class="price-now">899 €</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="price-save">Du sparst 121 €</div>
+                    <div class="discount-a" style="margin-top:3px;">-12%</div>
+                  </div>
+                </div>
+                <div class="price-track-wrap">
+                  <div class="price-track-labels"><span style="color:rgba(0,0,0,0.4);">0 €</span><span style="color:rgba(0,0,0,0.4);">1.020 €</span></div>
+                  <div class="progress-track">
+                    <div class="progress-fill-b" style="width:88%;"></div>
+                  </div>
+                </div>
+                <div class="compare-meta" style="color:rgba(0,0,0,0.4);">Jun 2026 · Fjorde &amp; Norwegen</div>
+              </div>
+              <div class="compare-card light" style="margin:4px 10px;">
+                <div class="compare-header">
+                  <div class="logo-c">🛳</div>
+                  <div style="flex:1;min-width:0;">
+                    <div class="compare-title" style="color:#000;">Oestliche Karibik</div>
+                    <div style="font-size:8px;color:rgba(0,0,0,0.4);">MSC · Seaside · 8 Naechte</div>
+                  </div>
+                </div>
+                <div class="compare-divider"></div>
+                <div class="price-row">
+                  <div>
+                    <div class="price-orig" style="color:rgba(0,0,0,0.3);">—</div>
+                    <div class="price-now">1.249 €</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <div class="price-save" style="color:rgba(0,0,0,0.3);">kein Vgl.-Preis</div>
+                  </div>
+                </div>
+                <div class="compare-meta" style="color:rgba(0,0,0,0.4);">Jan 2027 · Karibik</div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item inactive light"><span>🗺</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Karte</span></div>
+            <div class="tab-item inactive light"><span>📊</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Statistik</span></div>
+            <div class="tab-item active"><span>🔖</span><span class="tab-label">Merkliste</span></div>
+            <div class="tab-item inactive light"><span>⚙️</span><span class="tab-label" style="color:rgba(0,0,0,0.35);">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="max-width:320px;padding-top:40px;">
+        <div class="accent-bar" style="background:var(--sea-green);"></div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:16px;">Warum besser als IST?</div>
+        <ul class="bullets green" style="gap:12px;">
+          <li>Deal.originalPrice war bisher unsichtbar — Vorschlag C macht es zum Haupt-Feature</li>
+          <li>Preis-Track (Progress-View) vermittelt Ersparnis intuitiv — kein Rechnen, kein Prozentsatz-Denken</li>
+          <li>seaGreen fuer Ersparniszahl ist semantisch richtig (positiver Wert) und Marken-Token-konform</li>
+          <li>Schiffsname + Reederei in Header-Zeile priorisiert — ShipTrip-USP bleibt im Fokus</li>
+          <li>Null-Preis-Vergleich (kein Originalpreis) wird sauber degradiert: Text &bdquo;kein Vgl.-Preis&ldquo;</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 10 — ROADMAP
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s10">
+  <div style="max-width:860px;width:100%;">
+    <div class="slide-title-block">
+      <div class="slide-num">Roadmap</div>
+      <div class="slide-h">Implementierungs-Phasen</div>
+      <div class="slide-sub">Alle drei Vorschlaege bauen aufeinander auf — Sprint 1 ist Token-Fix, unverzichtbar</div>
+    </div>
+    <div class="roadmap-row">
+      <div class="roadmap-item">
+        <div class="roadmap-sprint">Sprint 1 — Pflicht (Alle Vorschlaege)</div>
+        <div class="roadmap-title">Token-Fix + Card-Huelle</div>
+        <div class="roadmap-effort">Aufwand: S · 2-4h</div>
+        <ul class="bullets" style="margin-top:8px;gap:6px;font-size:12px;">
+          <li>DealRowView: background(secondarySystemBackground) + cornerRadius(10) + listRowSeparator(.hidden)</li>
+          <li>.red → sunsetOrange an Rabatt-Capsule</li>
+          <li>Price-Farbe .primary → oceanBlue</li>
+          <li>Logo-Thumbnail r8 → r6</li>
+          <li>Datum-Chip aus startDate/endDate</li>
+          <li>Empty-State CTA: .tint(oceanBlue)</li>
+        </ul>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-sprint" style="color:var(--sunset-orange);">Sprint 2 — Vorschlag A oder B</div>
+        <div class="roadmap-title">Hero-Card oder Geo-Cards</div>
+        <div class="roadmap-effort">Aufwand A: S · Aufwand B: M</div>
+        <ul class="bullets orange" style="margin-top:8px;gap:6px;font-size:12px;">
+          <li>A: CruiseHeroCardView-Muster auf bestes Deal anwenden (wenig Code neu)</li>
+          <li>B: DealCardView mit 56pt SVG-Geo-Zone (Gradient-Konfiguration pro Destination-Typ)</li>
+          <li>B: Sortier-Pills (Preis/Datum/Reederei) als ScrollView-Leiste</li>
+          <li>Gemeinsam: Schiffsname in der Zeile sichtbar machen</li>
+        </ul>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-sprint" style="color:var(--sea-green);">Sprint 3 — Vorschlag C (optional)</div>
+        <div class="roadmap-title">Vergleichs-Preis-Tracking</div>
+        <div class="roadmap-effort">Aufwand: M · kein Modell-Aenderung</div>
+        <ul class="bullets green" style="margin-top:8px;gap:6px;font-size:12px;">
+          <li>DealCompareCardView: Durchstrich-Orig.-Preis + Aktualpreis + Spar-Chip</li>
+          <li>Progress-Track (SwiftUI ProgressView custom) fuer visuellen Preis-Vergleich</li>
+          <li>Graceful Degradation wenn originalPrice == nil</li>
+          <li>Deal.originalPrice ist bereits im Datenmodell — kein Migration-Aufwand</li>
+        </ul>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:20px;padding:14px 20px;">
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.6;">
+        <strong style="color:#fff;">Empfehlung:</strong> Sprint 1 ist nicht optional — er schliesst die Konsistenzluecke, die der Consistency-Brief als harte Anforderung definiert. Danach: Vorschlag A fuer minimalen Aufwand, Vorschlag B wenn der visuelle Eindruck Prioritaet hat, Vorschlag C als differenzierender Feature-Layer.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 11 — CLOSING
+═══════════════════════════════════════════════════════════════════ -->
+<section class="slide" id="s11">
+  <div style="max-width:700px;width:100%;text-align:center;">
+    <div class="slide-num">Empfehlung</div>
+    <div class="heading" style="font-size:32px;margin-bottom:12px;">Naechster Schritt</div>
+    <div class="subheading" style="margin-bottom:32px;font-size:16px;">Sprint 1 ist Design-Hygiene. Alles andere ist Richtungsentscheid.</div>
+    <div class="closing-grid">
+      <div class="closing-card">
+        <h4 style="color:var(--ocean-blue);">Vorschlag A</h4>
+        <p>Tiefste Konsistenz zur Hauptseite, geringstes Risiko. Hero-Card nutzt bestehendes CruiseHeroCardView-Muster direkt. Empfehlung wenn Konsistenz Prioritaet hat.</p>
+      </div>
+      <div class="closing-card">
+        <h4 style="color:var(--sunset-orange);">Vorschlag B</h4>
+        <p>Staerkster visueller Eindruck. Geo-Gradient differenziert ShipTrip von generischen Listen. Empfehlung wenn App Store Screenshots ein Upgrade brauchen.</p>
+      </div>
+      <div class="closing-card">
+        <h4 style="color:var(--sea-green);">Vorschlag C</h4>
+        <p>Einziger Vorschlag mit echtem Feature-Mehrwert (Preis-Vergleich). Differenziert gegenueber Mitbewerbern. Empfehlung als Add-on auf Sprint 1+2.</p>
+      </div>
+      <div class="closing-card">
+        <h4>Sprint 1 (alle)</h4>
+        <p>Token-Fix + Card-Huelle in DealRowView: 2-4h, kein Risiko, schliesst Konsistenzluecke sofort. Muss vor jedem anderen Sprint landen.</p>
+      </div>
+    </div>
+    <div style="margin-top:28px;font-size:12px;color:rgba(255,255,255,0.3);">
+      ShipTrip UX-Pitch-Deck · Merkliste (DealsView) · 2026-06-17 · Gemini Design Gate #5 durchgelaufen
+    </div>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<!-- Navigation buttons -->
+<button class="nav-btn" id="nav-prev">&#8592;</button>
+<button class="nav-btn" id="nav-next">&#8594;</button>
+<div id="slide-counter"></div>
+
+<script>
+(function() {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+
+  function hashIndex() {
+    const h = parseInt(location.hash.replace('#',''), 10);
+    return (!isNaN(h) && h >= 1 && h <= total) ? h - 1 : 0;
+  }
+
+  function go(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= total) idx = total - 1;
+    slides[current].classList.remove('active');
+    current = idx;
+    slides[current].classList.add('active');
+    location.hash = '#' + (current + 1);
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress-bar').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  document.getElementById('nav-prev').addEventListener('click', () => go(current - 1));
+  document.getElementById('nav-next').addEventListener('click', () => go(current + 1));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(current + 1); }
+    if (e.key === 'ArrowLeft')  { e.preventDefault(); go(current - 1); }
+    if (e.key === 'Home')       { e.preventDefault(); go(0); }
+    if (e.key === 'End')        { e.preventDefault(); go(total - 1); }
+  });
+
+  // touch / swipe
+  let tx = 0;
+  document.addEventListener('touchstart', (e) => { tx = e.changedTouches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend',   (e) => {
+    const dx = e.changedTouches[0].clientX - tx;
+    if (Math.abs(dx) > 50) go(dx < 0 ? current + 1 : current - 1);
+  }, { passive: true });
+
+  go(hashIndex());
+})();
+</script>
+</body>
+</html>

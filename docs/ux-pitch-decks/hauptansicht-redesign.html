@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Hauptansicht Redesign</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ocean: #0C8CE9;
+  --ocean-light: #36A9F0;
+  --navy: #1A365D;
+  --navy-dark: #0d1f35;
+  --sunset: #FF6B35;
+  --sea: #34C759;
+  --bg: #07101c;
+  --surface: #0f1e30;
+  --surface2: #152840;
+  --border: #1e3350;
+  --text: #e8edf5;
+  --muted: #7a9ab8;
+  --accent: var(--ocean);
+  --red: #ff4d5e;
+  --amber: #ffa940;
+  --green: var(--sea);
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: var(--text); }
+
+#deck { width: 100vw; height: 100vh; position: relative; }
+.slide { display: none; position: absolute; inset: 0; overflow: hidden; }
+.slide.active { display: flex; }
+
+#progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--ocean), var(--sunset)); transition: width .3s ease; z-index: 100; }
+#counter { position: fixed; bottom: 20px; right: 28px; font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .05em; z-index: 100; }
+
+.nav-btn { position: fixed; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(12,140,233,.15); border: 1px solid rgba(12,140,233,.3); color: var(--ocean); font-size: 18px; cursor: pointer; z-index: 100; display: flex; align-items: center; justify-content: center; transition: background .2s, opacity .2s; opacity: .6; }
+.nav-btn:hover { background: rgba(12,140,233,.3); opacity: 1; }
+#nav-prev { left: 16px; }
+#nav-next { right: 72px; }
+
+.slide-inner { width: 100%; height: 100%; display: flex; flex-direction: column; padding: 40px 60px 36px; overflow-y: auto; }
+.slide-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ocean); margin-bottom: 8px; }
+.slide-title { font-size: clamp(1.5rem, 2.8vw, 2.2rem); font-weight: 800; line-height: 1.15; letter-spacing: -.02em; margin-bottom: 6px; }
+.slide-sub { font-size: 14px; color: var(--muted); line-height: 1.6; max-width: 620px; margin-bottom: 28px; }
+
+/* ===== IPHONE MOCKUP ===== */
+.phone { width: 186px; flex-shrink: 0; background: #08111d; border-radius: 36px; padding: 7px; box-shadow: 0 0 0 1.5px #1a2e45, 0 0 0 3px #0d1e2e, 0 24px 52px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.04); position: relative; }
+.phone-inner { width: 100%; border-radius: 29px; overflow: hidden; background: #f2f2f7; position: relative; }
+.phone-inner::before { content: ''; position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 66px; height: 14px; background: #08111d; border-radius: 10px; z-index: 10; }
+.phone-inner.dark { background: #0a1929; }
+
+.scr { width: 100%; background: #f2f2f7; color: #1c1c1e; font-size: 8.5px; line-height: 1.3; position: relative; }
+.scr * { box-sizing: border-box; }
+.scr.dark { background: #0a1929; color: #dceeff; }
+
+.sbar { height: 20px; padding: 0 12px; padding-top: 5px; display: flex; align-items: center; justify-content: space-between; font-size: 7px; font-weight: 700; color: #1c1c1e; }
+.sbar.white { color: #fff; }
+.sbar.dark-bar { color: #aac4de; }
+
+.nbar { padding: 2px 10px 5px; display: flex; align-items: flex-end; justify-content: space-between; }
+.nbar-title { font-size: 14px; font-weight: 800; letter-spacing: -.3px; color: #1c1c1e; }
+.nbar-title.dark { color: #e8f0f8; }
+.nbar-btn { font-size: 12px; color: var(--ocean); font-weight: 700; }
+
+.tabbar { height: 42px; border-top: .5px solid rgba(0,0,0,.1); display: flex; background: rgba(248,248,251,.97); }
+.tabbar.dark { background: rgba(10,22,40,.97); border-top-color: rgba(255,255,255,.08); }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 5.5px; color: #9aa0aa; }
+.tab.on { color: var(--ocean); }
+.tab .ic { font-size: 10px; line-height: 1; }
+
+/* ===== BEFORE / AFTER ===== */
+.ba-wrap { display: flex; gap: 24px; align-items: flex-start; flex: 1; min-height: 0; }
+.ba-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ba-label { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; }
+.ba-label.before { background: rgba(255,77,94,.15); color: var(--red); }
+.ba-label.after { background: rgba(52,199,89,.15); color: var(--sea); }
+.ba-caption { font-size: 10px; color: var(--muted); text-align: center; max-width: 180px; line-height: 1.45; }
+
+.why-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; flex: 1; min-width: 200px; align-self: flex-start; margin-top: 4px; }
+.why-title { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ocean); margin-bottom: 10px; }
+.why-item { display: flex; gap: 8px; margin-bottom: 9px; font-size: 12px; line-height: 1.5; }
+.why-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ocean); margin-top: 6px; flex-shrink: 0; }
+.effort-row { display: flex; gap: 6px; margin-top: 14px; flex-wrap: wrap; }
+.badge { font-size: 9px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+.badge-m { background: rgba(255,169,64,.15); color: var(--amber); }
+.badge-s { background: rgba(52,199,89,.15); color: var(--sea); }
+.badge-l { background: rgba(255,77,94,.15); color: var(--red); }
+.badge-ok { background: rgba(12,140,233,.15); color: var(--ocean); }
+
+/* ===== SLIDE 1: COVER ===== */
+#s1 { background: radial-gradient(ellipse 80% 60% at 60% 30%, rgba(12,140,233,.25) 0%, transparent 70%), linear-gradient(160deg, #07101c 0%, #0d1f35 100%); align-items: center; justify-content: center; }
+#s1 .cover-inner { text-align: center; max-width: 640px; }
+.cover-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ocean); border: 1px solid rgba(12,140,233,.4); padding: 5px 16px; border-radius: 99px; margin-bottom: 24px; }
+.cover-title { font-size: clamp(2.4rem, 5.5vw, 3.8rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; background: linear-gradient(135deg, #fff 40%, var(--ocean-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 16px; }
+.cover-sub { font-size: 17px; color: var(--muted); line-height: 1.6; max-width: 500px; margin: 0 auto 36px; }
+.cover-meta { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.cover-chip { font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 6px 14px; border-radius: 99px; }
+.wave-deco { position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%); opacity: .07; pointer-events: none; }
+
+/* ===== SLIDE 2: PROBLEM ===== */
+.problem-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; flex: 1; }
+.problem-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px; }
+.problem-card.sev-high { border-top: 3px solid var(--red); }
+.problem-card.sev-med { border-top: 3px solid var(--amber); }
+.problem-card.sev-low { border-top: 3px solid var(--ocean); }
+.problem-sev { font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
+.sev-high .problem-sev { color: var(--red); }
+.sev-med .problem-sev { color: var(--amber); }
+.sev-low .problem-sev { color: var(--ocean); }
+.problem-title { font-size: 12.5px; font-weight: 700; margin-bottom: 5px; line-height: 1.4; }
+.problem-desc { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 6px; }
+.problem-ref { font-size: 9.5px; color: #4a6a88; font-family: 'SF Mono', 'Fira Code', monospace; }
+
+/* ===== SLIDE 3: BENCHMARK ===== */
+.bench-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.bench-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.bench-app { font-size: 13px; font-weight: 800; margin-bottom: 4px; color: #fff; }
+.bench-cat { font-size: 9.5px; color: var(--muted); margin-bottom: 9px; }
+.bench-pattern { font-size: 11px; line-height: 1.55; color: #c8d8e8; border-left: 2px solid var(--ocean); padding-left: 9px; margin-bottom: 7px; }
+.bench-tag { display: inline-block; font-size: 8.5px; font-weight: 700; background: rgba(12,140,233,.15); color: var(--ocean); padding: 2px 7px; border-radius: 99px; margin-right: 3px; margin-top: 3px; }
+.pattern-table { width: 100%; border-collapse: collapse; font-size: 11.5px; background: var(--surface); border-radius: 10px; overflow: hidden; margin-top: 16px; }
+.pattern-table th { background: var(--surface2); padding: 7px 10px; text-align: left; font-size: 9.5px; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.pattern-table td { padding: 7px 10px; border-top: 1px solid var(--border); vertical-align: top; }
+.pattern-table td.yes { color: var(--sea); font-weight: 700; }
+.pattern-table td.par { color: var(--amber); font-weight: 600; }
+.pattern-table td.no { color: #445; }
+
+/* ===== ROADMAP ===== */
+.roadmap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1; }
+.roadmap-phase { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.phase-num { font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--ocean); margin-bottom: 5px; }
+.phase-title { font-size: 15px; font-weight: 800; margin-bottom: 3px; }
+.phase-sub { font-size: 11.5px; color: var(--muted); margin-bottom: 12px; }
+.phase-item { display: flex; gap: 7px; font-size: 11.5px; line-height: 1.5; margin-bottom: 7px; align-items: flex-start; }
+.phase-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.dot-ocean { background: var(--ocean); }
+.dot-amber { background: var(--amber); }
+.dot-sea { background: var(--sea); }
+
+/* closing */
+#s13 { background: radial-gradient(ellipse 80% 60% at 40% 40%, rgba(12,140,233,.2) 0%, transparent 70%), linear-gradient(160deg, #07101c 0%, #0d1f35 100%); align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<button class="nav-btn" id="nav-prev" onclick="go(-1)">&#8592;</button>
+<button class="nav-btn" id="nav-next" onclick="go(+1)">&#8594;</button>
+<div id="counter"></div>
+<div id="deck">
+
+<!-- SLIDE 1: COVER -->
+<div class="slide active" id="s1">
+  <div class="cover-inner">
+    <div class="cover-badge">ShipTrip &middot; UX-Redesign &middot; 2026</div>
+    <div class="cover-title">Hauptansicht<br>Redesign</div>
+    <div class="cover-sub">
+      4 Richtungen + 1 Empfehlung f&uuml;r &bdquo;Meine Reisen&ldquo; &mdash;
+      von der foto-abh&auml;ngigen Kachelliste zum Premium-Reisetagebuch.
+    </div>
+    <div class="cover-meta">
+      <span class="cover-chip">Scope: Cruise List View</span>
+      <span class="cover-chip">4 Directions + Hybrid</span>
+      <span class="cover-chip">SwiftUI-native</span>
+      <span class="cover-chip">Phase 2 &rarr; Phase 3 Bridge</span>
+    </div>
+  </div>
+  <svg class="wave-deco" width="900" height="180" viewBox="0 0 900 180" fill="none">
+    <path d="M0 90 C150 20 300 160 450 90 S750 20 900 90" stroke="white" stroke-width="3" fill="none"/>
+    <path d="M0 110 C150 40 300 180 450 110 S750 40 900 110" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M0 70 C150 0 300 140 450 70 S750 0 900 70" stroke="white" stroke-width="1.5" fill="none"/>
+  </svg>
+</div>
+
+<!-- SLIDE 2: PROBLEM -->
+<div class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 2 / 13 &mdash; Ist-Analyse</div>
+    <div class="slide-title">Was heute bremst</div>
+    <div class="slide-sub">6 Befunde aus Quellcode-Analyse &mdash; sortiert nach Impact auf den Premium-Eindruck.</div>
+    <div class="problem-grid">
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Ersteindruck</div>
+        <div class="problem-title">Karten kollabieren ohne Foto zu blauen Bl&ouml;cken</div>
+        <div class="problem-desc">LinearGradient oceanBlue&rarr;navyDark + Fährsymbol als Fallback: gleichf&ouml;rmige Kacheln ohne Pers&ouml;nlichkeit. Wer keine Fotos hinzuf&uuml;gt, sieht eine Wandfarbe.</div>
+        <div class="problem-ref">CruiseListView.swift &rarr; CruiseCardView, crd-hero fallback</div>
+      </div>
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Informationsdichte</div>
+        <div class="problem-title">Zu viel Scroll f&uuml;r zu wenig &Uuml;berblick</div>
+        <div class="problem-desc">Jede Karte ~210pt hoch. 3 Reisen = volle Scroll-H&ouml;he. L&auml;nder, Hafen-Anzahl, Route und Kosten sind auf der Listenebene unsichtbar &mdash; obwohl alle Daten vorliegen.</div>
+        <div class="problem-ref">CruiseListView.swift:100&ndash;114, listRowInsets top/bottom 8pt</div>
+      </div>
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Premium-Gef&uuml;hl</div>
+        <div class="problem-title">Kein &bdquo;Journal&ldquo;-Charakter sp&uuml;rbar</div>
+        <div class="problem-desc">Die Ansicht wirkt wie eine generische Listenapp. Kein narratives Element, keine Zeitlinie, kein Blick auf die gesammelten Reiseerlebnisse als Ganzes &mdash; die Seele des Produkts fehlt.</div>
+        <div class="problem-ref">CruiseListView.swift:99&ndash;114 (reines List-Layout)</div>
+      </div>
+      <div class="problem-card sev-med">
+        <div class="problem-sev">Mittel &mdash; Datenverschwendung</div>
+        <div class="problem-title">Reiche Daten (L&auml;nder, Ports, Timeline) bleiben verborgen</div>
+        <div class="problem-desc">Cruise-Modell h&auml;lt Hafen-Liste, Ausgaben, Bewertung, Notizen. Auf der Listenebene sichtbar: Titel, Reederei, Schiff, Datumsbereich. Alles andere erst nach Tap.</div>
+        <div class="problem-ref">CruiseListView.swift:101&ndash;103, CruiseCardView (nur 4 Felder)</div>
+      </div>
+      <div class="problem-card sev-med">
+        <div class="problem-sev">Mittel &mdash; Filter-Discoverability</div>
+        <div class="problem-title">Jahres- und Reederei-Filter versteckt im Hamburger-Men&uuml;</div>
+        <div class="problem-desc">filterMenu ist ein verstecktes Nested-Menu hinter einem Icon. Nutzer mit 10+ Reisen finden es nicht ohne Erkl&auml;rung. Quick-filter-Chips w&auml;ren native iOS-Patterns.</div>
+        <div class="problem-ref">CruiseListView.swift:131&ndash;183, filterMenu (navigationBarLeading)</div>
+      </div>
+      <div class="problem-card sev-low">
+        <div class="problem-sev">Niedrig &mdash; Kontext</div>
+        <div class="problem-title">Kein Hinweis auf &bdquo;n&auml;chste Reise&ldquo; oder Countdown</div>
+        <div class="problem-desc">Upcoming-Reisen werden mit &bdquo;Coming Soon&ldquo;-Badge markiert, aber es gibt keinen Header-Bereich der anzeigt: &bdquo;Norwegische Fjorde startet in 21 Tagen&ldquo;. Motivations-Trigger fehlt.</div>
+        <div class="problem-ref">CruiseListView.swift:58&ndash;95, kein upcoming-Hero-Block</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: BENCHMARKS -->
+<div class="slide" id="s3">
+  <div class="slide-inner" style="gap:16px;">
+    <div class="slide-label">Slide 3 / 13 &mdash; Benchmarks</div>
+    <div class="slide-title">Best-in-Class: was wir lernen k&ouml;nnen</div>
+    <div class="slide-sub" style="margin-bottom:12px;">5 Referenz-Apps die in genau diesem Scope das Niveau setzen &mdash; Patterns, keine Kopiervorlagen.</div>
+    <div class="bench-row">
+      <div class="bench-card">
+        <div class="bench-app">Polarsteps</div>
+        <div class="bench-cat">Reise-Tagebuch &bull; 10M+ Nutzer</div>
+        <div class="bench-pattern"><strong>Map-Fallback statt Grau:</strong> Ohne Foto generiert Polarsteps automatisch einen Karten-Ausschnitt der Route als Card-Header. Niemals leer.</div>
+        <div class="bench-pattern"><strong>Stats-Header:</strong> &bdquo;27 Trips &bull; 41 countries&ldquo; immer sichtbar &mdash; macht die Sammlung greifbar.</div>
+        <span class="bench-tag">Map-Fallback</span><span class="bench-tag">Collection-Stats</span>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Day One</div>
+        <div class="bench-cat">Journal &bull; Apple Design Award</div>
+        <div class="bench-pattern"><strong>Timeline als Navigation:</strong> Eintr&auml;ge auf einem vertikalen Zeitstrahl mit Jahr-Dividers. Vergangenheit als erz&auml;hlte Geschichte, nicht als sortierte Liste.</div>
+        <div class="bench-pattern"><strong>Streak &amp; Insights Strip:</strong> Mini-Statistiken als horiz. scrollbare Chips oberhalb der Liste &mdash; erzeugt Motivation ohne Platzverlust.</div>
+        <span class="bench-tag">Zeitstrahl</span><span class="bench-tag">Insights-Strip</span>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Flighty</div>
+        <div class="bench-cat">Flug-Tracker &bull; Premium iOS-App</div>
+        <div class="bench-pattern"><strong>Dashboard-Header:</strong> Kompakte Statistik-Zeile (Fl&uuml;ge, Meilen, L&auml;nder) als farbiges Banner &uuml;ber der Trip-Liste. Sofortige Orientierung.</div>
+        <div class="bench-pattern"><strong>Upcoming-Pinned:</strong> N&auml;chster Flug immer als prominente Karte oben gepinnt, auch wenn Datum weit weg.</div>
+        <span class="bench-tag">Stats-Banner</span><span class="bench-tag">Pinned-Upcoming</span>
+      </div>
+    </div>
+    <div class="bench-row" style="grid-template-columns: repeat(2,1fr); margin-top:10px;">
+      <div class="bench-card">
+        <div class="bench-app">Airbnb</div>
+        <div class="bench-cat">Travel &bull; Editorial Cards</div>
+        <div class="bench-pattern"><strong>Featured-First-Card:</strong> Erste Karte in der Liste ist gro&szlig; und editorial, alle weiteren kompakter. Schafft visuellen Rhythmus ohne Scroll-Inflation.</div>
+        <span class="bench-tag">Editorial-Hero</span><span class="bench-tag">Card-Rhythmus</span>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Tripsy / Wanderlog</div>
+        <div class="bench-cat">Trip Planner &bull; Collection-View</div>
+        <div class="bench-pattern"><strong>Cruise-Pass / Stamp-Visual:</strong> Reisen als sammelbare Objekte visualisiert (Passport-Stamps, Ticket-Stubs). Transformiert eine Liste in eine Kollektion.</div>
+        <span class="bench-tag">Collectibles</span><span class="bench-tag">Passport-Metapher</span>
+      </div>
+    </div>
+    <table class="pattern-table">
+      <thead><tr><th>Pattern</th><th>Polarsteps</th><th>Day One</th><th>Flighty</th><th>Airbnb</th><th>Tripsy</th><th>ShipTrip heute</th><th>Empfehlung</th></tr></thead>
+      <tbody>
+        <tr><td>Map/Inhalt-Fallback ohne Foto</td><td class="yes">Ja</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Gradient</td><td class="yes">Priorit&auml;t 1</td></tr>
+        <tr><td>Stats-Header / Collection-Summary</td><td class="yes">Ja</td><td class="par">Teilw.</td><td class="yes">Ja</td><td class="no">Nein</td><td class="par">Teilw.</td><td class="no">Nein</td><td class="yes">Priorit&auml;t 1</td></tr>
+        <tr><td>Zeitstrahl / Timeline-Nav</td><td class="no">Nein</td><td class="yes">Ja</td><td class="no">Nein</td><td class="no">Nein</td><td class="par">Teilw.</td><td class="no">Nein</td><td class="par">Direction 2</td></tr>
+        <tr><td>Featured/Editorial-Hero-Card</td><td class="par">Teilw.</td><td class="no">Nein</td><td class="yes">Ja</td><td class="yes">Ja</td><td class="no">Nein</td><td class="no">Nein</td><td class="yes">Direction 1+5</td></tr>
+        <tr><td>Stamp / Collectible-Metapher</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td><td class="no">Nein</td><td class="yes">Ja</td><td class="no">Nein</td><td class="par">Direction 4</td></tr>
+        <tr><td>Quick-Filter-Chips</td><td class="par">Teilw.</td><td class="no">Nein</td><td class="yes">Ja</td><td class="yes">Ja</td><td class="par">Teilw.</td><td class="no">Hamburger</td><td class="yes">Alle Directions</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SLIDE 4: DIRECTION 1 — EDITORIAL / MAGAZINE-JOURNAL -->
+<div class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 4 / 13 &mdash; Direction 1</div>
+    <div class="slide-title">Editorial / Magazine-Journal</div>
+    <div class="slide-sub">Gro&szlig;e, premium Karten mit editorischem Rhythmus &mdash; erste Karte als Hero, danach kompakter. Kein Foto = eleganter Geo-Hintergrund.</div>
+    <div class="ba-wrap">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <div class="ba-label before">Vorher</div>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:420px;">
+              <div class="sbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="nbar"><div class="nbar-title">Meine Reisen</div><div class="nbar-btn">+</div></div>
+              <!-- search bar -->
+              <div style="margin:0 10px 6px;background:#e5e5ea;border-radius:8px;padding:4px 8px;font-size:8px;color:#8a8f99;">&#128269; Suchen...</div>
+              <!-- card 1 no photo -->
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;">
+                  &#9749;
+                  <div style="position:absolute;top:6px;right:6px;background:rgba(255,200,0,.9);border-radius:99px;padding:2px 6px;font-size:6px;font-weight:800;color:#333;">&#9733; 4.5</div>
+                </div>
+                <div style="padding:7px 9px;background:#fff;">
+                  <div style="font-weight:800;font-size:9.5px;">Norwegische Fjorde</div>
+                  <div style="font-size:7.5px;color:#666;margin-top:2px;">&#128674; AIDA &bull; AIDAnova &bull; 07.–15.07.2026</div>
+                </div>
+              </div>
+              <!-- card 2 no photo -->
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:22px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;">
+                  <div style="font-weight:800;font-size:9.5px;">Westliches Mittelmeer 2025</div>
+                  <div style="font-size:7.5px;color:#666;margin-top:2px;">&#128674; TUI Cruises &bull; Mein Schiff 6 &bull; 8 Tage</div>
+                </div>
+              </div>
+              <!-- card 3 no photo -->
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:22px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;">
+                  <div style="font-weight:800;font-size:9.5px;">Karibik</div>
+                  <div style="font-size:7.5px;color:#666;margin-top:2px;">&#128674; AIDA &bull; AIDAdiva</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Gleichf&ouml;rmige blaue Bl&ouml;cke ohne Foto. Kein visueller Rhythmus.</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <div class="ba-label after">Nachher</div>
+        <div class="phone">
+          <div class="phone-inner dark">
+            <div class="scr dark" style="min-height:420px;">
+              <div class="sbar dark-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <!-- Large nav title -->
+              <div style="padding:4px 12px 6px;display:flex;align-items:flex-end;justify-content:space-between;">
+                <div style="font-size:15px;font-weight:900;letter-spacing:-.3px;color:#e8f0f8;">Meine Reisen</div>
+                <div style="font-size:11px;color:#0C8CE9;font-weight:700;">+</div>
+              </div>
+              <!-- HERO CARD — upcoming trip -->
+              <div style="margin:0 10px 8px;border-radius:14px;overflow:hidden;position:relative;">
+                <!-- SVG geo pattern as photo fallback -->
+                <div style="height:96px;background:linear-gradient(145deg,#0C3A6B,#0C8CE9 60%,#36A9F0);position:relative;overflow:hidden;">
+                  <svg width="100%" height="100%" viewBox="0 0 172 96" preserveAspectRatio="none" style="position:absolute;inset:0;opacity:.25;">
+                    <circle cx="30" cy="20" r="40" fill="none" stroke="#fff" stroke-width="1"/>
+                    <circle cx="140" cy="80" r="50" fill="none" stroke="#fff" stroke-width="1"/>
+                    <line x1="0" y1="60" x2="172" y2="40" stroke="#fff" stroke-width=".5"/>
+                    <line x1="0" y1="80" x2="172" y2="60" stroke="#fff" stroke-width=".5"/>
+                    <circle cx="55" cy="65" r="3" fill="#fff" opacity=".8"/>
+                    <circle cx="90" cy="55" r="3" fill="#fff" opacity=".8"/>
+                    <circle cx="125" cy="48" r="3" fill="#fff" opacity=".8"/>
+                  </svg>
+                  <!-- upcoming pill -->
+                  <div style="position:absolute;top:8px;left:9px;background:rgba(255,107,53,.9);border-radius:99px;padding:2px 7px;font-size:6.5px;font-weight:800;color:#fff;">In 21 Tagen</div>
+                  <!-- star -->
+                  <div style="position:absolute;top:8px;right:8px;background:rgba(255,200,0,.9);border-radius:99px;padding:2px 6px;font-size:6px;font-weight:800;color:#333;">&#9733; 4.5</div>
+                  <!-- overlay text -->
+                  <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 10px;background:linear-gradient(transparent,rgba(0,0,0,.75));">
+                    <div style="font-size:11.5px;font-weight:900;color:#fff;letter-spacing:-.2px;">Norwegische Fjorde</div>
+                    <div style="font-size:7.5px;color:rgba(255,255,255,.75);margin-top:1px;">&#128674; AIDA &bull; AIDAnova</div>
+                  </div>
+                </div>
+                <!-- card meta row -->
+                <div style="background:#0f1e30;padding:6px 10px;display:flex;gap:8px;border-top:.5px solid rgba(255,255,255,.08);">
+                  <div style="font-size:7px;color:#7a9ab8;">07.–15.07.2026</div>
+                  <div style="font-size:7px;color:#7a9ab8;">&#183;</div>
+                  <div style="font-size:7px;color:#7a9ab8;">9 Tage</div>
+                  <div style="font-size:7px;color:#7a9ab8;">&#183;</div>
+                  <div style="font-size:7px;color:#36A9F0;">4 L&auml;nder</div>
+                  <div style="font-size:7px;color:#7a9ab8;">&#183;</div>
+                  <div style="font-size:7px;color:#7a9ab8;">5 H&auml;fen</div>
+                </div>
+              </div>
+              <!-- compact card 2 -->
+              <div style="margin:0 10px 6px;border-radius:12px;overflow:hidden;display:flex;background:#0f1e30;border:.5px solid rgba(255,255,255,.08);">
+                <!-- thumb fallback: gradient square with geo lines -->
+                <div style="width:52px;flex-shrink:0;background:linear-gradient(145deg,#1a4a6e,#2a6ea6);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                  <svg width="52" height="52" viewBox="0 0 52 52" style="position:absolute;opacity:.3;"><circle cx="10" cy="10" r="20" fill="none" stroke="#fff" stroke-width="1"/><circle cx="45" cy="45" r="25" fill="none" stroke="#fff" stroke-width="1"/></svg>
+                  <div style="font-size:12px;z-index:1;">&#9970;</div>
+                </div>
+                <div style="padding:7px 9px;">
+                  <div style="font-weight:800;font-size:9px;color:#e8f0f8;">Westliches Mittelmeer 2025</div>
+                  <div style="font-size:7px;color:#7a9ab8;margin-top:2px;">TUI &bull; Mein Schiff 6 &bull; 8 Tage &bull; 3 L&auml;nder</div>
+                  <div style="margin-top:3px;display:flex;gap:4px;">
+                    <span style="font-size:6px;background:rgba(52,199,89,.15);color:#34C759;padding:1px 5px;border-radius:99px;font-weight:700;">Barcelona</span>
+                    <span style="font-size:6px;background:rgba(12,140,233,.15);color:#36A9F0;padding:1px 5px;border-radius:99px;font-weight:700;">Palma</span>
+                  </div>
+                </div>
+              </div>
+              <!-- compact card 3 -->
+              <div style="margin:0 10px 6px;border-radius:12px;overflow:hidden;display:flex;background:#0f1e30;border:.5px solid rgba(255,255,255,.08);">
+                <div style="width:52px;flex-shrink:0;background:linear-gradient(145deg,#3d1a6e,#6a36a6);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                  <svg width="52" height="52" viewBox="0 0 52 52" style="position:absolute;opacity:.3;"><circle cx="5" cy="45" r="30" fill="none" stroke="#fff" stroke-width="1"/></svg>
+                  <div style="font-size:12px;z-index:1;">&#127944;</div>
+                </div>
+                <div style="padding:7px 9px;">
+                  <div style="font-weight:800;font-size:9px;color:#e8f0f8;">Karibik</div>
+                  <div style="font-size:7px;color:#7a9ab8;margin-top:2px;">AIDA &bull; AIDAdiva &bull; 14 Tage</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar dark">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Hero-Karte mit Geo-Muster-Fallback. Kompakte Karten darunter mit Port-Chips.</div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Direction 1 &mdash; Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><div>Erster Editorial-Hero setzt Premium-Ton sofort &mdash; &uuml;bernimmt Airbnb-Prinzip &bdquo;featured card first&ldquo;</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Geo-SVG-Fallback (Koordinatenlinien + Hafen-Dots) ist inhaltsreich ohne Foto &mdash; zeigt Route, nicht Leere</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Kompakte Folge-Karten mit Thumbnail + Hafen-Chips erh&ouml;hen Informationsdichte 3&times;</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Dark Mode passt perfekt zur Reisestimmung und hebt Farbakzente (orange, blau) besser hervor</div></div>
+        <div class="why-item"><div class="why-dot" style="background:var(--amber)"></div><div>Upcoming-Pill als kontextueller Countdown erzeugt Vorfreude-Trigger</div></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">SwiftUI-native</span>
+          <span class="badge badge-s">Kein neues Modell</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: DIRECTION 2 — TIMELINE / LOGBUCH -->
+<div class="slide" id="s5">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 5 / 13 &mdash; Direction 2</div>
+    <div class="slide-title">Timeline / Logbuch</div>
+    <div class="slide-sub">Reisen auf einem vertikalen Zeitstrahl &mdash; Jahr-Dividers, Past vs. Upcoming getrennt, kompakte Zeilen. Erz&auml;hlt die Reisegschichte als Logbuch.</div>
+    <div class="ba-wrap">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <div class="ba-label before">Vorher</div>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:420px;">
+              <div class="sbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="nbar"><div class="nbar-title">Meine Reisen</div><div class="nbar-btn">+</div></div>
+              <div style="margin:0 10px 6px;background:#e5e5ea;border-radius:8px;padding:4px 8px;font-size:8px;color:#8a8f99;">&#128269; Suchen...</div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Norwegische Fjorde</div><div style="font-size:7.5px;color:#666;margin-top:2px;">07.–15.07.2026 &bull; 9 Tage</div></div>
+              </div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Westliches Mittelmeer 2025</div><div style="font-size:7.5px;color:#666;margin-top:2px;">8 Tage</div></div>
+              </div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Karibik</div><div style="font-size:7.5px;color:#666;margin-top:2px;">14 Tage</div></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Flache Liste, kein Zeitkontext, keine Kategorisierung.</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <div class="ba-label after">Nachher</div>
+        <div class="phone">
+          <div class="phone-inner dark">
+            <div class="scr dark" style="min-height:420px;">
+              <div class="sbar dark-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div style="padding:4px 12px 5px;display:flex;align-items:flex-end;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:900;color:#e8f0f8;">Logbuch</div>
+                <div style="font-size:10px;color:#0C8CE9;font-weight:700;">+</div>
+              </div>
+              <!-- Upcoming section -->
+              <div style="margin:0 10px 3px;">
+                <div style="font-size:7.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#FF6B35;margin-bottom:5px;">Bevorstehend</div>
+                <!-- timeline row -->
+                <div style="display:flex;gap:7px;align-items:flex-start;padding-bottom:8px;border-bottom:.5px solid rgba(255,255,255,.08);">
+                  <!-- spine -->
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:0;width:14px;flex-shrink:0;padding-top:3px;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#FF6B35;border:1.5px solid #07101c;"></div>
+                    <div style="width:1.5px;flex:1;min-height:30px;background:rgba(255,107,53,.3);margin-top:2px;"></div>
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-size:9.5px;font-weight:800;color:#e8f0f8;">Norwegische Fjorde</div>
+                    <div style="font-size:7px;color:#7a9ab8;margin-top:1px;">AIDA &#128674; &bull; 07.–15.07.2026</div>
+                    <div style="display:flex;gap:3px;margin-top:3px;">
+                      <span style="font-size:6px;background:rgba(255,107,53,.2);color:#FF6B35;padding:1px 5px;border-radius:99px;font-weight:700;">In 21 Tagen</span>
+                      <span style="font-size:6px;background:rgba(12,140,233,.15);color:#36A9F0;padding:1px 5px;border-radius:99px;font-weight:700;">4 L&auml;nder</span>
+                    </div>
+                  </div>
+                  <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(145deg,#0a3560,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;overflow:hidden;position:relative;">
+                    <svg width="36" height="36" viewBox="0 0 36 36" style="position:absolute;opacity:.3;"><circle cx="5" cy="5" r="15" fill="none" stroke="#fff" stroke-width="1"/><circle cx="30" cy="30" r="20" fill="none" stroke="#fff" stroke-width="1"/></svg>
+                    <span style="z-index:1;">&#127956;</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Year divider 2025 -->
+              <div style="margin:6px 10px 4px;display:flex;align-items:center;gap:6px;">
+                <div style="font-size:8px;font-weight:900;color:#4a6a88;letter-spacing:.06em;">2025</div>
+                <div style="flex:1;height:.5px;background:rgba(255,255,255,.08);"></div>
+              </div>
+              <!-- 2025 entries -->
+              <div style="margin:0 10px;display:flex;gap:7px;align-items:flex-start;margin-bottom:6px;">
+                <div style="display:flex;flex-direction:column;align-items:center;width:14px;flex-shrink:0;padding-top:3px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#0C8CE9;border:1.5px solid #07101c;"></div>
+                  <div style="width:1.5px;min-height:28px;background:rgba(12,140,233,.25);margin-top:2px;"></div>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:9px;font-weight:800;color:#e8f0f8;">Westliches Mittelmeer</div>
+                  <div style="font-size:7px;color:#7a9ab8;margin-top:1px;">TUI &#128674; &bull; 8 Tage &bull; 3 L&auml;nder</div>
+                  <div style="display:flex;gap:3px;margin-top:3px;">
+                    <span style="font-size:6px;color:#34C759;font-weight:700;">Barcelona</span>
+                    <span style="font-size:6px;color:#7a9ab8;">&middot;</span>
+                    <span style="font-size:6px;color:#34C759;font-weight:700;">Palma</span>
+                  </div>
+                </div>
+                <div style="width:32px;height:32px;border-radius:7px;background:linear-gradient(145deg,#1a4a6e,#2a6ea6);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#9970;</div>
+              </div>
+              <!-- Year divider 2024 -->
+              <div style="margin:4px 10px 4px;display:flex;align-items:center;gap:6px;">
+                <div style="font-size:8px;font-weight:900;color:#4a6a88;letter-spacing:.06em;">2024</div>
+                <div style="flex:1;height:.5px;background:rgba(255,255,255,.08);"></div>
+              </div>
+              <div style="margin:0 10px;display:flex;gap:7px;align-items:flex-start;">
+                <div style="display:flex;flex-direction:column;align-items:center;width:14px;flex-shrink:0;padding-top:3px;">
+                  <div style="width:8px;height:8px;border-radius:50%;background:#7a9ab8;border:1.5px solid #07101c;"></div>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:9px;font-weight:800;color:#e8f0f8;">Karibik</div>
+                  <div style="font-size:7px;color:#7a9ab8;margin-top:1px;">AIDA &#128674; &bull; 14 Tage &bull; 5 L&auml;nder</div>
+                </div>
+                <div style="width:32px;height:32px;border-radius:7px;background:linear-gradient(145deg,#3d1a6e,#6a36a6);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">&#127944;</div>
+              </div>
+            </div>
+            <div class="tabbar dark">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Zeitstrahl mit Jahr-Dividers, Upcoming-Sektion orange, Past blau.</div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Direction 2 &mdash; Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><div>Timeline-Metapher transformiert eine sortierte Liste in eine erz&auml;hlte Geschichte &mdash; das Kernversprechen eines Reisetagebuchs</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Jahr-Dividers reduzieren mentalen Aufwand beim Scannen stark &mdash; Day One-Pattern, bew&auml;hrt</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Kompakte Zeilen: 4&ndash;5 Reisen sichtbar ohne Scroll statt 2</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Thumbnail-Square ist Foto ODER Geo-Farbblock &mdash; kein Foto bedeutet kein Qualit&auml;tsverlust, nur eine andere Farbe</div></div>
+        <div class="why-item"><div class="why-dot" style="background:var(--amber)"></div><div>Implementation: SwiftUI List mit section headers und custom timeline connector via overlay &mdash; M Aufwand</div></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">Day One-Muster</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: DIRECTION 3 — DASHBOARD + STATS -->
+<div class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 6 / 13 &mdash; Direction 3</div>
+    <div class="slide-title">Dashboard + Stats</div>
+    <div class="slide-sub">Summary-Header mit Live-Statistiken &uuml;ber einer dichteren Trip-Liste &mdash; maximaler &Uuml;berblick mit minimalen Scrolls. Fl&auml;chig wie Flighty.</div>
+    <div class="ba-wrap">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <div class="ba-label before">Vorher</div>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:420px;">
+              <div class="sbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="nbar"><div class="nbar-title">Meine Reisen</div><div class="nbar-btn">+</div></div>
+              <div style="margin:0 10px 6px;background:#e5e5ea;border-radius:8px;padding:4px 8px;font-size:8px;color:#8a8f99;">&#128269; Suchen...</div>
+              <div style="font-size:8.5px;color:#8a8f99;text-align:center;padding:16px 10px;line-height:1.6;">Keine Statistik-&Uuml;bersicht vorhanden.<br>Scroll-Liste beginnt direkt.</div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Norwegische Fjorde</div><div style="font-size:7.5px;color:#666;margin-top:2px;">07.–15.07.2026 &bull; 9 Tage</div></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Keine Zusammenfassung. Nutzer muss erst in Statistik-Tab wechseln.</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <div class="ba-label after">Nachher</div>
+        <div class="phone">
+          <div class="phone-inner dark">
+            <div class="scr dark" style="min-height:420px;">
+              <div class="sbar dark-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div style="padding:4px 12px 5px;display:flex;align-items:flex-end;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:900;color:#e8f0f8;">Meine Reisen</div>
+                <div style="font-size:10px;color:#0C8CE9;font-weight:700;">+</div>
+              </div>
+              <!-- Stats header card -->
+              <div style="margin:0 10px 8px;background:linear-gradient(135deg,#0C3A6B,#0C8CE9);border-radius:13px;padding:10px 12px;">
+                <div style="font-size:7px;color:rgba(255,255,255,.65);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;">Deine Reise-Bilanz</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;">
+                  <div><div style="font-size:13px;font-weight:900;color:#fff;">7</div><div style="font-size:6px;color:rgba(255,255,255,.65);">Reisen</div></div>
+                  <div><div style="font-size:13px;font-weight:900;color:#fff;">14</div><div style="font-size:6px;color:rgba(255,255,255,.65);">L&auml;nder</div></div>
+                  <div><div style="font-size:13px;font-weight:900;color:#fff;">23</div><div style="font-size:6px;color:rgba(255,255,255,.65);">Seetage</div></div>
+                  <div><div style="font-size:13px;font-weight:900;color:#fff;">31</div><div style="font-size:6px;color:rgba(255,255,255,.65);">H&auml;fen</div></div>
+                </div>
+              </div>
+              <!-- filter chips -->
+              <div style="display:flex;gap:5px;padding:0 10px 6px;overflow:hidden;">
+                <span style="font-size:6.5px;background:#0C8CE9;color:#fff;padding:2px 8px;border-radius:99px;font-weight:700;flex-shrink:0;">Alle</span>
+                <span style="font-size:6.5px;background:rgba(255,255,255,.08);color:#7a9ab8;padding:2px 8px;border-radius:99px;font-weight:700;flex-shrink:0;">2026</span>
+                <span style="font-size:6.5px;background:rgba(255,255,255,.08);color:#7a9ab8;padding:2px 8px;border-radius:99px;font-weight:700;flex-shrink:0;">2025</span>
+                <span style="font-size:6.5px;background:rgba(255,255,255,.08);color:#7a9ab8;padding:2px 8px;border-radius:99px;font-weight:700;flex-shrink:0;">AIDA</span>
+              </div>
+              <!-- dense list rows -->
+              <div style="margin:0 10px 5px;background:#0f1e30;border-radius:11px;overflow:hidden;border:.5px solid rgba(255,255,255,.08);">
+                <div style="display:flex;gap:8px;padding:7px 9px;align-items:center;border-bottom:.5px solid rgba(255,255,255,.06);">
+                  <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(145deg,#0a3560,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">&#127956;</div>
+                  <div style="flex:1;">
+                    <div style="font-size:8.5px;font-weight:800;color:#e8f0f8;">Norwegische Fjorde</div>
+                    <div style="font-size:6.5px;color:#7a9ab8;">AIDA &bull; 9T &bull; 4 L&auml;nder &bull; 5 H&auml;fen</div>
+                  </div>
+                  <div style="text-align:right;"><div style="font-size:7px;color:#FF6B35;font-weight:700;">Bald</div><div style="font-size:6.5px;color:#7a9ab8;">07.2026</div></div>
+                </div>
+                <div style="display:flex;gap:8px;padding:7px 9px;align-items:center;border-bottom:.5px solid rgba(255,255,255,.06);">
+                  <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(145deg,#1a4a6e,#2a6ea6);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">&#9970;</div>
+                  <div style="flex:1;">
+                    <div style="font-size:8.5px;font-weight:800;color:#e8f0f8;">Westl. Mittelmeer 2025</div>
+                    <div style="font-size:6.5px;color:#7a9ab8;">TUI &bull; 8T &bull; 3 L&auml;nder</div>
+                  </div>
+                  <div style="text-align:right;"><div style="font-size:7px;color:#34C759;font-weight:700;">&#9733; 4.0</div><div style="font-size:6.5px;color:#7a9ab8;">08.2025</div></div>
+                </div>
+                <div style="display:flex;gap:8px;padding:7px 9px;align-items:center;">
+                  <div style="width:30px;height:30px;border-radius:7px;background:linear-gradient(145deg,#3d1a6e,#6a36a6);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">&#127944;</div>
+                  <div style="flex:1;">
+                    <div style="font-size:8.5px;font-weight:800;color:#e8f0f8;">Karibik</div>
+                    <div style="font-size:6.5px;color:#7a9ab8;">AIDA &bull; 14T &bull; 5 L&auml;nder</div>
+                  </div>
+                  <div style="text-align:right;"><div style="font-size:7px;color:#34C759;font-weight:700;">&#9733; 4.8</div><div style="font-size:6.5px;color:#7a9ab8;">12.2024</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar dark">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Stats-Banner + Quick-Filter-Chips + dichte Liste mit 3 Zeilen pro Reise.</div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Direction 3 &mdash; Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><div>Stats-Banner macht die Sammlung sofort sichtbar &mdash; &bdquo;7 Reisen &bull; 14 L&auml;nder&ldquo; als Stolz-Trigger, ohne Tab-Wechsel</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Quick-Filter-Chips ersetzen das Hamburger-Filter-Menu &mdash; iOS-natives Pattern, entdeckbar ohne Erkl&auml;rung</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Dichte Liste: 5&ndash;6 Reisen ohne Scroll sichtbar, Informationsdichte 5&times; h&ouml;her als jetzt</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Farbige Mini-Thumbnails l&ouml;sen das Foto-Problem: jede Reise bekommt eine einzigartige Farbkombination basierend auf Zielgebiet</div></div>
+        <div class="why-item"><div class="why-dot" style="background:var(--amber)"></div><div>Stats-Header berechnet sich aus vorhandenen SwiftData-Daten &mdash; kein neues Modell n&ouml;tig</div></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">Flighty-Pattern</span>
+          <span class="badge badge-s">SwiftData-ready</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SLIDE 7: DIRECTION 4 — MAP / CRUISE-PASS FIRST -->
+<div class="slide" id="s7">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 7 / 13 &mdash; Direction 4</div>
+    <div class="slide-title">Map / Cruise-Pass First</div>
+    <div class="slide-sub">Mini-Weltkarte mit besuchten Hafen-Dots + eine Reihe Passport-Stamps oben &mdash; macht die Sammlung sichtbar. Br&uuml;ckt zu Phase-3 &bdquo;Cruise Pass&ldquo;.</div>
+    <div class="ba-wrap">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <div class="ba-label before">Vorher</div>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:420px;">
+              <div class="sbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="nbar"><div class="nbar-title">Meine Reisen</div><div class="nbar-btn">+</div></div>
+              <div style="margin:0 10px 6px;background:#e5e5ea;border-radius:8px;padding:4px 8px;font-size:8px;color:#8a8f99;">&#128269; Suchen...</div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Norwegische Fjorde</div><div style="font-size:7.5px;color:#666;margin-top:2px;">07.–15.07.2026</div></div>
+              </div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Westliches Mittelmeer 2025</div></div>
+              </div>
+              <div style="font-size:8.5px;color:#8a8f99;text-align:center;padding:12px;">Karte nur im separaten Tab &mdash; keine Verbindung zur Liste</div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Karte und Liste komplett getrennt. Sammlung nicht sichtbar.</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <div class="ba-label after">Nachher</div>
+        <div class="phone">
+          <div class="phone-inner dark">
+            <div class="scr dark" style="min-height:420px;">
+              <div class="sbar dark-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div style="padding:4px 12px 5px;display:flex;align-items:flex-end;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:900;color:#e8f0f8;">Cruise Pass</div>
+                <div style="font-size:10px;color:#0C8CE9;font-weight:700;">+</div>
+              </div>
+              <!-- Mini world map SVG -->
+              <div style="margin:0 10px 6px;background:#0f1e30;border-radius:12px;overflow:hidden;border:.5px solid rgba(255,255,255,.08);height:72px;position:relative;">
+                <svg width="100%" height="72" viewBox="0 0 160 72" preserveAspectRatio="xMidYMid meet">
+                  <!-- simplified continent outlines -->
+                  <rect width="160" height="72" fill="#0a1929"/>
+                  <!-- Europe rough -->
+                  <path d="M72 20 L78 16 L84 18 L86 24 L82 28 L78 26 L74 28 L70 24 Z" fill="#1a2e45" stroke="rgba(255,255,255,.15)" stroke-width=".5"/>
+                  <!-- Scandinavia -->
+                  <path d="M76 8 L80 6 L82 10 L80 16 L78 16 L76 12 Z" fill="#1a2e45" stroke="rgba(255,255,255,.15)" stroke-width=".5"/>
+                  <!-- North America rough -->
+                  <path d="M20 18 L36 14 L40 20 L38 30 L30 34 L22 30 L18 24 Z" fill="#1a2e45" stroke="rgba(255,255,255,.15)" stroke-width=".5"/>
+                  <!-- Caribbean islands -->
+                  <circle cx="34" cy="34" r="2" fill="#1a2e45" stroke="rgba(255,255,255,.15)" stroke-width=".5"/>
+                  <!-- Africa rough -->
+                  <path d="M80 30 L88 28 L92 36 L90 50 L82 52 L78 44 L78 36 Z" fill="#1a2e45" stroke="rgba(255,255,255,.15)" stroke-width=".5"/>
+                  <!-- Mediterranean blue -->
+                  <path d="M78 28 L92 26 L90 30 L78 32 Z" fill="#0C3A6B" opacity=".8"/>
+                  <!-- visited port dots -->
+                  <circle cx="78" cy="12" r="2.5" fill="#FF6B35" opacity=".9"/><!-- Kiel/Hamburg -->
+                  <circle cx="78" cy="8" r="2.5" fill="#FF6B35" opacity=".9"/><!-- Bergen -->
+                  <circle cx="76" cy="6" r="2.5" fill="#FF6B35" opacity=".9"/><!-- Geiranger -->
+                  <circle cx="80" cy="10" r="2.5" fill="#FF6B35" opacity=".9"/><!-- Stavanger -->
+                  <circle cx="80" cy="14" r="2.5" fill="#0C8CE9" opacity=".9"/><!-- Copenhagen -->
+                  <circle cx="82" cy="28" r="2.5" fill="#0C8CE9" opacity=".9"/><!-- Barcelona -->
+                  <circle cx="80" cy="29" r="2.5" fill="#0C8CE9" opacity=".9"/><!-- Palma -->
+                  <circle cx="34" cy="33" r="2.5" fill="#34C759" opacity=".9"/><!-- Karibik -->
+                  <!-- route lines -->
+                  <polyline points="78,12 78,8 76,6 80,10 80,14" fill="none" stroke="#FF6B35" stroke-width=".8" opacity=".6" stroke-dasharray="2,1"/>
+                  <polyline points="82,28 80,29" fill="none" stroke="#0C8CE9" stroke-width=".8" opacity=".6"/>
+                </svg>
+                <!-- legend -->
+                <div style="position:absolute;bottom:5px;left:8px;display:flex;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:3px;"><div style="width:5px;height:5px;border-radius:50%;background:#FF6B35;"></div><div style="font-size:5.5px;color:#7a9ab8;">Fjorde</div></div>
+                  <div style="display:flex;align-items:center;gap:3px;"><div style="width:5px;height:5px;border-radius:50%;background:#0C8CE9;"></div><div style="font-size:5.5px;color:#7a9ab8;">Mittelmeer</div></div>
+                  <div style="display:flex;align-items:center;gap:3px;"><div style="width:5px;height:5px;border-radius:50%;background:#34C759;"></div><div style="font-size:5.5px;color:#7a9ab8;">Karibik</div></div>
+                </div>
+                <div style="position:absolute;top:5px;right:8px;font-size:6px;color:#0C8CE9;font-weight:700;">31 H&auml;fen &rarr;</div>
+              </div>
+              <!-- Stamp row -->
+              <div style="padding:0 10px 6px;">
+                <div style="font-size:7px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#7a9ab8;margin-bottom:5px;">Stamp-Sammlung</div>
+                <div style="display:flex;gap:5px;">
+                  <!-- stamp 1 -->
+                  <div style="width:44px;height:50px;border-radius:6px;border:1.5px dashed #FF6B35;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(255,107,53,.06);">
+                    <div style="font-size:13px;">&#127956;</div>
+                    <div style="font-size:5px;color:#FF6B35;font-weight:800;text-align:center;line-height:1.2;">FJORDE<br>2026</div>
+                  </div>
+                  <!-- stamp 2 -->
+                  <div style="width:44px;height:50px;border-radius:6px;border:1.5px dashed #0C8CE9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(12,140,233,.06);">
+                    <div style="font-size:13px;">&#9970;</div>
+                    <div style="font-size:5px;color:#0C8CE9;font-weight:800;text-align:center;line-height:1.2;">MITTEL-<br>MEER 25</div>
+                  </div>
+                  <!-- stamp 3 -->
+                  <div style="width:44px;height:50px;border-radius:6px;border:1.5px dashed #34C759;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(52,199,89,.06);">
+                    <div style="font-size:13px;">&#127944;</div>
+                    <div style="font-size:5px;color:#34C759;font-weight:800;text-align:center;line-height:1.2;">KARIBIK<br>2024</div>
+                  </div>
+                  <!-- locked stamp -->
+                  <div style="width:44px;height:50px;border-radius:6px;border:1.5px dashed rgba(255,255,255,.15);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(255,255,255,.03);">
+                    <div style="font-size:13px;opacity:.3;">&#128274;</div>
+                    <div style="font-size:5px;color:#4a6a88;font-weight:800;text-align:center;line-height:1.2;">N&Auml;CHSTE<br>REISE</div>
+                  </div>
+                </div>
+              </div>
+              <!-- compact list -->
+              <div style="margin:0 10px;background:#0f1e30;border-radius:10px;overflow:hidden;border:.5px solid rgba(255,255,255,.08);">
+                <div style="display:flex;gap:7px;padding:6px 8px;align-items:center;border-bottom:.5px solid rgba(255,255,255,.06);">
+                  <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(145deg,#0a3560,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:10px;">&#127956;</div>
+                  <div style="flex:1;"><div style="font-size:8px;font-weight:800;color:#e8f0f8;">Norwegische Fjorde</div><div style="font-size:6px;color:#7a9ab8;">AIDA &bull; 9T &bull; 5 H&auml;fen</div></div>
+                  <div style="font-size:6.5px;color:#FF6B35;font-weight:700;">Bald</div>
+                </div>
+                <div style="display:flex;gap:7px;padding:6px 8px;align-items:center;">
+                  <div style="width:26px;height:26px;border-radius:6px;background:linear-gradient(145deg,#1a4a6e,#2a6ea6);display:flex;align-items:center;justify-content:center;font-size:10px;">&#9970;</div>
+                  <div style="flex:1;"><div style="font-size:8px;font-weight:800;color:#e8f0f8;">Westl. Mittelmeer 2025</div><div style="font-size:6px;color:#7a9ab8;">TUI &bull; 8T</div></div>
+                  <div style="font-size:6.5px;color:#34C759;font-weight:700;">&#9733; 4.0</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar dark">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Mini-Karte mit Hafen-Dots + Stamp-Reihe + kompakte Liste darunter.</div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Direction 4 &mdash; Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><div>Weltkarte mit besuchten Hafen-Dots macht die Sammlung sofort greifbar &mdash; 31 Punkte auf einer Karte sind stolzer Moment</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Stamp-Metapher (Passport-Stamps) transformiert eine Liste in ein Sammlerobjekt &mdash; Tripsy-Pattern, ideal f&uuml;r Kreuzfahrer</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Br&uuml;ckt zu geplantem Phase-3 &bdquo;Cruise Pass&ldquo;-Feature &mdash; das Design w&auml;chst mit der Roadmap</div></div>
+        <div class="why-item"><div class="why-dot"></div><div>Kein Foto n&ouml;tig: Stamp-Design funktioniert rein mit Emoji + Region-Name + Farbcode</div></div>
+        <div class="why-item"><div class="why-dot" style="background:var(--red)"></div><div>Aufwand: Mini-Karte = MapKit MKMapView in einem ScrollView-Header, L Aufwand; Stamps = M</div></div>
+        <div class="effort-row">
+          <span class="badge badge-l">Aufwand L</span>
+          <span class="badge badge-ok">Phase-3-Bridge</span>
+          <span class="badge badge-m">Stamps M</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8: DIRECTION 5 — RECOMMENDED HYBRID -->
+<div class="slide" id="s8">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 8 / 13 &mdash; Direction 5 (Empfehlung)</div>
+    <div class="slide-title">Empfohlener Hybrid</div>
+    <div class="slide-sub">Stats-Slim-Header (Direction 3) + Editorial-Hero-Card (Direction 1) + kompakte Zeilen mit Geo-Fallback. Die st&auml;rksten Elemente, SwiftUI-baubar in einem Sprint.</div>
+    <div class="ba-wrap">
+      <!-- BEFORE summary -->
+      <div class="ba-col">
+        <div class="ba-label before">Vorher</div>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:420px;">
+              <div class="sbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="nbar"><div class="nbar-title">Meine Reisen</div><div class="nbar-btn">+</div></div>
+              <div style="margin:0 10px 6px;background:#e5e5ea;border-radius:8px;padding:4px 8px;font-size:8px;color:#8a8f99;">&#128269; Suchen...</div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,.4);">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Norwegische Fjorde</div><div style="font-size:7.5px;color:#666;margin-top:2px;">07.–15.07.2026 &bull; 9 Tage</div></div>
+              </div>
+              <div style="margin:0 10px 8px;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">
+                <div style="height:70px;background:linear-gradient(135deg,#0C8CE9,#1A365D);display:flex;align-items:center;justify-content:center;font-size:20px;color:rgba(255,255,255,.4);">&#9749;</div>
+                <div style="padding:7px 9px;background:#fff;"><div style="font-weight:800;font-size:9px;">Westliches Mittelmeer 2025</div></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Uniformes blaues Raster. Kein Kontext, kein Charakter.</div>
+      </div>
+
+      <!-- AFTER hybrid -->
+      <div class="ba-col">
+        <div class="ba-label after" style="background:rgba(12,140,233,.2);color:var(--ocean);">Empfehlung</div>
+        <div class="phone">
+          <div class="phone-inner dark">
+            <div class="scr dark" style="min-height:420px;">
+              <div class="sbar dark-bar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <!-- Slim nav with title -->
+              <div style="padding:3px 12px 4px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:14px;font-weight:900;color:#e8f0f8;">Meine Reisen</div>
+                <div style="font-size:10px;color:#0C8CE9;font-weight:700;">+</div>
+              </div>
+              <!-- Slim stats strip -->
+              <div style="margin:0 10px 7px;background:#0f1e30;border-radius:10px;padding:6px 10px;display:flex;justify-content:space-between;border:.5px solid rgba(255,255,255,.08);">
+                <div style="text-align:center;"><div style="font-size:11px;font-weight:900;color:#0C8CE9;">7</div><div style="font-size:5.5px;color:#7a9ab8;font-weight:600;">Reisen</div></div>
+                <div style="width:.5px;background:rgba(255,255,255,.08);"></div>
+                <div style="text-align:center;"><div style="font-size:11px;font-weight:900;color:#36A9F0;">14</div><div style="font-size:5.5px;color:#7a9ab8;font-weight:600;">L&auml;nder</div></div>
+                <div style="width:.5px;background:rgba(255,255,255,.08);"></div>
+                <div style="text-align:center;"><div style="font-size:11px;font-weight:900;color:#34C759;">23</div><div style="font-size:5.5px;color:#7a9ab8;font-weight:600;">Seetage</div></div>
+                <div style="width:.5px;background:rgba(255,255,255,.08);"></div>
+                <div style="text-align:center;"><div style="font-size:11px;font-weight:900;color:#FF6B35;">31</div><div style="font-size:5.5px;color:#7a9ab8;font-weight:600;">H&auml;fen</div></div>
+              </div>
+              <!-- Hero card — upcoming -->
+              <div style="margin:0 10px 6px;border-radius:13px;overflow:hidden;">
+                <div style="height:84px;background:linear-gradient(145deg,#0C3A6B,#0C8CE9 60%,#36A9F0);position:relative;overflow:hidden;">
+                  <svg width="100%" height="84" viewBox="0 0 160 84" preserveAspectRatio="none" style="position:absolute;inset:0;opacity:.2;">
+                    <circle cx="20" cy="20" r="40" fill="none" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="130" cy="70" r="55" fill="none" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="48" cy="58" r="3" fill="#fff"/><circle cx="80" cy="48" r="3" fill="#fff"/>
+                    <circle cx="112" cy="42" r="3" fill="#fff"/>
+                    <polyline points="48,58 80,48 112,42" fill="none" stroke="#fff" stroke-width=".8" stroke-dasharray="3,2"/>
+                  </svg>
+                  <div style="position:absolute;top:7px;left:8px;background:rgba(255,107,53,.92);border-radius:99px;padding:2px 7px;font-size:6px;font-weight:800;color:#fff;">In 21 Tagen</div>
+                  <div style="position:absolute;top:7px;right:8px;font-size:10px;color:rgba(255,255,255,.8);">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+                  <div style="position:absolute;bottom:0;left:0;right:0;padding:7px 9px;background:linear-gradient(transparent,rgba(0,0,0,.8));">
+                    <div style="font-size:11px;font-weight:900;color:#fff;letter-spacing:-.2px;">Norwegische Fjorde</div>
+                    <div style="font-size:7px;color:rgba(255,255,255,.7);">&#128674; AIDA &bull; AIDAnova &bull; 07.–15.07.2026</div>
+                  </div>
+                </div>
+                <div style="background:#0f1e30;padding:5px 9px;display:flex;gap:6px;border-top:.5px solid rgba(255,255,255,.07);">
+                  <div style="font-size:6.5px;color:#36A9F0;">4 L&auml;nder</div>
+                  <div style="font-size:6.5px;color:#4a6a88;">&middot;</div>
+                  <div style="font-size:6.5px;color:#7a9ab8;">5 H&auml;fen</div>
+                  <div style="font-size:6.5px;color:#4a6a88;">&middot;</div>
+                  <div style="font-size:6.5px;color:#7a9ab8;">2.538 &euro;</div>
+                  <div style="margin-left:auto;font-size:6px;color:#0C8CE9;">Details &rarr;</div>
+                </div>
+              </div>
+              <!-- compact rows -->
+              <div style="margin:0 10px;background:#0f1e30;border-radius:10px;overflow:hidden;border:.5px solid rgba(255,255,255,.08);">
+                <div style="display:flex;gap:7px;padding:6px 8px;align-items:center;border-bottom:.5px solid rgba(255,255,255,.06);">
+                  <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(145deg,#1a4a6e,#2a6ea6);display:flex;align-items:center;justify-content:center;font-size:11px;">&#9970;</div>
+                  <div style="flex:1;"><div style="font-size:8px;font-weight:800;color:#e8f0f8;">Westl. Mittelmeer 2025</div><div style="font-size:6px;color:#7a9ab8;">TUI &bull; 8T &bull; 3 L&auml;nder &bull; Barcelona, Palma</div></div>
+                  <div style="font-size:7px;color:#34C759;font-weight:700;">&#9733; 4.0</div>
+                </div>
+                <div style="display:flex;gap:7px;padding:6px 8px;align-items:center;">
+                  <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(145deg,#3d1a6e,#6a36a6);display:flex;align-items:center;justify-content:center;font-size:11px;">&#127944;</div>
+                  <div style="flex:1;"><div style="font-size:8px;font-weight:800;color:#e8f0f8;">Karibik</div><div style="font-size:6px;color:#7a9ab8;">AIDA &bull; 14T &bull; 5 L&auml;nder</div></div>
+                  <div style="font-size:7px;color:#34C759;font-weight:700;">&#9733; 4.8</div>
+                </div>
+              </div>
+            </div>
+            <div class="tabbar dark">
+              <div class="tab on"><div class="ic">&#9875;</div>Reisen</div>
+              <div class="tab"><div class="ic">&#128506;</div>Karte</div>
+              <div class="tab"><div class="ic">&#9733;</div>Merkliste</div>
+              <div class="tab"><div class="ic">&#128202;</div>Statistik</div>
+              <div class="tab"><div class="ic">&#8943;</div>Mehr</div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Slim Stats-Strip + Editorial-Hero + kompakte Zeilen. 4&times; mehr Info, Premium-Look.</div>
+      </div>
+
+      <div class="why-box">
+        <div class="why-title">Warum dieser Hybrid?</div>
+        <div class="why-item"><div class="why-dot" style="background:#FF6B35"></div><div><strong>Slim Stats-Strip</strong> (3) gibt Collection-Bewusstsein ohne vertikalen Platzverlust &mdash; 28pt H&ouml;he, passt &uuml;ber jeden Header</div></div>
+        <div class="why-item"><div class="why-dot"></div><div><strong>Editorial-Hero</strong> (1) f&uuml;r die n&auml;chste/letzte Reise: maximaler Premium-Eindruck im ersten Scroll-Fold, erzeugt Vorfreude</div></div>
+        <div class="why-item"><div class="why-dot"></div><div><strong>Kompakte Zeilen</strong> (1+3) darunter: 4&ndash;5 weitere Reisen sichtbar, mit Hafen-Highlights als Orts-Geda&uml;chtnis</div></div>
+        <div class="why-item"><div class="why-dot"></div><div><strong>Geo-SVG-Fallback</strong> (1) l&ouml;st das Kern-Problem: jede Karte ist visuell individuell &mdash; Farbverlauf nach Region, Koordinatenlinien, Hafen-Dots</div></div>
+        <div class="why-item"><div class="why-dot" style="background:#34C759"></div><div>Phase-3-ready: Stats-Strip-Zahlen werden sp&auml;ter zur Cruise-Pass-Eingangskarte; die Architektur bleibt konsistent</div></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M (1 Sprint)</span>
+          <span class="badge badge-ok">SwiftUI-native</span>
+          <span class="badge badge-s">Kein neues Modell</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: NO-PHOTO PROBLEM — DEEP DIVE -->
+<div class="slide" id="s9">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 9 / 13 &mdash; Kernproblem: Kein Foto</div>
+    <div class="slide-title">Das Foto-Problem gel&ouml;st</div>
+    <div class="slide-sub">Alle vier Directions m&uuml;ssen ohne Foto funktionieren. Drei Fallback-Strategien &mdash; je nach Direction kombinierbar.</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;flex:1;">
+      <!-- Fallback 1: Geo-SVG -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#FF6B35;margin-bottom:8px;">Strategie A</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px;">Geo-Muster-Hintergrund</div>
+        <div style="background:#0a1929;border-radius:10px;height:72px;margin-bottom:10px;overflow:hidden;position:relative;">
+          <svg width="100%" height="72" viewBox="0 0 200 72" preserveAspectRatio="none">
+            <rect width="200" height="72" fill="linear-gradient(145deg,#0C3A6B,#0C8CE9)"/>
+            <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0C3A6B"/><stop offset="100%" stop-color="#0C8CE9"/></linearGradient></defs>
+            <rect width="200" height="72" fill="url(#g1)"/>
+            <circle cx="30" cy="20" r="50" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
+            <circle cx="160" cy="60" r="60" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1.5"/>
+            <circle cx="70" cy="50" r="4" fill="rgba(255,255,255,.6)"/>
+            <circle cx="110" cy="40" r="4" fill="rgba(255,255,255,.6)"/>
+            <circle cx="150" cy="35" r="4" fill="rgba(255,255,255,.6)"/>
+            <polyline points="70,50 110,40 150,35" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1" stroke-dasharray="4,2"/>
+          </svg>
+          <div style="position:absolute;bottom:6px;left:8px;font-size:10px;font-weight:900;color:#fff;">Norwegische Fjorde</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.55;">SVG-Overlay mit Koordinatenlinien + Hafen-Dots aus den Port-Daten des Cruise-Modells. Jede Karte ist einzigartig basierend auf echten Geo-Daten. Aufwand: S &mdash; reine SwiftUI Canvas.</div>
+      </div>
+      <!-- Fallback 2: Region-Color -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#0C8CE9;margin-bottom:8px;">Strategie B</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px;">Region-Farbpalette</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+          <div style="height:36px;border-radius:7px;background:linear-gradient(135deg,#0C3A6B,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;">Nordsee/Fjorde</div>
+          <div style="height:36px;border-radius:7px;background:linear-gradient(135deg,#1a4a1a,#34C759);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;">Mittelmeer</div>
+          <div style="height:36px;border-radius:7px;background:linear-gradient(135deg,#3d1a6e,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;">Karibik</div>
+          <div style="height:36px;border-radius:7px;background:linear-gradient(135deg,#6e3d1a,#FF6B35);display:flex;align-items:center;justify-content:center;font-size:8px;color:rgba(255,255,255,.8);font-weight:700;">Asien/Pacific</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.55;">Farbverlauf basierend auf dem Zielgebiet der Reise (aus Hafen-Koordinaten ableitbar). Identische Reiseziele = &auml;hnliche Farbe. Aufwand: XS &mdash; ein switch auf Latitude-Range.</div>
+      </div>
+      <!-- Fallback 3: Emoji Icon -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#34C759;margin-bottom:8px;">Strategie C</div>
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px;">Styled Emoji-Thumb</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(145deg,#0C3A6B,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:22px;">&#128674;</div>
+          <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(145deg,#1a4a1a,#34C759);display:flex;align-items:center;justify-content:center;font-size:22px;">&#9970;</div>
+          <div style="width:50px;height:50px;border-radius:10px;background:linear-gradient(145deg,#3d1a6e,#9b59b6);display:flex;align-items:center;justify-content:center;font-size:22px;">&#127944;</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--muted);line-height:1.55;">Reederei-Emoji auf einem Region-Farbblock. Das Schiff-Emoji bleibt als Brand-Signal der Reederei (explizit erw&uuml;nscht). Kein Platzhalter-Charakter weil das Emoji semantisch tr&auml;gt. Aufwand: XS.</div>
+      </div>
+    </div>
+    <div style="background:rgba(12,140,233,.08);border:1px solid rgba(12,140,233,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:#b0d0f0;line-height:1.5;margin-top:12px;">
+      <strong style="color:var(--ocean);">Empfehlung:</strong> Strategie A (Geo-Muster) f&uuml;r Hero-Karten (Direction 1 + Hybrid), Strategie B+C f&uuml;r kompakte Zeilen. Alle drei Strategien sind kombinierbar und SwiftUI-native implementierbar ohne externe Assets.
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: SWIFTUI IMPLEMENTATION NOTES -->
+<div class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 10 / 13 &mdash; Implementation</div>
+    <div class="slide-title">SwiftUI-Baubarkeit</div>
+    <div class="slide-sub">Alle Elemente des Hybrids sind mit nativem SwiftUI implementierbar &mdash; kein Fremdk&uuml;rzel, keine exotischen Views.</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;flex:1;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#34C759;margin-bottom:8px;">Native SwiftUI &mdash; S/M Aufwand</div>
+        <div style="font-size:11.5px;color:var(--text);line-height:1.6;">
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:#34C759;font-weight:700;flex-shrink:0;">S</div><div><strong>Slim Stats-Strip:</strong> HStack mit computed properties aus SwiftData aggregation queries. Kein neues Datenmodell.</div></div>
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:#34C759;font-weight:700;flex-shrink:0;">S</div><div><strong>Region-Farbpalette Fallback:</strong> Extension auf Cruise die aus dem ersten Port den Geo-Bereich ableitet &rarr; ein Color-Token.</div></div>
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:var(--amber);font-weight:700;flex-shrink:0;">M</div><div><strong>Geo-SVG Fallback:</strong> SwiftUI Canvas mit Port-Koordinaten normalisiert auf Karten-Bounds. TimelineView nicht n&ouml;tig.</div></div>
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:var(--amber);font-weight:700;flex-shrink:0;">M</div><div><strong>Hero + Compact-Card System:</strong> ViewBuilder der je nach Index-Position unterschiedliche Card-Layouts w&auml;hlt.</div></div>
+          <div style="display:flex;gap:8px;"><div style="color:var(--amber);font-weight:700;flex-shrink:0;">M</div><div><strong>Quick-Filter-Chips:</strong> ScrollView(.horizontal) mit Binding auf filteredCruises. Ersetzt filterMenu komplett.</div></div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:8px;">L Aufwand &mdash; Expliziter Hinweis</div>
+        <div style="font-size:11.5px;color:var(--text);line-height:1.6;">
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:var(--red);font-weight:700;flex-shrink:0;">L</div><div><strong>Mini-Weltkarte (Direction 4):</strong> MKMapView in einem UIViewRepresentable im ScrollView-Header. Interaktions-Konflikte m&ouml;glich. Empfehlung: als Phase-3-Feature separat landen.</div></div>
+          <div style="margin-bottom:8px;display:flex;gap:8px;"><div style="color:var(--red);font-weight:700;flex-shrink:0;">L</div><div><strong>Stamp-Animationen:</strong> Rub-to-reveal oder Collection-Unlock wäre aufwendig. Initiale Version ohne Animation implementieren.</div></div>
+          <div style="display:flex;gap:8px;"><div style="color:var(--amber);font-weight:700;flex-shrink:0;">M</div><div><strong>Timeline-Spine (Direction 2):</strong> Custom geometry in einer List Section. Machbar aber erfordert präzises overlay-Alignment.</div></div>
+        </div>
+        <div style="margin-top:14px;background:rgba(255,107,53,.08);border:1px solid rgba(255,107,53,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:#f0b080;line-height:1.5;">
+          <strong>Empfehlung:</strong> Hybrid (Slide 8) in einem Sprint. Direction 4 als separate Phase-3-Arbeit tracken &mdash; nicht zusammen landen.
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ocean);margin-bottom:8px;">Dark Mode</div>
+        <div style="font-size:11.5px;color:var(--text);line-height:1.6;">Dark Mode ist f&uuml;r alle Directions empfohlen: Die Farbakzente (oceanBlue, sunset, seaGreen) leuchten auf dunklem Hintergrund besser. NavyDark als App-Hintergrund (statt System-Default wei&szlig;) ist per <code style="font-size:10px;background:#0a1929;padding:1px 4px;border-radius:3px;">.preferredColorScheme(.dark)</code> erzwingbar oder als Nutzer-Toggle in Settings angeboten werden.</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:18px;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ocean);margin-bottom:8px;">Accessibility</div>
+        <div style="font-size:11.5px;color:var(--text);line-height:1.6;">Geo-SVG-Fallback ben&ouml;tigt <code style="font-size:10px;background:#0a1929;padding:1px 4px;border-radius:3px;">accessibilityLabel</code> mit Reisename + Hafen-Liste. Stats-Strip-Zahlen als separate AccessibilityElements mit Einheit (nicht nur &bdquo;7&ldquo; sondern &bdquo;7 Reisen&ldquo;). Quick-Filter-Chips als Toggle-Buttons mit accessibilityValue.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: DIRECTION COMPARISON TABLE -->
+<div class="slide" id="s11">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 11 / 13 &mdash; Entscheidungshilfe</div>
+    <div class="slide-title">Directions im Vergleich</div>
+    <div class="slide-sub">Welche Direction liefert was &mdash; auf einen Blick.</div>
+    <div style="flex:1;overflow:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surface);border-radius:12px;overflow:hidden;">
+        <thead>
+          <tr>
+            <th style="background:var(--surface2);padding:10px 14px;text-align:left;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Kriterium</th>
+            <th style="background:var(--surface2);padding:10px 14px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;">D1 Editorial</th>
+            <th style="background:var(--surface2);padding:10px 14px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;">D2 Timeline</th>
+            <th style="background:var(--surface2);padding:10px 14px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;">D3 Dashboard</th>
+            <th style="background:var(--surface2);padding:10px 14px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-align:center;">D4 Map/Stamps</th>
+            <th style="background:rgba(12,140,233,.12);padding:10px 14px;font-size:10px;color:var(--ocean);font-weight:800;letter-spacing:.06em;text-transform:uppercase;text-align:center;">D5 Hybrid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">Premium-Gef&uuml;hl</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">&#9733;&#9733;&#9733;&#9733;&#9733;</td></tr>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">Informationsdichte</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);font-weight:700;text-align:center;">&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">&#9733;&#9733;&#9733;&#9733;</td></tr>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">Kein-Foto-Robustheit</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">&#9733;&#9733;&#9733;&#9733;</td></tr>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">SwiftUI-Aufwand</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">M</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);font-weight:700;text-align:center;">M&ndash;L</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">M</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--red);font-weight:700;text-align:center;">L</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">M</td></tr>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">Phase-3-Bridge</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);text-align:center;">Teilweise</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);text-align:center;">Teilweise</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">Ja</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">Stark</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">Ja</td></tr>
+          <tr><td style="padding:9px 14px;border-top:1px solid var(--border);">Journal-Charakter</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--amber);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:700;text-align:center;">&#9733;&#9733;&#9733;&#9733;</td><td style="padding:9px 14px;border-top:1px solid var(--border);color:var(--sea);font-weight:800;text-align:center;background:rgba(12,140,233,.05);">&#9733;&#9733;&#9733;&#9733;&#9733;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="background:rgba(12,140,233,.08);border:1px solid rgba(12,140,233,.2);border-radius:10px;padding:12px 16px;font-size:12px;color:#b0d0f0;line-height:1.5;margin-top:14px;">
+      <strong style="color:var(--ocean);">Fazit:</strong> Direction 5 (Hybrid) gewinnt in 4 von 6 Kategorien und erzielt keine schlechte Bewertung. Direction 4 ist die visionär st&auml;rkste, aber Implementation-Aufwand rechtfertigt ein separates Ticket f&uuml;r Phase 3.
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: ROADMAP -->
+<div class="slide" id="s12">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 12 / 13 &mdash; Roadmap</div>
+    <div class="slide-title">N&auml;chste Schritte</div>
+    <div class="slide-sub">3 Phasen &mdash; von Quick-Win bis Phase-3-Vision. Empfehlung: Sprint 1 direkt.</div>
+    <div class="roadmap-grid">
+      <div class="roadmap-phase">
+        <div class="phase-num">Sprint 1 &mdash; Sofort</div>
+        <div class="phase-title">Hybrid-Core</div>
+        <div class="phase-sub">Aufwand M &bull; 1&ndash;2 Wochen &bull; kein Modell-&Auml;nderung</div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Slim Stats-Strip: 4 Zahlen aus SwiftData aggregation (Reisen, L&auml;nder, Seetage, H&auml;fen)</div></div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Hero-Card-Layout f&uuml;r erste (n&auml;chste/letzte) Reise mit Geo-SVG-Fallback</div></div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Kompakte Zeilen-Cards darunter mit Hafen-Chips (max. 3 sichtbar)</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Quick-Filter-Chips (Jahr, Reederei) als horizontale ScrollView unter NavBar</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Dark Mode als App-weiter Default oder Settings-Toggle</div></div>
+        <div class="phase-item"><div class="phase-dot dot-sea"></div><div>Region-Farbpalette-Extension auf Cruise (XS Aufwand, sofortiger Effekt)</div></div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="phase-num">Sprint 2 &mdash; Phase 2 Abschluss</div>
+        <div class="phase-title">Timeline-Option</div>
+        <div class="phase-sub">Aufwand M&ndash;L &bull; optional als View-Toggle</div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Timeline/Logbuch-View als alternatives Layout (Toggle in NavBar: Liste / Chronik)</div></div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Jahr-Dividers als Section-Headers in SwiftUI List</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Upcoming vs. Past Section mit orangem / blauem Zeitstrahl-Connector</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Countdown-Banner f&uuml;r n&auml;chste Reise (wenn Startdatum &lt; 30 Tage)</div></div>
+        <div class="phase-item"><div class="phase-dot dot-sea"></div><div>Geo-SVG-Fallback verfeinern: echte Koordinaten aus Port-Modell einbinden</div></div>
+      </div>
+      <div class="roadmap-phase">
+        <div class="phase-num">Phase 3 &mdash; Cruise Pass</div>
+        <div class="phase-title">Map + Stamps</div>
+        <div class="phase-sub">Aufwand L &bull; eigenst&auml;ndiges Feature-Ticket</div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Cruise Pass Tab (oder erweiterter Stats-Strip) mit Passport-Stamp-Sammlung</div></div>
+        <div class="phase-item"><div class="phase-dot dot-ocean"></div><div>Mini-Weltkarte mit besuchten Hafen-Dots als MKMapView-Header</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Stamp-Design: SVG-basierte Briefmarken-&Auml;sthetik, eine pro Reiseregion</div></div>
+        <div class="phase-item"><div class="phase-dot dot-amber"></div><div>Unlock-Trigger: neuer Stamp erscheint nach Reise-Abschluss (endDate &lt; heute)</div></div>
+        <div class="phase-item"><div class="phase-dot dot-sea"></div><div>Share-Sheet: Cruise Pass als PNG-Export f&uuml;r Social-Media (UIGraphicsImageRenderer)</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13: CLOSING -->
+<div class="slide" id="s13">
+  <div style="text-align:center;max-width:640px;margin:auto;">
+    <div class="cover-badge">Design-Proposal &middot; ShipTrip &middot; Juni 2026</div>
+    <div class="cover-title" style="font-size:clamp(2rem,4.5vw,3.2rem);">Empfehlung:<br>Hybrid starten</div>
+    <div class="cover-sub">
+      Stats-Strip + Editorial-Hero + Geo-SVG-Fallback.<br>
+      Ein Sprint &mdash; vom blauen Kachelraster zum Premium-Journal.
+    </div>
+    <div class="cover-meta" style="justify-content:center;">
+      <span class="cover-chip">Aufwand M &mdash; 1&ndash;2 Wochen</span>
+      <span class="cover-chip">SwiftUI-native, kein neues Modell</span>
+      <span class="cover-chip">Foto-Problem gel&ouml;st</span>
+      <span class="cover-chip">Phase-3-ready</span>
+    </div>
+    <div style="margin-top:36px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:12px;color:var(--text);line-height:1.5;max-width:200px;text-align:left;">
+        <div style="font-size:10px;font-weight:700;color:var(--ocean);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">N&auml;chster Schritt</div>
+        Direction 5 freigeben &rarr; Developer-Ticket erstellen &rarr; Sprint planen
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:12px;color:var(--text);line-height:1.5;max-width:200px;text-align:left;">
+        <div style="font-size:10px;font-weight:700;color:var(--sunset);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Offen</div>
+        Dark Mode als Default vs. Toggle: Nutzerpräferenz befragen oder A/B in TestFlight
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:12px;color:var(--text);line-height:1.5;max-width:200px;text-align:left;">
+        <div style="font-size:10px;font-weight:700;color:var(--sea);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Phase 3</div>
+        Map + Stamps als separates Ticket tracken &mdash; nicht mit Sprint 1 mischen
+      </div>
+    </div>
+  </div>
+  <svg class="wave-deco" width="900" height="180" viewBox="0 0 900 180" fill="none">
+    <path d="M0 90 C150 20 300 160 450 90 S750 20 900 90" stroke="white" stroke-width="3" fill="none"/>
+    <path d="M0 110 C150 40 300 180 450 110 S750 40 900 110" stroke="white" stroke-width="2" fill="none"/>
+  </svg>
+</div>
+
+</div><!-- /#deck -->
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+let cur = 0;
+
+function show(n) {
+  slides[cur].classList.remove('active');
+  cur = (n + total) % total;
+  slides[cur].classList.add('active');
+  document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+  location.hash = cur + 1;
+}
+
+function go(d) { show(cur + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  if (e.key === 'Home') { e.preventDefault(); show(0); }
+  if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+});
+
+// init
+(function() {
+  const h = parseInt(location.hash.replace('#','')) - 1;
+  const start = (!isNaN(h) && h >= 0 && h < total) ? h : 0;
+  slides[0].classList.remove('active');
+  cur = start;
+  slides[cur].classList.add('active');
+  document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+  document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+})();
+</script>
+</body>
+</html>

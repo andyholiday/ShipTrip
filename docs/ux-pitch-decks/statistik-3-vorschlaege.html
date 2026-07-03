@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Statistik Redesign · 3 Vorschläge</title>
+<style>
+  :root {
+    --ocean-blue: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy-dark: #1A365D;
+    --sunset-orange: #FF6B35;
+    --sea-green: #34C759;
+    --bg: #0f1923;
+    --surface: #1a2535;
+    --surface2: #212f42;
+    --text: #f0f4f8;
+    --text-sec: #8fa3b8;
+    --border: rgba(255,255,255,0.08);
+    --r16: 16px;
+    --r10: 10px;
+    --r6: 6px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* === SLIDE ENGINE === */
+  .slide { display: none; width: 100vw; height: 100vh; position: relative; overflow: hidden; }
+  .slide.active { display: flex; flex-direction: column; }
+
+  /* progress bar */
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--ocean-blue), var(--ocean-light));
+    transition: width 0.3s ease; z-index: 100;
+  }
+  .slide-counter {
+    position: fixed; bottom: 20px; right: 24px;
+    font-size: 12px; color: var(--text-sec);
+    font-variant-numeric: tabular-nums; z-index: 100;
+    background: rgba(0,0,0,0.4); padding: 4px 10px; border-radius: 20px;
+  }
+  .nav-hint {
+    position: fixed; bottom: 20px; left: 24px;
+    font-size: 11px; color: var(--text-sec); z-index: 100;
+    opacity: 0.6;
+  }
+
+  /* === SLIDE LAYOUT HELPERS === */
+  .slide-inner {
+    flex: 1; display: flex; flex-direction: column;
+    padding: 48px 64px 56px;
+    max-width: 1280px; margin: 0 auto; width: 100%;
+  }
+  .slide-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ocean-light);
+    margin-bottom: 12px;
+  }
+  .slide-title {
+    font-size: 36px; font-weight: 700; line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .slide-sub {
+    font-size: 16px; color: var(--text-sec); margin-bottom: 32px; line-height: 1.5;
+  }
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* === COVER === */
+  #s1 { background: linear-gradient(135deg, #0a1520 0%, #0d2036 40%, #0C8CE9 160%); }
+  .cover-inner {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; align-items: flex-start;
+    padding: 64px 80px;
+  }
+  .cover-app {
+    font-size: 13px; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--ocean-light); margin-bottom: 24px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .cover-ship { font-size: 24px; }
+  .cover-title { font-size: 56px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; }
+  .cover-title span { color: var(--ocean-blue); }
+  .cover-claim { font-size: 20px; color: var(--text-sec); max-width: 520px; line-height: 1.6; margin-bottom: 40px; }
+  .cover-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+  .chip {
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--border);
+  }
+  .chip-blue { background: rgba(12,140,233,0.15); color: var(--ocean-blue); border-color: rgba(12,140,233,0.3); }
+  .chip-orange { background: rgba(255,107,53,0.15); color: var(--sunset-orange); border-color: rgba(255,107,53,0.3); }
+  .chip-green { background: rgba(52,199,89,0.15); color: var(--sea-green); border-color: rgba(52,199,89,0.3); }
+  .cover-deco {
+    position: absolute; right: 0; top: 0; bottom: 0; width: 42%;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0.12; pointer-events: none;
+  }
+
+  /* === PROBLEM SLIDE === */
+  .problem-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; flex: 1;
+  }
+  .problem-card {
+    background: var(--surface); border-radius: var(--r10);
+    padding: 20px; border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .problem-severity {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px;
+    width: fit-content;
+  }
+  .sev-high { background: rgba(255,59,48,0.2); color: #FF3B30; }
+  .sev-med { background: rgba(255,159,10,0.2); color: #FF9F0A; }
+  .sev-low { background: rgba(52,199,89,0.2); color: var(--sea-green); }
+  .problem-title { font-size: 14px; font-weight: 600; }
+  .problem-ref { font-size: 11px; color: var(--ocean-light); font-family: 'SF Mono', monospace; }
+  .problem-desc { font-size: 12px; color: var(--text-sec); line-height: 1.5; }
+
+  /* === IPHONE MOCKUP === */
+  .iphone {
+    width: 200px; flex-shrink: 0;
+    background: #1c1c1e;
+    border-radius: 44px;
+    border: 2px solid #3a3a3c;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05), inset 0 0 0 1px #000,
+                0 24px 60px rgba(0,0,0,0.6);
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .iphone-notch {
+    width: 90px; height: 28px; background: #1c1c1e;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto; flex-shrink: 0; z-index: 10;
+    position: relative;
+  }
+  .iphone-notch::after {
+    content: ''; position: absolute;
+    width: 50px; height: 10px; background: #111;
+    border-radius: 0 0 10px 10px; left: 20px; top: 0;
+  }
+  .iphone-screen {
+    flex: 1; overflow: hidden;
+    background: #f2f2f7;
+    display: flex; flex-direction: column;
+  }
+  .iphone-screen.dark { background: #000; }
+  .iphone-nav-bar {
+    background: rgba(242,242,247,0.92); padding: 8px 12px 6px;
+    border-bottom: 0.5px solid rgba(0,0,0,0.12);
+    font-size: 9px; font-weight: 800; color: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .iphone-nav-bar.dark { background: rgba(28,28,30,0.92); color: #fff; border-color: rgba(255,255,255,0.08); }
+  .iphone-scroll { flex: 1; padding: 10px 8px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+  .iphone-tab-bar {
+    display: flex; background: rgba(242,242,247,0.92);
+    border-top: 0.5px solid rgba(0,0,0,0.12);
+    padding: 6px 0 4px; flex-shrink: 0;
+  }
+  .iphone-tab-bar.dark { background: rgba(28,28,30,0.92); border-color: rgba(255,255,255,0.08); }
+  .iphone-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .iphone-tab-icon { font-size: 14px; }
+  .iphone-tab-label { font-size: 7px; color: #8e8e93; }
+  .iphone-tab-label.active { color: var(--ocean-blue); }
+  .iphone-tab-icon.active { filter: drop-shadow(0 0 3px var(--ocean-blue)); }
+
+  /* before/after layout */
+  .ba-row {
+    display: flex; gap: 32px; flex: 1; align-items: center;
+  }
+  .ba-side { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .ba-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 12px; border-radius: 20px;
+  }
+  .ba-before { background: rgba(255,59,48,0.15); color: #FF3B30; }
+  .ba-after { background: rgba(52,199,89,0.15); color: var(--sea-green); }
+  .ba-bullets { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+  .ba-bullet { display: flex; gap: 12px; align-items: flex-start; }
+  .ba-bullet-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--ocean-blue); flex-shrink: 0; margin-top: 5px;
+  }
+  .ba-bullet-text { font-size: 14px; color: var(--text-sec); line-height: 1.5; }
+  .ba-bullet-text strong { color: var(--text); }
+
+  /* === IST StatCard (before) — raw system colors === */
+  .ist-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .ist-stat-card {
+    background: #f2f2f7; border-radius: 12px; padding: 8px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .ist-stat-card.dark { background: #1c1c1e; }
+  .ist-stat-icon { font-size: 11px; }
+  .ist-stat-value { font-size: 12px; font-weight: 700; color: #1a1a1a; }
+  .ist-stat-value.dark { color: #fff; }
+  .ist-stat-label { font-size: 8px; color: #8e8e93; }
+  /* raw system colors as-is */
+  .raw-blue { color: #007AFF; }
+  .raw-cyan { color: #32ADE6; }
+  .raw-orange { color: #FF9500; }
+  .raw-green { color: #34C759; }
+  .raw-purple { color: #AF52DE; }
+  .raw-yellow { color: #FFCC00; }
+
+  /* === BRAND-TOKEN StatCard (after, shared) === */
+  .brand-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .brand-stat-card {
+    background: #f2f2f7; border-radius: 10px; padding: 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .brand-stat-card.dark { background: #2c2c2e; }
+  .brand-stat-value {
+    font-size: 13px; font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .brand-stat-label { font-size: 7px; font-weight: 600; color: #8e8e93; letter-spacing: 0.05em; }
+  .brand-stat-icon { font-size: 9px; margin-bottom: 1px; }
+  .c-ocean { color: var(--ocean-blue); }
+  .c-light { color: var(--ocean-light); }
+  .c-orange { color: var(--sunset-orange); }
+  .c-green { color: var(--sea-green); }
+
+  /* Section headers in mockup */
+  .mock-section-head {
+    font-size: 9px; font-weight: 800; color: #1a1a1a;
+    padding: 2px 0; margin-top: 2px;
+  }
+  .mock-section-head.dark { color: #fff; }
+  .mock-card {
+    background: #f2f2f7; border-radius: 10px; padding: 8px;
+  }
+  .mock-card.dark { background: #2c2c2e; }
+  .mock-card-dark2 { background: #1c1c1e; border-radius: 10px; padding: 8px; }
+
+  /* Chart bars */
+  .mock-chart { display: flex; align-items: flex-end; gap: 6px; height: 44px; }
+  .mock-bar { border-radius: 3px 3px 0 0; flex: 1; }
+
+  /* Donut chart SVG holder */
+  .mock-donut { display: flex; gap: 8px; align-items: center; }
+  .mock-legend { display: flex; flex-direction: column; gap: 3px; }
+  .mock-legend-row { display: flex; align-items: center; gap: 4px; font-size: 7px; color: #8e8e93; }
+  .mock-legend-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+  /* stats strip (before strip) */
+  .ist-stats-strip {
+    background: #f2f2f7; border-radius: 10px;
+    border: 0.5px solid rgba(0,0,0,0.12);
+    display: flex; overflow: hidden;
+    margin-bottom: 2px;
+  }
+  .ist-stats-cell {
+    flex: 1; padding: 6px 4px; display: flex; flex-direction: column;
+    align-items: center; border-right: 0.5px solid rgba(0,0,0,0.12);
+  }
+  .ist-stats-cell:last-child { border-right: none; }
+
+  /* === ROADMAP === */
+  .roadmap-cols { display: flex; gap: 20px; flex: 1; }
+  .roadmap-phase {
+    flex: 1; background: var(--surface); border-radius: var(--r10);
+    padding: 20px; border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .phase-badge {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 20px; width: fit-content;
+  }
+  .phase-1 { background: rgba(12,140,233,0.2); color: var(--ocean-blue); }
+  .phase-2 { background: rgba(255,107,53,0.2); color: var(--sunset-orange); }
+  .phase-3 { background: rgba(52,199,89,0.2); color: var(--sea-green); }
+  .phase-title { font-size: 16px; font-weight: 700; }
+  .phase-effort { font-size: 12px; color: var(--text-sec); }
+  .phase-items { display: flex; flex-direction: column; gap: 8px; }
+  .phase-item { display: flex; gap: 8px; font-size: 13px; color: var(--text-sec); line-height: 1.4; }
+  .phase-item::before { content: '—'; color: var(--border); flex-shrink: 0; }
+
+  /* === TWO-COL LAYOUT === */
+  .two-col { display: flex; gap: 48px; flex: 1; align-items: center; }
+  .col-text { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+  .col-phones { display: flex; gap: 20px; align-items: center; }
+
+  /* ===============================
+     VORSCHLAG-SPEZIFISCHE MOCKUPS
+     =============================== */
+
+  /* V1: Dashboard — zahlen-fokussiert, großer Highlight-Strip */
+  .v1-hero-strip {
+    background: linear-gradient(135deg, var(--navy-dark) 0%, #0C8CE9 100%);
+    border-radius: var(--r16); padding: 10px;
+    display: flex; justify-content: space-around; align-items: center;
+    margin-bottom: 2px;
+  }
+  .v1-hero-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .v1-hero-value { font-size: 14px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+  .v1-hero-label { font-size: 7px; color: rgba(255,255,255,0.7); font-weight: 600; }
+  .v1-divider { width: 0.5px; background: rgba(255,255,255,0.25); height: 28px; }
+  .v1-secondary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .v1-sec-card {
+    background: #f2f2f7; border-radius: var(--r10); padding: 7px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .v1-sec-card.dark { background: #2c2c2e; }
+  .v1-sec-icon { font-size: 10px; }
+  .v1-sec-text { display: flex; flex-direction: column; }
+  .v1-sec-val { font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .v1-sec-lbl { font-size: 7px; color: #8e8e93; }
+
+  /* V2: Story/Charts — narrative, chart-first */
+  .v2-year-bar-wrap { background: #f2f2f7; border-radius: var(--r10); padding: 8px; }
+  .v2-year-bar-wrap.dark { background: #2c2c2e; }
+  .v2-chart-title { font-size: 8px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+  .v2-chart-title.dark { color: #fff; }
+  .v2-bar-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+  .v2-bar-year { font-size: 7px; color: #8e8e93; width: 24px; flex-shrink: 0; }
+  .v2-bar-fill { height: 10px; border-radius: 3px; background: var(--ocean-blue); }
+  .v2-bar-count { font-size: 7px; color: #8e8e93; margin-left: 2px; }
+
+  .v2-top-strip {
+    background: #f2f2f7; border-radius: var(--r10); padding: 6px 8px;
+    display: flex; justify-content: space-between;
+  }
+  .v2-top-strip.dark { background: #2c2c2e; }
+  .v2-top-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .v2-top-value { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .v2-top-lbl { font-size: 7px; color: #8e8e93; }
+
+  /* V3: Kompakt-Liste — scannable, kein Chart-Overhead */
+  .v3-list-card {
+    background: #f2f2f7; border-radius: var(--r10); overflow: hidden;
+  }
+  .v3-list-card.dark { background: #2c2c2e; }
+  .v3-list-row {
+    display: flex; align-items: center; padding: 6px 8px;
+    border-bottom: 0.5px solid rgba(0,0,0,0.08); gap: 6px;
+  }
+  .v3-list-row:last-child { border-bottom: none; }
+  .v3-list-row.dark { border-color: rgba(255,255,255,0.06); }
+  .v3-list-icon { font-size: 10px; width: 16px; flex-shrink: 0; }
+  .v3-list-label { font-size: 9px; color: #3a3a3c; flex: 1; }
+  .v3-list-label.dark { color: #ebebf5; }
+  .v3-list-value { font-size: 9px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .v3-list-bar-wrap { width: 40px; height: 5px; background: rgba(0,0,0,0.08); border-radius: 3px; overflow: hidden; }
+  .v3-list-bar-inner { height: 100%; border-radius: 3px; }
+
+  /* Drill-down slide */
+  .v3-drill-card {
+    background: #f2f2f7; border-radius: var(--r16); overflow: hidden;
+  }
+  .v3-drill-card.dark { background: #1c1c1e; }
+  .v3-drill-header {
+    background: linear-gradient(135deg, var(--navy-dark) 0%, #0C8CE9 100%);
+    padding: 10px 10px 8px; display: flex; flex-direction: column; gap: 2px;
+  }
+  .v3-drill-title { font-size: 10px; font-weight: 800; color: #fff; }
+  .v3-drill-total { font-size: 14px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }
+  .v3-drill-row {
+    display: flex; align-items: center; padding: 5px 8px; gap: 5px;
+    border-bottom: 0.5px solid rgba(0,0,0,0.08);
+  }
+  .v3-drill-row:last-child { border-bottom: none; }
+  .v3-drill-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .v3-drill-cat-name { font-size: 8px; flex: 1; color: #3a3a3c; }
+  .v3-drill-cat-bar { flex: 1; height: 5px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden; }
+  .v3-drill-cat-fill { height: 100%; border-radius: 3px; }
+  .v3-drill-cat-val { font-size: 8px; font-weight: 700; color: #3a3a3c; font-variant-numeric: tabular-nums; width: 36px; text-align: right; }
+
+  /* Highlight box */
+  .highlight-box {
+    background: rgba(12,140,233,0.08); border: 1px solid rgba(12,140,233,0.2);
+    border-radius: var(--r10); padding: 14px 18px;
+  }
+  .highlight-box p { font-size: 14px; color: var(--text-sec); line-height: 1.6; }
+  .highlight-box strong { color: var(--ocean-blue); }
+
+  /* rec tag */
+  .rec-tag {
+    display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    background: rgba(255,107,53,0.15); color: var(--sunset-orange);
+    margin-left: 12px; vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="slide-counter" id="slideCounter">1 / 12</div>
+<div class="nav-hint">← → Pfeiltasten · Leertaste · Home/End</div>
+
+<!-- ===================== SLIDE 1: COVER ===================== -->
+<div class="slide active" id="s1">
+  <div class="cover-inner">
+    <div class="cover-app">
+      <span class="cover-ship">🚢</span>
+      ShipTrip · UX Pitch
+    </div>
+    <div class="cover-title">Statistik<br><span>Redesign</span></div>
+    <div class="cover-claim">Drei klar unterscheidbare Richtungen — alle konsistent zur redesignten Hauptseite „Meine Reisen".</div>
+    <div class="cover-chips">
+      <span class="chip chip-blue">v1 · Dashboard</span>
+      <span class="chip chip-orange">v2 · Story/Charts</span>
+      <span class="chip chip-green">v3 · Kompakt-Liste</span>
+    </div>
+  </div>
+  <div class="cover-deco">
+    <svg width="400" height="400" viewBox="0 0 400 400">
+      <circle cx="200" cy="200" r="180" fill="none" stroke="white" stroke-width="1" opacity="0.5"/>
+      <circle cx="200" cy="200" r="140" fill="none" stroke="white" stroke-width="0.5" opacity="0.4" stroke-dasharray="4 3"/>
+      <circle cx="200" cy="200" r="100" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>
+      <text x="200" y="215" text-anchor="middle" font-size="72" opacity="0.6">📊</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 2: PROBLEM ===================== -->
+<div class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="slide-label">IST-Analyse · UX-Review</div>
+    <div class="slide-title">Was heute nicht stimmt</div>
+    <div class="slide-sub">6 Code-verankerte Findings — StatsView.swift, Color+Theme.swift</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <span class="problem-severity sev-high">High</span>
+        <div class="problem-title">Rohe System-Farben statt Marken-Tokens</div>
+        <div class="problem-ref">StatsView.swift:51–90 · Color+Theme.swift</div>
+        <div class="problem-desc">StatCard nutzt .blue/.cyan/.orange/.green/.purple/.yellow — komplett andere Farbsprache als die redesignten Stats-Strip-Kacheln (oceanBlue, oceanLight, sunsetOrange, seaGreen).</div>
+      </div>
+      <div class="problem-card">
+        <span class="problem-severity sev-high">High</span>
+        <div class="problem-title">cornerRadius 12 statt Hierarchie 10/16</div>
+        <div class="problem-ref">StatsView.swift:120, 168, 193 · _consistency-brief.md §2</div>
+        <div class="problem-desc">Alle Karten haben r12 — bricht die definierte Radius-Hierarchie (Hero = 16, Standard = 10). Stats-Strip der Hauptseite hat korrekt r10.</div>
+      </div>
+      <div class="problem-card">
+        <span class="problem-severity sev-high">High</span>
+        <div class="problem-title">StatCard linksbündig statt zentriert</div>
+        <div class="problem-ref">StatsView.swift:246–263 · _consistency-brief.md §4</div>
+        <div class="problem-desc">Icon, Wert, Label sind .leading-aligned. Die Stats-Strip-Zellen der Hauptseite sind zentriert mit Wert .title3/.heavy + monospacedDigit(). Inkonsistente Typografie für identisches Konzept.</div>
+      </div>
+      <div class="problem-card">
+        <span class="problem-severity sev-med">Med</span>
+        <div class="problem-title">Chart-Farben ohne Token-Bezug</div>
+        <div class="problem-ref">StatsView.swift:113 (.blue.gradient)</div>
+        <div class="problem-desc">Bar-Chart nutzt .blue.gradient statt oceanBlue/navyDark-Verlauf. Donut-Chart-Farben werden automatisch von Charts vergeben — keine Bindung ans Brand-Farbsystem.</div>
+      </div>
+      <div class="problem-card">
+        <span class="problem-severity sev-med">Med</span>
+        <div class="problem-title">Schwache visuelle Hierarchie</div>
+        <div class="problem-ref">StatsView.swift:17–44</div>
+        <div class="problem-desc">Alle Sektionen (Stats-Grid, Chart, Reedereien) haben identisches Gewicht — kein Highlight der wichtigsten Kennzahl (z. B. Gesamtreisen / Gesamttage). Keine Abstufung Premium → Sekundär.</div>
+      </div>
+      <div class="problem-card">
+        <span class="problem-severity sev-med">Med</span>
+        <div class="problem-title">Kein Drill-down / keine Interaktion</div>
+        <div class="problem-ref">StatsView.swift:48–91 (StatCard ohne action)</div>
+        <div class="problem-desc">Kacheln sind reines Display — kein NavigationLink, kein Sheet bei Antippen. User sieht Ausgaben-Total, aber keine Aufschlüsselung per Tap. Verschenkte Exploration.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 3: BEFORE (gemeinsam) ===================== -->
+<div class="slide" id="s3">
+  <div class="slide-inner">
+    <div class="slide-label">Gemeinsame Basis</div>
+    <div class="slide-title">IST-Zustand — vor allen Vorschlägen</div>
+    <div class="slide-sub">Kanonische Datenszene: 4 Reisen · 6 Länder · 34 Hafentage · 12.400 sm · 6.480 €</div>
+    <div class="two-col">
+      <div class="col-text">
+        <div class="highlight-box">
+          <p><strong>Kern-Problem:</strong> StatsView sieht aus wie eine generische SwiftUI-Demo. Rohe <code>.blue/.cyan/.green</code>-Farben, r12 überall, linksbündige Kacheln — kein einziges Marken-Token sichtbar. Die redesignte Hauptseite ist visuell eine andere App.</p>
+        </div>
+        <div class="ba-bullets">
+          <div class="ba-bullet">
+            <div class="ba-bullet-dot" style="background: #FF3B30;"></div>
+            <div class="ba-bullet-text"><strong>6× System-Farben</strong> statt Brand-Tokens in den StatCards</div>
+          </div>
+          <div class="ba-bullet">
+            <div class="ba-bullet-dot" style="background: #FF3B30;"></div>
+            <div class="ba-bullet-text"><strong>r12 durchgehend</strong> — Radius-Hierarchie 10/16 ignoriert</div>
+          </div>
+          <div class="ba-bullet">
+            <div class="ba-bullet-dot" style="background: #FF3B30;"></div>
+            <div class="ba-bullet-text"><strong>Linksbündige Kacheln</strong> vs. zentrierte Stats-Strip-Zellen</div>
+          </div>
+          <div class="ba-bullet">
+            <div class="ba-bullet-dot" style="background: #FF9F0A;"></div>
+            <div class="ba-bullet-text"><strong>Flacher Charts-Bereich</strong> — kein Highlight, keine Interaktion</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-phones">
+        <!-- IST-Mockup DARK -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+          <div class="ba-label ba-before">IST / Before</div>
+          <div class="iphone" style="height:480px;">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen dark">
+              <div class="iphone-nav-bar dark">Statistik</div>
+              <div class="iphone-scroll">
+                <div class="ist-stat-grid">
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-blue">⛴️</span>
+                    <span class="ist-stat-value dark">4</span>
+                    <span class="ist-stat-label">Kreuzfahrten</span>
+                  </div>
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-cyan">📅</span>
+                    <span class="ist-stat-value dark">34</span>
+                    <span class="ist-stat-label">Reisetage</span>
+                  </div>
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-orange">📍</span>
+                    <span class="ist-stat-value dark">18</span>
+                    <span class="ist-stat-label">Häfen</span>
+                  </div>
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-green">🌍</span>
+                    <span class="ist-stat-value dark">6</span>
+                    <span class="ist-stat-label">Länder</span>
+                  </div>
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-purple">💶</span>
+                    <span class="ist-stat-value dark" style="font-size:9px;">6.480 €</span>
+                    <span class="ist-stat-label">Ausgaben</span>
+                  </div>
+                  <div class="ist-stat-card dark">
+                    <span class="ist-stat-icon raw-yellow">⭐</span>
+                    <span class="ist-stat-value dark">4.2</span>
+                    <span class="ist-stat-label">Ø Bewertung</span>
+                  </div>
+                </div>
+                <!-- Chart section -->
+                <div class="mock-card-dark2">
+                  <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:5px;">Kreuzfahrten pro Jahr</div>
+                  <div class="mock-chart">
+                    <div class="mock-bar" style="height:30px;background:#007AFF;"></div>
+                    <div class="mock-bar" style="height:55px;background:#007AFF;"></div>
+                    <div class="mock-bar" style="height:20px;background:#007AFF;"></div>
+                  </div>
+                  <div style="display:flex;gap:6px;margin-top:2px;">
+                    <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2024</div>
+                    <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2025</div>
+                    <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2026</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="iphone-tab-bar dark">
+              <div class="iphone-tab"><div class="iphone-tab-icon">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+              <div class="iphone-tab"><div class="iphone-tab-icon">🌍</div><div class="iphone-tab-label">Karte</div></div>
+              <div class="iphone-tab"><div class="iphone-tab-icon active">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+              <div class="iphone-tab"><div class="iphone-tab-icon">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+              <div class="iphone-tab"><div class="iphone-tab-icon">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 4: V1 INTRO ===================== -->
+<div class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="slide-label">Vorschlag 1 von 3</div>
+    <div class="slide-title">Dashboard — Zahlen im Zentrum <span class="rec-tag">Empfohlen</span></div>
+    <div class="slide-sub">Ein Gradient-Hero-Strip hebt die 4 Kern-Kennzahlen prominent hervor. Sekundäre Kacheln darunter nutzen Brand-Tokens. Bekanntes iPhone-Dashboard-Muster, maximal lesbar auf einen Blick.</div>
+    <div class="divider"></div>
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot"></div>
+        <div class="ba-bullet-text"><strong>Hero-Strip</strong> mit navyDark → oceanBlue Gradient — identisch zur GeoFallback-Farbsprache der Hauptseite. Radius 16 (Fokus-Objekt).</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot"></div>
+        <div class="ba-bullet-text"><strong>4 Kern-Werte</strong> (Reisen, Tage, Häfen, sm) im Hero — weiß, .title3/.heavy + monospacedDigit. Exakt die Stats-Strip-Typografie-Spec.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot"></div>
+        <div class="ba-bullet-text"><strong>Sekundäres 2×2-Grid</strong> (Länder, Ausgaben, Reederei, Ø Rating) mit Brand-Token-Farben: oceanBlue, oceanLight, sunsetOrange, seaGreen. Radius 10.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot"></div>
+        <div class="ba-bullet-text"><strong>Bar-Chart</strong> mit oceanBlue-Gradient statt rawem .blue. Reederei-Leiste als kompakte Rangliste mit Emoji-Logos.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot"></div>
+        <div class="ba-bullet-text"><strong>Drill-down</strong> auf Ausgaben-Kachel: Sheet öffnet Kategorie-Aufschlüsselung mit Donut-Chart und Zeilen-Detailansicht.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 5: V1 MOCKUP ===================== -->
+<div class="slide" id="s5">
+  <div class="slide-inner" style="padding-top:36px;padding-bottom:40px;">
+    <div class="slide-label">Vorschlag 1 · Before / After</div>
+    <div class="slide-title" style="font-size:28px;margin-bottom:6px;">Dashboard — Zahlen-fokussiert</div>
+    <div class="ba-row" style="margin-top:16px;">
+      <!-- BEFORE -->
+      <div class="ba-side">
+        <div class="ba-label ba-before">IST / Before</div>
+        <div class="iphone" style="height:440px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="iphone-nav-bar dark">Statistik</div>
+            <div class="iphone-scroll">
+              <div class="ist-stat-grid">
+                <div class="ist-stat-card dark"><span class="raw-blue" style="font-size:9px;">⛴️</span><span class="ist-stat-value dark">4</span><span class="ist-stat-label">Kreuzfahrten</span></div>
+                <div class="ist-stat-card dark"><span class="raw-cyan" style="font-size:9px;">📅</span><span class="ist-stat-value dark">34</span><span class="ist-stat-label">Reisetage</span></div>
+                <div class="ist-stat-card dark"><span class="raw-orange" style="font-size:9px;">📍</span><span class="ist-stat-value dark">18</span><span class="ist-stat-label">Häfen</span></div>
+                <div class="ist-stat-card dark"><span class="raw-green" style="font-size:9px;">🌍</span><span class="ist-stat-value dark">6</span><span class="ist-stat-label">Länder</span></div>
+                <div class="ist-stat-card dark"><span class="raw-purple" style="font-size:9px;">💶</span><span class="ist-stat-value dark" style="font-size:8px;">6.480 €</span><span class="ist-stat-label">Ausgaben</span></div>
+                <div class="ist-stat-card dark"><span class="raw-yellow" style="font-size:9px;">⭐</span><span class="ist-stat-value dark">4.2</span><span class="ist-stat-label">Ø Bewertung</span></div>
+              </div>
+              <div style="background:#1c1c1e;border-radius:12px;padding:8px;">
+                <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:4px;">Kreuzfahrten pro Jahr</div>
+                <div style="display:flex;align-items:flex-end;gap:6px;height:36px;">
+                  <div style="flex:1;height:22px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:36px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:14px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone-tab-bar dark">
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:12px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BULLETS CENTER -->
+      <div class="ba-bullets">
+        <div class="ba-bullet"><div class="ba-bullet-dot"></div><div class="ba-bullet-text"><strong>Gradient-Hero-Strip</strong> r16 — Fokus-Objekt analog zu CruiseHeroCard</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot"></div><div class="ba-bullet-text"><strong>Brand-Tokens</strong> ersetzen raw .blue/.cyan/.green/.purple</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot"></div><div class="ba-bullet-text"><strong>r10 Sekundärkacheln</strong> — Radius-Hierarchie eingehalten</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot"></div><div class="ba-bullet-text"><strong>Bar-Chart oceanBlue-Gradient</strong> statt .blue.gradient</div></div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-side">
+        <div class="ba-label ba-after">SOLL / After (V1)</div>
+        <div class="iphone" style="height:440px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="iphone-nav-bar dark">Statistik</div>
+            <div class="iphone-scroll" style="gap:6px;">
+              <!-- Hero Gradient Strip -->
+              <div style="background:linear-gradient(135deg,#1A365D 0%,#0C8CE9 100%);border-radius:16px;padding:10px;">
+                <div style="font-size:7px;color:rgba(255,255,255,0.7);font-weight:600;margin-bottom:6px;letter-spacing:0.08em;">MEINE STATISTIKEN</div>
+                <div style="display:flex;justify-content:space-around;align-items:center;">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="font-size:16px;font-weight:900;color:#fff;">4</div>
+                    <div style="font-size:6px;color:rgba(255,255,255,0.7);font-weight:600;">REISEN</div>
+                  </div>
+                  <div style="width:0.5px;background:rgba(255,255,255,0.25);height:28px;"></div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="font-size:16px;font-weight:900;color:#fff;">34</div>
+                    <div style="font-size:6px;color:rgba(255,255,255,0.7);font-weight:600;">TAGE</div>
+                  </div>
+                  <div style="width:0.5px;background:rgba(255,255,255,0.25);height:28px;"></div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="font-size:16px;font-weight:900;color:#fff;">18</div>
+                    <div style="font-size:6px;color:rgba(255,255,255,0.7);font-weight:600;">HÄFEN</div>
+                  </div>
+                  <div style="width:0.5px;background:rgba(255,255,255,0.25);height:28px;"></div>
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                    <div style="font-size:13px;font-weight:900;color:#fff;">12.4k</div>
+                    <div style="font-size:6px;color:rgba(255,255,255,0.7);font-weight:600;">SM</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Secondary 2x2 grid -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+                <div style="background:#2c2c2e;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span style="font-size:9px;">🌍</span>
+                  <span style="font-size:13px;font-weight:900;color:#0C8CE9;">6</span>
+                  <span style="font-size:7px;color:#8e8e93;font-weight:600;">LÄNDER</span>
+                </div>
+                <div style="background:#2c2c2e;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span style="font-size:9px;">💶</span>
+                  <span style="font-size:10px;font-weight:900;color:#FF6B35;">6.480 €</span>
+                  <span style="font-size:7px;color:#8e8e93;font-weight:600;">AUSGABEN</span>
+                </div>
+                <div style="background:#2c2c2e;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span style="font-size:9px;">🛳️</span>
+                  <span style="font-size:12px;font-weight:900;color:#36A9F0;">Costa</span>
+                  <span style="font-size:7px;color:#8e8e93;font-weight:600;">TOP REEDEREI</span>
+                </div>
+                <div style="background:#2c2c2e;border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span style="font-size:9px;">⭐</span>
+                  <span style="font-size:13px;font-weight:900;color:#34C759;">4.2</span>
+                  <span style="font-size:7px;color:#8e8e93;font-weight:600;">Ø BEWERTUNG</span>
+                </div>
+              </div>
+              <!-- Bar Chart -->
+              <div style="background:#2c2c2e;border-radius:10px;padding:8px;">
+                <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:5px;">Reisen pro Jahr</div>
+                <div style="display:flex;align-items:flex-end;gap:6px;height:36px;">
+                  <div style="flex:1;height:22px;background:linear-gradient(to top,#1A365D,#0C8CE9);border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:36px;background:linear-gradient(to top,#1A365D,#0C8CE9);border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:14px;background:linear-gradient(to top,#1A365D,#0C8CE9);border-radius:2px 2px 0 0;"></div>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:2px;">
+                  <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2024</div>
+                  <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2025</div>
+                  <div style="flex:1;text-align:center;font-size:7px;color:#8e8e93;">2026</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone-tab-bar dark">
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:12px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 6: V2 INTRO ===================== -->
+<div class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="slide-label">Vorschlag 2 von 3</div>
+    <div class="slide-title">Story / Charts — Narrativ und Daten</div>
+    <div class="slide-sub">Charts zuerst, Zahlen als Kontext. Die Reisedaten erzählen eine Geschichte: Jahresverlauf, Länder-Ranking, Ausgaben-Donut. Kompakter Stats-Strip oben verankert die Key-Numbers.</div>
+    <div class="divider"></div>
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sunset-orange);"></div>
+        <div class="ba-bullet-text"><strong>Stats-Strip oben</strong> — exakt wie CruiseStatsStripView: 4 Zellen, separator 0.5pt, r10, Werte oceanBlue/sunsetOrange/seaGreen. Sofortige Hauptzahl-Referenz.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sunset-orange);"></div>
+        <div class="ba-bullet-text"><strong>Horizontale Bar-Charts</strong> für Länder-Ranking (Italia 5, Spanien 3 …) — klarer, scannbarer als vertikale Balken für kategorische Daten.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sunset-orange);"></div>
+        <div class="ba-bullet-text"><strong>Donut-Chart Ausgaben</strong> mit Brand-Farben aus expenseColor(for:) — Kacheln zur Legende werden interaktiv (Antippen = Drill-down). r10-Karte.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sunset-orange);"></div>
+        <div class="ba-bullet-text"><strong>Timeline-Leiste</strong> am Ende: Reisen-pro-Jahr als gestapelter Zeitstrahl — verbindet Statistik visuell mit der Hauptseite-Metapher.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 7: V2 MOCKUP ===================== -->
+<div class="slide" id="s7">
+  <div class="slide-inner" style="padding-top:36px;padding-bottom:40px;">
+    <div class="slide-label">Vorschlag 2 · Before / After</div>
+    <div class="slide-title" style="font-size:28px;margin-bottom:6px;">Story/Charts — Narrativ-fokussiert</div>
+    <div class="ba-row" style="margin-top:16px;">
+      <!-- BEFORE (same as before) -->
+      <div class="ba-side">
+        <div class="ba-label ba-before">IST / Before</div>
+        <div class="iphone" style="height:440px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="iphone-nav-bar dark">Statistik</div>
+            <div class="iphone-scroll">
+              <div class="ist-stat-grid">
+                <div class="ist-stat-card dark"><span class="raw-blue" style="font-size:9px;">⛴️</span><span class="ist-stat-value dark">4</span><span class="ist-stat-label">Kreuzfahrten</span></div>
+                <div class="ist-stat-card dark"><span class="raw-cyan" style="font-size:9px;">📅</span><span class="ist-stat-value dark">34</span><span class="ist-stat-label">Reisetage</span></div>
+                <div class="ist-stat-card dark"><span class="raw-orange" style="font-size:9px;">📍</span><span class="ist-stat-value dark">18</span><span class="ist-stat-label">Häfen</span></div>
+                <div class="ist-stat-card dark"><span class="raw-green" style="font-size:9px;">🌍</span><span class="ist-stat-value dark">6</span><span class="ist-stat-label">Länder</span></div>
+                <div class="ist-stat-card dark"><span class="raw-purple" style="font-size:9px;">💶</span><span class="ist-stat-value dark" style="font-size:8px;">6.480 €</span><span class="ist-stat-label">Ausgaben</span></div>
+                <div class="ist-stat-card dark"><span class="raw-yellow" style="font-size:9px;">⭐</span><span class="ist-stat-value dark">4.2</span><span class="ist-stat-label">Ø Bewertung</span></div>
+              </div>
+              <div style="background:#1c1c1e;border-radius:12px;padding:8px;">
+                <div style="font-size:8px;color:#fff;font-weight:700;margin-bottom:4px;">Kreuzfahrten pro Jahr</div>
+                <div style="display:flex;align-items:flex-end;gap:5px;height:34px;">
+                  <div style="flex:1;height:20px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:34px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:12px;background:#007AFF;border-radius:2px 2px 0 0;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone-tab-bar dark">
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:12px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BULLETS -->
+      <div class="ba-bullets">
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sunset-orange);"></div><div class="ba-bullet-text"><strong>Stats-Strip</strong> exakt wie Hauptseite — sofortige Wiedererkennbarkeit</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sunset-orange);"></div><div class="ba-bullet-text"><strong>Horizontale Bars</strong> für Länder/Reederei-Ranking — scannbarer als 2×N-Grid</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sunset-orange);"></div><div class="ba-bullet-text"><strong>Donut-Chart</strong> mit expenseColor-Tokens — kein automatisches Chart-Farbsystem</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sunset-orange);"></div><div class="ba-bullet-text"><strong>Charts-first Layout</strong> — Storytelling über rohe Zahlen-Reihe</div></div>
+      </div>
+
+      <!-- AFTER V2 -->
+      <div class="ba-side">
+        <div class="ba-label ba-after">SOLL / After (V2)</div>
+        <div class="iphone" style="height:440px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="iphone-nav-bar dark">Statistik</div>
+            <div class="iphone-scroll" style="gap:6px;">
+              <!-- Stats Strip (like main page) -->
+              <div style="background:#2c2c2e;border-radius:10px;border:0.5px solid rgba(255,255,255,0.1);display:flex;overflow:hidden;">
+                <div style="flex:1;padding:6px 3px;display:flex;flex-direction:column;align-items:center;border-right:0.5px solid rgba(255,255,255,0.1);">
+                  <div style="font-size:12px;font-weight:900;color:#0C8CE9;">4</div>
+                  <div style="font-size:6px;font-weight:600;color:#8e8e93;">REISEN</div>
+                </div>
+                <div style="flex:1;padding:6px 3px;display:flex;flex-direction:column;align-items:center;border-right:0.5px solid rgba(255,255,255,0.1);">
+                  <div style="font-size:12px;font-weight:900;color:#36A9F0;">34</div>
+                  <div style="font-size:6px;font-weight:600;color:#8e8e93;">TAGE</div>
+                </div>
+                <div style="flex:1;padding:6px 3px;display:flex;flex-direction:column;align-items:center;border-right:0.5px solid rgba(255,255,255,0.1);">
+                  <div style="font-size:12px;font-weight:900;color:#FF6B35;">18</div>
+                  <div style="font-size:6px;font-weight:600;color:#8e8e93;">HÄFEN</div>
+                </div>
+                <div style="flex:1;padding:6px 3px;display:flex;flex-direction:column;align-items:center;">
+                  <div style="font-size:12px;font-weight:900;color:#34C759;">6</div>
+                  <div style="font-size:6px;font-weight:600;color:#8e8e93;">LÄNDER</div>
+                </div>
+              </div>
+              <!-- Horizontal bar chart - countries -->
+              <div style="background:#2c2c2e;border-radius:10px;padding:8px;">
+                <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:5px;">Top-Länder</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="font-size:7px;color:#8e8e93;width:22px;">IT</div>
+                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:83%;height:100%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);border-radius:3px;"></div></div>
+                    <div style="font-size:7px;color:#8e8e93;">5</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="font-size:7px;color:#8e8e93;width:22px;">ES</div>
+                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:50%;height:100%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);border-radius:3px;"></div></div>
+                    <div style="font-size:7px;color:#8e8e93;">3</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <div style="font-size:7px;color:#8e8e93;width:22px;">HR</div>
+                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:33%;height:100%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);border-radius:3px;"></div></div>
+                    <div style="font-size:7px;color:#8e8e93;">2</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Donut chart -->
+              <div style="background:#2c2c2e;border-radius:10px;padding:8px;">
+                <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:5px;">Ausgaben nach Kategorie</div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <svg width="52" height="52" viewBox="0 0 52 52">
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#2c2c2e" stroke-width="8"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#0C8CE9" stroke-width="8"
+                      stroke-dasharray="50 76" stroke-dashoffset="0" transform="rotate(-90 26 26)"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#FF6B35" stroke-width="8"
+                      stroke-dasharray="28 98" stroke-dashoffset="-50" transform="rotate(-90 26 26)"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#34C759" stroke-width="8"
+                      stroke-dasharray="18 108" stroke-dashoffset="-78" transform="rotate(-90 26 26)"/>
+                    <circle cx="26" cy="26" r="20" fill="none" stroke="#AF52DE" stroke-width="8"
+                      stroke-dasharray="30 96" stroke-dashoffset="-96" transform="rotate(-90 26 26)"/>
+                    <text x="26" y="30" text-anchor="middle" font-size="7" fill="#fff" font-weight="700">6.480</text>
+                  </svg>
+                  <div style="display:flex;flex-direction:column;gap:3px;">
+                    <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#0C8CE9;"></div><div style="font-size:7px;color:#8e8e93;">Ausflüge 2.200 €</div></div>
+                    <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#FF6B35;"></div><div style="font-size:7px;color:#8e8e93;">Bord 1.480 €</div></div>
+                    <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#34C759;"></div><div style="font-size:7px;color:#8e8e93;">Sonstiges 960 €</div></div>
+                    <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#AF52DE;"></div><div style="font-size:7px;color:#8e8e93;">Souvenirs 1.840 €</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone-tab-bar dark">
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:12px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 8: V3 INTRO ===================== -->
+<div class="slide" id="s8">
+  <div class="slide-inner">
+    <div class="slide-label">Vorschlag 3 von 3</div>
+    <div class="slide-title">Kompakt-Liste — Scannen statt Staunen</div>
+    <div class="slide-sub">Listenbasiert, kein Chart-Overhead. Alle Werte in einer kompakten, gerahmten Karte mit inline Mini-Bars. Minimal-Aufwand für maximale Übersicht — ideal für viele Metriken auf kleinem Raum.</div>
+    <div class="divider"></div>
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sea-green);"></div>
+        <div class="ba-bullet-text"><strong>Einzige Listen-Karte</strong> (r10, kein Rand ausser separators) enthält alle Stats als Zeilen — analoges Muster zu CruiseTimelineRowView.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sea-green);"></div>
+        <div class="ba-bullet-text"><strong>Mini-Bars inline</strong> pro Zeile zeigen relativen Wert (Ausgaben-Kategorien, Länder) — kein separater Chart-Block nötig.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sea-green);"></div>
+        <div class="ba-bullet-text"><strong>Drill-down Sheet</strong> beim Antippen einer Zeile (z. B. Ausgaben) — öffnet Detailansicht mit Donut-Chart + Kategorie-Aufschlüsselung. Zeigt das Interaktionsmuster.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-dot" style="background: var(--sea-green);"></div>
+        <div class="ba-bullet-text"><strong>Niedrigster Implementierungsaufwand</strong> — kein eigener Chart-View, reiner List-basierter Code. Geringste Abweichung vom bestehenden Code-Muster.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 9: V3 MOCKUP ===================== -->
+<div class="slide" id="s9">
+  <div class="slide-inner" style="padding-top:36px;padding-bottom:40px;">
+    <div class="slide-label">Vorschlag 3 · Before / After + Drill-down</div>
+    <div class="slide-title" style="font-size:28px;margin-bottom:6px;">Kompakt-Liste — inkl. Drill-down-Kachel</div>
+    <div class="ba-row" style="margin-top:16px;">
+      <!-- BEFORE -->
+      <div class="ba-side">
+        <div class="ba-label ba-before">IST / Before</div>
+        <div class="iphone" style="height:440px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="iphone-nav-bar dark">Statistik</div>
+            <div class="iphone-scroll">
+              <div class="ist-stat-grid">
+                <div class="ist-stat-card dark"><span class="raw-blue" style="font-size:9px;">⛴️</span><span class="ist-stat-value dark">4</span><span class="ist-stat-label">Kreuzfahrten</span></div>
+                <div class="ist-stat-card dark"><span class="raw-cyan" style="font-size:9px;">📅</span><span class="ist-stat-value dark">34</span><span class="ist-stat-label">Reisetage</span></div>
+                <div class="ist-stat-card dark"><span class="raw-orange" style="font-size:9px;">📍</span><span class="ist-stat-value dark">18</span><span class="ist-stat-label">Häfen</span></div>
+                <div class="ist-stat-card dark"><span class="raw-green" style="font-size:9px;">🌍</span><span class="ist-stat-value dark">6</span><span class="ist-stat-label">Länder</span></div>
+                <div class="ist-stat-card dark"><span class="raw-purple" style="font-size:9px;">💶</span><span class="ist-stat-value dark" style="font-size:8px;">6.480 €</span><span class="ist-stat-label">Ausgaben</span></div>
+                <div class="ist-stat-card dark"><span class="raw-yellow" style="font-size:9px;">⭐</span><span class="ist-stat-value dark">4.2</span><span class="ist-stat-label">Ø Bewertung</span></div>
+              </div>
+              <div style="height:8px;"></div>
+              <div style="background:#1c1c1e;border-radius:12px;padding:8px;">
+                <div style="font-size:8px;font-weight:700;color:#fff;margin-bottom:4px;">Top Reedereien</div>
+                <div style="display:flex;align-items:center;gap:5px;padding:3px 0;border-bottom:0.5px solid rgba(255,255,255,0.06);">
+                  <span style="font-size:10px;">🛳️</span>
+                  <span style="font-size:8px;color:#ebebf5;flex:1;">Costa</span>
+                  <span style="font-size:8px;color:#8e8e93;">2 Reisen</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;padding:3px 0;">
+                  <span style="font-size:10px;">⚓</span>
+                  <span style="font-size:8px;color:#ebebf5;flex:1;">MSC</span>
+                  <span style="font-size:8px;color:#8e8e93;">1 Reise</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="iphone-tab-bar dark">
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:12px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+            <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:12px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BULLETS -->
+      <div class="ba-bullets">
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sea-green);"></div><div class="ba-bullet-text"><strong>Alle Stats in einer Karte</strong> — kompakteste Form, kein Layout-Overhead</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sea-green);"></div><div class="ba-bullet-text"><strong>Inline Mini-Bars</strong> — Verhältnis ohne separaten Chart-Block</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sea-green);"></div><div class="ba-bullet-text"><strong>Drill-down Sheet</strong> auf Ausgaben-Zeile — zeigt Interaktionsmuster</div></div>
+        <div class="ba-bullet"><div class="ba-bullet-dot" style="background:var(--sea-green);"></div><div class="ba-bullet-text"><strong>Niedrigster Aufwand</strong> — S-Effort, direkte Code-Umsetzung</div></div>
+      </div>
+
+      <!-- AFTER V3 + Drill-down -->
+      <div style="display:flex;flex-direction:column;gap:16px;align-items:center;">
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <!-- Main stats list view -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div class="ba-label ba-after" style="font-size:10px;">SOLL (V3)</div>
+            <div class="iphone" style="height:440px;width:185px;">
+              <div class="iphone-notch"></div>
+              <div class="iphone-screen dark">
+                <div class="iphone-nav-bar dark">Statistik</div>
+                <div class="iphone-scroll" style="gap:6px;">
+                  <!-- Kompakt Liste Karte -->
+                  <div style="background:#2c2c2e;border-radius:10px;overflow:hidden;">
+                    <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:6px;">
+                      <span style="font-size:10px;width:14px;">⛴️</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Kreuzfahrten</span>
+                      <span style="font-size:9px;font-weight:800;color:#0C8CE9;">4</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:6px;">
+                      <span style="font-size:10px;width:14px;">📅</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Reisetage</span>
+                      <span style="font-size:9px;font-weight:800;color:#36A9F0;">34</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:6px;">
+                      <span style="font-size:10px;width:14px;">📍</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Häfen</span>
+                      <span style="font-size:9px;font-weight:800;color:#FF6B35;">18</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:6px;">
+                      <span style="font-size:10px;width:14px;">🌍</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Länder</span>
+                      <span style="font-size:9px;font-weight:800;color:#34C759;">6</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:6px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:6px;">
+                      <span style="font-size:10px;width:14px;">💶</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Ausgaben</span>
+                      <div style="display:flex;align-items:center;gap:4px;">
+                        <span style="font-size:8px;font-weight:800;color:#FF6B35;">6.480 €</span>
+                        <span style="font-size:8px;color:#36A9F0;">›</span>
+                      </div>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:6px 8px;gap:6px;">
+                      <span style="font-size:10px;width:14px;">⭐</span>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Ø Bewertung</span>
+                      <span style="font-size:9px;font-weight:800;color:#34C759;">4.2</span>
+                    </div>
+                  </div>
+                  <!-- Reederei mini list -->
+                  <div style="background:#2c2c2e;border-radius:10px;overflow:hidden;">
+                    <div style="padding:5px 8px 3px;font-size:7px;font-weight:700;color:#8e8e93;letter-spacing:0.07em;">TOP REEDEREI</div>
+                    <div style="display:flex;align-items:center;padding:4px 8px 6px;gap:5px;">
+                      <span style="font-size:12px;">🛳️</span>
+                      <span style="font-size:9px;color:#ebebf5;font-weight:700;flex:1;">Costa</span>
+                      <div style="width:36px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:var(--ocean-blue);border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;">2</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:4px 8px 6px;gap:5px;">
+                      <span style="font-size:12px;">⚓</span>
+                      <span style="font-size:9px;color:#ebebf5;flex:1;">MSC</span>
+                      <div style="width:36px;height:5px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;"><div style="width:50%;height:100%;background:var(--ocean-light);border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;">1</span>
+                    </div>
+                  </div>
+                  <!-- Year chart compact -->
+                  <div style="background:#2c2c2e;border-radius:10px;padding:7px 8px;">
+                    <div style="font-size:7px;font-weight:700;color:#fff;margin-bottom:4px;">Reisen pro Jahr</div>
+                    <div style="display:flex;flex-direction:column;gap:3px;">
+                      <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:6px;color:#8e8e93;width:20px;">2024</span><div style="flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:50%;height:100%;background:linear-gradient(90deg,#1A365D,#0C8CE9);border-radius:2px;"></div></div><span style="font-size:6px;color:#8e8e93;">1</span></div>
+                      <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:6px;color:#8e8e93;width:20px;">2025</span><div style="flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:100%;height:100%;background:linear-gradient(90deg,#1A365D,#0C8CE9);border-radius:2px;"></div></div><span style="font-size:6px;color:#8e8e93;">2</span></div>
+                      <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:6px;color:#8e8e93;width:20px;">2026</span><div style="flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;"><div style="width:25%;height:100%;background:linear-gradient(90deg,#1A365D,#0C8CE9);border-radius:2px;"></div></div><span style="font-size:6px;color:#8e8e93;">1</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tab-bar dark">
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:11px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- DRILL-DOWN Sheet -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+            <div style="font-size:10px;font-weight:700;color:var(--sea-green);letter-spacing:0.08em;background:rgba(52,199,89,0.12);padding:4px 10px;border-radius:20px;">TAP › DRILL-DOWN</div>
+            <div class="iphone" style="height:440px;width:185px;">
+              <div class="iphone-notch"></div>
+              <div class="iphone-screen dark">
+                <!-- Dimmed background suggestion -->
+                <div style="background:rgba(0,0,0,0.5);position:absolute;top:28px;left:0;right:0;height:120px;z-index:0;"></div>
+                <!-- Sheet -->
+                <div style="position:absolute;bottom:0;left:0;right:0;background:#1c1c1e;border-radius:16px 16px 0 0;z-index:10;padding:8px;">
+                  <div style="width:32px;height:3px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 8px;"></div>
+                  <!-- Drill header -->
+                  <div style="background:linear-gradient(135deg,#1A365D 0%,#0C8CE9 100%);border-radius:10px;padding:8px 10px;margin-bottom:6px;">
+                    <div style="font-size:8px;font-weight:700;color:rgba(255,255,255,0.7);letter-spacing:0.06em;">AUSGABEN GESAMT</div>
+                    <div style="font-size:18px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;">6.480 €</div>
+                    <div style="font-size:7px;color:rgba(255,255,255,0.6);">4 Reisen · 2024–2026</div>
+                  </div>
+                  <!-- Category rows -->
+                  <div style="background:#2c2c2e;border-radius:10px;overflow:hidden;">
+                    <div style="display:flex;align-items:center;padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:5px;">
+                      <div style="width:6px;height:6px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Ausflüge</span>
+                      <div style="width:40px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:83%;height:100%;background:#0C8CE9;border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;width:36px;text-align:right;">2.200 €</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:5px;">
+                      <div style="width:6px;height:6px;border-radius:50%;background:#AF52DE;flex-shrink:0;"></div>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Souvenirs</span>
+                      <div style="width:40px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:70%;height:100%;background:#AF52DE;border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;width:36px;text-align:right;">1.840 €</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:5px 8px;border-bottom:0.5px solid rgba(255,255,255,0.06);gap:5px;">
+                      <div style="width:6px;height:6px;border-radius:50%;background:#FF6B35;flex-shrink:0;"></div>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Bordkasse</span>
+                      <div style="width:40px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:56%;height:100%;background:#FF6B35;border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;width:36px;text-align:right;">1.480 €</span>
+                    </div>
+                    <div style="display:flex;align-items:center;padding:5px 8px;gap:5px;">
+                      <div style="width:6px;height:6px;border-radius:50%;background:#34C759;flex-shrink:0;"></div>
+                      <span style="font-size:8px;color:#ebebf5;flex:1;">Sonstiges</span>
+                      <div style="width:40px;height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="width:37%;height:100%;background:#34C759;border-radius:3px;"></div></div>
+                      <span style="font-size:7px;color:#8e8e93;width:36px;text-align:right;">960 €</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tab-bar dark" style="position:relative;z-index:0;">
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🗺</div><div class="iphone-tab-label">Reisen</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🌍</div><div class="iphone-tab-label">Karte</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon active" style="font-size:11px;">📊</div><div class="iphone-tab-label active" style="color:var(--ocean-blue);">Statistik</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">🔖</div><div class="iphone-tab-label">Merkliste</div></div>
+                <div class="iphone-tab"><div class="iphone-tab-icon" style="font-size:11px;">⚙️</div><div class="iphone-tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 10: VERGLEICH ===================== -->
+<div class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="slide-label">Gegenüberstellung</div>
+    <div class="slide-title">Drei Richtungen im Vergleich</div>
+    <div class="slide-sub">Alle drei beheben die IST-Schwächen vollständig. Unterschied: Tonalität und Komplexität.</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;flex:1;margin-top:16px;">
+      <!-- V1 -->
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px;border:1px solid rgba(12,140,233,0.3);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--ocean-blue);"></div>
+          <div style="font-size:16px;font-weight:700;">V1 · Dashboard</div>
+          <span class="rec-tag" style="font-size:10px;">Empfohlen</span>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.6;">Gradient-Hero-Strip + 2x2-Sekundärgrid. Starkste visuelle Differenzierung. Sofort les- und premium-wirkend.</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Staerken</div>
+          <div style="font-size:12px;color:var(--text-sec);">+ Starkste Hierarchie<br>+ Brand-Anker durch Gradient<br>+ Drill-down auf Ausgaben<br>+ Direkt erkennbar als ShipTrip</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Aufwand</div>
+          <div style="font-size:12px;color:var(--text-sec);">M — neue Hero-Strip-Komponente</div>
+        </div>
+      </div>
+      <!-- V2 -->
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px;border:1px solid rgba(255,107,53,0.25);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--sunset-orange);"></div>
+          <div style="font-size:16px;font-weight:700;">V2 · Story/Charts</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.6;">Stats-Strip oben + Charts-first Layout. Verbindet Statistik narrativ mit der Reise-Timeline-Metapher der Hauptseite.</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Staerken</div>
+          <div style="font-size:12px;color:var(--text-sec);">+ Stats-Strip = sofortige Konsistenz<br>+ Horizontale Bars scannbar<br>+ Donut mit Brand-Farben<br>+ Reiche Chart-Darstellung</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Aufwand</div>
+          <div style="font-size:12px;color:var(--text-sec);">M — Chart-Token-Bindung nötig</div>
+        </div>
+      </div>
+      <!-- V3 -->
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px;border:1px solid rgba(52,199,89,0.25);display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--sea-green);"></div>
+          <div style="font-size:16px;font-weight:700;">V3 · Kompakt-Liste</div>
+        </div>
+        <div style="font-size:13px;color:var(--text-sec);line-height:1.6;">Alle Stats als gerahmte Zeilen-Karte + Drill-down-Sheet. Niedrigster Aufwand, direktes Interaktionsmuster, kompakteste Darstellung.</div>
+        <div style="border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Staerken</div>
+          <div style="font-size:12px;color:var(--text-sec);">+ Niedrigster Aufwand (S)<br>+ Drill-down klar demonstriert<br>+ Analoges Muster zu TimelineRow<br>+ Alle Tokens sofort einsetzbar</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:12px;font-weight:600;color:var(--text);">Aufwand</div>
+          <div style="font-size:12px;color:var(--text-sec);">S — nur Token-Swap + List-Refactor</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 11: ROADMAP ===================== -->
+<div class="slide" id="s11">
+  <div class="slide-inner">
+    <div class="slide-label">Implementierung</div>
+    <div class="slide-title">Roadmap — 3 Phasen</div>
+    <div class="slide-sub">Phase 1 ist unabhängig vom gewählten Vorschlag — muss in jedem Fall zuerst. Phasen 2+3 je nach Entscheidung V1/V2/V3.</div>
+    <div class="roadmap-cols" style="margin-top:16px;">
+      <div class="roadmap-phase">
+        <span class="phase-badge phase-1">Phase 1 · Token-Fix</span>
+        <div class="phase-title">Pflicht — unabhaengig vom Vorschlag</div>
+        <div class="phase-effort">Aufwand: S · ~2–3h</div>
+        <div class="phase-items">
+          <div class="phase-item">StatCard.color: .blue → .oceanBlue, .cyan → .oceanLight, .orange → .sunsetOrange, .green → .seaGreen, .purple → eigener Token, .yellow → eigener Token</div>
+          <div class="phase-item">StatCard.cornerRadius 12 → 10 (Standard-Karte)</div>
+          <div class="phase-item">StatCard alignment: .leading → .center, Icon entfernen oder sekundaer setzen</div>
+          <div class="phase-item">cruisesPerYearChart: .blue.gradient → Linear(navyDark, oceanBlue)</div>
+          <div class="phase-item">Alle Karten-Sections: .cornerRadius 12 → 10</div>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <span class="phase-badge phase-2">Phase 2 · Layout (je Vorschlag)</span>
+        <div class="phase-title">V1: Hero-Strip · V2: Strip+Bars · V3: List-Refactor</div>
+        <div class="phase-effort">Aufwand: M (V1/V2) · S (V3) · ~4–8h</div>
+        <div class="phase-items">
+          <div class="phase-item">V1: StatsHeroStripView — Gradient-Karte, 4 Zellen, White-Typo, r16</div>
+          <div class="phase-item">V1: Sekundaergrid 2×2 mit Brand-Token-Farben statt StatCard-System</div>
+          <div class="phase-item">V2: CruiseStatsStripView wiederverwenden als Stats-Top-Strip</div>
+          <div class="phase-item">V2: Horizontale BarMark-Charts fuer Laender/Reederei</div>
+          <div class="phase-item">V3: Kompakt-List-Karte mit separator-Dividers, Brand-Tokens pro Zeile</div>
+          <div class="phase-item">V3: Inline Mini-Bars als relativer Wert-Indikator (kein Chart-Import)</div>
+        </div>
+      </div>
+      <div class="roadmap-phase">
+        <span class="phase-badge phase-3">Phase 3 · Interaktion</span>
+        <div class="phase-title">Drill-down + Zustaende</div>
+        <div class="phase-effort">Aufwand: M · ~3–5h</div>
+        <div class="phase-items">
+          <div class="phase-item">Ausgaben-Kachel / -Zeile: NavigationLink oder .sheet mit ExpenseDetailView</div>
+          <div class="phase-item">Donut-Chart oder Liste mit Kategorie-Aufschluesselung (expensesByCategory)</div>
+          <div class="phase-item">Laender-Kachel: Laender-Liste sortiert nach Haeufigkeit</div>
+          <div class="phase-item">Empty-State: ContentUnavailableView mit label/description/action (analog Hauptseite)</div>
+          <div class="phase-item">Accessibility: accessibilityLabel pro StatCard-Zeile mit Wert + Einheit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SLIDE 12: CLOSING ===================== -->
+<div class="slide" id="s12">
+  <div class="slide-inner" style="justify-content:center;align-items:center;text-align:center;gap:32px;">
+    <div>
+      <div class="slide-label" style="text-align:center;">Naechste Schritte</div>
+      <div class="slide-title" style="font-size:44px;">Entscheidung</div>
+      <div class="slide-sub" style="max-width:560px;margin:0 auto;">Phase 1 (Token-Fix) laeuft sofort als Fast-Path. Fuer Phase 2+3 bitte Vorschlag bestaetigen — dann Developer-Spawn.</div>
+    </div>
+    <div style="display:flex;gap:20px;justify-content:center;flex-wrap:wrap;">
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px 32px;border:1px solid rgba(12,140,233,0.3);display:flex;flex-direction:column;gap:8px;align-items:center;min-width:180px;">
+        <div style="font-size:28px;">A</div>
+        <div style="font-weight:700;">V1 Dashboard</div>
+        <div style="font-size:12px;color:var(--text-sec);">Premium-Feel, staerkste Hierarchie</div>
+        <div style="font-size:11px;color:var(--ocean-blue);">Empfehlung</div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px 32px;border:1px solid rgba(255,107,53,0.25);display:flex;flex-direction:column;gap:8px;align-items:center;min-width:180px;">
+        <div style="font-size:28px;">B</div>
+        <div style="font-weight:700;">V2 Story/Charts</div>
+        <div style="font-size:12px;color:var(--text-sec);">Datenreich, narrativ</div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px 32px;border:1px solid rgba(52,199,89,0.25);display:flex;flex-direction:column;gap:8px;align-items:center;min-width:180px;">
+        <div style="font-size:28px;">C</div>
+        <div style="font-weight:700;">V3 Kompakt-Liste</div>
+        <div style="font-size:12px;color:var(--text-sec);">Schnell, S-Aufwand, Drill-down</div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--r16);padding:24px 32px;border:1px solid var(--border);display:flex;flex-direction:column;gap:8px;align-items:center;min-width:180px;">
+        <div style="font-size:28px;">D</div>
+        <div style="font-weight:700;">Phase 1 only</div>
+        <div style="font-size:12px;color:var(--text-sec);">Token-Fix jetzt, Layout spaeter</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--text-sec);">Gemini Design Gate #5b: Deck wurde durch Gemini-Kritik-Pass validiert — Findings eingearbeitet.</div>
+  </div>
+</div>
+
+<script>
+  const TOTAL = 12;
+  let current = 1;
+
+  function goTo(n) {
+    if (n < 1 || n > TOTAL) return;
+    document.getElementById('s' + current)?.classList.remove('active');
+    current = n;
+    document.getElementById('s' + current)?.classList.add('active');
+    document.getElementById('slideCounter').textContent = current + ' / ' + TOTAL;
+    document.getElementById('progressBar').style.width = (current / TOTAL * 100) + '%';
+    location.hash = current;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') goTo(current - 1);
+    if (e.key === 'Home') goTo(1);
+    if (e.key === 'End') goTo(TOTAL);
+  });
+
+  // deep link
+  const hash = parseInt(location.hash.replace('#', ''));
+  if (hash >= 1 && hash <= TOTAL) goTo(hash);
+  else goTo(1);
+</script>
+</body>
+</html>

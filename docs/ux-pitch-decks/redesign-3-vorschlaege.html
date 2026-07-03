@@ -1,0 +1,3317 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip · 3 Redesign-Richtungen</title>
+<style>
+/* ============================================================
+   WRAPPER / COVER
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+  background: #08111E;
+  color: #fff;
+  min-height: 100vh;
+}
+
+/* ── Cover ────────────────────────────────────────────────── */
+.cover {
+  background: linear-gradient(160deg, #0A1628 0%, #1A365D 50%, #0C5A9E 100%);
+  padding: 48px 24px 40px;
+  text-align: center;
+  border-bottom: 0.5px solid rgba(255,255,255,0.1);
+}
+.cover-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #36A9F0;
+  margin-bottom: 12px;
+}
+.cover-title {
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  color: #fff;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+.cover-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  max-width: 520px;
+  margin: 0 auto 10px;
+  line-height: 1.55;
+}
+.cover-anchor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #34C759;
+  background: rgba(52,199,89,0.12);
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(52,199,89,0.25);
+}
+
+/* ── Description cards ────────────────────────────────────── */
+.desc-strip {
+  display: flex;
+  gap: 12px;
+  padding: 28px 24px 0;
+  max-width: 1320px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.desc-card {
+  flex: 1;
+  min-width: 260px;
+  max-width: 340px;
+  background: #111827;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.desc-card:hover {
+  background: #1a2233;
+}
+.desc-card.dc-active {
+  border-color: #0C8CE9;
+  background: rgba(12,140,233,0.08);
+}
+.dc-number {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 6px;
+}
+.dc-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.dc-v1 { color: #36A9F0; }
+.dc-v2 { color: #0C8CE9; }
+.dc-v3 { color: #34C759; }
+.dc-body {
+  font-size: 12px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
+}
+.dc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+.dc-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Switcher bar ─────────────────────────────────────────── */
+.switcher-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 24px 0;
+  flex-wrap: wrap;
+}
+.sw-btn {
+  font-family: -apple-system, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.sw-btn:hover {
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.8);
+}
+.sw-btn.sw-active {
+  background: #0C8CE9;
+  border-color: #0C8CE9;
+  color: #fff;
+}
+.sw-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 4px;
+}
+.sw-btn.sw-side {
+  background: rgba(52,199,89,0.08);
+  border-color: rgba(52,199,89,0.3);
+  color: #34C759;
+}
+.sw-btn.sw-side.sw-active {
+  background: #34C759;
+  border-color: #34C759;
+  color: #0A1A0F;
+}
+
+/* ── Viewport area ────────────────────────────────────────── */
+.viewport {
+  padding: 24px 12px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Solo mode: center single panel */
+.solo-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+/* Side-by-side mode */
+.side-wrap {
+  display: none;
+  gap: 16px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.side-wrap.sb-active {
+  display: flex;
+}
+.side-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.side-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Fragment containers */
+.frag-v1, .frag-v2, .frag-v3 {
+  display: none;
+}
+.frag-v1.frag-visible,
+.frag-v2.frag-visible,
+.frag-v3.frag-visible {
+  display: block;
+}
+
+/* Scale fragments down in side-by-side mode */
+.side-wrap .frag-v1,
+.side-wrap .frag-v2,
+.side-wrap .frag-v3 {
+  display: block;
+  transform-origin: top center;
+  transform: scale(0.72);
+  margin-bottom: calc(-28% * 2.5);
+}
+
+/* Footer */
+.page-footer {
+  text-align: center;
+  padding: 20px 24px 40px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  border-top: 0.5px solid rgba(255,255,255,0.06);
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     COVER
+     ══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-eyebrow">ShipTrip · UX Redesign 2026</div>
+  <div class="cover-title">3 Redesign-Richtungen</div>
+  <div class="cover-sub">
+    Drei vollstandige Redesign-Ansatze fur die App. Jede Richtung zeigt alle 5 Tabs
+    mit funktionierender Tab-Bar, Karten-Pins und Detailansicht. Gemeinsamer Anker:
+    grosse Reise-Kacheln auf "Meine Reisen" bleiben erhalten.
+  </div>
+  <div class="cover-anchor">
+    Gemeinsamer Anker: grosse Reise-Kacheln (geplant + vergangen) auf Meine Reisen
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     DESCRIPTION CARDS
+     ══════════════════════════════════════════════════════════ -->
+<div class="desc-strip">
+  <div class="desc-card dc-active" id="dcCard1" onclick="switchTo(1)">
+    <div class="dc-number">Vorschlag 1</div>
+    <div class="dc-name"><span class="dc-v1">Editorial Journal</span></div>
+    <div class="dc-body">
+      Heller, papierweisser Hintergrund mit Serif-Typografie (Georgia) im Header.
+      Navy-zu-Ocean Magazin-Gradient als Markenfarbe. Zeitstrahl-Zeilen mit farbigem
+      linkem Akzentstreifen. Warms Licht, redaktioneller Charakter.
+    </div>
+    <div class="dc-tags">
+      <span class="dc-tag">Hell</span>
+      <span class="dc-tag">Serif</span>
+      <span class="dc-tag">Papier #FAFAF8</span>
+      <span class="dc-tag">Magazin-Header</span>
+    </div>
+  </div>
+
+  <div class="desc-card" id="dcCard2" onclick="switchTo(2)">
+    <div class="dc-number">Vorschlag 2</div>
+    <div class="dc-name"><span class="dc-v2">Immersiv Foto-First</span></div>
+    <div class="dc-body">
+      Tiefschwarzer Hintergrund (#0A0A0F), Fotos und Geo-Gradients dominant.
+      Starke Scrim-Overlays (0.78 Opazitat). Hero-Karte laeuft nahtlos durch Meta-Bar.
+      Premium-Dunkel-Feeling, Cinema-Atmosphare.
+    </div>
+    <div class="dc-tags">
+      <span class="dc-tag">Dunkel</span>
+      <span class="dc-tag">Foto-First</span>
+      <span class="dc-tag">Canvas #0A0A0F</span>
+      <span class="dc-tag">Immersiv</span>
+    </div>
+  </div>
+
+  <div class="desc-card" id="dcCard3" onclick="switchTo(3)">
+    <div class="dc-number">Vorschlag 3</div>
+    <div class="dc-name"><span class="dc-v3">Explorer Geo-First</span></div>
+    <div class="dc-body">
+      Dunkelblaues Geo-System (#0A0F1A) mit minimalen Geo-SVG-Thumbnails in jedem
+      Listeneintrag. Progress-Ring auf Seetage. Welt-Karte in Statistik. Chip-Navigation
+      auf der Karte. Explorer-Metapher, datengetrieben.
+    </div>
+    <div class="dc-tags">
+      <span class="dc-tag">Dunkel</span>
+      <span class="dc-tag">Geo-First</span>
+      <span class="dc-tag">Canvas #0A0F1A</span>
+      <span class="dc-tag">Weltkarte</span>
+      <span class="dc-tag">Progress-Ring</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SWITCHER
+     ══════════════════════════════════════════════════════════ -->
+<div class="switcher-bar">
+  <button class="sw-btn sw-active" id="swBtn1" onclick="switchTo(1)">Vorschlag 1</button>
+  <button class="sw-btn" id="swBtn2" onclick="switchTo(2)">Vorschlag 2</button>
+  <button class="sw-btn" id="swBtn3" onclick="switchTo(3)">Vorschlag 3</button>
+  <div class="sw-divider"></div>
+  <button class="sw-btn sw-side" id="swBtnSide" onclick="toggleSide()">Nebeneinander</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     VIEWPORT
+     ══════════════════════════════════════════════════════════ -->
+<div class="viewport">
+
+  <!-- Solo view -->
+  <div class="solo-wrap" id="soloWrap">
+    <div class="frag-v1 frag-visible" id="soloV1"></div>
+    <div class="frag-v2" id="soloV2"></div>
+    <div class="frag-v3" id="soloV3"></div>
+  </div>
+
+  <!-- Side-by-side view -->
+  <div class="side-wrap" id="sideWrap">
+    <div class="side-col">
+      <div class="side-label">Vorschlag 1 · Editorial Journal</div>
+      <div id="sideV1"></div>
+    </div>
+    <div class="side-col">
+      <div class="side-label">Vorschlag 2 · Immersiv Foto-First</div>
+      <div id="sideV2"></div>
+    </div>
+    <div class="side-col">
+      <div class="side-label">Vorschlag 3 · Explorer Geo-First</div>
+      <div id="sideV3"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="page-footer">
+  ShipTrip · UX Redesign 2026 · Self-contained · Kein CDN · Kein externes Bild
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     FRAGMENT V1 — Editorial Journal (Hell, Serif, Papier)
+     ══════════════════════════════════════════════════════════ -->
+<template id="tmplV1">
+<style>
+/* ============================================================
+   v1 — Editorial Journal Design System
+   Prefix: v1-
+   Tokens (Brand): oceanBlue #0C8CE9, oceanLight #36A9F0,
+   navyDark #1A365D, sunsetOrange #FF6B35, seaGreen #34C759
+   Paper: #FAFAF8
+   ============================================================ */
+
+/* Reset scoped to v1-root */
+.v1-root *, .v1-root *::before, .v1-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.v1-root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 40px 20px 60px;
+  background: #f0f0f0;
+  font-family: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* ── iPhone Frame ─────────────────────────────────────────── */
+.v1-iphone {
+  position: relative;
+  width: 393px;
+  height: 852px;
+  background: #000;
+  border-radius: 54px;
+  padding: 14px;
+  box-shadow:
+    0 0 0 2px #1a1a1a,
+    0 0 0 4px #2a2a2a,
+    0 40px 80px rgba(0,0,0,0.45),
+    0 10px 20px rgba(0,0,0,0.25);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.v1-iphone-inner {
+  width: 100%;
+  height: 100%;
+  background: #FAFAF8;
+  border-radius: 42px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dynamic Island */
+.v1-dynamic-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+/* Status Bar */
+.v1-status-bar {
+  height: 54px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 26px 6px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+}
+.v1-status-time {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+.v1-status-icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.v1-status-icons svg {
+  fill: #fff;
+}
+
+/* Screen Content Area */
+.v1-screen {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Individual screens shown/hidden */
+.v1-tab-content {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+.v1-tab-content.v1-active {
+  display: flex;
+}
+
+/* ── Gradient Magazin-Header (ALL tabs) ──────────────────── */
+.v1-mag-header {
+  background: linear-gradient(160deg, #1A365D 0%, #0C8CE9 100%);
+  padding: 8px 20px 14px;
+  flex-shrink: 0;
+  position: relative;
+}
+.v1-mag-header-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+.v1-mag-header-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.65);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+.v1-mag-header-actions {
+  position: absolute;
+  right: 16px;
+  bottom: 14px;
+  display: flex;
+  gap: 10px;
+}
+.v1-mag-header-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s;
+}
+.v1-mag-header-btn:hover {
+  background: rgba(255,255,255,0.28);
+}
+.v1-mag-header-btn svg {
+  fill: #fff;
+}
+
+/* ── Scrollable body ─────────────────────────────────────── */
+.v1-body {
+  flex: 1;
+  overflow-y: auto;
+  background: #FAFAF8;
+  -webkit-overflow-scrolling: touch;
+}
+.v1-body::-webkit-scrollbar { display: none; }
+
+/* ── Typography helpers ───────────────────────────────────── */
+.v1-eyebrow {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 4px;
+}
+.v1-eyebrow-dark {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(26,54,93,0.55);
+  margin-bottom: 4px;
+}
+.v1-serif-hero {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 22px;
+  font-weight: normal;
+  color: #fff;
+  line-height: 1.2;
+}
+.v1-serif-section {
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-size: 18px;
+  font-weight: normal;
+  color: #1A365D;
+  line-height: 1.25;
+}
+
+/* ── Stats Strip ─────────────────────────────────────────── */
+.v1-stats-strip {
+  display: flex;
+  background: #fff;
+  border-bottom: 0.5px solid rgba(0,0,0,0.09);
+}
+.v1-stat-item {
+  flex: 1;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+.v1-stat-item + .v1-stat-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 0.5px;
+  background: rgba(0,0,0,0.1);
+}
+.v1-stat-val {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.v1-stat-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(0,0,0,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+
+/* ── Hero Card ───────────────────────────────────────────── */
+.v1-hero-card {
+  margin: 12px 16px 8px;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  transition: transform 0.12s;
+}
+.v1-hero-card:active { transform: scale(0.98); }
+
+.v1-hero-geo {
+  height: 190px;
+  background: linear-gradient(145deg, #1A365D 0%, #0C8CE9 55%, #36A9F0 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px 14px 10px;
+}
+
+/* Scrim */
+.v1-hero-geo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.72) 100%);
+  pointer-events: none;
+}
+
+.v1-hero-geo-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Decorative port dots on geo fallback */
+.v1-geo-dots {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+.v1-geo-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+}
+.v1-geo-dot-line {
+  position: absolute;
+  height: 1px;
+  background: rgba(255,255,255,0.18);
+  transform-origin: left center;
+}
+
+.v1-hero-upcoming-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  background: #FF6B35;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.02em;
+}
+
+.v1-hero-rating-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: linear-gradient(135deg, #FF9500, #FF6B35);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.v1-hero-meta {
+  background: #F2F2F7;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 0.5px solid rgba(0,0,0,0.07);
+}
+.v1-hero-meta-left {
+  font-size: 10px;
+  color: rgba(0,0,0,0.5);
+  letter-spacing: 0.01em;
+}
+.v1-hero-meta-right {
+  font-size: 10px;
+  color: #0C8CE9;
+  font-weight: 600;
+}
+
+/* ── Year Divider ────────────────────────────────────────── */
+.v1-year-div {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px 6px;
+  gap: 8px;
+}
+.v1-year-div-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+.v1-year-div-line {
+  flex: 1;
+  height: 0.5px;
+  background: rgba(0,0,0,0.12);
+}
+
+/* ── Timeline Row ────────────────────────────────────────── */
+.v1-timeline-row {
+  margin: 4px 16px;
+  padding: 10px 12px;
+  background: #F2F2F7;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.12s;
+}
+.v1-timeline-row:active { opacity: 0.8; }
+
+/* 2pt left accent stripe */
+.v1-timeline-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2.5px;
+  border-radius: 10px 0 0 10px;
+}
+.v1-timeline-row.v1-accent-orange::before { background: #FF6B35; }
+.v1-timeline-row.v1-accent-blue::before   { background: #0C8CE9; }
+.v1-timeline-row.v1-accent-gray::before   { background: #B0B0B0; }
+
+.v1-spine-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.v1-spine-orange { background: #FF6B35; }
+.v1-spine-blue   { background: #0C8CE9; }
+.v1-spine-gray   { background: #C7C7CC; }
+
+.v1-row-text { flex: 1; min-width: 0; }
+.v1-row-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v1-row-sub {
+  font-size: 10.5px;
+  color: rgba(0,0,0,0.5);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v1-row-ports {
+  font-size: 10px;
+  color: #34C759;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.v1-row-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1A365D, #0C8CE9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.v1-row-rating {
+  font-size: 10px;
+  color: #34C759;
+  text-align: center;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ── Detail View ─────────────────────────────────────────── */
+.v1-detail-view {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: #FAFAF8;
+  z-index: 200;
+  flex-direction: column;
+  overflow: hidden;
+}
+.v1-detail-view.v1-active { display: flex; }
+
+.v1-detail-geo {
+  height: 220px;
+  background: linear-gradient(145deg, #1A365D 0%, #0C8CE9 55%, #36A9F0 100%);
+  position: relative;
+  flex-shrink: 0;
+}
+.v1-detail-back {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 20;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+}
+.v1-detail-back svg { fill: #fff; }
+
+.v1-detail-header-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 16px 12px;
+  background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 100%);
+  z-index: 10;
+}
+.v1-detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+.v1-detail-body::-webkit-scrollbar { display: none; }
+
+.v1-route-section { margin-top: 16px; }
+.v1-route-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 0.5px solid rgba(0,0,0,0.07);
+}
+.v1-route-item:last-child { border-bottom: none; }
+.v1-route-pin {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.v1-pin-start  { background: rgba(255,107,53,0.15);  color: #FF6B35; }
+.v1-pin-port   { background: rgba(12,140,233,0.12);  color: #0C8CE9; }
+.v1-pin-end    { background: rgba(52,199,89,0.12);   color: #34C759; }
+.v1-pin-seaday { background: rgba(54,169,240,0.12);  color: #36A9F0; }
+
+.v1-route-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+.v1-route-meta {
+  font-size: 10.5px;
+  color: rgba(0,0,0,0.45);
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────── */
+.v1-tab-bar {
+  background: rgba(250,250,248,0.95);
+  border-top: 0.5px solid rgba(0,0,0,0.12);
+  display: flex;
+  height: 83px;
+  padding-bottom: 20px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+}
+.v1-tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 8px 0 0;
+  transition: opacity 0.1s;
+}
+.v1-tab-item:active { opacity: 0.6; }
+.v1-tab-item svg { transition: fill 0.15s; }
+.v1-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  transition: color 0.15s;
+  color: #8E8E93;
+}
+.v1-tab-item.v1-tab-active .v1-tab-label { color: #0C8CE9; }
+.v1-tab-item.v1-tab-active svg { fill: #0C8CE9; }
+.v1-tab-item:not(.v1-tab-active) svg { fill: #8E8E93; }
+
+/* ── Map Screen ──────────────────────────────────────────── */
+.v1-map-bg {
+  flex: 1;
+  background: #dde8f0;
+  position: relative;
+  overflow: hidden;
+}
+.v1-map-grid-h, .v1-map-grid-v {
+  position: absolute;
+  background: rgba(255,255,255,0.4);
+}
+.v1-map-grid-h { left: 0; right: 0; height: 1px; }
+.v1-map-grid-v { top: 0; bottom: 0; width: 1px; }
+
+.v1-map-route {
+  position: absolute;
+  background: none;
+}
+
+.v1-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.v1-map-pin:active { transform: translate(-50%,-50%) scale(1.2); }
+.v1-map-pin-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: #fff;
+  font-weight: 700;
+}
+.v1-pin-c-orange { background: #FF6B35; }
+.v1-pin-c-blue   { background: #0C8CE9; }
+.v1-pin-c-green  { background: #34C759; }
+.v1-pin-c-light  { background: #36A9F0; }
+
+/* Map bottom sheet */
+.v1-map-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #FAFAF8;
+  border-radius: 18px 18px 0 0;
+  padding: 10px 16px 16px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(0.32,0,0,1);
+  z-index: 30;
+}
+.v1-map-sheet.v1-sheet-open {
+  transform: translateY(0);
+}
+.v1-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(0,0,0,0.18);
+  border-radius: 2px;
+  margin: 0 auto 10px;
+}
+.v1-sheet-port-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+.v1-sheet-port-meta {
+  font-size: 12px;
+  color: rgba(0,0,0,0.5);
+  margin-top: 3px;
+}
+.v1-sheet-role-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-top: 8px;
+}
+
+/* ── Stats Screen ────────────────────────────────────────── */
+.v1-stats-hero-strip {
+  background: linear-gradient(135deg, #1A365D 0%, #0C8CE9 100%);
+  padding: 12px 16px 14px;
+}
+.v1-stats-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 0;
+}
+.v1-stats-hero-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  position: relative;
+}
+.v1-stats-hero-item + .v1-stats-hero-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 0.5px;
+  background: rgba(255,255,255,0.25);
+}
+.v1-stats-hero-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.v1-stats-hero-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 2px;
+}
+
+.v1-stat-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px 16px 0;
+}
+.v1-stat-card {
+  background: #F2F2F7;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v1-sc-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+.v1-sc-val {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+}
+.v1-sc-lbl {
+  font-size: 11px;
+  color: rgba(0,0,0,0.5);
+  font-weight: 500;
+}
+
+/* Ocean gradient bar chart */
+.v1-chart-section {
+  margin: 14px 16px 0;
+  background: #F2F2F7;
+  border-radius: 12px;
+  padding: 12px;
+}
+.v1-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 10px;
+}
+.v1-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.v1-bar-label {
+  font-size: 11px;
+  color: rgba(0,0,0,0.55);
+  width: 32px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.v1-bar-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.v1-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #1A365D, #0C8CE9, #36A9F0);
+}
+.v1-bar-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a1a;
+  width: 14px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Deals Screen ────────────────────────────────────────── */
+.v1-deal-hero {
+  margin: 12px 16px 0;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  transition: transform 0.12s;
+}
+.v1-deal-hero:active { transform: scale(0.985); }
+.v1-deal-hero-geo {
+  height: 140px;
+  background: linear-gradient(145deg, #1A365D 0%, #0C8CE9 55%, #36A9F0 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+}
+.v1-deal-hero-geo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+}
+.v1-deal-hero-content {
+  position: relative;
+  z-index: 2;
+}
+.v1-deal-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background: #FF6B35;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.v1-deal-meta-bar {
+  background: #F2F2F7;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 0.5px solid rgba(0,0,0,0.07);
+}
+.v1-deal-price {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1a1a1a;
+  font-variant-numeric: tabular-nums;
+}
+.v1-deal-orig {
+  font-size: 11px;
+  color: rgba(0,0,0,0.4);
+  text-decoration: line-through;
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.v1-deal-save {
+  font-size: 11px;
+  color: #34C759;
+  font-weight: 700;
+}
+
+.v1-deal-rows-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 12px 16px 6px;
+}
+.v1-deal-row {
+  margin: 4px 16px;
+  padding: 10px 12px;
+  background: #F2F2F7;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.v1-deal-geo-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1A365D, #36A9F0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.v1-deal-row-text { flex: 1; min-width: 0; }
+.v1-deal-row-title {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v1-deal-row-sub {
+  font-size: 10.5px;
+  color: rgba(0,0,0,0.5);
+  margin-top: 1px;
+}
+.v1-deal-row-price {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.v1-deal-row-badge {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #fff;
+  background: #FF6B35;
+  padding: 2px 7px;
+  border-radius: 20px;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+/* ── Settings Screen ─────────────────────────────────────── */
+.v1-settings-profile {
+  background: linear-gradient(160deg, #1A365D 0%, #0C8CE9 100%);
+  padding: 14px 20px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.v1-settings-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.v1-settings-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  font-family: Georgia, "Times New Roman", Times, serif;
+}
+.v1-settings-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.v1-settings-chip {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.v1-settings-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 12px 16px 6px;
+}
+.v1-settings-group {
+  margin: 0 16px;
+  background: #F2F2F7;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.v1-settings-row {
+  display: flex;
+  align-items: center;
+  padding: 11px 14px;
+  gap: 10px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.07);
+  cursor: pointer;
+}
+.v1-settings-row:last-child { border-bottom: none; }
+.v1-settings-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.v1-settings-row-text {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+.v1-settings-row-trail {
+  font-size: 12px;
+  color: rgba(0,0,0,0.4);
+}
+.v1-settings-row-trail-active {
+  font-size: 12px;
+  color: #34C759;
+  font-weight: 600;
+}
+
+/* ── Utility ─────────────────────────────────────────────── */
+.v1-section-spacer { height: 14px; }
+.v1-bottom-pad { height: 20px; }
+</style>
+
+<section class="v1-root">
+  <!-- iPhone Frame -->
+  <div class="v1-iphone">
+    <div class="v1-iphone-inner">
+      <!-- Dynamic Island -->
+      <div class="v1-dynamic-island"></div>
+
+      <!-- Status Bar (color adapts via JS per tab) -->
+      <div class="v1-status-bar" id="v1StatusBar">
+        <span class="v1-status-time">9:41</span>
+        <div class="v1-status-icons">
+          <!-- Signal -->
+          <svg width="17" height="12" viewBox="0 0 17 12"><rect x="0" y="5" width="3" height="7" rx="0.8"/><rect x="4.5" y="3.5" width="3" height="8.5" rx="0.8"/><rect x="9" y="1.5" width="3" height="10.5" rx="0.8"/><rect x="13.5" y="0" width="3" height="12" rx="0.8" opacity="0.35"/></svg>
+          <!-- Wifi -->
+          <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 9.5a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/><path d="M4.6 7.2a4.8 4.8 0 016.8 0l-1.2 1.1a3.2 3.2 0 00-4.4 0L4.6 7.2z"/><path d="M2 4.7a8 8 0 0112 0L12.8 5.8a6.4 6.4 0 00-9.6 0L2 4.7z"/></svg>
+          <!-- Battery -->
+          <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="21" height="10" rx="2.5" stroke="currentColor" stroke-width="1.2" fill="none" opacity="0.35"/><rect x="21.5" y="3.8" width="2" height="4.4" rx="1" opacity="0.4"/><rect x="1.5" y="2.5" width="16" height="7" rx="1.5" fill="currentColor"/></svg>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════ SCREENS ══ -->
+      <div class="v1-screen">
+
+        <!-- ── DETAIL VIEW (overlay) ───────────────────── -->
+        <div class="v1-detail-view" id="v1DetailView">
+          <div class="v1-detail-geo">
+            <!-- Decorative route dots -->
+            <div class="v1-geo-dots">
+              <div class="v1-geo-dot" style="width:120px;height:120px;top:-40px;right:-30px;opacity:0.18;"></div>
+              <div class="v1-geo-dot" style="width:70px;height:70px;top:30px;left:20px;opacity:0.12;"></div>
+              <!-- route line SVG -->
+              <svg width="100%" height="100%" viewBox="0 0 365 220" style="position:absolute;inset:0;" preserveAspectRatio="xMidYMid meet">
+                <polyline points="48,160 110,90 155,110 195,130 260,100 310,115 48,160" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                <circle cx="48"  cy="160" r="5" fill="#FF6B35" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="110" cy="90"  r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="155" cy="110" r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="195" cy="130" r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="260" cy="100" r="4" fill="#36A9F0" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="310" cy="115" r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <button class="v1-detail-back" id="v1DetailBack" aria-label="Zurueck">
+              <svg width="10" height="16" viewBox="0 0 10 16"><path d="M8 2L2 8l6 6" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+            </button>
+            <div class="v1-detail-header-overlay">
+              <div class="v1-eyebrow">COSTA CRUISES · COSTA TOSCANA</div>
+              <div class="v1-serif-hero">Westliches Mittelmeer</div>
+              <div style="font-size:10.5px;color:rgba(255,255,255,0.65);margin-top:4px;">1.–8. Okt 2024 · 8 Tage · 5 Haefen</div>
+            </div>
+          </div>
+          <div class="v1-detail-body">
+            <!-- Meta chips -->
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+              <span style="background:rgba(12,140,233,0.1);color:#0C8CE9;font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:20px;">6 Laender</span>
+              <span style="background:rgba(52,199,89,0.1);color:#34C759;font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:20px;">8 Haftentage</span>
+              <span style="background:rgba(255,107,53,0.1);color:#FF6B35;font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:20px;">&#9733; 4.8</span>
+            </div>
+            <div class="v1-eyebrow-dark">Route</div>
+            <div class="v1-serif-section" style="margin-bottom:10px;">Barcelona &#8594; Barcelona</div>
+            <!-- Route items -->
+            <div class="v1-route-section">
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-start">&#9875;</div>
+                <div><div class="v1-route-name">Barcelona</div><div class="v1-route-meta">Abfahrt · 1. Okt 2024 · Spanien</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-port">&#9875;</div>
+                <div><div class="v1-route-name">Marseille</div><div class="v1-route-meta">2. Okt · Frankreich</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-port">&#9875;</div>
+                <div><div class="v1-route-name">Genua</div><div class="v1-route-meta">3. Okt · Italien</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-port">&#9875;</div>
+                <div><div class="v1-route-name">Neapel</div><div class="v1-route-meta">4. Okt · Italien</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-seaday">&#127754;</div>
+                <div><div class="v1-route-name">Seetag</div><div class="v1-route-meta">5. Okt</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-port">&#9875;</div>
+                <div><div class="v1-route-name">Palma de Mallorca</div><div class="v1-route-meta">6. Okt · Spanien</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-seaday">&#127754;</div>
+                <div><div class="v1-route-name">Seetag</div><div class="v1-route-meta">7. Okt</div></div>
+              </div>
+              <div class="v1-route-item">
+                <div class="v1-route-pin v1-pin-end">&#9875;</div>
+                <div><div class="v1-route-name">Barcelona</div><div class="v1-route-meta">Ankunft · 8. Okt 2024 · Spanien</div></div>
+              </div>
+            </div>
+            <div class="v1-bottom-pad"></div>
+          </div>
+        </div>
+
+        <!-- MAP PIN SHEET (overlay on map) -->
+        <div id="v1MapSheet" class="v1-map-sheet">
+          <div class="v1-sheet-handle"></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div id="v1SheetPinIcon" class="v1-route-pin v1-pin-port" style="width:36px;height:36px;font-size:15px;">&#9875;</div>
+            <div>
+              <div class="v1-sheet-port-name" id="v1SheetPortName">Barcelona</div>
+              <div class="v1-sheet-port-meta" id="v1SheetPortMeta">Spanien · Start · 1. Okt 2024</div>
+            </div>
+          </div>
+          <span class="v1-sheet-role-badge" id="v1SheetRoleBadge" style="background:rgba(255,107,53,0.12);color:#FF6B35;">Starthafen</span>
+        </div>
+
+        <!-- ── TAB 0: MEINE REISEN ─────────────────────── -->
+        <div class="v1-tab-content v1-active" id="v1Tab0">
+          <!-- Gradient Mag-Header -->
+          <div class="v1-mag-header" style="padding-top:4px;">
+            <div class="v1-mag-header-title">Meine Reisen</div>
+            <div class="v1-mag-header-sub">4 Reisen · 6 Laender · ~12.400 sm</div>
+            <div class="v1-mag-header-actions">
+              <button class="v1-mag-header-btn" aria-label="Filter">
+                <svg width="16" height="14" viewBox="0 0 16 14"><path d="M0 1h16M3 7h10M6 13h4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" fill="none"/></svg>
+              </button>
+              <button class="v1-mag-header-btn" aria-label="Hinzufuegen">
+                <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable body -->
+          <div class="v1-body">
+            <!-- Stats Strip -->
+            <div class="v1-stats-strip">
+              <div class="v1-stat-item">
+                <span class="v1-stat-val" style="color:#0C8CE9;">4</span>
+                <span class="v1-stat-lbl">Reisen</span>
+              </div>
+              <div class="v1-stat-item">
+                <span class="v1-stat-val" style="color:#36A9F0;">6</span>
+                <span class="v1-stat-lbl">Laender</span>
+              </div>
+              <div class="v1-stat-item">
+                <span class="v1-stat-val" style="color:#34C759;">34</span>
+                <span class="v1-stat-lbl">Haftentage</span>
+              </div>
+              <div class="v1-stat-item">
+                <span class="v1-stat-val" style="color:#FF6B35;">12.4k</span>
+                <span class="v1-stat-lbl">Seemeilen</span>
+              </div>
+            </div>
+
+            <!-- Hero Card -->
+            <div class="v1-hero-card" id="v1HeroCard" role="button" aria-label="Westliches Mittelmeer oeffnen">
+              <div class="v1-hero-geo">
+                <!-- Decorative geo dots -->
+                <div class="v1-geo-dots">
+                  <div class="v1-geo-dot" style="width:180px;height:180px;top:-60px;right:-50px;opacity:0.12;"></div>
+                  <div class="v1-geo-dot" style="width:90px;height:90px;top:40px;left:-20px;opacity:0.1;"></div>
+                  <!-- Route path SVG -->
+                  <svg width="100%" height="100%" viewBox="0 0 365 190" style="position:absolute;inset:0;" preserveAspectRatio="xMidYMid meet">
+                    <polyline points="40,155 95,85 140,105 180,120 235,90 285,108 40,155" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    <circle cx="40"  cy="155" r="5" fill="#FF6B35" stroke="#fff" stroke-width="1.8"/>
+                    <circle cx="95"  cy="85"  r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="140" cy="105" r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="180" cy="120" r="3.5" fill="#36A9F0" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="235" cy="90"  r="4" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="285" cy="108" r="5" fill="#34C759" stroke="#fff" stroke-width="1.8"/>
+                  </svg>
+                </div>
+                <div class="v1-hero-rating-badge">&#9733; 4.8</div>
+                <div class="v1-hero-geo-content">
+                  <div class="v1-eyebrow">COSTA CRUISES · COSTA TOSCANA</div>
+                  <div class="v1-serif-hero">Westliches Mittelmeer</div>
+                  <div style="font-size:10.5px;color:rgba(255,255,255,0.6);margin-top:5px;">1.–8. Oktober 2024 · 8 Tage</div>
+                </div>
+              </div>
+              <div class="v1-hero-meta">
+                <span class="v1-hero-meta-left">5 Haefen · 6 Laender · &#8364;2.340</span>
+                <span class="v1-hero-meta-right">Details &#8594;</span>
+              </div>
+            </div>
+
+            <!-- Year divider 2024 -->
+            <div class="v1-year-div">
+              <span class="v1-year-div-label">2024</span>
+              <div class="v1-year-div-line"></div>
+            </div>
+
+            <!-- Timeline row 1 (rated, past) -->
+            <div class="v1-timeline-row v1-accent-blue">
+              <div class="v1-spine-dot v1-spine-blue"></div>
+              <div class="v1-row-text">
+                <div class="v1-row-title">Karibik Winter</div>
+                <div class="v1-row-sub">MSC Cruises &#128674; · 12T · 4 Laender</div>
+                <div class="v1-row-ports">Bridgetown · Fort-de-France</div>
+              </div>
+              <div>
+                <div class="v1-row-thumb">&#128674;</div>
+                <div class="v1-row-rating">&#9733; 4.2</div>
+              </div>
+            </div>
+
+            <!-- Year divider 2023 -->
+            <div class="v1-year-div">
+              <span class="v1-year-div-label">2023</span>
+              <div class="v1-year-div-line"></div>
+            </div>
+
+            <!-- Timeline row 2 -->
+            <div class="v1-timeline-row v1-accent-blue">
+              <div class="v1-spine-dot v1-spine-blue"></div>
+              <div class="v1-row-text">
+                <div class="v1-row-title">Norwegische Fjorde</div>
+                <div class="v1-row-sub">AIDA Cruises &#128674; · 9T · 1 Land</div>
+                <div class="v1-row-ports">Bergen · Flaam</div>
+              </div>
+              <div>
+                <div class="v1-row-thumb">&#9875;</div>
+                <div class="v1-row-rating">&#9733; 4.7</div>
+              </div>
+            </div>
+
+            <!-- Timeline row 3 (upcoming) -->
+            <div class="v1-timeline-row v1-accent-orange">
+              <div class="v1-spine-dot v1-spine-orange"></div>
+              <div class="v1-row-text">
+                <div class="v1-row-title">Oestliches Mittelmeer</div>
+                <div class="v1-row-sub">TUI Cruises &#128674; · 10T · 3 Laender</div>
+                <div class="v1-row-ports">Athen · Santorini</div>
+              </div>
+              <div>
+                <div class="v1-row-thumb" style="background:linear-gradient(135deg,#FF6B35,#ffaa5a);">&#9973;</div>
+                <div class="v1-row-rating" style="color:#FF6B35;">In 23d</div>
+              </div>
+            </div>
+
+            <div class="v1-bottom-pad"></div>
+          </div>
+        </div>
+
+        <!-- ── TAB 1: KARTE ───────────────────────────── -->
+        <div class="v1-tab-content" id="v1Tab1">
+          <div class="v1-mag-header" style="padding-top:4px;">
+            <div class="v1-mag-header-title">Karte</div>
+            <div class="v1-mag-header-sub">Alle Routen · 4 Reisen</div>
+            <div class="v1-mag-header-actions">
+              <button class="v1-mag-header-btn" aria-label="Ebenen">
+                <svg width="15" height="14" viewBox="0 0 15 14"><path d="M7.5 1L14 5l-6.5 4L1 5z" stroke="#fff" stroke-width="1.4" fill="none" stroke-linejoin="round"/><path d="M1 9l6.5 4L14 9" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+              </button>
+            </div>
+          </div>
+          <div style="flex:1;position:relative;overflow:hidden;">
+            <!-- Map background -->
+            <div class="v1-map-bg" id="v1MapBg">
+              <!-- Grid lines -->
+              <div class="v1-map-grid-h" style="top:25%;"></div>
+              <div class="v1-map-grid-h" style="top:50%;"></div>
+              <div class="v1-map-grid-h" style="top:75%;"></div>
+              <div class="v1-map-grid-v" style="left:25%;"></div>
+              <div class="v1-map-grid-v" style="left:50%;"></div>
+              <div class="v1-map-grid-v" style="left:75%;"></div>
+
+              <!-- Simplified Mediterranean route SVG -->
+              <svg width="100%" height="100%" viewBox="0 0 365 500" style="position:absolute;inset:0;" preserveAspectRatio="xMidYMid meet">
+                <!-- Land masses (simplified) -->
+                <ellipse cx="130" cy="210" rx="55" ry="25" fill="rgba(180,200,160,0.4)"/>
+                <ellipse cx="240" cy="195" rx="60" ry="22" fill="rgba(180,200,160,0.4)"/>
+                <ellipse cx="185" cy="260" rx="35" ry="18" fill="rgba(180,200,160,0.35)"/>
+                <!-- Norway coast hint -->
+                <path d="M80 80 Q100 60 120 90 Q135 110 110 130 Q90 145 70 120 Z" fill="rgba(180,200,160,0.35)"/>
+
+                <!-- Route lines -->
+                <polyline points="80,220 115,205 140,215 160,225 195,200 220,210 80,220"
+                  fill="none" stroke="#0C8CE9" stroke-width="1.8" stroke-dasharray="none" opacity="0.85"/>
+                <!-- Fjorde route -->
+                <polyline points="100,100 115,85 125,95 110,115" fill="none" stroke="#FF6B35" stroke-width="1.6" stroke-dasharray="4,3" opacity="0.7"/>
+              </svg>
+
+              <!-- Pins — Mediterranean route -->
+              <div class="v1-map-pin" style="left:22%;top:43%;" id="v1PinBCN" data-port="Barcelona" data-meta="Spanien · 1. Okt 2024" data-role="start">
+                <div class="v1-map-pin-dot v1-pin-c-orange">S</div>
+              </div>
+              <div class="v1-map-pin" style="left:32%;top:40%;" id="v1PinMRS" data-port="Marseille" data-meta="Frankreich · 2. Okt 2024" data-role="port">
+                <div class="v1-map-pin-dot v1-pin-c-blue"></div>
+              </div>
+              <div class="v1-map-pin" style="left:39%;top:42%;" id="v1PinGEN" data-port="Genua" data-meta="Italien · 3. Okt 2024" data-role="port">
+                <div class="v1-map-pin-dot v1-pin-c-blue"></div>
+              </div>
+              <div class="v1-map-pin" style="left:44%;top:46%;" id="v1PinNAP" data-port="Neapel" data-meta="Italien · 4. Okt 2024" data-role="port">
+                <div class="v1-map-pin-dot v1-pin-c-blue"></div>
+              </div>
+              <div class="v1-map-pin" style="left:53%;top:40%;" id="v1PinPMI" data-port="Palma de Mallorca" data-meta="Spanien · 6. Okt 2024" data-role="port">
+                <div class="v1-map-pin-dot v1-pin-c-blue"></div>
+              </div>
+              <div class="v1-map-pin" style="left:22.5%;top:43.5%;" id="v1PinBCN2" data-port="Barcelona" data-meta="Spanien · Endpunkt · 8. Okt" data-role="end">
+                <div class="v1-map-pin-dot v1-pin-c-green">E</div>
+              </div>
+              <!-- Norway pin -->
+              <div class="v1-map-pin" style="left:28%;top:18%;" id="v1PinBER" data-port="Bergen" data-meta="Norwegen · Starthafen" data-role="start">
+                <div class="v1-map-pin-dot v1-pin-c-orange">S</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TAB 2: MERKLISTE ───────────────────────── -->
+        <div class="v1-tab-content" id="v1Tab2">
+          <div class="v1-mag-header" style="padding-top:4px;">
+            <div class="v1-mag-header-title">Merkliste</div>
+            <div class="v1-mag-header-sub">2 gespeicherte Angebote</div>
+            <div class="v1-mag-header-actions">
+              <button class="v1-mag-header-btn" aria-label="Hinzufuegen">
+                <svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="v1-body">
+            <!-- Hero deal -->
+            <div class="v1-deal-hero">
+              <div class="v1-deal-hero-geo">
+                <div class="v1-geo-dots">
+                  <div class="v1-geo-dot" style="width:100px;height:100px;top:-30px;right:-20px;opacity:0.15;"></div>
+                  <svg width="100%" height="100%" viewBox="0 0 365 140" style="position:absolute;inset:0;" preserveAspectRatio="xMidYMid meet">
+                    <polyline points="40,120 100,65 175,80 260,60 325,75" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    <circle cx="40"  cy="120" r="4" fill="#FF6B35" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="100" cy="65"  r="3.5" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="175" cy="80"  r="3.5" fill="#36A9F0" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="260" cy="60"  r="3.5" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="325" cy="75"  r="4" fill="#34C759" stroke="#fff" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div class="v1-deal-badge">&#8722;29 %</div>
+                <div class="v1-deal-hero-content">
+                  <div class="v1-eyebrow">AIDA CRUISES · AIDAPRIMA</div>
+                  <div class="v1-serif-hero" style="font-size:18px;">Norwegische Fjorde</div>
+                </div>
+              </div>
+              <div class="v1-deal-meta-bar">
+                <div>
+                  <span class="v1-deal-price">ab 899 &#8364;</span>
+                  <span class="v1-deal-orig">1.269 &#8364;</span>
+                </div>
+                <span class="v1-deal-save">Du sparst 370 &#8364;</span>
+              </div>
+            </div>
+
+            <!-- Other deals label -->
+            <div class="v1-deal-rows-label">Weitere Angebote</div>
+
+            <!-- Deal row -->
+            <div class="v1-deal-row">
+              <div class="v1-deal-geo-thumb">&#127796;</div>
+              <div class="v1-deal-row-text">
+                <div class="v1-deal-row-title">MSC Oestliche Karibik</div>
+                <div class="v1-deal-row-sub">MSC Cruises · 14 Tage · Karibik</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="v1-deal-row-price">1.249 &#8364;</div>
+                <span class="v1-deal-row-badge">&#8722;18 %</span>
+              </div>
+            </div>
+
+            <div class="v1-bottom-pad"></div>
+          </div>
+        </div>
+
+        <!-- ── TAB 3: STATISTIK ───────────────────────── -->
+        <div class="v1-tab-content" id="v1Tab3">
+          <div class="v1-mag-header" style="padding-top:4px;">
+            <div class="v1-mag-header-title">Statistik</div>
+            <div class="v1-mag-header-sub">Reise-Ueberblick</div>
+          </div>
+          <div class="v1-body">
+            <!-- Hero stats strip (gradient) -->
+            <div class="v1-stats-hero-strip">
+              <div class="v1-stats-hero-grid">
+                <div class="v1-stats-hero-item">
+                  <span class="v1-stats-hero-val">4</span>
+                  <span class="v1-stats-hero-lbl">Reisen</span>
+                </div>
+                <div class="v1-stats-hero-item">
+                  <span class="v1-stats-hero-val">34</span>
+                  <span class="v1-stats-hero-lbl">Seetage</span>
+                </div>
+                <div class="v1-stats-hero-item">
+                  <span class="v1-stats-hero-val">18</span>
+                  <span class="v1-stats-hero-lbl">Haefen</span>
+                </div>
+                <div class="v1-stats-hero-item">
+                  <span class="v1-stats-hero-val">6</span>
+                  <span class="v1-stats-hero-lbl">Laender</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat cards 2x2 grid -->
+            <div class="v1-stat-cards-grid">
+              <div class="v1-stat-card">
+                <div class="v1-sc-icon" style="background:rgba(12,140,233,0.12);">&#9972;</div>
+                <div class="v1-sc-val" style="color:#0C8CE9;">4</div>
+                <div class="v1-sc-lbl">Kreuzfahrten</div>
+              </div>
+              <div class="v1-stat-card">
+                <div class="v1-sc-icon" style="background:rgba(54,169,240,0.12);">&#128197;</div>
+                <div class="v1-sc-val" style="color:#36A9F0;">39</div>
+                <div class="v1-sc-lbl">Reisetage</div>
+              </div>
+              <div class="v1-stat-card">
+                <div class="v1-sc-icon" style="background:rgba(255,107,53,0.12);">&#128205;</div>
+                <div class="v1-sc-val" style="color:#FF6B35;">18</div>
+                <div class="v1-sc-lbl">Haefen</div>
+              </div>
+              <div class="v1-stat-card">
+                <div class="v1-sc-icon" style="background:rgba(52,199,89,0.12);">&#127758;</div>
+                <div class="v1-sc-val" style="color:#34C759;">6</div>
+                <div class="v1-sc-lbl">Laender</div>
+              </div>
+            </div>
+
+            <!-- Bar chart: Reisen pro Jahr -->
+            <div class="v1-chart-section">
+              <div class="v1-chart-title">Reisen pro Jahr</div>
+              <div class="v1-bar-row">
+                <span class="v1-bar-label">2024</span>
+                <div class="v1-bar-track"><div class="v1-bar-fill" style="width:100%;"></div></div>
+                <span class="v1-bar-val">2</span>
+              </div>
+              <div class="v1-bar-row">
+                <span class="v1-bar-label">2023</span>
+                <div class="v1-bar-track"><div class="v1-bar-fill" style="width:50%;"></div></div>
+                <span class="v1-bar-val">1</span>
+              </div>
+              <div class="v1-bar-row">
+                <span class="v1-bar-label">2022</span>
+                <div class="v1-bar-track"><div class="v1-bar-fill" style="width:50%;"></div></div>
+                <span class="v1-bar-val">1</span>
+              </div>
+            </div>
+
+            <!-- Top Reedereien -->
+            <div class="v1-chart-section" style="margin-top:10px;">
+              <div class="v1-chart-title">Top Reedereien</div>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:12px;color:#1a1a1a;">Costa Cruises</span>
+                  <span style="font-size:11px;font-weight:700;color:#0C8CE9;">2 Reisen</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:12px;color:#1a1a1a;">AIDA Cruises</span>
+                  <span style="font-size:11px;font-weight:700;color:#0C8CE9;">1 Reise</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-size:12px;color:#1a1a1a;">MSC Cruises</span>
+                  <span style="font-size:11px;font-weight:700;color:#0C8CE9;">1 Reise</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="v1-bottom-pad"></div>
+          </div>
+        </div>
+
+        <!-- ── TAB 4: MEHR ────────────────────────────── -->
+        <div class="v1-tab-content" id="v1Tab4">
+          <div class="v1-mag-header" style="padding-top:4px;">
+            <div class="v1-mag-header-title">Mehr</div>
+            <div class="v1-mag-header-sub">Einstellungen &amp; Info</div>
+          </div>
+          <div class="v1-body">
+            <!-- Profile header -->
+            <div class="v1-settings-profile">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div class="v1-settings-avatar">&#128100;</div>
+                <div>
+                  <div class="v1-settings-name">Mein Profil</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:2px;">ShipTrip · v1.5.1</div>
+                </div>
+              </div>
+              <div class="v1-settings-chips">
+                <span class="v1-settings-chip">4 Reisen</span>
+                <span class="v1-settings-chip">6 Laender</span>
+                <span class="v1-settings-chip">34 Seetage</span>
+              </div>
+            </div>
+
+            <div class="v1-settings-section-label">Erscheinungsbild</div>
+            <div class="v1-settings-group">
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(12,140,233,0.12);">&#127769;</div>
+                <span class="v1-settings-row-text">Farbschema</span>
+                <span class="v1-settings-row-trail">System</span>
+              </div>
+            </div>
+
+            <div class="v1-settings-section-label">KI &amp; Daten</div>
+            <div class="v1-settings-group">
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(255,107,53,0.12);">&#10024;</div>
+                <span class="v1-settings-row-text">Gemini API</span>
+                <span class="v1-settings-row-trail-active">Aktiv</span>
+              </div>
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(54,169,240,0.12);">&#9729;&#65039;</div>
+                <span class="v1-settings-row-text">iCloud Sync</span>
+                <span class="v1-settings-row-trail">Geplant</span>
+              </div>
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(52,199,89,0.12);">&#128230;</div>
+                <span class="v1-settings-row-text">Daten exportieren</span>
+                <span class="v1-settings-row-trail">ZIP</span>
+              </div>
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(255,107,53,0.12);">&#128276;</div>
+                <span class="v1-settings-row-text">Benachrichtigungen</span>
+                <span class="v1-settings-row-trail">30 Tage</span>
+              </div>
+            </div>
+
+            <div class="v1-settings-section-label">Info</div>
+            <div class="v1-settings-group">
+              <div class="v1-settings-row">
+                <div class="v1-settings-icon" style="background:rgba(26,54,93,0.1);">&#8505;&#65039;</div>
+                <span class="v1-settings-row-text">Version</span>
+                <span class="v1-settings-row-trail">1.5.1 (8)</span>
+              </div>
+            </div>
+
+            <div class="v1-bottom-pad"></div>
+          </div>
+        </div>
+
+      </div><!-- /v1-screen -->
+
+      <!-- Tab Bar -->
+      <div class="v1-tab-bar" role="tablist">
+        <button class="v1-tab-item v1-tab-active" data-tab="0" id="v1TabBtn0" role="tab" aria-selected="true" aria-label="Reisen">
+          <svg width="22" height="20" viewBox="0 0 22 20"><path d="M2 14h18M3 10h16l-1.5-6H4.5L3 10zM1 14l1 4h18l1-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="6" cy="18" r="1.5" fill="currentColor"/><circle cx="16" cy="18" r="1.5" fill="currentColor"/></svg>
+          <span class="v1-tab-label">Reisen</span>
+        </button>
+        <button class="v1-tab-item" data-tab="1" id="v1TabBtn1" role="tab" aria-selected="false" aria-label="Karte">
+          <svg width="22" height="20" viewBox="0 0 22 20"><path d="M8 2l6 16M1 5l7-3M15 18l6-3M1 5v13l7-3M8 15l7 3V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          <span class="v1-tab-label">Karte</span>
+        </button>
+        <button class="v1-tab-item" data-tab="2" id="v1TabBtn2" role="tab" aria-selected="false" aria-label="Merkliste">
+          <svg width="18" height="22" viewBox="0 0 18 22"><path d="M2 2h14v18l-7-5-7 5V2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          <span class="v1-tab-label">Merkliste</span>
+        </button>
+        <button class="v1-tab-item" data-tab="3" id="v1TabBtn3" role="tab" aria-selected="false" aria-label="Statistik">
+          <svg width="22" height="20" viewBox="0 0 22 20"><rect x="1" y="10" width="4" height="9" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="9" y="5" width="4" height="14" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/><rect x="17" y="1" width="4" height="18" rx="1" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+          <span class="v1-tab-label">Statistik</span>
+        </button>
+        <button class="v1-tab-item" data-tab="4" id="v1TabBtn4" role="tab" aria-selected="false" aria-label="Mehr">
+          <svg width="22" height="6" viewBox="0 0 22 6"><circle cx="3" cy="3" r="2.2" fill="currentColor"/><circle cx="11" cy="3" r="2.2" fill="currentColor"/><circle cx="19" cy="3" r="2.2" fill="currentColor"/></svg>
+          <span class="v1-tab-label">Mehr</span>
+        </button>
+      </div>
+
+    </div><!-- /v1-iphone-inner -->
+  </div><!-- /v1-iphone -->
+
+  <!-- Caption -->
+  <div style="margin-top:24px;text-align:center;font-family:-apple-system,system-ui,sans-serif;color:#555;font-size:13px;line-height:1.6;max-width:393px;">
+    <strong style="color:#1A365D;font-family:Georgia,serif;font-size:15px;">Editorial Journal</strong><br>
+    Hell · Serif · Papier · navy&#8594;ocean Magazin-Header<br>
+    <span style="font-size:11px;opacity:0.6;">Tippe Tabs · Reise-Kachel · Karten-Pins</span>
+  </div>
+
+</section>
+
+<script>
+(function () {
+  'use strict';
+
+  var root = document.currentScript ? document.currentScript.closest('.frag-v1') : null;
+  if (!root) root = document.querySelector('.frag-v1.frag-visible') || document.querySelector('#soloV1') || document.querySelector('#sideV1');
+  if (!root) return;
+
+  // ── Tab switching ─────────────────────────────────────
+  var tabBtns    = root.querySelectorAll('.v1-tab-item');
+  var tabPanels  = root.querySelectorAll('.v1-tab-content');
+  var statusBar  = root.querySelector('#v1StatusBar');
+
+  function setStatusBar() {
+    if (statusBar) statusBar.style.color = '#fff';
+  }
+
+  tabBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var tab = btn.getAttribute('data-tab');
+      closeDetail();
+      closeMapSheet();
+
+      tabBtns.forEach(function (b) {
+        b.classList.remove('v1-tab-active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('v1-tab-active');
+      btn.setAttribute('aria-selected', 'true');
+
+      tabPanels.forEach(function (p) { p.classList.remove('v1-active'); });
+      var active = root.querySelector('#v1Tab' + tab);
+      if (active) active.classList.add('v1-active');
+      setStatusBar();
+    });
+  });
+
+  setStatusBar();
+
+  // ── Detail view ───────────────────────────────────────
+  var heroCard   = root.querySelector('#v1HeroCard');
+  var detailView = root.querySelector('#v1DetailView');
+  var detailBack = root.querySelector('#v1DetailBack');
+
+  function openDetail() { if (detailView) detailView.classList.add('v1-active'); }
+  function closeDetail() { if (detailView) detailView.classList.remove('v1-active'); }
+
+  if (heroCard) heroCard.addEventListener('click', openDetail);
+  if (detailBack) detailBack.addEventListener('click', closeDetail);
+
+  // ── Map pins ──────────────────────────────────────────
+  var mapSheet = root.querySelector('#v1MapSheet');
+  var mapBg    = root.querySelector('#v1MapBg');
+
+  var portData = {
+    'v1PinBCN':  { name: 'Barcelona',        meta: 'Spanien · 1. Okt 2024',        label: 'Starthafen', color: '#FF6B35', bg: 'rgba(255,107,53,0.12)' },
+    'v1PinMRS':  { name: 'Marseille',         meta: 'Frankreich · 2. Okt 2024',     label: 'Hafen',      color: '#0C8CE9', bg: 'rgba(12,140,233,0.12)' },
+    'v1PinGEN':  { name: 'Genua',             meta: 'Italien · 3. Okt 2024',        label: 'Hafen',      color: '#0C8CE9', bg: 'rgba(12,140,233,0.12)' },
+    'v1PinNAP':  { name: 'Neapel',            meta: 'Italien · 4. Okt 2024',        label: 'Hafen',      color: '#0C8CE9', bg: 'rgba(12,140,233,0.12)' },
+    'v1PinPMI':  { name: 'Palma de Mallorca', meta: 'Spanien · 6. Okt 2024',        label: 'Hafen',      color: '#0C8CE9', bg: 'rgba(12,140,233,0.12)' },
+    'v1PinBCN2': { name: 'Barcelona',         meta: 'Spanien · Endpunkt · 8. Okt', label: 'Endpunkt',   color: '#34C759', bg: 'rgba(52,199,89,0.12)'  },
+    'v1PinBER':  { name: 'Bergen',            meta: 'Norwegen · Starthafen',        label: 'Starthafen', color: '#FF6B35', bg: 'rgba(255,107,53,0.12)' }
+  };
+
+  function openMapSheet(id) {
+    var d = portData[id];
+    if (!d || !mapSheet) return;
+    root.querySelector('#v1SheetPortName').textContent = d.name;
+    root.querySelector('#v1SheetPortMeta').textContent = d.meta;
+    var badge = root.querySelector('#v1SheetRoleBadge');
+    badge.textContent = d.label;
+    badge.style.background = d.bg;
+    badge.style.color = d.color;
+    var icon = root.querySelector('#v1SheetPinIcon');
+    icon.style.background = d.bg;
+    icon.style.color = d.color;
+    mapSheet.classList.add('v1-sheet-open');
+  }
+
+  function closeMapSheet() {
+    if (mapSheet) mapSheet.classList.remove('v1-sheet-open');
+  }
+
+  Object.keys(portData).forEach(function (id) {
+    var pin = root.querySelector('#' + id);
+    if (pin) {
+      pin.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openMapSheet(id);
+      });
+    }
+  });
+
+  if (mapBg) mapBg.addEventListener('click', closeMapSheet);
+
+})();
+</script>
+</template>
+
+<!-- ══════════════════════════════════════════════════════════
+     ORCHESTRATOR SCRIPT
+     ══════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Load fragment templates into placeholder divs ── */
+  function cloneTemplate(tmplId, targetId) {
+    var tmpl = document.getElementById(tmplId);
+    var target = document.getElementById(targetId);
+    if (!tmpl || !target) return;
+    var frag = tmpl.content.cloneNode(true);
+    target.appendChild(frag);
+  }
+
+  /* Fragments are defined as <template> elements to avoid
+     duplicate IDs causing JS conflicts before insertion.
+     We insert each fragment once into both solo and side slots. */
+
+  /* ── State ─────────────────────────────────────────── */
+  var current   = 1;   // 1 | 2 | 3
+  var sideMode  = false;
+  var loaded    = {};  // track which templates have been inserted
+
+  /* ── DOM refs ──────────────────────────────────────── */
+  var soloWrap  = document.getElementById('soloWrap');
+  var sideWrap  = document.getElementById('sideWrap');
+  var soloSlots = [null,
+    document.getElementById('soloV1'),
+    document.getElementById('soloV2'),
+    document.getElementById('soloV3')
+  ];
+  var sideSlots = [null,
+    document.getElementById('sideV1'),
+    document.getElementById('sideV2'),
+    document.getElementById('sideV3')
+  ];
+
+  /* ── Fragment insertion ─────────────────────────────── */
+  function ensureLoaded(n) {
+    if (loaded[n]) return;
+    loaded[n] = true;
+    var tmpl = document.getElementById('tmplV' + n);
+    if (!tmpl) return;
+    // Solo slot
+    var soloClone = tmpl.content.cloneNode(true);
+    soloSlots[n].appendChild(soloClone);
+    // Side slot — deep clone again
+    var sideClone = tmpl.content.cloneNode(true);
+    sideSlots[n].appendChild(sideClone);
+  }
+
+  /* ── Show / hide in solo mode ───────────────────────── */
+  function showSolo(n) {
+    for (var i = 1; i <= 3; i++) {
+      soloSlots[i].style.display = (i === n) ? 'block' : 'none';
+    }
+  }
+
+  /* ── Tab switch ─────────────────────────────────────── */
+  window.switchTo = function (n) {
+    current = n;
+
+    // Update desc cards
+    for (var i = 1; i <= 3; i++) {
+      var card = document.getElementById('dcCard' + i);
+      if (card) card.classList.toggle('dc-active', i === n);
+    }
+
+    // Update switcher buttons
+    for (var j = 1; j <= 3; j++) {
+      var btn = document.getElementById('swBtn' + j);
+      if (btn) btn.classList.toggle('sw-active', j === n);
+    }
+
+    if (!sideMode) {
+      ensureLoaded(n);
+      showSolo(n);
+    }
+  };
+
+  /* ── Nebeneinander toggle ───────────────────────────── */
+  window.toggleSide = function () {
+    sideMode = !sideMode;
+    var btn = document.getElementById('swBtnSide');
+    btn.classList.toggle('sw-active', sideMode);
+
+    if (sideMode) {
+      soloWrap.style.display = 'none';
+      sideWrap.classList.add('sb-active');
+      // Ensure all three are loaded
+      for (var i = 1; i <= 3; i++) ensureLoaded(i);
+    } else {
+      sideWrap.classList.remove('sb-active');
+      soloWrap.style.display = '';
+      showSolo(current);
+    }
+  };
+
+  /* ── Init ───────────────────────────────────────────── */
+  // Load V1 immediately (default)
+  ensureLoaded(1);
+  showSolo(1);
+
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════
+     FRAGMENT V2 — Immersiv Foto-First (Dunkel)
+     ══════════════════════════════════════════════════════════ -->
+<template id="tmplV2">
+<style>
+.v2-root {
+  --v2-canvas:       #0A0A0F;
+  --v2-card1:        #1C1C1E;
+  --v2-card2:        #2C2C2E;
+  --v2-ocean:        #0C8CE9;
+  --v2-ocean-light:  #36A9F0;
+  --v2-navy:         #1A365D;
+  --v2-sunset:       #FF6B35;
+  --v2-sea:          #34C759;
+  --v2-white:        #FFFFFF;
+  --v2-white80:      rgba(255,255,255,0.80);
+  --v2-white50:      rgba(255,255,255,0.50);
+  --v2-white20:      rgba(255,255,255,0.20);
+  --v2-white10:      rgba(255,255,255,0.10);
+  --v2-sec:          rgba(255,255,255,0.45);
+  --v2-r16: 16px; --v2-r12: 12px; --v2-r10: 10px; --v2-r6: 6px;
+  --v2-font: -apple-system, system-ui, "Helvetica Neue", sans-serif;
+}
+.v2-root * { box-sizing: border-box; margin: 0; padding: 0; }
+.v2-root {
+  font-family: var(--v2-font);
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+.v2-phone {
+  width: 390px; height: 844px;
+  background: var(--v2-canvas);
+  border-radius: 50px;
+  border: 8px solid #2a2a2a;
+  box-shadow: 0 0 0 1px #111, inset 0 0 0 1px #333, 0 40px 80px rgba(0,0,0,0.9);
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.v2-phone::before {
+  content: '';
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 34px; background: #000; border-radius: 20px; z-index: 100;
+}
+.v2-status-bar {
+  height: 54px; flex-shrink: 0;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 24px 6px; z-index: 10;
+}
+.v2-status-time { font-size: 15px; font-weight: 600; color: var(--v2-white); letter-spacing: -0.3px; }
+.v2-status-icons { display: flex; gap: 6px; align-items: center; }
+.v2-status-icons svg { display: block; }
+.v2-screen { flex: 1; overflow: hidden; position: relative; }
+.v2-tab-screen {
+  position: absolute; inset: 0;
+  overflow-y: auto; overflow-x: hidden;
+  display: none; flex-direction: column;
+  background: var(--v2-canvas);
+  -webkit-overflow-scrolling: touch;
+}
+.v2-tab-screen.v2-active { display: flex; }
+.v2-tab-screen::-webkit-scrollbar { display: none; }
+.v2-tab-bar {
+  height: 82px; flex-shrink: 0;
+  background: rgba(10,10,15,0.96);
+  border-top: 0.5px solid rgba(255,255,255,0.12);
+  display: flex; align-items: flex-start; padding-top: 8px; z-index: 50;
+}
+.v2-tab-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: none; border: none; cursor: pointer; padding: 6px 0;
+  -webkit-tap-highlight-color: transparent; outline: none;
+}
+.v2-tab-btn svg { display: block; }
+.v2-tab-label { font-size: 10px; font-weight: 500; color: var(--v2-sec); }
+.v2-tab-btn.v2-active .v2-tab-label { color: var(--v2-ocean); }
+.v2-tab-btn.v2-active svg path,
+.v2-tab-btn.v2-active svg rect,
+.v2-tab-btn.v2-active svg circle,
+.v2-tab-btn.v2-active svg polyline,
+.v2-tab-btn.v2-active svg line { stroke: var(--v2-ocean) !important; }
+.v2-nav-header { padding: 8px 16px 12px; flex-shrink: 0; }
+.v2-nav-title { font-size: 28px; font-weight: 800; color: var(--v2-white); letter-spacing: -0.5px; }
+.v2-nav-subtitle { font-size: 13px; color: var(--v2-sec); margin-top: 2px; }
+.v2-gradient-header {
+  background: linear-gradient(135deg, var(--v2-navy) 0%, var(--v2-ocean) 100%);
+  padding: 16px 16px 20px; flex-shrink: 0;
+}
+.v2-gradient-header .v2-nav-title { color: #fff; }
+.v2-stats-strip { display: flex; padding: 12px 16px; gap: 0; flex-shrink: 0; }
+.v2-stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.v2-stat-item + .v2-stat-item { border-left: 0.5px solid var(--v2-white10); }
+.v2-stat-val { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--v2-white); }
+.v2-stat-lbl { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--v2-sec); }
+.v2-stat-item:nth-child(1) .v2-stat-val { color: var(--v2-ocean); }
+.v2-stat-item:nth-child(2) .v2-stat-val { color: var(--v2-ocean-light); }
+.v2-stat-item:nth-child(3) .v2-stat-val { color: var(--v2-sea); }
+.v2-stat-item:nth-child(4) .v2-stat-val { color: var(--v2-sunset); }
+.v2-hero-wrap { padding: 0 16px 8px; flex-shrink: 0; }
+.v2-hero-card { border-radius: var(--v2-r16); overflow: hidden; cursor: pointer; position: relative; }
+.v2-hero-media { height: 190px; position: relative; overflow: hidden; }
+.v2-hero-geo {
+  width: 100%; height: 100%;
+  background: linear-gradient(145deg, #0A1628 0%, #0D2845 35%, #1A365D 55%, #0C8CE9 100%);
+  position: relative; overflow: hidden;
+}
+.v2-hero-scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.78) 100%); z-index: 2; }
+.v2-hero-text { position: absolute; bottom: 12px; left: 12px; right: 12px; z-index: 3; }
+.v2-hero-title { font-size: 18px; font-weight: 900; color: #fff; line-height: 1.2; letter-spacing: -0.3px; }
+.v2-hero-sub { font-size: 11px; color: var(--v2-white80); margin-top: 3px; }
+.v2-badge-upcoming { position: absolute; top: 10px; left: 10px; z-index: 5; background: var(--v2-sunset); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.v2-badge-rating { position: absolute; top: 10px; right: 10px; z-index: 5; background: linear-gradient(135deg, #FF9500, #FF6B35); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.v2-hero-meta { background: var(--v2-canvas); display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-top: 0.5px solid var(--v2-white10); }
+.v2-hero-meta-left { font-size: 11px; color: var(--v2-sec); }
+.v2-hero-meta-right { font-size: 11px; font-weight: 600; color: var(--v2-ocean); }
+.v2-year-divider { display: flex; align-items: center; gap: 8px; padding: 12px 16px 4px; }
+.v2-year-line { flex: 1; height: 0.5px; background: var(--v2-white20); }
+.v2-year-text { font-size: 11px; font-weight: 700; color: var(--v2-sec); letter-spacing: 0.8px; text-transform: uppercase; }
+.v2-tl-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; }
+.v2-tl-row:active { opacity: 0.7; }
+.v2-tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.v2-tl-dot.past { background: var(--v2-ocean); }
+.v2-tl-dot.planned { background: var(--v2-sunset); }
+.v2-tl-info { flex: 1; min-width: 0; }
+.v2-tl-name { font-size: 14px; font-weight: 700; color: var(--v2-white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-tl-meta { font-size: 11px; color: var(--v2-sec); margin-top: 1px; }
+.v2-tl-ports { font-size: 10px; color: var(--v2-sea); margin-top: 2px; }
+.v2-tl-thumb { width: 34px; height: 34px; border-radius: var(--v2-r6); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.v2-tl-thumb-geo { background: linear-gradient(135deg, var(--v2-navy), var(--v2-ocean)); }
+.v2-tl-rating { font-size: 9px; color: var(--v2-sea); text-align: center; margin-top: 2px; }
+/* Detail overlay */
+.v2-detail-overlay { position: absolute; inset: 0; background: var(--v2-canvas); z-index: 90; display: none; flex-direction: column; overflow-y: auto; }
+.v2-detail-overlay.v2-open { display: flex; }
+.v2-detail-overlay::-webkit-scrollbar { display: none; }
+.v2-detail-hero { height: 220px; position: relative; flex-shrink: 0; }
+.v2-detail-back { position: absolute; top: 60px; left: 16px; z-index: 10; background: rgba(0,0,0,0.5); border: none; border-radius: 20px; color: #fff; font-size: 13px; font-weight: 600; padding: 6px 12px; cursor: pointer; }
+.v2-detail-hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 16px; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.85)); z-index: 5; }
+.v2-detail-title { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.4px; }
+.v2-detail-sub { font-size: 12px; color: var(--v2-white80); margin-top: 4px; }
+.v2-detail-body { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+.v2-detail-section-title { font-size: 13px; font-weight: 700; color: var(--v2-sec); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+.v2-route-row { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; }
+.v2-route-spine { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 20px; }
+.v2-route-pin { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.v2-route-line { width: 2px; height: 24px; background: var(--v2-white20); margin-top: 3px; }
+.v2-route-name { font-size: 14px; font-weight: 700; color: var(--v2-white); }
+.v2-route-date { font-size: 11px; color: var(--v2-sec); margin-top: 1px; }
+.v2-route-country { font-size: 10px; color: var(--v2-ocean-light); margin-top: 1px; }
+.v2-detail-stats { display: flex; gap: 8px; }
+.v2-detail-stat { flex: 1; background: var(--v2-card1); border-radius: var(--v2-r10); padding: 10px 8px; text-align: center; }
+.v2-detail-stat-val { font-size: 18px; font-weight: 800; color: var(--v2-white); font-variant-numeric: tabular-nums; }
+.v2-detail-stat-lbl { font-size: 9px; font-weight: 600; color: var(--v2-sec); text-transform: uppercase; margin-top: 2px; }
+/* Map */
+.v2-map-body { flex: 1; position: relative; overflow: hidden; }
+.v2-map-canvas { width: 100%; height: 100%; background: linear-gradient(160deg, #0A1A2E 0%, #0D2845 40%, #0F3A5A 70%, #0C4070 100%); position: relative; }
+.v2-chip-row { position: absolute; top: 12px; left: 0; right: 0; display: flex; gap: 6px; padding: 0 16px; z-index: 20; overflow-x: auto; }
+.v2-chip-row::-webkit-scrollbar { display: none; }
+.v2-chip { background: rgba(10,10,15,0.75); border: 0.5px solid var(--v2-white20); border-radius: 20px; color: var(--v2-white80); font-size: 11px; font-weight: 600; padding: 5px 12px; white-space: nowrap; cursor: pointer; flex-shrink: 0; transition: background 0.15s; }
+.v2-chip.v2-active { background: var(--v2-ocean); border-color: var(--v2-ocean); color: #fff; }
+.v2-map-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.v2-map-pin-circle { cursor: pointer; }
+.v2-map-sheet { position: absolute; bottom: -200px; left: 0; right: 0; background: var(--v2-card1); border-radius: 20px 20px 0 0; padding: 12px 16px 20px; z-index: 30; transition: bottom 0.3s cubic-bezier(0.4,0,0.2,1); }
+.v2-map-sheet.v2-open { bottom: 0; }
+.v2-sheet-handle { width: 36px; height: 4px; background: var(--v2-white20); border-radius: 2px; margin: 0 auto 12px; }
+.v2-sheet-title { font-size: 16px; font-weight: 800; color: var(--v2-white); }
+.v2-sheet-sub { font-size: 12px; color: var(--v2-sec); margin-top: 3px; }
+.v2-sheet-meta { display: flex; gap: 8px; margin-top: 10px; }
+.v2-sheet-chip { background: var(--v2-card2); border-radius: var(--v2-r6); padding: 4px 8px; font-size: 11px; color: var(--v2-white80); }
+.v2-sheet-close { position: absolute; top: 14px; right: 14px; background: var(--v2-card2); border: none; color: var(--v2-sec); font-size: 16px; width: 26px; height: 26px; border-radius: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+/* Deals */
+.v2-deal-hero { margin: 0 16px 12px; border-radius: var(--v2-r16); overflow: hidden; position: relative; cursor: pointer; }
+.v2-deal-hero-bg { height: 140px; background: linear-gradient(145deg, #0A1628 0%, #0D2845 40%, var(--v2-ocean) 100%); position: relative; }
+.v2-deal-hero-scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 10%, rgba(0,0,0,0.72) 100%); }
+.v2-deal-hero-content { position: absolute; bottom: 0; left: 0; right: 0; padding: 12px; z-index: 2; }
+.v2-deal-price { font-size: 20px; font-weight: 900; color: var(--v2-sea); font-variant-numeric: tabular-nums; }
+.v2-deal-hero-title { font-size: 14px; font-weight: 700; color: #fff; margin-top: 2px; }
+.v2-deal-badge { position: absolute; top: 10px; right: 10px; z-index: 3; background: var(--v2-sunset); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 20px; }
+.v2-deal-row { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; }
+.v2-deal-logo { width: 44px; height: 44px; background: var(--v2-card2); border-radius: var(--v2-r10); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.v2-deal-info { flex: 1; min-width: 0; }
+.v2-deal-name { font-size: 14px; font-weight: 700; color: var(--v2-white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-deal-dest { font-size: 11px; color: var(--v2-sec); margin-top: 2px; }
+.v2-deal-price-col { text-align: right; flex-shrink: 0; }
+.v2-deal-amount { font-size: 15px; font-weight: 800; color: var(--v2-sea); font-variant-numeric: tabular-nums; }
+.v2-deal-disc { font-size: 10px; font-weight: 700; color: #fff; background: var(--v2-sunset); padding: 1px 5px; border-radius: 8px; display: inline-block; margin-top: 2px; }
+/* Stats */
+.v2-stats-hero { background: linear-gradient(135deg, var(--v2-navy) 0%, #0C5A9E 60%, var(--v2-ocean) 100%); padding: 20px 16px 24px; flex-shrink: 0; }
+.v2-stats-hero-title { font-size: 13px; font-weight: 700; color: var(--v2-white80); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 16px; }
+.v2-stats-hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.v2-stats-hero-val { font-size: 26px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; line-height: 1; }
+.v2-stats-hero-lbl { font-size: 11px; color: var(--v2-white80); margin-top: 4px; font-weight: 500; }
+.v2-stats-hero-anchor .v2-stats-hero-val { font-size: 32px; }
+.v2-stats-hero-anchor .v2-stats-hero-lbl { color: var(--v2-ocean-light); font-weight: 700; }
+.v2-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+.v2-stat-card { background: var(--v2-card1); border-radius: var(--v2-r12); padding: 14px 12px; }
+.v2-stat-card-icon { font-size: 20px; margin-bottom: 8px; }
+.v2-stat-card-val { font-size: 22px; font-weight: 900; color: var(--v2-white); font-variant-numeric: tabular-nums; line-height: 1; }
+.v2-stat-card-lbl { font-size: 11px; color: var(--v2-sec); margin-top: 4px; }
+.v2-chart-card { background: var(--v2-card1); border-radius: var(--v2-r12); padding: 14px 12px; margin: 0 16px; }
+.v2-chart-title { font-size: 13px; font-weight: 700; color: var(--v2-white); margin-bottom: 12px; }
+.v2-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.v2-bar-label { font-size: 11px; color: var(--v2-sec); width: 30px; text-align: right; flex-shrink: 0; }
+.v2-bar-track { flex: 1; height: 8px; background: var(--v2-card2); border-radius: 4px; overflow: hidden; }
+.v2-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--v2-navy), var(--v2-ocean)); }
+.v2-bar-count { font-size: 11px; color: var(--v2-ocean-light); width: 16px; flex-shrink: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.v2-lines-card { background: var(--v2-card1); border-radius: var(--v2-r12); padding: 14px 12px; margin: 0 16px; }
+.v2-line-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.v2-line-row + .v2-line-row { border-top: 0.5px solid var(--v2-white10); }
+.v2-line-logo { font-size: 20px; }
+.v2-line-name { flex: 1; font-size: 13px; color: var(--v2-white); font-weight: 600; }
+.v2-line-count { font-size: 12px; color: var(--v2-sec); }
+/* Settings */
+.v2-profile-header { background: linear-gradient(135deg, var(--v2-navy) 0%, var(--v2-ocean) 100%); padding: 20px 16px 24px; flex-shrink: 0; }
+.v2-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--v2-white20); display: flex; align-items: center; justify-content: center; font-size: 26px; margin-bottom: 10px; }
+.v2-profile-name { font-size: 20px; font-weight: 800; color: #fff; }
+.v2-profile-chips { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.v2-profile-chip { background: var(--v2-white20); border-radius: 20px; padding: 3px 10px; font-size: 11px; color: #fff; font-weight: 600; }
+.v2-settings-section { padding: 12px 16px 4px; }
+.v2-settings-section-label { font-size: 11px; font-weight: 700; color: var(--v2-sec); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+.v2-settings-card { background: var(--v2-card1); border-radius: var(--v2-r12); overflow: hidden; }
+.v2-settings-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.v2-settings-row + .v2-settings-row { border-top: 0.5px solid var(--v2-white10); }
+.v2-settings-icon { width: 30px; height: 30px; border-radius: var(--v2-r6); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.v2-settings-label { flex: 1; font-size: 14px; color: var(--v2-white); font-weight: 500; }
+.v2-settings-value { font-size: 13px; color: var(--v2-sec); }
+.v2-settings-chevron { font-size: 12px; color: var(--v2-white20); }
+.v2-api-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--v2-sea); flex-shrink: 0; }
+.v2-spacer { height: 24px; flex-shrink: 0; }
+</style>
+
+<section class="v2-root">
+  <div class="v2-phone" id="v2-phone">
+    <div class="v2-status-bar">
+      <span class="v2-status-time">9:41</span>
+      <div class="v2-status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><rect x="0" y="6" width="3" height="6" rx="0.5" fill="white" opacity="0.4"/><rect x="4.5" y="4" width="3" height="8" rx="0.5" fill="white" opacity="0.6"/><rect x="9" y="2" width="3" height="10" rx="0.5" fill="white" opacity="0.8"/><rect x="13.5" y="0" width="3" height="12" rx="0.5" fill="white"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 9.5 L8 11.5" stroke="white" stroke-width="2" stroke-linecap="round"/><path d="M5.5 7.5 Q8 5.5 10.5 7.5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.8"/><path d="M3 5 Q8 1.5 13 5" stroke="white" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0" y="1" width="21" height="10" rx="2.5" stroke="white" stroke-width="1" opacity="0.6"/><rect x="1.5" y="2.5" width="16" height="7" rx="1.5" fill="white"/><path d="M22 4 L22 8" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/></svg>
+      </div>
+    </div>
+
+    <div class="v2-screen">
+      <!-- TAB 0: MEINE REISEN -->
+      <div class="v2-tab-screen v2-active" id="v2-screen-0">
+        <div class="v2-nav-header" style="padding-top:4px;">
+          <div class="v2-nav-title">Meine Reisen</div>
+        </div>
+        <div class="v2-stats-strip">
+          <div class="v2-stat-item"><span class="v2-stat-val">4</span><span class="v2-stat-lbl">Reisen</span></div>
+          <div class="v2-stat-item"><span class="v2-stat-val">6</span><span class="v2-stat-lbl">Laender</span></div>
+          <div class="v2-stat-item"><span class="v2-stat-val">34</span><span class="v2-stat-lbl">Seetage</span></div>
+          <div class="v2-stat-item"><span class="v2-stat-val">12.4k</span><span class="v2-stat-lbl">Seemeilen</span></div>
+        </div>
+        <div class="v2-hero-wrap">
+          <div class="v2-hero-card" id="v2-hero-tap">
+            <div class="v2-hero-media">
+              <div class="v2-hero-geo">
+                <svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;" viewBox="0 0 358 190" preserveAspectRatio="xMidYMid meet">
+                  <ellipse cx="280" cy="120" rx="90" ry="40" fill="rgba(12,140,233,0.12)"/>
+                  <ellipse cx="80" cy="60" rx="60" ry="25" fill="rgba(26,54,93,0.3)"/>
+                  <polyline points="72,140 140,105 195,88 230,118 145,150 72,140" fill="none" stroke="#0C8CE9" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+                  <circle cx="72" cy="140" r="6" fill="#FF6B35"/>
+                  <circle cx="72" cy="140" r="10" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.35"/>
+                  <circle cx="140" cy="105" r="5" fill="#0C8CE9"/>
+                  <circle cx="195" cy="88" r="5" fill="#0C8CE9"/>
+                  <circle cx="230" cy="118" r="5" fill="#0C8CE9"/>
+                  <circle cx="145" cy="150" r="5" fill="#0C8CE9"/>
+                  <circle cx="72" cy="140" r="4" fill="#34C759"/>
+                </svg>
+                <div class="v2-hero-scrim"></div>
+              </div>
+            </div>
+            <div class="v2-badge-upcoming">In 42 Tagen</div>
+            <div class="v2-hero-text">
+              <div class="v2-hero-title">Westliches Mittelmeer</div>
+              <div class="v2-hero-sub">&#128674; Costa Cruises · Costa Toscana · 14. Aug – 22. Aug 2026</div>
+            </div>
+            <div class="v2-hero-meta">
+              <span class="v2-hero-meta-left">3 Laender · 5 Haefen</span>
+              <span class="v2-hero-meta-right">Details &#8594;</span>
+            </div>
+          </div>
+        </div>
+        <div class="v2-year-divider"><div class="v2-year-line"></div><div class="v2-year-text">2025</div><div class="v2-year-line"></div></div>
+        <div class="v2-tl-row" id="v2-tl-tap-1">
+          <div class="v2-tl-dot past"></div>
+          <div class="v2-tl-info">
+            <div class="v2-tl-name">Norwegische Fjorde</div>
+            <div class="v2-tl-meta">AIDA Cruises &#128674; · 14 Tage · 2 Laender</div>
+            <div class="v2-tl-ports">Bergen · Flaam · Geiranger</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div class="v2-tl-thumb v2-tl-thumb-geo">&#128674;</div>
+            <div class="v2-tl-rating">&#9733; 4.8</div>
+          </div>
+        </div>
+        <div class="v2-year-divider"><div class="v2-year-line"></div><div class="v2-year-text">2024</div><div class="v2-year-line"></div></div>
+        <div class="v2-tl-row">
+          <div class="v2-tl-dot past"></div>
+          <div class="v2-tl-info">
+            <div class="v2-tl-name">Oestliches Mittelmeer</div>
+            <div class="v2-tl-meta">Costa Cruises &#128674; · 8 Tage · 3 Laender</div>
+            <div class="v2-tl-ports">Athen · Mykonos · Santorini</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;">
+            <div class="v2-tl-thumb v2-tl-thumb-geo">&#128674;</div>
+            <div class="v2-tl-rating">&#9733; 4.2</div>
+          </div>
+        </div>
+        <div class="v2-spacer"></div>
+      </div>
+
+      <!-- DETAIL OVERLAY -->
+      <div class="v2-detail-overlay" id="v2-detail-overlay">
+        <div class="v2-detail-hero">
+          <div style="width:100%;height:100%;background:linear-gradient(145deg,#0A1628 0%,#0D2845 40%,#1A365D 70%,#0C8CE9 100%);position:relative;">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;" viewBox="0 0 374 220" preserveAspectRatio="xMidYMid meet">
+              <polyline points="60,168 130,130 190,108 240,138 295,125 340,155 60,168" fill="none" stroke="#0C8CE9" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+              <circle cx="60" cy="168" r="7" fill="#FF6B35"/><circle cx="60" cy="168" r="12" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.3"/>
+              <circle cx="130" cy="130" r="5" fill="#0C8CE9"/><circle cx="190" cy="108" r="5" fill="#0C8CE9"/>
+              <circle cx="240" cy="138" r="5" fill="#0C8CE9"/><circle cx="295" cy="125" r="5" fill="#36A9F0"/>
+              <circle cx="340" cy="155" r="6" fill="#34C759"/>
+            </svg>
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 20%,rgba(0,0,0,0.80) 100%);"></div>
+          </div>
+          <button class="v2-detail-back" id="v2-detail-back">&#8592; Zurueck</button>
+          <div class="v2-detail-hero-content">
+            <div class="v2-detail-title">Westliches Mittelmeer</div>
+            <div class="v2-detail-sub">Costa Toscana · 8 Tage · 14.–22. Aug 2026</div>
+          </div>
+        </div>
+        <div class="v2-detail-body">
+          <div class="v2-detail-stats">
+            <div class="v2-detail-stat"><div class="v2-detail-stat-val" style="color:var(--v2-sunset);">42</div><div class="v2-detail-stat-lbl">Tage bis Start</div></div>
+            <div class="v2-detail-stat"><div class="v2-detail-stat-val" style="color:var(--v2-ocean);">8</div><div class="v2-detail-stat-lbl">Reisetage</div></div>
+            <div class="v2-detail-stat"><div class="v2-detail-stat-val" style="color:var(--v2-sea);">3</div><div class="v2-detail-stat-lbl">Laender</div></div>
+          </div>
+          <div>
+            <div class="v2-detail-section-title">Route</div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-sunset);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name">Barcelona</div><div class="v2-route-date">14. Aug · Abfahrt 18:00</div><div class="v2-route-country">Spanien</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-ocean);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name">Marseille</div><div class="v2-route-date">15. Aug · 08:00–18:00</div><div class="v2-route-country">Frankreich</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-ocean);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name">Genua</div><div class="v2-route-date">16. Aug · 08:00–20:00</div><div class="v2-route-country">Italien</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-ocean);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name">Neapel</div><div class="v2-route-date">17. Aug · 08:00–19:00</div><div class="v2-route-country">Italien</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-ocean-light);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name" style="color:var(--v2-ocean-light);">Seetag</div><div class="v2-route-date">18. Aug</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-ocean);"></div><div class="v2-route-line"></div></div><div><div class="v2-route-name">Palma</div><div class="v2-route-date">19. Aug · 08:00–22:00</div><div class="v2-route-country">Spanien</div></div></div>
+            <div class="v2-route-row"><div class="v2-route-spine"><div class="v2-route-pin" style="background:var(--v2-sea);"></div></div><div><div class="v2-route-name">Barcelona</div><div class="v2-route-date">22. Aug · Ankunft 07:00</div><div class="v2-route-country">Spanien (Endpunkt)</div></div></div>
+          </div>
+        </div>
+        <div class="v2-spacer"></div>
+      </div>
+
+      <!-- TAB 1: KARTE -->
+      <div class="v2-tab-screen" id="v2-screen-1">
+        <div class="v2-gradient-header"><div class="v2-nav-title">Karte</div></div>
+        <div class="v2-map-body">
+          <div class="v2-map-canvas" id="v2-map-canvas">
+            <div class="v2-chip-row">
+              <div class="v2-chip v2-active" data-chip="alle">Alle</div>
+              <div class="v2-chip" data-chip="spanien">Spanien</div>
+              <div class="v2-chip" data-chip="italien">Italien</div>
+              <div class="v2-chip" data-chip="norwegen">Norwegen</div>
+            </div>
+            <svg class="v2-map-svg" viewBox="0 0 374 560" preserveAspectRatio="xMidYMid meet">
+              <rect width="374" height="560" fill="transparent"/>
+              <ellipse cx="187" cy="240" rx="120" ry="35" fill="rgba(26,54,93,0.3)" opacity="0.5"/>
+              <ellipse cx="95" cy="270" rx="35" ry="28" fill="rgba(26,54,93,0.25)" opacity="0.6"/>
+              <ellipse cx="210" cy="255" rx="18" ry="45" fill="rgba(26,54,93,0.25)" opacity="0.6" transform="rotate(-15,210,255)"/>
+              <ellipse cx="155" cy="232" rx="25" ry="18" fill="rgba(26,54,93,0.25)" opacity="0.5"/>
+              <ellipse cx="195" cy="80" rx="35" ry="55" fill="rgba(26,54,93,0.2)" opacity="0.5"/>
+              <!-- W-Med route -->
+              <polyline points="95,280 145,245 205,230 215,270 140,290 95,280" fill="none" stroke="#0C8CE9" stroke-width="2" stroke-dasharray="6,3" opacity="0.85"/>
+              <!-- Fjorde route -->
+              <polyline points="185,72 188,55 193,42 200,58 195,78" fill="none" stroke="#FF6B35" stroke-width="2" opacity="0.75"/>
+              <!-- Clickable pins -->
+              <circle id="v2-pin-bcn" cx="95" cy="280" r="7" fill="#FF6B35" class="v2-map-pin-circle" data-port="bcn" style="cursor:pointer;"/>
+              <circle cx="95" cy="280" r="13" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.2"/>
+              <circle id="v2-pin-mrs" cx="145" cy="245" r="6" fill="#0C8CE9" class="v2-map-pin-circle" data-port="mrs" style="cursor:pointer;"/>
+              <circle id="v2-pin-gen" cx="205" cy="230" r="6" fill="#0C8CE9" class="v2-map-pin-circle" data-port="gen" style="cursor:pointer;"/>
+              <circle id="v2-pin-nap" cx="215" cy="270" r="6" fill="#0C8CE9" class="v2-map-pin-circle" data-port="nap" style="cursor:pointer;"/>
+              <circle id="v2-pin-pmx" cx="140" cy="290" r="6" fill="#0C8CE9" class="v2-map-pin-circle" data-port="pmx" style="cursor:pointer;"/>
+              <circle cx="185" cy="72" r="6" fill="#FF6B35"/>
+              <circle cx="195" cy="78" r="6" fill="#34C759"/>
+              <text x="75" y="276" font-size="9" fill="white" font-weight="600" opacity="0.85">Barcelona</text>
+              <text x="148" y="241" font-size="9" fill="white" font-weight="600" opacity="0.85">Marseille</text>
+              <text x="208" y="227" font-size="9" fill="white" font-weight="600" opacity="0.85">Genua</text>
+              <text x="218" y="282" font-size="9" fill="white" font-weight="600" opacity="0.85">Neapel</text>
+              <text x="126" y="300" font-size="9" fill="white" font-weight="600" opacity="0.85">Palma</text>
+              <text x="170" y="72" font-size="9" fill="white" font-weight="600" opacity="0.75">Bergen</text>
+            </svg>
+            <div class="v2-map-sheet" id="v2-map-sheet">
+              <button class="v2-sheet-close" id="v2-sheet-close">&#215;</button>
+              <div class="v2-sheet-handle"></div>
+              <div class="v2-sheet-title" id="v2-sheet-port-name">Barcelona</div>
+              <div class="v2-sheet-sub" id="v2-sheet-port-sub">Spanien</div>
+              <div class="v2-sheet-meta">
+                <div class="v2-sheet-chip" id="v2-sheet-date">14. Aug 2026</div>
+                <div class="v2-sheet-chip" id="v2-sheet-role">Starthafen</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: MERKLISTE -->
+      <div class="v2-tab-screen" id="v2-screen-2">
+        <div class="v2-gradient-header"><div class="v2-nav-title">Merkliste</div><div class="v2-nav-subtitle">2 gespeicherte Angebote</div></div>
+        <div style="padding:12px 16px 0;"><div style="font-size:11px;font-weight:700;color:var(--v2-sec);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">Bestes Angebot</div></div>
+        <div class="v2-deal-hero">
+          <div class="v2-deal-hero-bg">
+            <svg style="position:absolute;inset:0;width:100%;height:100%;overflow:visible;" viewBox="0 0 326 140" preserveAspectRatio="xMidYMid meet">
+              <ellipse cx="160" cy="60" rx="80" ry="30" fill="rgba(12,140,233,0.15)"/>
+              <polyline points="120,110 145,80 165,65 180,78 195,55 220,70 235,90" fill="none" stroke="#36A9F0" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.6"/>
+              <circle cx="120" cy="110" r="5" fill="#FF6B35"/>
+              <circle cx="235" cy="90" r="5" fill="#34C759"/>
+            </svg>
+            <div class="v2-deal-hero-scrim"></div>
+          </div>
+          <div class="v2-deal-badge">-28%</div>
+          <div class="v2-deal-hero-content"><div class="v2-deal-price">ab 899 &#8364;</div><div class="v2-deal-hero-title">AIDA Norwegische Fjorde</div></div>
+        </div>
+        <div class="v2-deal-row">
+          <div class="v2-deal-logo">&#9875;</div>
+          <div class="v2-deal-info"><div class="v2-deal-name">AIDA Norwegische Fjorde</div><div class="v2-deal-dest">Norwegen · 14 Tage</div></div>
+          <div class="v2-deal-price-col"><div class="v2-deal-amount">899 &#8364;</div><div class="v2-deal-disc">-28%</div></div>
+        </div>
+        <div class="v2-deal-row">
+          <div class="v2-deal-logo">&#127754;</div>
+          <div class="v2-deal-info"><div class="v2-deal-name">MSC Oestliche Karibik</div><div class="v2-deal-dest">Karibik · 12 Tage</div></div>
+          <div class="v2-deal-price-col"><div class="v2-deal-amount">1.249 &#8364;</div></div>
+        </div>
+        <div class="v2-spacer"></div>
+      </div>
+
+      <!-- TAB 3: STATISTIK -->
+      <div class="v2-tab-screen" id="v2-screen-3">
+        <div class="v2-stats-hero">
+          <div class="v2-stats-hero-title">Lifetime · Alle Reisen</div>
+          <div class="v2-stats-hero-grid">
+            <div class="v2-stats-hero-item v2-stats-hero-anchor"><div class="v2-stats-hero-val">12.400</div><div class="v2-stats-hero-lbl">Seemeilen</div></div>
+            <div class="v2-stats-hero-item"><div class="v2-stats-hero-val">34</div><div class="v2-stats-hero-lbl">Reisetage</div></div>
+            <div class="v2-stats-hero-item"><div class="v2-stats-hero-val">6</div><div class="v2-stats-hero-lbl">Laender</div></div>
+            <div class="v2-stats-hero-item"><div class="v2-stats-hero-val">&#9733; 4.5</div><div class="v2-stats-hero-lbl">&#216; Bewertung</div></div>
+          </div>
+        </div>
+        <div style="height:12px;"></div>
+        <div class="v2-stats-grid">
+          <div class="v2-stat-card"><div class="v2-stat-card-icon">&#9972;</div><div class="v2-stat-card-val" style="color:var(--v2-ocean);">4</div><div class="v2-stat-card-lbl">Kreuzfahrten</div></div>
+          <div class="v2-stat-card"><div class="v2-stat-card-icon">&#128197;</div><div class="v2-stat-card-val" style="color:var(--v2-ocean-light);">34</div><div class="v2-stat-card-lbl">Reisetage</div></div>
+          <div class="v2-stat-card"><div class="v2-stat-card-icon">&#128205;</div><div class="v2-stat-card-val" style="color:var(--v2-sunset);">18</div><div class="v2-stat-card-lbl">Haefen</div></div>
+          <div class="v2-stat-card"><div class="v2-stat-card-icon">&#127758;</div><div class="v2-stat-card-val" style="color:var(--v2-sea);">6</div><div class="v2-stat-card-lbl">Laender</div></div>
+        </div>
+        <div style="height:12px;"></div>
+        <div class="v2-chart-card">
+          <div class="v2-chart-title">Kreuzfahrten pro Jahr</div>
+          <div class="v2-bar-row"><div class="v2-bar-label">2024</div><div class="v2-bar-track"><div class="v2-bar-fill" style="width:33%;"></div></div><div class="v2-bar-count">1</div></div>
+          <div class="v2-bar-row"><div class="v2-bar-label">2025</div><div class="v2-bar-track"><div class="v2-bar-fill" style="width:66%;"></div></div><div class="v2-bar-count">2</div></div>
+          <div class="v2-bar-row"><div class="v2-bar-label">2026</div><div class="v2-bar-track"><div class="v2-bar-fill" style="width:33%;"></div></div><div class="v2-bar-count">1</div></div>
+        </div>
+        <div style="height:12px;"></div>
+        <div class="v2-lines-card">
+          <div class="v2-chart-title">Top Reedereien</div>
+          <div class="v2-line-row"><div class="v2-line-logo">&#9875;</div><div class="v2-line-name">Costa Cruises</div><div class="v2-line-count">2 Reisen</div></div>
+          <div class="v2-line-row"><div class="v2-line-logo">&#9875;</div><div class="v2-line-name">AIDA Cruises</div><div class="v2-line-count">1 Reise</div></div>
+          <div class="v2-line-row"><div class="v2-line-logo">&#127754;</div><div class="v2-line-name">MSC Cruises</div><div class="v2-line-count">1 Reise</div></div>
+        </div>
+        <div class="v2-spacer"></div>
+      </div>
+
+      <!-- TAB 4: MEHR -->
+      <div class="v2-tab-screen" id="v2-screen-4">
+        <div class="v2-profile-header">
+          <div class="v2-avatar">&#129517;</div>
+          <div class="v2-profile-name">ShipTrip</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:2px;">Version 1.5.1</div>
+          <div class="v2-profile-chips"><div class="v2-profile-chip">4 Reisen</div><div class="v2-profile-chip">6 Laender</div><div class="v2-profile-chip">12.400 sm</div></div>
+        </div>
+        <div class="v2-settings-section">
+          <div class="v2-settings-section-label">Erscheinungsbild</div>
+          <div class="v2-settings-card">
+            <div class="v2-settings-row"><div class="v2-settings-icon" style="background:rgba(255,255,255,0.1);">&#127769;</div><div class="v2-settings-label">Farbschema</div><div class="v2-settings-value">Dunkel</div><div class="v2-settings-chevron">›</div></div>
+          </div>
+        </div>
+        <div class="v2-settings-section">
+          <div class="v2-settings-section-label">KI-Funktionen</div>
+          <div class="v2-settings-card">
+            <div class="v2-settings-row"><div class="v2-settings-icon" style="background:rgba(12,140,233,0.2);">&#10024;</div><div class="v2-settings-label">Gemini API</div><div class="v2-api-dot"></div><div class="v2-settings-chevron">›</div></div>
+          </div>
+        </div>
+        <div class="v2-settings-section">
+          <div class="v2-settings-section-label">App</div>
+          <div class="v2-settings-card">
+            <div class="v2-settings-row"><div class="v2-settings-icon" style="background:rgba(255,107,53,0.2);">&#128276;</div><div class="v2-settings-label">Erinnerungen</div><div class="v2-settings-chevron">›</div></div>
+            <div class="v2-settings-row"><div class="v2-settings-icon" style="background:rgba(52,199,89,0.2);">&#128190;</div><div class="v2-settings-label">Daten verwalten</div><div class="v2-settings-chevron">›</div></div>
+            <div class="v2-settings-row"><div class="v2-settings-icon" style="background:rgba(255,255,255,0.08);">&#8505;&#65039;</div><div class="v2-settings-label">Version</div><div class="v2-settings-value">1.5.1 (8)</div></div>
+          </div>
+        </div>
+        <div class="v2-spacer"></div>
+      </div>
+    </div><!-- /v2-screen -->
+
+    <!-- TAB BAR -->
+    <div class="v2-tab-bar">
+      <button class="v2-tab-btn v2-active" data-tab="0" aria-label="Meine Reisen">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M2 18 Q6 12 12 14 Q18 16 22 10" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linecap="round" fill="none"/><rect x="4" y="7" width="16" height="9" rx="2" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" fill="none"/></svg>
+        <span class="v2-tab-label">Reisen</span>
+      </button>
+      <button class="v2-tab-btn" data-tab="1" aria-label="Karte">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 4L3 7V20L9 17L15 20L21 17V4L15 7L9 4Z" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+        <span class="v2-tab-label">Karte</span>
+      </button>
+      <button class="v2-tab-btn" data-tab="2" aria-label="Merkliste">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 3H19C19.6 3 20 3.4 20 4V21L12 17L4 21V4C4 3.4 4.4 3 5 3Z" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" stroke-linejoin="round" fill="none"/></svg>
+        <span class="v2-tab-label">Merkliste</span>
+      </button>
+      <button class="v2-tab-btn" data-tab="3" aria-label="Statistik">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4" height="9" rx="1" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" fill="none"/><rect x="10" y="7" width="4" height="14" rx="1" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" fill="none"/><rect x="17" y="3" width="4" height="18" rx="1" stroke="rgba(255,255,255,0.4)" stroke-width="1.8" fill="none"/></svg>
+        <span class="v2-tab-label">Statistik</span>
+      </button>
+      <button class="v2-tab-btn" data-tab="4" aria-label="Mehr">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="5" cy="12" r="1.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.8"/><circle cx="12" cy="12" r="1.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.8"/><circle cx="19" cy="12" r="1.5" stroke="rgba(255,255,255,0.4)" stroke-width="1.8"/></svg>
+        <span class="v2-tab-label">Mehr</span>
+      </button>
+    </div>
+  </div><!-- /v2-phone -->
+
+  <div style="margin-top:24px;text-align:center;font-family:-apple-system,system-ui,sans-serif;color:rgba(255,255,255,0.45);font-size:13px;line-height:1.6;max-width:393px;">
+    <strong style="color:#36A9F0;font-size:15px;">Immersiv Foto-First</strong><br>
+    Dunkel · Canvas #0A0A0F · nahtlose Foto-Kachel<br>
+    <span style="font-size:11px;opacity:0.6;">Tippe Tabs · Hero-Karte · Karten-Pins</span>
+  </div>
+</section>
+
+<script>
+(function() {
+  'use strict';
+  var root = document.currentScript ? document.currentScript.closest('.frag-v2') : null;
+  if (!root) root = document.querySelector('.frag-v2.frag-visible') || document.querySelector('#soloV2') || document.querySelector('#sideV2');
+  if (!root) return;
+
+  var tabs    = root.querySelectorAll('.v2-tab-btn');
+  var screens = root.querySelectorAll('.v2-tab-screen');
+  var overlay = root.querySelector('#v2-detail-overlay');
+  var backBtn = root.querySelector('#v2-detail-back');
+  var heroTap = root.querySelector('#v2-hero-tap');
+  var tl1     = root.querySelector('#v2-tl-tap-1');
+  var sheet   = root.querySelector('#v2-map-sheet');
+  var sheetClose = root.querySelector('#v2-sheet-close');
+  var mapCanvas  = root.querySelector('#v2-map-canvas');
+
+  function switchTab(idx) {
+    tabs.forEach(function(t) { t.classList.remove('v2-active'); });
+    screens.forEach(function(s) { s.classList.remove('v2-active'); });
+    tabs[idx].classList.add('v2-active');
+    screens[idx].classList.add('v2-active');
+    if (idx !== 0) closeDetail();
+    if (idx !== 1) closeSheet();
+  }
+  tabs.forEach(function(btn) {
+    btn.addEventListener('click', function() { switchTab(parseInt(btn.getAttribute('data-tab'), 10)); });
+  });
+
+  function openDetail()  { if (overlay) overlay.classList.add('v2-open'); }
+  function closeDetail() { if (overlay) overlay.classList.remove('v2-open'); }
+  if (heroTap) heroTap.addEventListener('click', openDetail);
+  if (tl1)     tl1.addEventListener('click', openDetail);
+  if (backBtn) backBtn.addEventListener('click', closeDetail);
+
+  var chips = root.querySelectorAll('.v2-chip');
+  chips.forEach(function(c) {
+    c.addEventListener('click', function() {
+      chips.forEach(function(x) { x.classList.remove('v2-active'); });
+      c.classList.add('v2-active');
+    });
+  });
+
+  var portData = {
+    bcn: { name: 'Barcelona',  sub: 'Spanien', date: '14. Aug 2026', role: 'Starthafen' },
+    mrs: { name: 'Marseille',  sub: 'Frankreich', date: '15. Aug 2026', role: 'Zwischenstopp' },
+    gen: { name: 'Genua',      sub: 'Italien', date: '16. Aug 2026', role: 'Zwischenstopp' },
+    nap: { name: 'Neapel',     sub: 'Italien', date: '17. Aug 2026', role: 'Zwischenstopp' },
+    pmx: { name: 'Palma',      sub: 'Spanien', date: '19. Aug 2026', role: 'Zwischenstopp' }
+  };
+
+  function openSheet(key) {
+    var d = portData[key];
+    if (!d || !sheet) return;
+    root.querySelector('#v2-sheet-port-name').textContent = d.name;
+    root.querySelector('#v2-sheet-port-sub').textContent  = d.sub;
+    root.querySelector('#v2-sheet-date').textContent      = d.date;
+    root.querySelector('#v2-sheet-role').textContent      = d.role;
+    sheet.classList.add('v2-open');
+  }
+  function closeSheet() { if (sheet) sheet.classList.remove('v2-open'); }
+
+  var pins = root.querySelectorAll('.v2-map-pin-circle');
+  pins.forEach(function(pin) {
+    pin.addEventListener('click', function() { openSheet(pin.getAttribute('data-port')); });
+  });
+  if (sheetClose) sheetClose.addEventListener('click', closeSheet);
+  if (mapCanvas) {
+    mapCanvas.addEventListener('click', function(e) {
+      if (e.target === mapCanvas || e.target.tagName === 'svg' || e.target.tagName === 'polyline' || e.target.tagName === 'ellipse') closeSheet();
+    });
+  }
+})();
+</script>
+</template>
+
+<!-- ══════════════════════════════════════════════════════════
+     FRAGMENT V3 — Explorer Geo-First
+     ══════════════════════════════════════════════════════════ -->
+<template id="tmplV3">
+<style>
+.v3-root {
+  --v3-bg:#0A0F1A; --v3-bg2:#111827; --v3-bg3:#1C2333; --v3-card:#1C2333;
+  --v3-border:rgba(255,255,255,0.08);
+  --v3-ocean:#0C8CE9; --v3-oceanL:#36A9F0; --v3-navy:#1A365D;
+  --v3-sunset:#FF6B35; --v3-sea:#34C759; --v3-white:#FFFFFF;
+  --v3-grey:rgba(255,255,255,0.55); --v3-grey2:rgba(255,255,255,0.30);
+  --v3-font:-apple-system,system-ui,'Helvetica Neue',sans-serif;
+  --v3-r16:16px; --v3-r12:12px; --v3-r10:10px; --v3-r6:6px;
+}
+.v3-root * { box-sizing:border-box; margin:0; padding:0; }
+.v3-root {
+  display:flex; justify-content:center; align-items:flex-start;
+  padding:32px 16px 64px; background:#060A12;
+  font-family:var(--v3-font); -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+.v3-phone {
+  position:relative; width:390px; height:844px;
+  background:var(--v3-bg); border-radius:50px;
+  border:1.5px solid rgba(255,255,255,0.18);
+  box-shadow:0 0 0 6px #0D1117,0 0 0 8px rgba(255,255,255,0.06),0 40px 80px rgba(0,0,0,0.7);
+  overflow:hidden; display:flex; flex-direction:column; user-select:none;
+}
+.v3-island { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:100; }
+.v3-statusbar { height:52px; flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding:0 28px 6px; font-size:12px; font-weight:600; color:var(--v3-white); position:relative; z-index:99; }
+.v3-screen { flex:1; overflow:hidden; position:relative; }
+.v3-tabbar { height:82px; flex-shrink:0; background:rgba(13,18,27,0.95); border-top:0.5px solid var(--v3-border); display:flex; align-items:flex-start; padding-top:8px; position:relative; z-index:50; }
+.v3-tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:4px 0; -webkit-tap-highlight-color:transparent; }
+.v3-tab-icon { width:26px; height:26px; display:flex; align-items:center; justify-content:center; }
+.v3-tab-icon svg { width:22px; height:22px; fill:var(--v3-grey2); transition:fill 0.15s; }
+.v3-tab-label { font-size:10px; font-weight:500; color:var(--v3-grey2); transition:color 0.15s; }
+.v3-tab.v3-active .v3-tab-icon svg { fill:var(--v3-ocean); }
+.v3-tab.v3-active .v3-tab-label { color:var(--v3-ocean); }
+.v3-panel { position:absolute; inset:0; background:var(--v3-bg); overflow-y:auto; overflow-x:hidden; display:none; flex-direction:column; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+.v3-panel::-webkit-scrollbar { display:none; }
+.v3-panel.v3-visible { display:flex; }
+.v3-navbar { position:sticky; top:0; z-index:40; background:rgba(10,15,26,0.92); backdrop-filter:blur(12px); padding:12px 16px 10px; border-bottom:0.5px solid var(--v3-border); flex-shrink:0; }
+.v3-navbar-title { font-size:22px; font-weight:800; color:var(--v3-white); letter-spacing:-0.4px; }
+.v3-navbar-sub { font-size:11px; color:var(--v3-grey); margin-top:1px; }
+/* strip */
+.v3-strip { display:flex; background:var(--v3-card); border-radius:var(--v3-r10); border:0.5px solid var(--v3-border); overflow:hidden; margin:8px 16px 12px; }
+.v3-strip-cell { flex:1; display:flex; flex-direction:column; align-items:center; padding:8px 0; border-right:0.5px solid var(--v3-border); position:relative; }
+.v3-strip-cell:last-child { border-right:none; }
+.v3-strip-val { font-size:17px; font-weight:800; font-variant-numeric:tabular-nums; }
+.v3-strip-lbl { font-size:9px; font-weight:600; color:var(--v3-grey); margin-top:1px; }
+.v3-strip-ring { position:absolute; top:4px; right:6px; width:18px; height:18px; }
+/* hero */
+.v3-hero { margin:0 16px 12px; border-radius:var(--v3-r16); overflow:hidden; cursor:pointer; }
+.v3-hero-media { position:relative; height:190px; overflow:hidden; }
+.v3-hero-scrim { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0) 30%,rgba(0,0,0,0.82) 100%); z-index:2; }
+.v3-hero-text { position:absolute; bottom:12px; left:12px; right:12px; z-index:3; }
+.v3-hero-title { font-size:17px; font-weight:900; color:#fff; line-height:1.2; margin-bottom:3px; }
+.v3-hero-sub { font-size:11px; color:rgba(255,255,255,0.78); }
+.v3-hero-badge-tl { position:absolute; top:10px; left:10px; z-index:4; }
+.v3-hero-meta { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--v3-card); border-top:0.5px solid var(--v3-border); }
+.v3-geo { width:100%; height:100%; background:linear-gradient(135deg,#1A365D 0%,#0C8CE9 60%,#36A9F0 100%); position:relative; overflow:hidden; }
+.v3-geo svg { position:absolute; inset:0; width:100%; height:100%; }
+.v3-geo-thumb { width:34px; height:34px; border-radius:var(--v3-r6); overflow:hidden; flex-shrink:0; background:linear-gradient(135deg,#1A365D,#0C8CE9); position:relative; }
+.v3-geo-thumb svg { position:absolute; inset:0; width:100%; height:100%; }
+/* badge / chip */
+.v3-badge { display:inline-flex; align-items:center; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; }
+.v3-badge-sunset { background:var(--v3-sunset); color:#fff; }
+.v3-badge-sea    { background:var(--v3-sea); color:#0A1A0F; }
+/* caption */
+.v3-caption { font-size:11px; color:var(--v3-grey); }
+.v3-label-ocean { color:var(--v3-ocean); }
+/* year divider */
+.v3-year-div { display:flex; align-items:center; gap:8px; margin:8px 16px 4px 26px; }
+.v3-year-div span { font-size:11px; font-weight:800; color:var(--v3-grey); white-space:nowrap; }
+.v3-year-div::after { content:''; flex:1; height:0.5px; background:var(--v3-border); }
+/* row */
+.v3-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--v3-card); border-radius:var(--v3-r10); margin:0 16px 6px; cursor:pointer; transition:background 0.12s; }
+.v3-row:active { background:#242d3e; }
+.v3-spine { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+.v3-row-text { flex:1; min-width:0; }
+.v3-row-title { font-size:14px; font-weight:700; color:var(--v3-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.v3-row-meta { font-size:11px; color:var(--v3-grey); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+.v3-row-ports { font-size:10px; color:var(--v3-sea); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px; }
+.v3-row-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+.v3-row-rating { font-size:10px; color:var(--v3-sea); }
+/* map */
+.v3-map-wrap { position:relative; flex:1; min-height:0; overflow:hidden; }
+.v3-map-bg { width:100%; height:100%; background:#1a2744; position:relative; overflow:hidden; }
+.v3-map-chips { position:absolute; bottom:0; left:0; right:0; padding:10px 12px 14px; background:linear-gradient(to top,rgba(10,15,26,0.95) 80%,transparent); display:flex; gap:6px; flex-wrap:wrap; z-index:20; }
+.v3-chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:4px 10px; border-radius:20px; cursor:pointer; }
+.v3-chip-ocean  { background:rgba(12,140,233,0.18); color:var(--v3-oceanL); border:1px solid rgba(12,140,233,0.35); }
+.v3-chip-sunset { background:rgba(255,107,53,0.18); color:var(--v3-sunset); border:1px solid rgba(255,107,53,0.30); }
+.v3-chip-active { opacity:1 !important; }
+.v3-chip:not(.v3-chip-active) { opacity:0.6; }
+.v3-pin { position:absolute; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; cursor:pointer; z-index:10; }
+.v3-pin-dot { width:14px; height:14px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,0.5); }
+.v3-pin-label { font-size:9px; font-weight:600; background:rgba(10,15,26,0.88); color:#fff; padding:1px 5px; border-radius:6px; margin-top:2px; white-space:nowrap; }
+.v3-sheet { position:absolute; bottom:0; left:0; right:0; background:var(--v3-bg2); border-radius:20px 20px 0 0; padding:14px 16px 28px; z-index:30; transform:translateY(100%); transition:transform 0.28s cubic-bezier(.4,0,.2,1); border-top:0.5px solid var(--v3-border); }
+.v3-sheet.v3-open { transform:translateY(0); }
+.v3-sheet-handle { width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 14px; }
+.v3-sheet-title { font-size:17px; font-weight:800; color:var(--v3-white); margin-bottom:4px; }
+.v3-sheet-sub { font-size:12px; color:var(--v3-grey); margin-bottom:12px; }
+.v3-sheet-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:0.5px solid var(--v3-border); }
+.v3-sheet-row:last-child { border-bottom:none; }
+.v3-sheet-key { font-size:12px; color:var(--v3-grey); }
+.v3-sheet-val { font-size:12px; font-weight:600; color:var(--v3-white); }
+.v3-sheet-close { display:none; position:absolute; inset:0; z-index:25; background:transparent; cursor:pointer; }
+.v3-sheet.v3-open ~ .v3-sheet-close { display:block; }
+.v3-excursion-wrap { margin-top:10px; }
+.v3-excursion-tag { display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:3px 8px; background:rgba(52,199,89,0.15); color:var(--v3-sea); border-radius:8px; margin:3px 3px 0 0; }
+/* stats */
+.v3-stats-hero { margin:0 16px 14px; border-radius:var(--v3-r12); background:linear-gradient(135deg,var(--v3-navy) 0%,var(--v3-ocean) 100%); padding:14px 16px 12px; position:relative; overflow:hidden; }
+.v3-stats-hero::before { content:''; position:absolute; right:-20px; top:-20px; width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.07); }
+.v3-stats-hero-title { font-size:11px; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:0.5px; text-transform:uppercase; margin-bottom:8px; }
+.v3-stats-hero-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px; }
+.v3-stats-hero-cell { display:flex; flex-direction:column; }
+.v3-stats-hero-val { font-size:20px; font-weight:900; color:#fff; font-variant-numeric:tabular-nums; }
+.v3-stats-hero-lbl { font-size:9px; font-weight:600; color:rgba(255,255,255,0.6); margin-top:1px; }
+.v3-world-wrap { margin:0 16px 14px; background:var(--v3-card); border-radius:var(--v3-r12); padding:12px; }
+.v3-world-title { font-size:13px; font-weight:700; color:var(--v3-white); margin-bottom:8px; }
+.v3-world-map { width:100%; height:90px; border-radius:8px; overflow:hidden; }
+.v3-world-map svg { width:100%; height:100%; }
+.v3-token-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 16px 14px; }
+.v3-token-card { background:var(--v3-card); border-radius:var(--v3-r12); padding:12px; display:flex; flex-direction:column; gap:4px; }
+.v3-token-icon { font-size:18px; margin-bottom:2px; }
+.v3-token-val { font-size:20px; font-weight:900; font-variant-numeric:tabular-nums; color:var(--v3-white); }
+.v3-token-lbl { font-size:10px; color:var(--v3-grey); }
+.v3-shipping-wrap { margin:0 16px 16px; background:var(--v3-card); border-radius:var(--v3-r12); padding:12px; }
+.v3-shipping-title { font-size:13px; font-weight:700; color:var(--v3-white); margin-bottom:10px; }
+.v3-bar-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.v3-bar-logo { font-size:14px; width:20px; text-align:center; flex-shrink:0; }
+.v3-bar-name { font-size:11px; color:var(--v3-grey); flex:1; }
+.v3-bar-track { width:80px; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; }
+.v3-bar-fill { height:100%; border-radius:3px; background:linear-gradient(to right,var(--v3-ocean),var(--v3-oceanL)); }
+/* deals */
+.v3-deal-hero { margin:0 16px 12px; border-radius:var(--v3-r16); overflow:hidden; cursor:pointer; }
+.v3-deal-hero-media { height:120px; position:relative; overflow:hidden; }
+.v3-deal-geo { width:100%; height:100%; background:linear-gradient(135deg,#1A3A5C 0%,#0A5C3A 100%); position:relative; overflow:hidden; }
+.v3-deal-geo::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse at 30% 60%,rgba(52,199,89,0.15) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(12,140,233,0.15) 0%,transparent 50%); }
+.v3-deal-geo-text { position:absolute; bottom:10px; left:12px; z-index:2; }
+.v3-deal-geo-label { font-size:16px; font-weight:900; color:#fff; }
+.v3-deal-geo-sub { font-size:11px; color:rgba(255,255,255,0.7); }
+.v3-deal-hero-meta { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--v3-card); border-top:0.5px solid var(--v3-border); }
+.v3-deal-price { font-size:16px; font-weight:800; color:var(--v3-white); }
+.v3-deal-row { display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--v3-card); border-radius:var(--v3-r10); margin:0 16px 6px; }
+.v3-deal-logo { font-size:22px; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.06); border-radius:8px; flex-shrink:0; }
+.v3-deal-info { flex:1; min-width:0; }
+.v3-deal-title { font-size:13px; font-weight:700; color:var(--v3-white); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.v3-deal-dest-row { display:flex; align-items:center; gap:5px; margin-top:3px; flex-wrap:wrap; }
+.v3-dest-chip { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:600; padding:2px 7px; border-radius:10px; background:rgba(12,140,233,0.16); color:var(--v3-oceanL); }
+.v3-deal-price-right { display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0; }
+.v3-deal-price-val { font-size:14px; font-weight:800; color:var(--v3-white); }
+.v3-badge-red { background:#E53E3E; color:#fff; }
+/* settings */
+.v3-settings-header { background:linear-gradient(160deg,var(--v3-navy) 0%,var(--v3-ocean) 100%); padding:16px 16px 20px; position:relative; overflow:hidden; }
+.v3-settings-header::after { content:''; position:absolute; right:-30px; bottom:-30px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.06); }
+.v3-settings-app-name { font-size:22px; font-weight:900; color:#fff; }
+.v3-settings-version { font-size:11px; color:rgba(255,255,255,0.6); margin-top:2px; margin-bottom:12px; }
+.v3-settings-stat-row { display:flex; gap:8px; }
+.v3-settings-chip { background:rgba(255,255,255,0.12); border-radius:10px; padding:5px 10px; font-size:11px; font-weight:700; color:#fff; }
+.v3-settings-section { margin:12px 16px 0; background:var(--v3-card); border-radius:var(--v3-r12); overflow:hidden; }
+.v3-settings-section-header { padding:8px 12px 6px; font-size:10px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; border-bottom:0.5px solid var(--v3-border); }
+.v3-settings-row { display:flex; align-items:center; padding:11px 12px; border-bottom:0.5px solid var(--v3-border); gap:10px; }
+.v3-settings-row:last-child { border-bottom:none; }
+.v3-settings-icon { width:28px; height:28px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+.v3-settings-row-label { flex:1; font-size:13px; font-weight:500; color:var(--v3-white); }
+.v3-settings-row-val { font-size:12px; color:var(--v3-grey); }
+.v3-settings-row-chevron { font-size:11px; color:var(--v3-grey2); }
+/* detail */
+.v3-detail { display:none; position:absolute; inset:0; background:var(--v3-bg); z-index:60; flex-direction:column; overflow-y:auto; scrollbar-width:none; }
+.v3-detail::-webkit-scrollbar { display:none; }
+.v3-detail.v3-open { display:flex; }
+.v3-detail-back { position:sticky; top:0; z-index:70; background:rgba(10,15,26,0.92); backdrop-filter:blur(12px); display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:0.5px solid var(--v3-border); cursor:pointer; flex-shrink:0; }
+.v3-detail-back-arrow { font-size:18px; color:var(--v3-ocean); line-height:1; }
+.v3-detail-back-label { font-size:15px; color:var(--v3-ocean); font-weight:500; }
+.v3-detail-geo { width:100%; height:210px; background:linear-gradient(135deg,#1A365D,#0C8CE9,#36A9F0); position:relative; overflow:hidden; flex-shrink:0; }
+.v3-detail-geo svg { position:absolute; inset:0; width:100%; height:100%; }
+.v3-detail-geo-scrim { position:absolute; inset:0; background:linear-gradient(to bottom,transparent 30%,rgba(0,0,0,0.75) 100%); z-index:2; }
+.v3-detail-geo-text { position:absolute; bottom:12px; left:16px; right:16px; z-index:3; }
+.v3-detail-geo-title { font-size:20px; font-weight:900; color:#fff; line-height:1.15; margin-bottom:4px; }
+.v3-detail-geo-sub { font-size:11px; color:rgba(255,255,255,0.75); }
+.v3-detail-body { padding:0 16px 24px; flex:1; }
+.v3-port-timeline { margin-top:14px; }
+.v3-port-stop { display:flex; gap:10px; margin-bottom:0; position:relative; }
+.v3-port-stop::before { content:''; position:absolute; left:7px; top:18px; bottom:-8px; width:1.5px; background:var(--v3-border); }
+.v3-port-stop:last-child::before { display:none; }
+.v3-port-dot-wrap { width:16px; flex-shrink:0; display:flex; justify-content:center; padding-top:3px; }
+.v3-port-dot { width:14px; height:14px; border-radius:50%; border:2px solid var(--v3-bg); }
+.v3-port-info { flex:1; padding-bottom:12px; }
+.v3-port-name { font-size:13px; font-weight:700; color:var(--v3-white); }
+.v3-port-times { font-size:11px; color:var(--v3-grey); margin-top:1px; }
+</style>
+
+<section class="v3-root">
+  <div class="v3-phone" id="v3Phone">
+    <div class="v3-island"></div>
+    <div class="v3-statusbar">
+      <span>9:41</span>
+      <span style="display:flex;gap:5px;align-items:center;">
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="white" opacity="0.9"><rect x="0" y="7" width="3" height="5" rx="0.8"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="0.8"/><rect x="9" y="2" width="3" height="10" rx="0.8"/><rect x="13.5" y="0" width="3" height="12" rx="0.8"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="white" stroke-width="1.5" opacity="0.9"><path d="M1 4.5C3.5 2 6.5 0.5 8 0.5s4.5 1.5 7 4"/><path d="M3.5 7C5 5.5 6.5 4.5 8 4.5s3 1 4.5 2.5"/><circle cx="8" cy="10" r="1.2" fill="white" stroke="none"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="white" stroke-opacity="0.9"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="white" opacity="0.9"/><path d="M22.5 4v4" stroke="white" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+    </div>
+
+    <div class="v3-screen">
+
+      <!-- S0: MEINE REISEN -->
+      <div class="v3-panel v3-visible" id="v3S0">
+        <div class="v3-navbar">
+          <div class="v3-navbar-title">Meine Reisen</div>
+          <div class="v3-navbar-sub" style="color:var(--v3-grey2);font-size:10px;margin-top:2px;">4 Kreuzfahrten · 6 Laender</div>
+        </div>
+        <div class="v3-strip">
+          <div class="v3-strip-cell"><span class="v3-strip-val" style="color:var(--v3-ocean);">4</span><span class="v3-strip-lbl">Reisen</span></div>
+          <div class="v3-strip-cell"><span class="v3-strip-val" style="color:var(--v3-oceanL);">6</span><span class="v3-strip-lbl">Laender</span></div>
+          <div class="v3-strip-cell" style="position:relative;">
+            <svg class="v3-strip-ring" viewBox="0 0 18 18"><circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2.5"/><circle cx="9" cy="9" r="7" fill="none" stroke="#34C759" stroke-width="2.5" stroke-dasharray="29 44" stroke-dashoffset="11" stroke-linecap="round" transform="rotate(-90 9 9)"/></svg>
+            <span class="v3-strip-val" style="color:var(--v3-sea);">34</span><span class="v3-strip-lbl">Seetage</span>
+          </div>
+          <div class="v3-strip-cell"><span class="v3-strip-val" style="color:var(--v3-sunset);">18</span><span class="v3-strip-lbl">Haefen</span></div>
+        </div>
+        <div class="v3-hero" id="v3HeroCard">
+          <div class="v3-hero-media">
+            <div class="v3-geo">
+              <svg viewBox="0 0 390 190" preserveAspectRatio="xMidYMid slice">
+                <circle cx="78" cy="152" r="266" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+                <circle cx="331" cy="28" r="226" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+                <polyline points="138,95 167,73 200,62 250,100 143,112 138,95" fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <circle cx="167" cy="73" r="3.5" fill="rgba(255,255,255,0.6)"/><circle cx="200" cy="62" r="3.5" fill="rgba(255,255,255,0.6)"/><circle cx="250" cy="100" r="3.5" fill="rgba(255,255,255,0.6)"/>
+                <circle cx="138" cy="95" r="7" fill="none" stroke="white" stroke-width="2"/><circle cx="138" cy="95" r="5" fill="#FF6B35"/>
+                <circle cx="143" cy="112" r="7" fill="none" stroke="white" stroke-width="2"/><circle cx="143" cy="112" r="5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="v3-hero-scrim"></div>
+            <div class="v3-hero-badge-tl"><span class="v3-badge v3-badge-sunset">In 42 Tagen</span></div>
+            <div class="v3-hero-text">
+              <div class="v3-hero-title">Westliches Mittelmeer</div>
+              <div class="v3-hero-sub">&#128739; Costa Cruises · Costa Toscana · 15. Sep – 23. Sep</div>
+            </div>
+          </div>
+          <div class="v3-hero-meta">
+            <span class="v3-caption">5 Laender · 6 Haefen · 8 Tage</span>
+            <span class="v3-caption v3-label-ocean" style="font-weight:600;">Details &#8594;</span>
+          </div>
+        </div>
+        <div class="v3-year-div"><span>2025</span></div>
+        <div class="v3-row">
+          <div class="v3-spine" style="background:var(--v3-ocean);"></div>
+          <div class="v3-row-text"><div class="v3-row-title">Norwegische Fjorde</div><div class="v3-row-meta">AIDA Cruises &#128674; · 14T · 3 Laender</div><div class="v3-row-ports">Bergen · Flaam · Geiranger</div></div>
+          <div class="v3-row-right">
+            <div class="v3-geo-thumb"><svg viewBox="0 0 34 34"><circle cx="6" cy="28" r="28" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1"/><polyline points="8,24 14,18 20,12 28,16" fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.2" stroke-dasharray="3 2"/><circle cx="8" cy="24" r="3.5" fill="none" stroke="white" stroke-width="1.2"/><circle cx="8" cy="24" r="2.5" fill="#FF6B35"/><circle cx="28" cy="16" r="3.5" fill="none" stroke="white" stroke-width="1.2"/><circle cx="28" cy="16" r="2.5" fill="#34C759"/></svg></div>
+            <div class="v3-row-rating">&#9733; 4.8</div>
+          </div>
+        </div>
+        <div class="v3-year-div"><span>2024</span></div>
+        <div class="v3-row">
+          <div class="v3-spine" style="background:var(--v3-ocean);"></div>
+          <div class="v3-row-text"><div class="v3-row-title">Oestliches Mittelmeer</div><div class="v3-row-meta">MSC Cruises &#128674; · 11T · 4 Laender</div><div class="v3-row-ports">Athen · Mykonos · Santorin</div></div>
+          <div class="v3-row-right">
+            <div class="v3-geo-thumb"><svg viewBox="0 0 34 34"><circle cx="28" cy="6" r="22" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1"/><polyline points="6,26 12,20 20,16 28,22" fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.2" stroke-dasharray="3 2"/><circle cx="6" cy="26" r="3.5" fill="none" stroke="white" stroke-width="1.2"/><circle cx="6" cy="26" r="2.5" fill="#FF6B35"/><circle cx="28" cy="22" r="3.5" fill="none" stroke="white" stroke-width="1.2"/><circle cx="28" cy="22" r="2.5" fill="#34C759"/></svg></div>
+            <div class="v3-row-rating">&#9733; 4.5</div>
+          </div>
+        </div>
+        <div style="height:20px;"></div>
+      </div>
+
+      <!-- S1: KARTE -->
+      <div class="v3-panel" id="v3S1">
+        <div style="flex:1;position:relative;overflow:hidden;">
+          <div class="v3-map-bg" style="height:100%;">
+            <svg viewBox="0 0 390 660" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;">
+              <rect width="390" height="660" fill="#1a2744"/>
+              <path d="M0,80 Q40,60 80,70 Q120,65 155,80 Q170,90 165,110 Q150,130 130,145 Q110,160 90,155 Q60,150 30,160 Q10,165 0,155 Z" fill="#2a3a5c" opacity="0.8"/>
+              <path d="M185,75 Q210,70 230,85 Q245,100 242,125 Q238,150 230,175 Q218,220 210,230 Q200,215 196,195 Q190,170 188,145 Q182,120 182,100 Z" fill="#2a3a5c" opacity="0.8"/>
+              <path d="M0,280 Q160,268 320,274 Q360,278 390,280 L390,340 L0,340 Z" fill="#2a3a5c" opacity="0.8"/>
+              <polyline id="v3Route0" points="112,178 148,148 190,138 232,185 118,215 112,178" fill="none" stroke="#0C8CE9" stroke-width="2.5" opacity="0.9"/>
+              <polyline points="268,168 285,158 295,165 310,175 268,168" fill="none" stroke="#FF6B35" stroke-width="2" opacity="0.6"/>
+              <!-- Barcelona start -->
+              <circle cx="112" cy="178" r="7" fill="none" stroke="white" stroke-width="1.8"/><circle cx="112" cy="178" r="5" fill="#FF6B35"/>
+              <circle cx="148" cy="148" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <circle cx="190" cy="138" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <circle cx="232" cy="185" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <circle cx="118" cy="215" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <!-- tap zones -->
+              <rect x="104" y="170" width="24" height="24" fill="transparent" onclick="v3OpenPin('Barcelona','Spanien','Ankunft: 15. Sep · Abfahrt: 23. Sep','8 Std','Sagrada Familia,Barceloneta')" style="cursor:pointer;"/>
+              <rect x="140" y="140" width="24" height="24" fill="transparent" onclick="v3OpenPin('Marseille','Frankreich','Ankunft: 16. Sep · Abfahrt: 17. Sep','10 Std','Chateau d If,Vieux-Port')" style="cursor:pointer;"/>
+              <rect x="182" y="130" width="24" height="24" fill="transparent" onclick="v3OpenPin('Genua','Italien','Ankunft: 17. Sep · Abfahrt: 18. Sep','9 Std','Altstadt,Porto Antico')" style="cursor:pointer;"/>
+              <rect x="224" y="177" width="24" height="24" fill="transparent" onclick="v3OpenPin('Neapel','Italien','Ankunft: 18. Sep · Abfahrt: 19. Sep','11 Std','Pompeji,Vesuv')" style="cursor:pointer;"/>
+              <rect x="110" y="207" width="24" height="24" fill="transparent" onclick="v3OpenPin('Palma de Mallorca','Spanien','Ankunft: 21. Sep · Abfahrt: 22. Sep','12 Std','Kathedrale La Seu,Altstadt')" style="cursor:pointer;"/>
+              <circle cx="356" cy="80" r="18" fill="rgba(13,18,27,0.85)"/>
+              <text x="356" y="85" text-anchor="middle" fill="white" font-size="14">&#8853;</text>
+            </svg>
+            <div class="v3-map-chips">
+              <div class="v3-chip v3-chip-ocean v3-chip-active" onclick="v3FocusRoute(0,this)"><span style="width:8px;height:8px;border-radius:50%;background:#0C8CE9;display:inline-block;"></span>W. Mittelmeer</div>
+              <div class="v3-chip v3-chip-sunset" onclick="v3FocusRoute(1,this)"><span style="width:8px;height:8px;border-radius:50%;background:#FF6B35;display:inline-block;"></span>Norw. Fjorde</div>
+              <div class="v3-chip" style="background:rgba(52,199,89,0.14);color:var(--v3-sea);border:1px solid rgba(52,199,89,0.28);" onclick="v3FocusRoute(2,this)"><span style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;"></span>O. Mittelmeer</div>
+            </div>
+            <div class="v3-sheet" id="v3PortSheet">
+              <div class="v3-sheet-handle"></div>
+              <div class="v3-sheet-title" id="v3SheetPortName">Neapel</div>
+              <div class="v3-sheet-sub" id="v3SheetPortCountry">Italien</div>
+              <div class="v3-sheet-row"><span class="v3-sheet-key">Aufenthalt</span><span class="v3-sheet-val" id="v3SheetTimes">18. Sep</span></div>
+              <div class="v3-sheet-row"><span class="v3-sheet-key">Dauer</span><span class="v3-sheet-val" id="v3SheetDuration">11 Std</span></div>
+              <div class="v3-excursion-wrap"><div class="v3-sheet-key" style="margin-bottom:5px;">Ausfluege</div><div id="v3SheetExcursions"><span class="v3-excursion-tag">Pompeji</span><span class="v3-excursion-tag">Vesuv</span></div></div>
+            </div>
+            <div class="v3-sheet-close" id="v3SheetClose" onclick="v3ClosePin()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2: MERKLISTE -->
+      <div class="v3-panel" id="v3S2">
+        <div class="v3-navbar"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="v3-navbar-title">Merkliste</div><span style="font-size:20px;color:var(--v3-ocean);cursor:pointer;">+</span></div></div>
+        <div class="v3-deal-hero" style="margin-top:12px;">
+          <div class="v3-deal-hero-media">
+            <div class="v3-deal-geo">
+              <svg viewBox="0 0 358 120" style="position:absolute;inset:0;width:100%;height:100%;"><circle cx="280" cy="10" r="80" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/><path d="M0,80 Q60,60 130,55 Q175,48 200,45" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/></svg>
+              <div class="v3-deal-geo-text"><div class="v3-deal-geo-label">Norwegische Fjorde</div><div class="v3-deal-geo-sub">AIDA Cruises · AIDAnova</div></div>
+            </div>
+            <div class="v3-hero-scrim" style="z-index:1;"></div>
+          </div>
+          <div class="v3-deal-hero-meta">
+            <div><span class="v3-deal-price">ab 899 EUR</span><div style="margin-top:2px;display:flex;gap:5px;"><span class="v3-dest-chip">&#127956; Fjorde</span><span class="v3-dest-chip">&#127475;&#127476; Norwegen</span></div></div>
+            <span class="v3-badge v3-badge-red" style="font-size:11px;padding:4px 10px;">-18%</span>
+          </div>
+        </div>
+        <div style="margin:4px 0 8px;padding:0 16px;"><div style="font-size:11px;color:var(--v3-grey);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Weitere Angebote</div></div>
+        <div class="v3-deal-row">
+          <div class="v3-deal-logo">&#128674;</div>
+          <div class="v3-deal-info"><div class="v3-deal-title">MSC Oestliche Karibik</div><div class="v3-deal-dest-row"><span class="v3-dest-chip">&#127796; Karibik</span><span class="v3-caption" style="color:var(--v3-grey2);">14T</span></div></div>
+          <div class="v3-deal-price-right"><div class="v3-deal-price-val">1.249 EUR</div><span class="v3-badge v3-badge-red" style="font-size:9px;padding:2px 6px;">-12%</span></div>
+        </div>
+        <div class="v3-deal-row">
+          <div class="v3-deal-logo">&#9972;</div>
+          <div class="v3-deal-info"><div class="v3-deal-title">Costa Mittelmeer Klassik</div><div class="v3-deal-dest-row"><span class="v3-dest-chip">&#127470;&#127481; Italien</span><span class="v3-dest-chip">&#127466;&#127480; Spanien</span></div></div>
+          <div class="v3-deal-price-right"><div class="v3-deal-price-val">749 EUR</div></div>
+        </div>
+        <div style="height:20px;"></div>
+      </div>
+
+      <!-- S3: STATISTIK -->
+      <div class="v3-panel" id="v3S3">
+        <div class="v3-navbar"><div class="v3-navbar-title">Statistik</div></div>
+        <div class="v3-stats-hero" style="margin-top:12px;">
+          <div class="v3-stats-hero-title">Reise-Bilanz</div>
+          <div class="v3-stats-hero-grid">
+            <div class="v3-stats-hero-cell"><span class="v3-stats-hero-val">4</span><span class="v3-stats-hero-lbl">Reisen</span></div>
+            <div class="v3-stats-hero-cell"><span class="v3-stats-hero-val">34</span><span class="v3-stats-hero-lbl">Seetage</span></div>
+            <div class="v3-stats-hero-cell"><span class="v3-stats-hero-val">18</span><span class="v3-stats-hero-lbl">Haefen</span></div>
+            <div class="v3-stats-hero-cell"><span class="v3-stats-hero-val">12.4k</span><span class="v3-stats-hero-lbl">sm</span></div>
+          </div>
+        </div>
+        <div class="v3-world-wrap">
+          <div class="v3-world-title">Besuchte Laender <span style="color:var(--v3-ocean);font-size:12px;">(6)</span></div>
+          <div class="v3-world-map">
+            <svg viewBox="0 0 340 100" preserveAspectRatio="xMidYMid meet" style="background:#101C2E;width:100%;height:100%;border-radius:8px;">
+              <rect width="340" height="100" fill="#101C2E" rx="8"/>
+              <path d="M10,10 Q25,5 38,12 Q45,18 42,30 Q38,42 30,48 Q20,52 12,45 Q5,38 8,25 Z" fill="#1C2D42" opacity="0.9"/>
+              <path d="M38,55 Q46,50 52,58 Q55,68 50,80 Q45,90 38,92 Q30,90 28,80 Q25,68 30,60 Z" fill="#1C2D42" opacity="0.9"/>
+              <path d="M108,28 Q118,24 126,28 Q130,34 126,40 Q120,44 112,42 Q106,38 108,28 Z" fill="#0C8CE9" opacity="0.85"/>
+              <path d="M118,20 Q128,17 136,22 Q140,28 136,34 Q130,36 122,34 Q116,30 118,20 Z" fill="#0C8CE9" opacity="0.85"/>
+              <path d="M136,22 Q142,20 146,26 Q148,34 144,44 Q141,50 138,48 Q134,42 133,34 Q132,28 136,22 Z" fill="#0C8CE9" opacity="0.85"/>
+              <path d="M128,8 Q135,5 140,10 Q142,16 138,20 Q133,22 128,18 Q124,14 128,8 Z" fill="#0C8CE9" opacity="0.85"/>
+              <path d="M152,30 Q158,28 162,32 Q164,38 160,42 Q155,44 152,40 Q149,36 152,30 Z" fill="#0C8CE9" opacity="0.85"/>
+              <path d="M138,8 Q155,5 170,12 Q175,20 168,28 Q162,32 152,30 Q146,26 142,20 Q138,20 136,22 Q128,18 128,8 Z" fill="#1C2D42" opacity="0.8"/>
+              <path d="M170,5 Q220,2 260,8 Q280,14 275,30 Q268,40 250,42 Q225,44 200,38 Q180,32 170,20 Z" fill="#1C2D42" opacity="0.8"/>
+              <path d="M112,50 Q140,46 162,50 Q170,58 165,74 Q158,86 148,90 Q135,92 125,86 Q115,78 112,66 Z" fill="#1C2D42" opacity="0.8"/>
+              <path d="M18,30 Q36,26 42,34 Q44,42 38,48 Q28,52 18,48 Q12,42 18,30 Z" fill="#0C8CE9" opacity="0.75"/>
+              <path d="M255,60 Q275,56 285,64 Q288,74 280,82 Q268,86 256,80 Q248,72 255,60 Z" fill="#1C2D42" opacity="0.8"/>
+              <rect x="250" y="88" width="8" height="8" rx="2" fill="#0C8CE9" opacity="0.85"/>
+              <text x="262" y="95" fill="rgba(255,255,255,0.5)" font-size="6" font-family="-apple-system,sans-serif">Besucht</text>
+            </svg>
+          </div>
+        </div>
+        <div class="v3-token-grid">
+          <div class="v3-token-card"><div class="v3-token-icon">&#127758;</div><div class="v3-token-val" style="color:var(--v3-oceanL);">6</div><div class="v3-token-lbl">Laender</div></div>
+          <div class="v3-token-card"><div class="v3-token-icon">&#11088;</div><div class="v3-token-val" style="color:#FBBF24;">4.7</div><div class="v3-token-lbl">&#216; Bewertung</div></div>
+          <div class="v3-token-card"><div class="v3-token-icon">&#128182;</div><div class="v3-token-val" style="color:var(--v3-sea);">4.280</div><div class="v3-token-lbl">Ausgaben (EUR)</div></div>
+          <div class="v3-token-card"><div class="v3-token-icon">&#9875;</div><div class="v3-token-val" style="color:var(--v3-sunset);">18</div><div class="v3-token-lbl">Haefen gesamt</div></div>
+        </div>
+        <div class="v3-shipping-wrap">
+          <div class="v3-shipping-title">Top Reedereien</div>
+          <div class="v3-bar-row"><div class="v3-bar-logo">&#128739;</div><div class="v3-bar-name">Costa Cruises</div><div class="v3-bar-track"><div class="v3-bar-fill" style="width:100%;"></div></div></div>
+          <div class="v3-bar-row"><div class="v3-bar-logo">&#9972;</div><div class="v3-bar-name">AIDA Cruises</div><div class="v3-bar-track"><div class="v3-bar-fill" style="width:75%;"></div></div></div>
+          <div class="v3-bar-row"><div class="v3-bar-logo">&#128674;</div><div class="v3-bar-name">MSC Cruises</div><div class="v3-bar-track"><div class="v3-bar-fill" style="width:50%;"></div></div></div>
+        </div>
+        <div style="height:20px;"></div>
+      </div>
+
+      <!-- S4: MEHR -->
+      <div class="v3-panel" id="v3S4">
+        <div class="v3-settings-header">
+          <div class="v3-settings-app-name">ShipTrip</div>
+          <div class="v3-settings-version">Version 1.5.1 · Build 8</div>
+          <div class="v3-settings-stat-row"><div class="v3-settings-chip">4 Reisen</div><div class="v3-settings-chip">6 Laender</div><div class="v3-settings-chip">34 Seetage</div></div>
+        </div>
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-oceanL);">Erscheinungsbild</div>
+          <div class="v3-settings-row"><div class="v3-settings-icon" style="background:rgba(12,140,233,0.15);">&#127763;</div><div class="v3-settings-row-label">Farbschema</div><div class="v3-settings-row-val">System</div><div class="v3-settings-row-chevron">›</div></div>
+        </div>
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-sea);">KI-Funktionen</div>
+          <div class="v3-settings-row"><div class="v3-settings-icon" style="background:rgba(52,199,89,0.15);">&#10024;</div><div class="v3-settings-row-label">Gemini API</div><div class="v3-settings-row-val" style="color:var(--v3-sea);">Aktiv</div><div class="v3-settings-row-chevron">›</div></div>
+        </div>
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-oceanL);">Synchronisation</div>
+          <div class="v3-settings-row"><div class="v3-settings-icon" style="background:rgba(12,140,233,0.12);">&#9729;&#65039;</div><div class="v3-settings-row-label">iCloud Sync</div><div class="v3-settings-row-val">Geplant</div></div>
+        </div>
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-grey);">Daten</div>
+          <div class="v3-settings-row"><div class="v3-settings-icon" style="background:rgba(255,255,255,0.07);">&#128190;</div><div class="v3-settings-row-label">Daten verwalten</div><div class="v3-settings-row-chevron">›</div></div>
+          <div class="v3-settings-row"><div class="v3-settings-icon" style="background:rgba(255,255,255,0.07);">&#8505;&#65039;</div><div class="v3-settings-row-label">Version</div><div class="v3-settings-row-val">1.5.1</div></div>
+        </div>
+        <div style="height:24px;"></div>
+      </div>
+
+      <!-- DETAIL OVERLAY -->
+      <div class="v3-detail" id="v3Detail">
+        <div class="v3-detail-back" id="v3DetailBack"><div class="v3-detail-back-arrow">&#8249;</div><div class="v3-detail-back-label">Meine Reisen</div></div>
+        <div class="v3-detail-geo">
+          <svg viewBox="0 0 390 210" style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice">
+            <defs><linearGradient id="v3DG" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1A365D"/><stop offset="60%" stop-color="#0C8CE9"/><stop offset="100%" stop-color="#36A9F0"/></linearGradient></defs>
+            <rect width="390" height="210" fill="url(#v3DG)"/>
+            <circle cx="78" cy="168" r="266" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+            <circle cx="312" cy="42" r="226" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+            <polyline points="90,140 148,102 206,88 270,138 96,165 90,140" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-dasharray="5 3"/>
+            <circle cx="148" cy="102" r="4" fill="rgba(255,255,255,0.65)"/><circle cx="206" cy="88" r="4" fill="rgba(255,255,255,0.65)"/><circle cx="270" cy="138" r="4" fill="rgba(255,255,255,0.65)"/>
+            <circle cx="90" cy="140" r="8" fill="none" stroke="white" stroke-width="2"/><circle cx="90" cy="140" r="5.5" fill="#FF6B35"/>
+            <circle cx="96" cy="165" r="8" fill="none" stroke="white" stroke-width="2"/><circle cx="96" cy="165" r="5.5" fill="#34C759"/>
+          </svg>
+          <div class="v3-detail-geo-scrim"></div>
+          <div class="v3-detail-geo-text">
+            <div class="v3-detail-geo-title">Westliches Mittelmeer</div>
+            <div class="v3-detail-geo-sub">&#128739; Costa Cruises · Costa Toscana · Sep 2026 · 8 Tage</div>
+          </div>
+        </div>
+        <div class="v3-detail-body">
+          <div class="v3-port-timeline">
+            <div style="font-size:13px;font-weight:700;color:var(--v3-white);margin-bottom:10px;">Route</div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#FF6B35;"></div></div><div class="v3-port-info"><div class="v3-port-name">Barcelona <span class="v3-badge v3-badge-sunset" style="font-size:9px;padding:1px 6px;margin-left:4px;">Start</span></div><div class="v3-port-times">Abfahrt: 15. Sep 2026, 18:00</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#0C8CE9;"></div></div><div class="v3-port-info"><div class="v3-port-name">Marseille</div><div class="v3-port-times">16. Sep · 08:00–18:00 · 10 Std</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#0C8CE9;"></div></div><div class="v3-port-info"><div class="v3-port-name">Genua</div><div class="v3-port-times">17. Sep · 07:00–16:00 · 9 Std</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#0C8CE9;"></div></div><div class="v3-port-info"><div class="v3-port-name">Neapel</div><div class="v3-port-times">18. Sep · 07:00–18:00 · 11 Std</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#36A9F0;"></div></div><div class="v3-port-info"><div class="v3-port-name">Seetag <span style="font-size:10px;color:var(--v3-grey);">· Adria</span></div><div class="v3-port-times">19. Sep</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#0C8CE9;"></div></div><div class="v3-port-info"><div class="v3-port-name">Palma de Mallorca</div><div class="v3-port-times">21. Sep · 08:00–20:00 · 12 Std</div></div></div>
+            <div class="v3-port-stop"><div class="v3-port-dot-wrap"><div class="v3-port-dot" style="background:#34C759;"></div></div><div class="v3-port-info"><div class="v3-port-name">Barcelona <span class="v3-badge v3-badge-sea" style="font-size:9px;padding:1px 6px;margin-left:4px;">Endpunkt</span></div><div class="v3-port-times">Ankunft: 23. Sep 2026, 07:00</div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /v3-screen -->
+
+    <!-- Tab Bar -->
+    <div class="v3-tabbar">
+      <div class="v3-tab v3-active" id="v3Tab0" onclick="v3Switch(0)"><div class="v3-tab-icon"><svg viewBox="0 0 24 24"><path d="M20 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2zm-8-8l-4 4h3v4h2v-4h3z"/></svg></div><div class="v3-tab-label">Reisen</div></div>
+      <div class="v3-tab" id="v3Tab1" onclick="v3Switch(1)"><div class="v3-tab-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div><div class="v3-tab-label">Karte</div></div>
+      <div class="v3-tab" id="v3Tab2" onclick="v3Switch(2)"><div class="v3-tab-icon"><svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg></div><div class="v3-tab-label">Merkliste</div></div>
+      <div class="v3-tab" id="v3Tab3" onclick="v3Switch(3)"><div class="v3-tab-icon"><svg viewBox="0 0 24 24"><path d="M5 20h2v-8H5v8zm4 0h2V4H9v16zm4 0h2v-4h-2v4zm4 0h2v-12h-2v12z"/></svg></div><div class="v3-tab-label">Statistik</div></div>
+      <div class="v3-tab" id="v3Tab4" onclick="v3Switch(4)"><div class="v3-tab-icon"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></div><div class="v3-tab-label">Mehr</div></div>
+    </div>
+  </div><!-- /v3-phone -->
+
+  <div style="margin-top:24px;text-align:center;font-family:-apple-system,system-ui,sans-serif;color:rgba(255,255,255,0.4);font-size:13px;line-height:1.6;max-width:393px;">
+    <strong style="color:#34C759;font-size:15px;">Explorer Geo-First</strong><br>
+    Dunkel · Canvas #0A0F1A · Geo-Thumbnails · Weltkarte<br>
+    <span style="font-size:11px;opacity:0.6;">Tippe Tabs · Hero-Karte · Karten-Pins</span>
+  </div>
+</section>
+
+<script>
+(function() {
+  'use strict';
+  var root = document.currentScript ? document.currentScript.closest('.frag-v3') : null;
+  if (!root) root = document.querySelector('.frag-v3.frag-visible') || document.querySelector('#soloV3') || document.querySelector('#sideV3');
+  if (!root) return;
+
+  var current = 0;
+
+  function v3Switch(idx) {
+    root.getElementById ? null : null; // unused — use root.querySelector
+    root.querySelector('#v3S' + current).classList.remove('v3-visible');
+    root.querySelector('#v3Tab' + current).classList.remove('v3-active');
+    current = idx;
+    root.querySelector('#v3S' + idx).classList.add('v3-visible');
+    root.querySelector('#v3Tab' + idx).classList.add('v3-active');
+    if (idx !== 0) {
+      var det = root.querySelector('#v3Detail');
+      if (det) det.classList.remove('v3-open');
+    }
+  }
+
+  // Wire tab onclick — override global v3Switch for this instance
+  [0,1,2,3,4].forEach(function(i) {
+    var tab = root.querySelector('#v3Tab' + i);
+    if (tab) tab.onclick = function() { v3Switch(i); };
+  });
+
+  // Detail
+  var heroCard   = root.querySelector('#v3HeroCard');
+  var detailEl   = root.querySelector('#v3Detail');
+  var detailBack = root.querySelector('#v3DetailBack');
+  function v3OpenDetail() { if (detailEl) detailEl.classList.add('v3-open'); }
+  function v3CloseDetail() { if (detailEl) detailEl.classList.remove('v3-open'); }
+  if (heroCard)   heroCard.addEventListener('click', v3OpenDetail);
+  if (detailBack) detailBack.addEventListener('click', v3CloseDetail);
+
+  // Port sheet
+  var portSheet  = root.querySelector('#v3PortSheet');
+  var sheetClose = root.querySelector('#v3SheetClose');
+
+  function v3OpenPin(name, country, times, duration, excursions) {
+    if (!portSheet) return;
+    root.querySelector('#v3SheetPortName').textContent    = name;
+    root.querySelector('#v3SheetPortCountry').textContent = country;
+    root.querySelector('#v3SheetTimes').textContent       = times;
+    root.querySelector('#v3SheetDuration').textContent    = duration;
+    var exWrap = root.querySelector('#v3SheetExcursions');
+    exWrap.innerHTML = '';
+    excursions.split(',').forEach(function(ex) {
+      var s = document.createElement('span');
+      s.className = 'v3-excursion-tag';
+      s.textContent = ex.trim();
+      exWrap.appendChild(s);
+    });
+    portSheet.classList.add('v3-open');
+    if (sheetClose) sheetClose.style.display = 'block';
+  }
+  function v3ClosePin() {
+    if (portSheet) portSheet.classList.remove('v3-open');
+    if (sheetClose) sheetClose.style.display = 'none';
+  }
+  if (sheetClose) sheetClose.addEventListener('click', v3ClosePin);
+
+  // Wire SVG tap zones
+  var tapZones = root.querySelectorAll('#v3S1 rect[onclick]');
+  tapZones.forEach(function(rect) {
+    var onclickStr = rect.getAttribute('onclick');
+    rect.removeAttribute('onclick');
+    rect.addEventListener('click', function() {
+      // parse args from original onclick string
+      var m = onclickStr.match(/v3OpenPin\((.+)\)$/);
+      if (!m) return;
+      var args = m[1].match(/'([^']*)'|"([^"]*)"/g).map(function(s) { return s.replace(/['"]/g,''); });
+      v3OpenPin(args[0], args[1], args[2], args[3], args[4]);
+    });
+  });
+
+  // Route chip focus
+  var mapChips = root.querySelectorAll('#v3S1 .v3-chip');
+  mapChips.forEach(function(c) {
+    c.onclick = function() {
+      mapChips.forEach(function(x) { x.classList.remove('v3-chip-active'); });
+      c.classList.add('v3-chip-active');
+    };
+  });
+
+  // Expose globals for inline onclick (SVG rects may still use them in side-mode)
+  window.v3Switch   = window.v3Switch   || v3Switch;
+  window.v3OpenPin  = window.v3OpenPin  || v3OpenPin;
+  window.v3ClosePin = window.v3ClosePin || v3ClosePin;
+})();
+</script>
+</template>
+
+</body>
+</html>

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projekt-Audit — ShipTrip — 2026-06-13</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #181b24; --surface-2: #1f2330; --border: #2a2f3e;
+    --text: #e8eaf0; --muted: #9aa1b5; --accent: #6c8cff;
+    --critical: #ff5a6a; --high: #ff9f43; --medium: #ffd166; --low: #7bd88f;
+    --ist: #ff5a6a; --soll: #4cd97b; --radius: 12px;
+    /* ShipTrip Brand (aus Color+Theme.swift) */
+    --ocean: #0C8CE9; --navy: #1A365D; --sunset: #FF6B35; --sea: #34C759;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 0 0 80px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.4rem; margin: 56px 0 16px; padding-top: 24px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 24px 0 10px; }
+  p { margin: 0 0 12px; color: var(--text); }
+  .muted { color: var(--muted); }
+  code { background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 0.85em; }
+  header { padding: 48px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .meta-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: 0.82rem; color: var(--muted); }
+  .meta-chip strong { color: var(--text); font-weight: 600; }
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; margin: 20px 0; }
+  .score-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .score-tile .domain { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .score-tile .score { font-size: 1.6rem; font-weight: 700; margin: 4px 0 2px; }
+  .score-tile .note { font-size: 0.84rem; color: var(--muted); }
+  .score-5, .score-4 { color: var(--low); } .score-3 { color: var(--medium); }
+  .score-2 { color: var(--high); } .score-1 { color: var(--critical); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .badge.critical { background: rgba(255,90,106,.15); color: var(--critical); }
+  .badge.high { background: rgba(255,159,67,.15); color: var(--high); }
+  .badge.medium { background: rgba(255,209,102,.15); color: var(--medium); }
+  .badge.low { background: rgba(123,216,143,.15); color: var(--low); }
+  details.finding { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 10px 0; overflow: hidden; }
+  details.finding summary { cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-weight: 600; list-style: none; }
+  details.finding summary::-webkit-details-marker { display: none; }
+  details.finding[open] summary { border-bottom: 1px solid var(--border); }
+  details.finding .body { padding: 14px 18px; font-size: 0.92rem; }
+  .finding .body dt { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 10px; }
+  .finding .body dd { margin: 2px 0 0; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0 30px; }
+  @media (max-width: 860px) { .pair { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; position: relative; }
+  .card.ist { border-top: 3px solid var(--ist); } .card.soll { border-top: 3px solid var(--soll); }
+  .card .tag { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card.ist .tag { color: var(--ist); } .card.soll .tag { color: var(--soll); }
+  .card h4 { margin: 6px 0 8px; font-size: 1.02rem; }
+  .card .evidence { font-size: 0.83rem; color: var(--muted); border-left: 2px solid var(--border); padding-left: 10px; margin-top: 10px; }
+  .pair-title { font-size: 1.1rem; font-weight: 700; margin: 28px 0 0; }
+  .factrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .fact { background: var(--surface-2); border-radius: 7px; padding: 3px 10px; font-size: 0.78rem; color: var(--muted); }
+  .fact strong { color: var(--text); }
+  .proto { margin-top: 14px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .proto .stage { position: relative; background: #0a0a0f; display: flex; align-items: center; justify-content: center; padding: 18px 0; min-height: 440px; }
+  .proto .caption { font-size: 0.72rem; color: var(--muted); padding: 6px 10px; border-top: 1px solid var(--border); }
+  .proto.diagram .stage { min-height: 160px; background: var(--surface-2); padding: 12px; display:block; }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
+  .tabs button { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 8px 18px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .direction { display: none; padding-top: 8px; } .direction.active { display: block; }
+  .leitidee { background: linear-gradient(135deg, rgba(108,140,255,.12), transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 16px 0; font-size: 1.02rem; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.07em; }
+  tr.recommended td { background: rgba(76,217,123,.07); }
+  .gate-ok { color: var(--soll); font-weight: 700; } .gate-skip { color: var(--medium); font-weight: 700; } .gate-fail { color: var(--critical); font-weight: 700; }
+  ul.good { list-style: none; } ul.good li { padding: 8px 0 8px 28px; position: relative; }
+  ul.good li::before { content: "✓"; position: absolute; left: 0; color: var(--soll); font-weight: 800; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; margin: 24px 0; font-size: 0.9rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; margin-right: 18px; }
+  ul.plain { margin: 0 0 12px 20px; } ul.plain li { margin: 4px 0; }
+
+  /* ===== iPhone Mockup Komponente ===== */
+  .device { width: 215px; height: 442px; background: #11131a; border-radius: 34px; padding: 7px; box-shadow: 0 0 0 2px #2c3142, 0 18px 40px rgba(0,0,0,.5); position: relative; }
+  .device .notch { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 78px; height: 18px; background: #11131a; border-radius: 0 0 12px 12px; z-index: 5; }
+  .scr { width: 100%; height: 100%; border-radius: 27px; overflow: hidden; position: relative; font-size: 9px; line-height: 1.3; }
+  .scr * { box-sizing: border-box; }
+  .statusbar { height: 20px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px 0 16px; font-size: 8px; font-weight: 700; }
+  .navbar { padding: 4px 12px 6px; display:flex; align-items:flex-end; justify-content:space-between; }
+  .navbar .title { font-size: 15px; font-weight: 800; letter-spacing: -.3px; }
+  .tabbar { position: absolute; bottom: 0; left: 0; right: 0; height: 42px; display: flex; border-top: .5px solid rgba(0,0,0,.12); }
+  .tabbar .tb { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:6.5px; }
+  .tabbar .ic { width:15px; height:15px; display:flex; align-items:center; justify-content:center; font-size:12px; line-height:1; }
+  /* light theme defaults */
+  .scr.light { background: #f2f2f7; color: #1c1c1e; }
+  .scr.light .statusbar { color:#1c1c1e; }
+  .scr.light .navbar .title { color:#1c1c1e; }
+  .scr.light .tabbar { background:#f8f8fb; }
+  .scr.light .tabbar .tb { color:#9aa0aa; } .scr.light .tabbar .tb.on { color: var(--ocean); }
+  .cardlist { padding: 4px 12px; overflow:hidden; }
+  .ccard { background:#fff; border-radius: 12px; margin-bottom: 9px; overflow:hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .chero { height: 86px; background:#dfe1e6; display:flex; align-items:center; justify-content:center; color:#b3b7c0; font-size:26px; position:relative;}
+  .cbody { padding: 7px 9px 9px; }
+  .crow { display:flex; align-items:center; justify-content:space-between; }
+  .ctitle { font-weight: 800; font-size: 10px; color:#1c1c1e; }
+  .cmeta { color:#8a8f99; font-size: 8px; margin-top:2px; display:flex; align-items:center; gap:3px;}
+  .pill { font-size:6.5px; font-weight:800; padding:2px 6px; border-radius:99px; }
+  .pill.rate { background: rgba(255,200,0,.18); color:#d9930a; }
+  .pill.soon { background: rgba(12,140,233,.16); color: var(--ocean); }
+  .swatch { font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;">Projekt-Audit</p>
+    <h1>ShipTrip 🚢 <span class="muted" style="font-size:1rem;">v1.4.1</span></h1>
+    <div class="meta-row">
+      <span class="meta-chip">Datum <strong>13.06.2026</strong></span>
+      <span class="meta-chip">Modus <strong>Final-Gate (Codex + Gemini Gegenleser)</strong></span>
+      <span class="meta-chip">Tiefe <strong>Voll-Audit</strong></span>
+      <span class="meta-chip">Richtungen <strong>3</strong></span>
+      <span class="meta-chip">Stack <strong>SwiftUI · SwiftData · iOS 18.5</strong></span>
+    </div>
+    <p class="muted" style="margin-top:14px;"><strong style="color:var(--text)">Briefing (Andre):</strong> Standard-Audit plus Schwerpunkte <strong style="color:var(--text)">Geld verdienen</strong> (Monetarisierung), <strong style="color:var(--text)">moderneres/hochwertigeres Aussehen</strong> und <strong style="color:var(--text)">einfachere Bedienung</strong>. UI/UX-Verbesserungen in der App visualisiert (IST/SOLL) in 3 Richtungen.</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#summary">Summary</a><a href="#scorecard">Scorecard</a><a href="#story">User Story</a><a href="#good">Was gut läuft</a><a href="#findings">Befunde</a><a href="#money">Monetarisierung</a><a href="#improvements">UI/UX-Richtungen</a><a href="#roadmap">Roadmap</a><a href="#gates">Gate-Log</a><a href="#appendix">Anhang</a>
+  </nav>
+
+  <!-- EXEC SUMMARY -->
+  <h2 id="summary">Executive Summary</h2>
+  <p>ShipTrip ist eine <strong>solide gebaute, aber unfertige und noch nicht monetarisierte</strong> Kreuzfahrt-Tagebuch-App. Das technische Fundament ist für ein Ein-Personen-Projekt überdurchschnittlich sauber: klare Datenmodelle, sichere Schlüssel-Speicherung, eine echte Stärke mit ~1.800 hinterlegten Häfen und eine durchdachte KI-Erfassung. Die App funktioniert — aber sie verdient kein Geld, sie sieht aus „wie jede iOS-App von der Stange", und an einigen Stellen verspricht sie mehr, als sie hält.</p>
+  <p><strong>Die drei wichtigsten Dinge, die du wissen solltest:</strong></p>
+  <ul class="plain">
+    <li><strong>1. Ein beworbenes Feature ist tot.</strong> „Push-Benachrichtigungen vor Reisestart" steht im Store-Text und in den Einstellungen — aber im Code wird <em>nie</em> eine Erinnerung geplant. Der Nutzer schaltet sie ein und es passiert nichts. Das ist der schwerwiegendste Befund und ein App-Store-Ablehnungsrisiko.</li>
+    <li><strong>2. Es gibt keinen Weg, Geld zu verdienen.</strong> Kein Abo, kein Kauf, keine Premium-Funktion — und die teure KI-Funktion zahlt der Nutzer indirekt selbst, indem er einen eigenen Google-Schlüssel besorgen muss. Das ist gleichzeitig die größte verschenkte Chance und das größte Hindernis für normale Nutzer.</li>
+    <li><strong>3. Das Aussehen ist funktional, aber austauschbar.</strong> Emojis als Reederei-Logos (💋, 🎩, 👑), graue Platzhalter-Kacheln und reine Apple-Standardoptik lassen die App eher nach Hobby- als nach Premium-Produkt wirken — genau dein Eindruck „altbacken".</li>
+  </ul>
+  <p style="background:rgba(76,217,123,.08);border-left:3px solid var(--soll);padding:10px 14px;border-radius:8px;"><strong>Kurzfassung Geld verdienen:</strong> Heute <strong>0 € Umsatz</strong> und keine technische Grundlage dafür. Empfehlung: <strong>Freemium-Abo</strong> (Gratis-Basis + Premium ca. 3,99 €/Monat oder 19,99 €/Jahr), das die teure KI-Funktion und ein Cloud-Backup als Premium bündelt — Details im Abschnitt Monetarisierung.</p>
+  <p><strong>Was du entscheiden musst:</strong> (a) Welche der drei UI/UX-Richtungen unten passt zu deiner Ambition — behutsame Politur, ein Premium-Reisetagebuch, oder ein kompletter Neuanlauf als aktiver Reise-Begleiter? (b) Willst du Monetarisierung als eigenständiges Arbeitspaket starten (Empfehlung: ja, gekoppelt an Richtung 2)? Die kaputte Benachrichtigung und die fehlenden Tests sollten unabhängig von der Richtung zuerst repariert werden.</p>
+
+  <!-- SCORECARD -->
+  <h2 id="scorecard">Scorecard</h2>
+  <p class="muted" style="margin-bottom:4px;"><strong style="color:var(--text);font-size:1.05rem;">Reifegrad gesamt: 2,6 / 5</strong> — technisch solide gebaut, aber es fehlen Geschäftsmodell, Tests und visuelle Politur.</p>
+  <div class="scorecard">
+    <div class="score-tile"><div class="domain">Architektur</div><div class="score score-3">3 / 5</div><div class="note">Saubere Modelle, aber Singletons & Redraw-Hacks, keine Sync-Schicht</div></div>
+    <div class="score-tile"><div class="domain">Code-Qualität</div><div class="score score-3">3 / 5</div><div class="note">Lesbar & konsistent, aber toter Code + Debug-Logs</div></div>
+    <div class="score-tile"><div class="domain">Tests</div><div class="score score-1">1 / 5</div><div class="note">Nur eine leere Platzhalter-Testfunktion</div></div>
+    <div class="score-tile"><div class="domain">Doku</div><div class="score score-4">4 / 5</div><div class="note">Umfangreich & gepflegt, überzeichnet aber Features</div></div>
+    <div class="score-tile"><div class="domain">UI / UX</div><div class="score score-2">2 / 5</div><div class="note">Funktional, aber dated; Emoji-Branding, leere Heros</div></div>
+    <div class="score-tile"><div class="domain">Security / Privacy</div><div class="score score-3">3 / 5</div><div class="note">Keychain gut, aber Buchungsdaten im Log, Key in URL</div></div>
+    <div class="score-tile"><div class="domain">Performance</div><div class="score score-3">3 / 5</div><div class="note">OK im Kleinen; Foto-Decoding skaliert schlecht</div></div>
+    <div class="score-tile"><div class="domain">Monetarisierung</div><div class="score score-1">1 / 5</div><div class="note">Nicht vorhanden — kein Umsatzpfad</div></div>
+    <div class="score-tile"><div class="domain">DX / Wartbarkeit</div><div class="score score-3">3 / 5</div><div class="note">Gute Docs, aber keine Tests/CI, keine Demo-Daten</div></div>
+  </div>
+
+  <!-- USER STORY -->
+  <h2 id="story">User Story &amp; Produkt-Einordnung</h2>
+  <p><strong>Wer ist der Nutzer?</strong> Ein Kreuzfahrt-Fan, der seine Reisen <em>dokumentieren und erinnern</em> will — ähnlich einem Reisetagebuch oder einer Briefmarken-Sammlung. Heute deckt ShipTrip vor allem das <strong>„Danach"</strong> ab (Reise erfassen, Route auf Karte, Statistik) und ein bisschen das <strong>„Davor"</strong> (Angebote notieren, Erinnerung — die aber nicht feuert). Das <strong>„Währenddessen"</strong> (an Bord, am Hafen) fehlt komplett.</p>
+  <p><strong>Die zentrale Reibung in der heutigen Story:</strong> Die App ist ein <em>Eingabe-Werkzeug</em>, kein <em>Erlebnis</em>. Der erste Eindruck eines neuen Nutzers ist ein leerer Bildschirm mit einem „+". Der größte Trumpf — die KI-Erfassung, die eine Buchungsbestätigung in Sekunden einträgt — ist hinter einer technischen Hürde versteckt: Der Nutzer muss sich bei Google einen API-Schlüssel besorgen und einfügen. Das schaffen vielleicht 2 von 100 Nutzern. Damit verpufft das stärkste Verkaufsargument genau dort, wo es wirken müsste.</p>
+  <p><strong>Produkt-Lücken gegenüber der Erwartungshaltung:</strong> „Angebote" suggeriert echte Deals, ist aber nur ein manueller Notizblock. „iCloud-Sync" ist als „geplant" markiert — heißt praktisch: Geht das Handy verloren, sind alle Reise-Erinnerungen weg (nur manueller JSON-Export schützt). Für eine „Erinnerungs"-App ist fehlende Datensicherung ein Vertrauensbruch.</p>
+
+  <!-- GUT -->
+  <h2 id="good">Was gut läuft</h2>
+  <ul class="good">
+    <li><strong>Saubere Datenmodelle</strong> mit korrekten Lösch-Regeln (<code>@Relationship(deleteRule: .cascade)</code>) und ausgelagerter Bildspeicherung (<code>@Attribute(.externalStorage)</code> in <code>Photo.swift</code>, <code>Port.swift</code>).</li>
+    <li><strong>~1.800 Häfen als echtes Alleinstellungsmerkmal</strong> (<code>PortSuggestion.swift</code>, 2.233 Zeilen) — Autocomplete plus automatische Koordinaten-Zuordnung. Das hat kaum ein Wettbewerber so gepflegt.</li>
+    <li><strong>Schlüssel sicher in der Keychain</strong> (<code>KeychainService.swift</code>), nicht in UserDefaults — das ist korrekt gemacht.</li>
+    <li><strong>Durchdachter KI-Prompt</strong> (<code>GeminiService.swift</code>): erkennt Seetage, leitet die Reederei aus dem Schiffsnamen ab, säubert Markdown aus der Antwort.</li>
+    <li><strong>Native Komponenten konsequent genutzt</strong>: Swift Charts (Statistik), MapKit (Routen), <code>ContentUnavailableView</code>, <code>PhotosPicker</code> — kein unnötiger Fremd-Code.</li>
+    <li><strong>Ausführliche, gepflegte Dokumentation</strong>: README, ARCHITECTURE, MODELS, SETUP und ein sauber im „Keep a Changelog"-Format geführtes CHANGELOG.</li>
+    <li><strong>Ökosystem-Denken</strong>: Import ist kompatibel zum Web-App-Export — zeigt, dass plattformübergreifend gedacht wurde.</li>
+  </ul>
+
+  <!-- BEFUNDE -->
+  <h2 id="findings">Befunde</h2>
+
+  <details class="finding" open>
+    <summary><span class="badge critical">Critical</span> Benachrichtigungen werden nie geplant — beworbenes Feature ist toter Code</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>NotificationService.swift:41–133</code> (definiert) · <code>CruiseFormView.saveCruise()</code> / gesamtes Projekt (kein Aufruf)</dd>
+      <dt>Evidenz</dt><dd>Eine projektweite Suche nach <code>scheduleAllReminders</code> / <code>scheduleCruiseReminder</code> / <code>scheduleDepartureReminder</code> findet die Funktionen <em>nur</em> in ihrer eigenen Definition. Beim Speichern einer Reise wird keine Erinnerung geplant. Die Settings-Schalter (<code>notifyBeforeCruise</code>, <code>reminderDaysBefore</code>) schreiben nur in AppStorage; nichts liest sie aus, um tatsächlich eine Benachrichtigung zu setzen.</dd>
+      <dt>Auswirkung</dt><dd>Der Store-Text und die Einstellungen versprechen Erinnerungen vor der Reise. Der Nutzer aktiviert sie — und es passiert nie etwas. Funktionaler Totalausfall eines beworbenen Features; potenzieller App-Store-Ablehnungsgrund (Guideline 2.3.1, „falsche Funktionsbehauptung").</dd>
+      <dt>Empfehlung</dt><dd><code>scheduleAllReminders(for:)</code> in <code>saveCruise()</code> (neu &amp; bearbeiten) aufrufen und <code>removeReminders(for:)</code> beim Löschen; die Settings-Werte (<code>reminderDaysBefore</code>, Toggles) tatsächlich als Parameter durchreichen. Plus ein Unit-/Integrationstest, der das Setzen verifiziert.</dd>
+      <dt>Konfidenz</dt><dd>Hoch (durch Grep verifiziert)</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> Keine Tests — eine einzige leere Platzhalter-Funktion</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTripTests/ShipTripTests.swift</code> (16 Zeilen, leerer <code>example()</code>-Test)</dd>
+      <dt>Evidenz</dt><dd>Der gesamte Testumfang ist <code>@Test func example() async throws { }</code> — ohne Assertions. Keine Tests für die fehleranfälligsten Stellen: handgeschriebener ZIP-Parser, Datums-Parsing, JSON-Extraktion der KI, Duplikat-Erkennung beim Import.</dd>
+      <dt>Auswirkung</dt><dd>Jede Änderung ist ein Blindflug. Genau die Logik mit dem höchsten Bruchrisiko (Byte-genaues ZIP-Parsing in <code>ExportImportService</code>) ist ungetestet.</dd>
+      <dt>Empfehlung</dt><dd>Mit Swift Testing eine Basis aufbauen: Export→Import-Roundtrip, Datums-/Currency-Parsing, <code>discountPercent</code>/<code>duration</code>-Berechnungen, <code>findBestMatch</code>-Hafensuche. Ziel zunächst die Services &amp; Model-Computed-Properties, nicht die Views.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> KI-Erfassung erfordert eigenen Google-API-Schlüssel — Top-Feature für 98% unerreichbar</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>SettingsView.swift:36–69</code>, <code>GeminiService.swift</code>, <code>CruiseFormView.swift:68</code></dd>
+      <dt>Evidenz</dt><dd>Die KI-Sektion erscheint nur, wenn <code>GeminiService.shared.isConfigured</code> true ist — und das setzt voraus, dass der Nutzer bei <code>aistudio.google.com</code> selbst einen Key erstellt und einfügt. Direkter API-Call vom Gerät, kein Backend-Proxy.</dd>
+      <dt>Auswirkung</dt><dd>Das stärkste Verkaufsargument („Buchungsbestätigung per KI") ist hinter einer technischen Hürde versteckt, die normale Nutzer nicht nehmen. Gleichzeitig blockiert genau dieses „Bring-your-own-Key"-Design den naheliegendsten Monetarisierungs-Hebel (verwaltete KI als Premium-Funktion).</dd>
+      <dt>Empfehlung</dt><dd>Mittelfristig: schlanker Backend-Proxy (z. B. serverlose Funktion), der den Key hält und KI-Importe als Premium-Funktion freischaltet (Kontingent/Abo). Kurzfristig: Onboarding, das den Mehrwert zeigt, bevor der Key verlangt wird. Siehe Monetarisierung &amp; Richtung 2.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge high">High</span> Fotos werden bei jedem Neuzeichnen voll dekodiert — skaliert schlecht</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseCardView.swift:24–25</code>, <code>CruiseDetailView.swift:107–110</code>, <code>ExportImportService.swift:118–123</code></dd>
+      <dt>Evidenz</dt><dd>In der Liste wird pro Karte und pro Redraw <code>UIImage(data: firstPhoto.imageData)</code> in voller Auflösung dekodiert; es gibt kein Downsampling/Thumbnail. Beim JSON-Export werden alle Fotos voll als Base64 in <em>eine</em> Datei geschrieben.</dd>
+      <dt>Auswirkung</dt><dd>Bei vielen Reisen mit mehreren Fotos: Scroll-Ruckler und hoher Speicherbedarf. Großer Export kann sehr groß/langsam werden.</dd>
+      <dt>Empfehlung</dt><dd>Beim Speichern ein verkleinertes Thumbnail (z. B. max. 600px) zusätzlich ablegen und in Listen nutzen; Downsampling via <code>CGImageSourceCreateThumbnailAtIndex</code>. Export ggf. als ZIP mit ausgelagerten Bildern statt Base64-in-JSON.</dd>
+      <dt>Konfidenz</dt><dd>Mittel (statisch beobachtet, nicht im Profiler gemessen)</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Buchungsdaten landen im Klartext-Log (<code>print</code>)</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>GeminiService.swift:115</code> (<code>print("DEBUG: Extracted JSON: …")</code>), <code>CruiseFormView.swift:369</code></dd>
+      <dt>Evidenz</dt><dd>Die extrahierten Buchungsdaten (inkl. Buchungsnummer, Kabine) werden per <code>print</code> ausgegeben.</dd>
+      <dt>Auswirkung</dt><dd>Persönliche/sensible Daten im Geräte-Log; unnötiges Rauschen im Release-Build. Datenschutz- und Professionalitäts-Makel.</dd>
+      <dt>Empfehlung</dt><dd>Alle <code>print</code>-Aufrufe entfernen oder durch <code>os.Logger</code> mit <code>.debug</code>-Level und <code>privacy: .private</code> ersetzen; im Release rauskompilieren.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Kein iCloud-Backup — Reise-Erinnerungen sind gerätegebunden</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTripApp.swift:35–36</code> (CloudKit auskommentiert), <code>SettingsView.swift:71–80</code> („Geplant"), <code>ShipTrip.entitlements</code> (kein CloudKit)</dd>
+      <dt>Evidenz</dt><dd><code>ModelConfiguration</code> ohne CloudKit; Entitlements enthalten nur App-Sandbox + Datei-Lesezugriff. Einziger Schutz ist der manuelle JSON-Export.</dd>
+      <dt>Auswirkung</dt><dd>Geräteverlust/Defekt = Totalverlust aller erfassten Reisen. Für eine „Erinnerungs"-App ein zentrales Vertrauens- und Retention-Risiko.</dd>
+      <dt>Empfehlung</dt><dd>SwiftData-CloudKit-Sync aktivieren (privater Container) — naheliegend, da Modelle bereits CloudKit-kompatibel sind. Eignet sich zudem als Premium-Funktion. ADR empfehlenswert (Sync-Konflikte, Schema-Migration).</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> „Angebote"-Tab ist nur ein manueller Notizblock</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>DealsView.swift</code> (gesamt)</dd>
+      <dt>Evidenz</dt><dd>Der Tab „Angebote" enthält ausschließlich ein manuelles Formular (Titel, Preis, Rabatt, Link). Es gibt keine Deal-Quelle, kein Feed, keine Aktualisierung.</dd>
+      <dt>Auswirkung</dt><dd>Das Wort „Angebote" weckt eine Erwartung (echte Deals), die nicht erfüllt wird — trägt zum Eindruck „unklar/kompliziert" bei und belegt einen von fünf wertvollen Tab-Plätzen mit dünnem Nutzen.</dd>
+      <dt>Empfehlung</dt><dd>Entweder zu „Merkliste/Wunschreisen" umbenennen (ehrliche Erwartung) oder zu echten Deals ausbauen (Affiliate-Feed — zugleich Monetarisierungs-Chance, siehe unten).</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Hart codierter Euro &amp; nur Deutsch — keine Lokalisierung</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd>z. B. <code>Expense.swift:91</code>, <code>Deal.swift:81</code>, <code>CruiseDetailView.swift:243</code> (<code>.currency(code: "EUR")</code>); alle UI-Strings direkt im Code auf Deutsch</dd>
+      <dt>Evidenz</dt><dd>Währung ist überall fest „EUR". Es gibt keine <code>Localizable.strings</code>; sämtliche Labels sind deutschsprachige String-Literale.</dd>
+      <dt>Auswirkung</dt><dd>Nicht-Euro-Nutzer sehen falsche Währung; internationale Skalierung (und damit der adressierbare Markt für Monetarisierung) ist blockiert. Kreuzfahrt ist ein globaler, englisch-/US-lastiger Markt.</dd>
+      <dt>Empfehlung</dt><dd>Währung pro Reise/Ausgabe wählbar machen oder an die Geräte-Locale binden; UI-Strings nach <code>String(localized:)</code> migrieren, mit Englisch als zweiter Sprache beginnen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Redraw-Hack gegen SwiftData (<code>refreshID = UUID()</code>)</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseDetailView.swift:24,54,328–330</code></dd>
+      <dt>Evidenz</dt><dd>Die Detailansicht erzwingt Neuzeichnen über <code>.id(refreshID)</code> mit neuer UUID, statt sich auf SwiftDatas Reaktivität zu verlassen — vermutlich um nach Sheet-Dismiss Aktualisierungen zu sehen.</dd>
+      <dt>Auswirkung</dt><dd><strong>Klartext:</strong> Die App baut den ganzen Bildschirm mit roher Gewalt neu auf, statt sich automatisch zu aktualisieren — dabei gehen Scroll-Position und Animationen verloren. Funktioniert, ist aber fragil und unnötig teuer.</dd>
+      <dt>Empfehlung</dt><dd>Ursache beheben: Häfen/Ausgaben über <code>@Query</code> bzw. die <code>@Bindable</code>-Relationship beobachten, statt der <code>id()</code>-Holzhammer-Methode.</dd>
+      <dt>Konfidenz</dt><dd>Mittel</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Import überspringt fehlerhafte Reisen stillschweigend — möglicher unbemerkter Datenverlust</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift:219–222</code></dd>
+      <dt>Evidenz</dt><dd>Scheitert das Datums-Parsing einer Reise (<code>guard let startDate … endDate … else { continue }</code>), wird die Reise per <code>continue</code> übersprungen — ohne Zählung, ohne Hinweis. Die Erfolgsmeldung zeigt nur <code>importedCount</code>; übersprungene Einträge tauchen nirgends auf.</dd>
+      <dt>Auswirkung</dt><dd><strong>Klartext:</strong> Importiert der Nutzer eine Datei mit z. B. 10 Reisen, von denen 3 ein abweichendes Datumsformat haben, erscheinen kommentarlos nur 7 — der Nutzer denkt, alles sei da. Stiller Teil-Datenverlust bei einer Datensicherungs-Funktion.</dd>
+      <dt>Empfehlung</dt><dd>Übersprungene/fehlgeschlagene Einträge zählen und in der Abschlussmeldung ausweisen („7 importiert, 3 übersprungen — Datumsformat"). <em>Von Codex (Final-Gate) ergänzt.</em></dd>
+      <dt>Konfidenz</dt><dd>Hoch (Code gelesen &amp; verifiziert)</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge low">Low</span> KI-Import kann Enddatum vor Startdatum setzen (keine Validierung)</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseFormView.swift:418–428</code> (KI-Pfad) vs. <code>:86</code> (manueller DatePicker)</dd>
+      <dt>Evidenz</dt><dd>Das manuelle Formular verhindert das Problem (<code>DatePicker(… in: startDate…)</code>). Der KI-Import setzt <code>startDate</code>/<code>endDate</code> jedoch direkt aus den geparsten Strings, und <code>saveCruise()</code> prüft die Reihenfolge nicht. Liefert die KI ein Enddatum vor dem Startdatum, wird es gespeichert.</dd>
+      <dt>Auswirkung</dt><dd>Negative Dauer (<code>Cruise.duration</code>) und mögliche Darstellungsfehler. Schmaler Pfad, aber real.</dd>
+      <dt>Empfehlung</dt><dd>In <code>saveCruise()</code> bzw. nach dem KI-Import ein Guard ergänzen, das <code>endDate &gt;= startDate</code> erzwingt (z. B. Enddatum auf Startdatum anheben). <em>Von Codex (Final-Gate) ergänzt.</em></dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Tote Settings &amp; Links</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>SettingsView.swift:116</code> (GitHub-Link → bare <code>https://github.com</code>), <code>SettingsView.swift:504–521</code> (Developer „API Override" → <code>apiOverride</code> wird nirgends gelesen)</dd>
+      <dt>Evidenz</dt><dd>GitHub-Link zeigt auf die Startseite statt aufs Repo; das versteckte Developer-Feld schreibt einen Wert, den keine Stelle verwendet.</dd>
+      <dt>Auswirkung</dt><dd>Kleine Vertrauens-/Aufräum-Themen; toter Code.</dd>
+      <dt>Empfehlung</dt><dd>Link korrigieren oder entfernen; ungenutztes Developer-Override entfernen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Emoji als Reederei-Logos wirken unprofessionell</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShippingLine.swift:18–71</code> (z. B. AIDA = 💋, Cunard = 🎩, Royal Caribbean = 👑)</dd>
+      <dt>Evidenz</dt><dd>Markenidentität wird über generische Emojis abgebildet, die mit den echten Marken nichts zu tun haben.</dd>
+      <dt>Auswirkung</dt><dd>Trägt direkt zum „altbacken/Hobby"-Eindruck bei (Briefing).</dd>
+      <dt>Empfehlung</dt><dd>Durch farbige Monogramm-Chips (Initialen in Markenfarbe) oder echte Logo-Assets ersetzen. Siehe Richtung 1.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Doppelte Route-Farb-Arrays &amp; uneinheitliche Hafen-Icons</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>Color+Theme.swift:41</code> vs. <code>MapView.swift:44</code> (eigene Kopie); Hafen-Pin mal orange (<code>CruiseFormView</code>), mal blau (<code>CruiseDetailView</code>), mal Routenfarbe (<code>MapView</code>)</dd>
+      <dt>Evidenz</dt><dd>MapView definiert ein eigenes <code>routeColors</code> statt das zentrale aus <code>Color+Theme</code> zu nutzen; Pin-Farben divergieren je View.</dd>
+      <dt>Auswirkung</dt><dd>Visuelle Inkonsistenz; Drift-Risiko bei Farbänderungen.</dd>
+      <dt>Empfehlung</dt><dd>Eine zentrale Farbquelle nutzen; Hafen-Icon/-Farbe vereinheitlichen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Instabile IDs beim Export erschweren künftige Synchronisation</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift:91,106,126</code></dd>
+      <dt>Evidenz</dt><dd>Bei jedem Export werden neue UUIDs erzeugt (<code>"cruise_\(UUID())"</code>), statt eine stabile Kennung pro Objekt zu speichern. Duplikat-Erkennung läuft heuristisch über Titel+Datum+Schiff.</dd>
+      <dt>Auswirkung</dt><dd>Ein-/Ausexport ist nicht id-stabil; spätere echte Sync/Merge-Mechaniken werden dadurch erschwert, Duplikate sind möglich.</dd>
+      <dt>Empfehlung</dt><dd>Stabile <code>id</code> (UUID) pro Modell persistieren und im Export verwenden.</dd>
+      <dt>Konfidenz</dt><dd>Hoch</dd>
+    </dl></div>
+  </details>
+
+  <!-- MONETARISIERUNG -->
+  <h2 id="money">Monetarisierung — Schwerpunkt</h2>
+  <p>Heute erzielt ShipTrip <strong>0 € Umsatz</strong> und hat keinerlei technische Grundlage dafür (kein StoreKit, keine Kauf-Capability). Für eine Nischen-App mit echtem Fan-Publikum (Kreuzfahrt) ist das eine verschenkte Chance. Die realistischen Hebel, grob nach Aufwand/Ertrag:</p>
+  <table>
+    <tr><th>Modell</th><th>Wie es zu ShipTrip passt</th><th>Aufwand</th><th>Ertrags-Potenzial</th></tr>
+    <tr class="recommended"><td><strong>Freemium-Abo (★ empfohlen)</strong></td><td>Gratis: 2–3 Reisen, manuelle Eingabe. <strong>Premium (z. B. 3,99 €/Monat o. 19,99 €/Jahr):</strong> unbegrenzte Reisen &amp; Fotos, <strong>verwaltete KI-Erfassung ohne eigenen Key</strong>, iCloud-Backup, Passport/Statistik-Extras, Daten-Export. Löst gleich zwei High-Befunde (KI-Hürde, fehlendes Backup) in ein Verkaufsargument auf.</td><td>L</td><td>Hoch &amp; wiederkehrend</td></tr>
+    <tr><td>Einmalkauf „Pro"</td><td>Lifetime-Unlock derselben Premium-Funktionen. Einfacher, aber kein wiederkehrender Umsatz; deckt laufende KI-Kosten schlecht.</td><td>M</td><td>Mittel, einmalig</td></tr>
+    <tr><td>Affiliate / Deals</td><td>„Angebote"-Tab zu echtem Deal-Feed ausbauen, Buchungen über Partner-Links (Kreuzfahrt-Affiliate-Programme). Passt thematisch perfekt, monetarisiert auch Gratis-Nutzer.</td><td>L–XL</td><td>Mittel–Hoch, variabel</td></tr>
+    <tr><td>Reines Werbe-Banner</td><td>Würde die Premium-Anmutung untergraben — für diese Zielgruppe nicht empfohlen.</td><td>S</td><td>Niedrig</td></tr>
+  </table>
+  <p><strong>Empfehlung:</strong> Freemium-Abo via StoreKit 2 als eigenes Arbeitspaket, gekoppelt an Richtung 2. Die teuren KI-Kosten rechtfertigen das wiederkehrende Modell; Backup + verwaltete KI sind die klarsten Premium-Trigger. Affiliate-Deals als zweite, parallele Einnahmequelle, die auch Gratis-Nutzer erfasst. Vor Preisfindung lohnt eine kurze <em>pricing-research</em> in der Kategorie Reise/Productivity.</p>
+
+  <!-- UI/UX RICHTUNGEN -->
+  <h2 id="improvements">UI/UX-Verbesserungen — 3 Richtungen mit IST/SOLL</h2>
+  <p class="muted">Jede Richtung zeigt den heutigen Stand (IST, rot) neben dem Zielbild (SOLL, grün) als maßstabsgetreues iPhone-Mockup. Die IST-Mockups bilden den echten Code nach (Ozeanblau <code>#0C8CE9</code>, Card-Layout mit 180px-Hero, graue Platzhalter, 5-Tab-Leiste). Tabs oben umschalten.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="active" onclick="showDir(0,this)">Richtung 1 · Behutsame Politur</button>
+    <button onclick="showDir(1,this)">Richtung 2 · Travel Journal</button>
+    <button onclick="showDir(2,this)">Richtung 3 · Cruise Companion</button>
+  </div>
+
+  <!-- ================= RICHTUNG 1 ================= -->
+  <section class="direction active">
+    <div class="leitidee"><strong>Leitidee:</strong> Struktur und Identität bleiben — wir polieren nur. Gleiche fünf Tabs, gleiches Ozeanblau, gleiche Story. Wir ersetzen die billig wirkenden Details (Emoji-Logos, graue Heros, flache Karten) durch hochwertige Standard-iOS-Bausteine: foto-zentrierte Karten, Marken-Monogramme, mehr Tiefe &amp; Typografie. Niedriges Risiko, schnell sichtbarer Qualitätssprung. <em>Empfohlen als erster Schritt.</em></div>
+
+    <p class="pair-title">1.1 — Reise-Liste: von flachen Karten zu foto-zentrierten Karten</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Graue Platzhalter-Kachel, Emoji-Reederei, flache Karte</h4>
+        <p>Ohne Foto dominiert eine große graue Fläche mit Fähr-Symbol; die Reederei wird durch ein generisches Emoji dargestellt.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Meine Reisen</span><span style="color:var(--ocean);font-size:15px;font-weight:700;">+</span></div>
+              <div class="cardlist">
+                <div class="ccard">
+                  <div class="chero">⛴︎</div>
+                  <div class="cbody">
+                    <div class="crow"><span class="ctitle">Mittelmeer Kreuzfahrt</span><span class="pill rate">★ 4.5</span></div>
+                    <div class="cmeta">💋 AIDA Cruises</div>
+                    <div class="cmeta">⛴︎ AIDAcosma</div>
+                    <div class="cmeta">📅 12.06.–19.06.2026 (8 Tage)</div>
+                    <div class="cmeta">📍 Barcelona → Rom → Neapel</div>
+                  </div>
+                </div>
+                <div class="ccard">
+                  <div class="chero">⛴︎</div>
+                  <div class="cbody">
+                    <div class="crow"><span class="ctitle">Norwegen Fjorde</span><span class="pill soon">Coming Soon</span></div>
+                    <div class="cmeta">🚢 Mein Schiff 4</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tb on"><span class="ic">⛴︎</span>Reisen</div>
+                <div class="tb"><span class="ic">🗺️</span>Karte</div>
+                <div class="tb"><span class="ic">🏷️</span>Angebote</div>
+                <div class="tb"><span class="ic">📊</span>Statistik</div>
+                <div class="tb"><span class="ic">•••</span>Mehr</div>
+              </div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von CruiseCardView.swift / MainTabView.swift</div>
+        </div>
+        <div class="evidence">CruiseCardView.swift:29–37 (grauer Rectangle-Platzhalter) · :71 (Emoji-Logo) · ShippingLine.swift:23 (AIDA = 💋)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Foto füllt die Karte, Marken-Monogramm, sanfter Verlauf &amp; Tiefe</h4>
+        <p>Das Foto wird zum Helden (mit Verlauf für lesbaren Titel); ohne Foto ein dezenter Ozean-Verlauf statt Grau. Reederei als farbiges Monogramm-Chip statt Emoji.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Meine Reisen</span><span style="color:var(--ocean);font-size:15px;font-weight:700;">+</span></div>
+              <div class="cardlist">
+                <div class="ccard" style="box-shadow:0 4px 14px rgba(12,57,93,.16);">
+                  <div class="chero" style="background:linear-gradient(135deg,#0C8CE9,#1A365D);color:#fff;align-items:flex-end;justify-content:flex-start;padding:7px 9px;height:96px;">
+                    <div style="position:absolute;top:6px;left:7px;background:#E10A78;color:#fff;width:17px;height:17px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;">AI</div>
+                    <div style="position:absolute;top:7px;right:7px;" class="pill rate">★ 4.5</div>
+                    <div><div style="font-weight:800;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.4);">Mittelmeer Kreuzfahrt</div><div style="font-size:8px;opacity:.92;">AIDA Cruises · AIDAcosma</div></div>
+                  </div>
+                  <div class="cbody" style="padding:7px 9px;">
+                    <div class="cmeta" style="color:#46506b;"><span style="color:var(--ocean);">📅</span> 12.–19. Juni · 8 Tage</div>
+                    <div class="cmeta" style="color:#46506b;"><span style="color:var(--sunset);">📍</span> Barcelona → Rom → Neapel</div>
+                  </div>
+                </div>
+                <div class="ccard" style="box-shadow:0 4px 14px rgba(12,57,93,.16);">
+                  <div class="chero" style="background:linear-gradient(135deg,#36A9F0,#0C8CE9);color:#fff;align-items:flex-end;justify-content:flex-start;padding:7px 9px;height:60px;">
+                    <div style="position:absolute;top:7px;right:7px;" class="pill soon" >In 4 Tagen</div>
+                    <div style="font-weight:800;font-size:11px;text-shadow:0 1px 3px rgba(0,0,0,.4);">Norwegen Fjorde</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tb on"><span class="ic">⛴︎</span>Reisen</div>
+                <div class="tb"><span class="ic">🗺️</span>Karte</div>
+                <div class="tb"><span class="ic">🏷️</span>Angebote</div>
+                <div class="tb"><span class="ic">📊</span>Statistik</div>
+                <div class="tb"><span class="ic">•••</span>Mehr</div>
+              </div>
+            </div></div>
+          </div>
+          <div class="caption">Foto-Held mit Verlauf · „AI"-Monogramm in AIDA-Magenta · Countdown („In 4 Tagen") ist <em>neue Logik</em>, nicht nur Optik</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Niedrig</strong></span><span class="fact">Nutzen <strong>Besserer erster Eindruck im App Store = mehr Downloads</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">1.2 — Detail-Header: von Info-Kachelgitter zu fotogeführtem Hero</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>2×N-Kachelgitter aus grauen Info-Boxen</h4>
+        <p>Schiff, Reederei, Zeitraum, Dauer etc. als gleichförmige graue Kacheln; viel Fläche, wenig Hierarchie.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar" style="justify-content:center;"><span class="title" style="font-size:11px;">Mittelmeer Kreuzfahrt</span></div>
+              <div style="padding:0 12px;">
+                <div style="height:78px;border-radius:14px;background:#dfe1e6;display:flex;align-items:center;justify-content:center;color:#b3b7c0;font-size:24px;">🖼️ Keine Fotos</div>
+                <div style="display:flex;gap:3px;margin:8px 0;">★★★★☆</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <div style="background:#e9eaee;border-radius:8px;padding:6px;"><div style="font-size:7px;color:#8a8f99;">⛴︎ Schiff</div><div style="font-weight:700;">AIDAcosma</div></div>
+                  <div style="background:#e9eaee;border-radius:8px;padding:6px;"><div style="font-size:7px;color:#8a8f99;">💋 Reederei</div><div style="font-weight:700;">AIDA</div></div>
+                  <div style="background:#e9eaee;border-radius:8px;padding:6px;"><div style="font-size:7px;color:#8a8f99;">📅 Zeitraum</div><div style="font-weight:700;">12.–19.06.</div></div>
+                  <div style="background:#e9eaee;border-radius:8px;padding:6px;"><div style="font-size:7px;color:#8a8f99;">🕑 Dauer</div><div style="font-weight:700;">8 Tage</div></div>
+                </div>
+              </div>
+              <div class="tabbar"><div class="tb on"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🏷️</span>Angebote</div><div class="tb"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von CruiseDetailView.swift:135–168 (InfoCard-Gitter)</div>
+        </div>
+        <div class="evidence">CruiseDetailView.swift:118–131 („Keine Fotos"-Grau) · :150–166 (LazyVGrid aus InfoCards)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Hero-Header mit Verlauf, darunter kompakte Fakten-Zeile</h4>
+        <p>Titel/Reederei liegen im farbigen Hero; die wichtigsten Fakten als eine ruhige Zeile statt sechs Kacheln. Klarere Hierarchie, weniger Grau.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar" style="color:#fff;"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div style="height:118px;background:linear-gradient(150deg,#0C8CE9,#1A365D);color:#fff;padding:24px 12px 10px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;">
+                <div style="position:absolute;top:24px;left:12px;background:#E10A78;color:#fff;width:18px;height:18px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;">AI</div>
+                <div style="position:absolute;top:24px;right:12px;" class="pill rate">★ 4.5</div>
+                <div style="font-weight:800;font-size:13px;">Mittelmeer Kreuzfahrt</div>
+                <div style="font-size:8px;opacity:.9;">AIDA Cruises · AIDAcosma</div>
+              </div>
+              <div style="display:flex;justify-content:space-around;padding:9px 0;border-bottom:.5px solid #e3e4e8;">
+                <div style="text-align:center;"><div style="font-weight:800;color:var(--ocean);">8</div><div style="font-size:7px;color:#8a8f99;">Tage</div></div>
+                <div style="text-align:center;"><div style="font-weight:800;color:var(--ocean);">5</div><div style="font-size:7px;color:#8a8f99;">Häfen</div></div>
+                <div style="text-align:center;"><div style="font-weight:800;color:var(--ocean);">3</div><div style="font-size:7px;color:#8a8f99;">Länder</div></div>
+                <div style="text-align:center;"><div style="font-weight:800;color:var(--ocean);">1.240€</div><div style="font-size:7px;color:#8a8f99;">Ausgaben</div></div>
+              </div>
+              <div style="padding:8px 12px;font-size:8px;color:#46506b;">Route, Ausgaben &amp; Notizen folgen darunter …</div>
+              <div class="tabbar"><div class="tb on"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🏷️</span>Angebote</div><div class="tb"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Farbiger Hero · 4 Kernzahlen statt 6 graue Kacheln · gleiche Inhalte, klarere Ordnung</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Niedrig</strong></span><span class="fact">Nutzen <strong>Wertige Anmutung, schnellere Erfassbarkeit</strong></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RICHTUNG 2 ================= -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Vom Eingabe-Werkzeug zum <strong>Premium-Reisetagebuch</strong>. Dieselbe Substanz, aber neu gerahmt als Erlebnis: eine Reise erzählt sich als Timeline, besuchte Länder werden zu sammelbaren „Stempeln" (Passport), und genau hier setzt das Freemium-Abo an (Backup, verwaltete KI, unbegrenzte Reisen). Mittlerer Aufwand, mittleres Risiko — der beste Hebel, um aus Nutzern zahlende Fans zu machen.</div>
+
+    <p class="pair-title">2.1 — Statistik: von Standard-Charts zu sammelbarem „Passport"</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Kennzahl-Kacheln + Balken-/Tortendiagramm</h4>
+        <p>Sechs Zahlen-Kacheln, ein Balkendiagramm pro Jahr, eine Torte nach Kategorie. Korrekt, aber emotionslos.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Statistik</span></div>
+              <div style="padding:0 12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                  <div style="background:#fff;border-radius:9px;padding:7px;"><div style="color:var(--ocean);font-size:13px;">⛴︎</div><div style="font-weight:800;">12</div><div style="font-size:7px;color:#8a8f99;">Kreuzfahrten</div></div>
+                  <div style="background:#fff;border-radius:9px;padding:7px;"><div style="color:var(--sunset);font-size:13px;">📍</div><div style="font-weight:800;">34</div><div style="font-size:7px;color:#8a8f99;">Häfen</div></div>
+                  <div style="background:#fff;border-radius:9px;padding:7px;"><div style="color:var(--sea);font-size:13px;">🌐</div><div style="font-weight:800;">9</div><div style="font-size:7px;color:#8a8f99;">Länder</div></div>
+                </div>
+                <div style="background:#fff;border-radius:10px;padding:9px;margin-top:8px;"><div style="font-weight:700;font-size:9px;margin-bottom:6px;">Kreuzfahrten pro Jahr</div>
+                  <div style="display:flex;align-items:flex-end;gap:6px;height:54px;">
+                    <div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:40%;border-radius:3px;"></div>
+                    <div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:70%;border-radius:3px;"></div>
+                    <div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:100%;border-radius:3px;"></div>
+                    <div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:55%;border-radius:3px;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar"><div class="tb"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🏷️</span>Angebote</div><div class="tb on"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von StatsView.swift:48–121</div>
+        </div>
+        <div class="evidence">StatsView.swift:48–92 (StatCard-Gitter) · :96–121 (BarMark) · :125–169 (SectorMark)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>„Mein Kreuzfahrt-Pass": Länder/Häfen als Stempel-Sammlung</h4>
+        <p>Besuchte Länder werden zu sammelbaren Stempeln mit Fortschritt („9 von 50 Ländern"). Charts bleiben darunter — aber oben steht ein emotionaler, teilbarer Anreiz, weiterzusammeln. Gesperrte Stempel sind ein sanfter Premium-Trigger.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar" style="color:#fff;"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div style="background:linear-gradient(150deg,#1A365D,#0C8CE9);color:#fff;padding:24px 12px 12px;">
+                <div style="font-weight:800;font-size:13px;">Mein Kreuzfahrt-Pass</div>
+                <div style="font-size:8px;opacity:.9;margin-bottom:8px;">9 von 50 Ländern · 34 Häfen · 96 Seetage</div>
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;">
+                  <div style="aspect-ratio:1;background:rgba(255,255,255,.16);border:1px dashed rgba(255,255,255,.5);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;">🇮🇹</div>
+                  <div style="aspect-ratio:1;background:rgba(255,255,255,.16);border:1px dashed rgba(255,255,255,.5);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;">🇪🇸</div>
+                  <div style="aspect-ratio:1;background:rgba(255,255,255,.16);border:1px dashed rgba(255,255,255,.5);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;">🇬🇷</div>
+                  <div style="aspect-ratio:1;background:rgba(255,255,255,.16);border:1px dashed rgba(255,255,255,.5);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;">🇳🇴</div>
+                  <div style="aspect-ratio:1;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.22);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;opacity:.4;">🇫🇷</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;margin-top:8px;background:rgba(255,255,255,.12);border-radius:8px;padding:5px 8px;font-size:7px;"><span>🔒</span><span>Voller Pass &amp; alle Stempel mit <strong>Premium</strong></span></div>
+              </div>
+              <div style="padding:9px 12px;">
+                <div style="background:#fff;border-radius:10px;padding:9px;"><div style="font-weight:700;font-size:9px;margin-bottom:6px;">Kreuzfahrten pro Jahr</div>
+                  <div style="display:flex;align-items:flex-end;gap:6px;height:42px;"><div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:40%;border-radius:3px;"></div><div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:70%;border-radius:3px;"></div><div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:100%;border-radius:3px;"></div><div style="flex:1;background:linear-gradient(#36A9F0,#0C8CE9);height:55%;border-radius:3px;"></div></div>
+                </div>
+              </div>
+              <div class="tabbar"><div class="tb"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🎫</span>Pass</div><div class="tb on"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Besuchte Länder = farbige Stempel · ausgegraut = noch nicht besucht · 🔒-Banner = Premium-Trigger · teilbar · Charts bleiben darunter</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>L</strong></span><span class="fact">Risiko <strong>Mittel</strong></span><span class="fact">Nutzen <strong>Bindung, Sammeltrieb, Teilen → Wachstum</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">2.2 — Monetarisierung: von versteckter Key-Eingabe zu klarem Premium-Angebot</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Technische Key-Eingabe in den Einstellungen — kein Umsatz</h4>
+        <p>Die KI-Funktion verlangt einen selbst besorgten Google-Schlüssel in einem nüchternen Settings-Formular. Kein Premium, kein Kauf, keine Wertkommunikation.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Einstellungen</span></div>
+              <div style="padding:4px 12px;">
+                <div style="font-size:7px;color:#8a8f99;text-transform:uppercase;margin:6px 2px;">KI-Funktionen</div>
+                <div style="background:#fff;border-radius:10px;overflow:hidden;">
+                  <div style="padding:9px;display:flex;justify-content:space-between;border-bottom:.5px solid #ececef;"><span>✨ Gemini API</span><span style="color:#c0392b;font-size:8px;">Nicht konfiguriert</span></div>
+                  <div style="padding:9px;border-bottom:.5px solid #ececef;color:var(--ocean);">🔑 API-Key eingeben</div>
+                  <div style="padding:9px;color:var(--ocean);">↗︎ Neuen Key bei Google erstellen</div>
+                </div>
+                <div style="font-size:7px;color:#8a8f99;margin:6px 2px;">Mit einem Gemini API-Key können Daten automatisch extrahiert werden.</div>
+              </div>
+              <div class="tabbar"><div class="tb"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🏷️</span>Angebote</div><div class="tb"><span class="ic">📊</span>Statistik</div><div class="tb on"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von SettingsView.swift:36–69</div>
+        </div>
+        <div class="evidence">SettingsView.swift:51–68 · GeminiService.shared.isConfigured gatet das Feature · kein StoreKit im Projekt</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>„ShipTrip Premium": ein klares, wertiges Abo-Angebot</h4>
+        <p>Statt Schlüssel-Bastelei ein verständliches Paywall-Sheet: verwaltete KI-Erfassung (kein eigener Key), iCloud-Backup, unbegrenzte Reisen, Pass-Extras. StoreKit 2, Jahres-Option hervorgehoben.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar" style="color:#fff;"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div style="background:linear-gradient(160deg,#0C8CE9,#1A365D);color:#fff;height:100%;padding:26px 14px 0;text-align:center;position:relative;">
+                <div style="font-size:24px;">⚓️</div>
+                <div style="font-weight:800;font-size:14px;margin-top:4px;">ShipTrip Premium</div>
+                <div style="font-size:8px;opacity:.9;margin-bottom:10px;">Alles für deine Reise-Erinnerungen</div>
+                <div style="text-align:left;font-size:8.5px;line-height:2;background:rgba(255,255,255,.12);border-radius:10px;padding:8px 10px;">
+                  <div>✓ KI-Erfassung — ohne eigenen Schlüssel</div>
+                  <div>✓ iCloud-Backup &amp; Sync</div>
+                  <div>✓ Unbegrenzte Reisen &amp; Fotos</div>
+                  <div>✓ Voller Kreuzfahrt-Pass</div>
+                </div>
+                <div style="display:flex;gap:7px;margin-top:10px;">
+                  <div style="flex:1;background:rgba(255,255,255,.14);border-radius:9px;padding:7px;"><div style="font-size:7px;opacity:.85;">Monat</div><div style="font-weight:800;">3,99 €</div></div>
+                  <div style="flex:1;background:#fff;color:#1A365D;border-radius:9px;padding:7px;position:relative;"><div style="position:absolute;top:-7px;right:6px;background:var(--sunset);color:#fff;font-size:6px;padding:1px 5px;border-radius:99px;">−58%</div><div style="font-size:7px;color:#0C8CE9;">Jahr</div><div style="font-weight:800;">19,99 €</div></div>
+                </div>
+                <div style="background:#fff;color:#0C8CE9;border-radius:10px;padding:8px;font-weight:800;margin-top:9px;font-size:10px;">Premium starten</div>
+                <div style="font-size:6.5px;opacity:.75;margin-top:5px;">Jederzeit kündbar · Wiederherstellen</div>
+              </div>
+            </div></div>
+          </div>
+          <div class="caption">StoreKit-2-Paywall · Jahres-Tarif als Anker · löst KI-Hürde + Backup-Lücke in ein Verkaufsargument</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>L</strong></span><span class="fact">Risiko <strong>Mittel</strong></span><span class="fact">Nutzen <strong>Erster echter Umsatz, wiederkehrend</strong></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= RICHTUNG 3 ================= -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Komplett neu gedacht — vom Archiv zum <strong>aktiven Reise-Begleiter</strong>. ShipTrip begleitet die ganze Reise: <em>davor</em> (Countdown, Packliste, Check-in), <em>währenddessen</em> (Tagesplaner an Bord, Hafen-Guide offline) und <em>danach</em> (Tagebuch, Pass). Eigenes, kräftiges „Ocean"-Designsystem mit der Karte als Bühne. Hoher Aufwand &amp; Risiko, aber das größte Differenzierungs- und Umsatzpotenzial (Voll-Abo).</div>
+
+    <p class="pair-title">3.1 — Start: von der reinen Reise-Liste zum aktiven „Heute an Bord"-Dashboard</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Statische Liste vergangener &amp; künftiger Reisen</h4>
+        <p>Der Start ist eine chronologische Kartenliste. Keine Aktualität, kein Bezug zu „jetzt" — egal ob die Reise in 100 Tagen oder gerade läuft.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Meine Reisen</span><span style="color:var(--ocean);font-size:15px;font-weight:700;">+</span></div>
+              <div class="cardlist">
+                <div class="ccard"><div class="chero">⛴︎</div><div class="cbody"><div class="crow"><span class="ctitle">Mittelmeer Kreuzfahrt</span><span class="pill rate">★ 4.5</span></div><div class="cmeta">💋 AIDA Cruises</div><div class="cmeta">📅 12.06.–19.06.2026</div></div></div>
+                <div class="ccard"><div class="chero">⛴︎</div><div class="cbody"><div class="crow"><span class="ctitle">Norwegen Fjorde</span><span class="pill soon">Coming Soon</span></div></div></div>
+              </div>
+              <div class="tabbar"><div class="tb on"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb"><span class="ic">🏷️</span>Angebote</div><div class="tb"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von CruiseListView.swift</div>
+        </div>
+        <div class="evidence">CruiseListView.swift:92–107 (statische List) · keine „aktuelle Reise"-Logik genutzt (Cruise.isOngoing existiert, wird aber nirgends im Start verwendet)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Kontextbewusstes Dashboard: Countdown, Tagesplan, nächster Hafen</h4>
+        <p>Die App weiß, wo du in deiner Reise stehst: Countdown vor der Abreise, an Bord der Tagesplan und der nächste Hafen mit Offline-Guide. Karte als visuelle Bühne. Eigenes dunkles Ocean-Theme.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr" style="background:#0a1a2f;color:#eaf2ff;">
+              <div class="statusbar" style="color:#eaf2ff;"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div style="padding:6px 13px 0;"><div style="font-size:8px;color:#5fa8e0;">NOCH 4 TAGE BIS</div><div style="font-weight:800;font-size:15px;">Mittelmeer Kreuzfahrt</div></div>
+              <div style="margin:9px 13px;border-radius:14px;overflow:hidden;height:96px;background:linear-gradient(160deg,#0C8CE9,#0a1a2f);position:relative;">
+                <div style="position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(255,255,255,.25),transparent 40%),radial-gradient(circle at 70% 70%,rgba(255,255,255,.18),transparent 35%);"></div>
+                <div style="position:absolute;left:10px;top:10px;font-size:8px;">⚓️ Barcelona → 🛳 → 📍 Rom</div>
+                <div style="position:absolute;left:10px;bottom:9px;font-size:7px;opacity:.85;">Route · 5 Häfen · 3 Länder</div>
+              </div>
+              <div style="display:flex;gap:8px;padding:0 13px;">
+                <div style="flex:1;background:#11263f;border-radius:11px;padding:9px;"><div style="font-size:15px;">🧳</div><div style="font-weight:700;font-size:9px;">Packliste</div><div style="font-size:7px;color:#7fb0dd;">12 / 20 erledigt</div></div>
+                <div style="flex:1;background:#11263f;border-radius:11px;padding:9px;"><div style="font-size:15px;">📋</div><div style="font-weight:700;font-size:9px;">Tag 1 Plan</div><div style="font-size:7px;color:#7fb0dd;">Einschiffung 14:00</div></div>
+              </div>
+              <div class="tabbar" style="background:#08152a;border-top:.5px solid #16304f;">
+                <div class="tb" style="color:#5fa8e0;"><span class="ic">🧭</span>Heute</div>
+                <div class="tb" style="color:#3d6488;"><span class="ic">🗺️</span>Reise</div>
+                <div class="tb" style="color:#3d6488;"><span class="ic">🎫</span>Pass</div>
+                <div class="tb" style="color:#3d6488;"><span class="ic">🏷️</span>Deals</div>
+                <div class="tb" style="color:#3d6488;"><span class="ic">•••</span>Mehr</div>
+              </div>
+            </div></div>
+          </div>
+          <div class="caption">„Heute"-Tab mit Countdown, Karten-Bühne, Packliste &amp; Tagesplan · eigenes dunkles Ocean-Theme</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>XL</strong></span><span class="fact">Risiko <strong>Hoch</strong></span><span class="fact">Nutzen <strong>Täglicher Nutzen statt nur Nachpflege → Retention &amp; Abo</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">3.2 — „Angebote": vom Notizblock zum echten Deal-Feed (Affiliate)</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Manuell erfasste Preis-Notizen</h4>
+        <p>Der Nutzer tippt selbst Titel, Preis und Rabatt ein. Keine Quelle, kein Mehrwert gegenüber einer Notiz-App.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Angebote</span><span style="color:var(--ocean);font-size:15px;font-weight:700;">+</span></div>
+              <div style="padding:4px 12px;">
+                <div style="background:#fff;border-radius:11px;padding:9px;display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                  <div style="width:30px;height:30px;border-radius:8px;background:#eee;display:flex;align-items:center;justify-content:center;font-size:15px;">🌊</div>
+                  <div style="flex:1;"><div style="font-weight:700;">Costa Mittelmeer</div><div style="font-size:7px;color:#8a8f99;">Westliches Mittelmeer · 8 Tage</div></div>
+                  <div style="text-align:right;"><div style="font-weight:800;">599 €</div><div style="background:#e74c3c;color:#fff;font-size:6px;padding:1px 5px;border-radius:99px;">−25%</div></div>
+                </div>
+                <div style="text-align:center;color:#b3b7c0;font-size:8px;margin-top:30px;">Selbst eingetippt — keine Live-Quelle</div>
+              </div>
+              <div class="tabbar"><div class="tb"><span class="ic">⛴︎</span>Reisen</div><div class="tb"><span class="ic">🗺️</span>Karte</div><div class="tb on"><span class="ic">🏷️</span>Angebote</div><div class="tb"><span class="ic">📊</span>Statistik</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Nachbau von DealsView.swift:87–154</div>
+        </div>
+        <div class="evidence">DealsView.swift — ausschließlich manuelles DealFormView, keine externe Quelle</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Kuratierter Deal-Feed mit Buchungs-Links (Affiliate)</h4>
+        <p>Echte Angebote, gefiltert nach den Reedereien/Regionen des Nutzers, mit „Merken" und Buchungs-Link. Monetarisiert auch Gratis-Nutzer über Partnerprovisionen.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="device"><div class="notch"></div><div class="scr light">
+              <div class="statusbar"><span>9:41</span><span>📶 🔋 84%</span></div>
+              <div class="navbar"><span class="title">Deals für dich</span><span style="font-size:11px;">⚲</span></div>
+              <div style="display:flex;gap:5px;padding:2px 12px 6px;font-size:7px;">
+                <span style="background:var(--ocean);color:#fff;padding:3px 8px;border-radius:99px;">Mittelmeer</span>
+                <span style="background:#e7e8ec;padding:3px 8px;border-radius:99px;">AIDA</span>
+                <span style="background:#e7e8ec;padding:3px 8px;border-radius:99px;">&lt; 1.000 €</span>
+              </div>
+              <div style="padding:0 12px;">
+                <div style="background:#fff;border-radius:12px;overflow:hidden;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+                  <div style="height:42px;background:linear-gradient(120deg,#0C8CE9,#1A365D);position:relative;"><span style="position:absolute;left:8px;bottom:5px;color:#fff;font-weight:700;font-size:9px;">AIDA · Westl. Mittelmeer</span><span style="position:absolute;right:7px;top:6px;background:var(--sunset);color:#fff;font-size:6px;padding:1px 5px;border-radius:99px;">TOP-DEAL</span></div>
+                  <div style="padding:8px;display:flex;justify-content:space-between;align-items:center;"><div style="font-size:7px;color:#8a8f99;">7 Nächte · ab Barcelona</div><div style="text-align:right;"><span style="text-decoration:line-through;color:#b3b7c0;font-size:7px;">899€</span> <span style="font-weight:800;color:var(--sea);">649€</span></div></div>
+                  <div style="background:var(--ocean);color:#fff;text-align:center;padding:6px;font-size:8px;font-weight:700;">Angebot ansehen ↗︎</div>
+                </div>
+                <div style="background:#fff;border-radius:12px;padding:8px;display:flex;justify-content:space-between;"><div style="font-weight:700;font-size:9px;">MSC · Adria 5 Nächte</div><div style="font-weight:800;color:var(--sea);">429€</div></div>
+              </div>
+              <div class="tabbar"><div class="tb"><span class="ic">🧭</span>Heute</div><div class="tb"><span class="ic">🗺️</span>Reise</div><div class="tb"><span class="ic">🎫</span>Pass</div><div class="tb on"><span class="ic">🏷️</span>Deals</div><div class="tb"><span class="ic">•••</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Live-Feed, nach Vorlieben gefiltert · Affiliate-Buchungslink · zweite Einnahmequelle (auch Gratis-Nutzer)</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>XL</strong></span><span class="fact">Risiko <strong>Hoch</strong></span><span class="fact">Nutzen <strong>Echter Mehrwert + Affiliate-Umsatz</strong></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERGLEICH -->
+  <h3>Richtungs-Vergleich &amp; Empfehlung</h3>
+  <table>
+    <tr><th>Richtung</th><th>Impact</th><th>Aufwand</th><th>Risiko</th><th>CI-Treue</th><th>Monetarisierung</th></tr>
+    <tr><td><strong>1 · Behutsame Politur</strong></td><td>Mittel (Anmutung)</td><td>M</td><td>Niedrig</td><td>Sehr hoch</td><td>—</td></tr>
+    <tr class="recommended"><td><strong>2 · Travel Journal</strong> ★ empfohlen</td><td>Hoch</td><td>L</td><td>Mittel</td><td>Hoch (Evolution)</td><td>Freemium-Abo</td></tr>
+    <tr><td><strong>3 · Cruise Companion</strong></td><td>Sehr hoch</td><td>XL</td><td>Hoch</td><td>Niedrig (Neuanlauf)</td><td>Voll-Abo + Affiliate</td></tr>
+  </table>
+  <p><strong>Empfehlung:</strong> <strong>Richtung 2</strong> als Zielbild — sie hebt die Anmutung deutlich, rahmt die App emotional als Premium-Reisetagebuch und bringt mit dem Freemium-Abo den ersten echten Umsatz, ohne die bestehende Substanz wegzuwerfen. <strong>Richtung 1 ist kein Konkurrent, sondern der erste Schritt dorthin</strong>: die Politur (foto-zentrierte Karten, Monogramme, Hero-Header) ist die visuelle Grundlage, auf der Richtung 2 aufsetzt. <strong>Richtung 3</strong> ist die langfristige Vision — bewusst als späteres, größeres Wagnis einplanen, nicht jetzt.</p>
+  <p class="muted">Hinweis zur Überschneidung: Der „Kreuzfahrt-Pass" und der „Deal-Feed" tauchen in Richtung 2 <em>und</em> 3 auf — das ist Absicht, keine Doppelung. Beide <strong>starten</strong> als schlanke Bausteine in Richtung 2 und werden in Richtung 3 zur Vollausbaustufe (Pass mit Gamification, Deals als echter Affiliate-Feed).</p>
+
+  <!-- ROADMAP -->
+  <h2 id="roadmap">Roadmap</h2>
+  <table>
+    <tr><th>Phase</th><th>Inhalt</th><th>Abhängigkeit</th><th>Aufwand</th></tr>
+    <tr><td><strong>0 · Quick Wins / Fixes</strong></td><td>Benachrichtigungen tatsächlich planen (C1) · <code>print</code>-Logs raus (M1) · tote Links/Settings entfernen (L1) · Test-Grundgerüst für Services (H1)</td><td>—</td><td>S–M</td></tr>
+    <tr><td><strong>1 · Vertrauen &amp; Substanz</strong></td><td>iCloud-Backup/Sync aktivieren (M6, + ADR) · Foto-Thumbnails/Downsampling (H4) · Währung/Locale + Englisch starten (M5)</td><td>Phase 0</td><td>M–L</td></tr>
+    <tr><td><strong>2 · Visuelle Politur (Richtung 1)</strong></td><td>Foto-zentrierte Karten · Marken-Monogramme statt Emoji · Hero-Detail-Header · Farb-/Icon-Konsistenz</td><td>—  (parallel zu 1 möglich)</td><td>M</td></tr>
+    <tr><td><strong>3 · Premium &amp; Journal (Richtung 2)</strong></td><td>StoreKit-2-Paywall · verwaltete KI über Backend-Proxy (löst H3) · Kreuzfahrt-Pass · Premium-Gating von Backup/KI/unbegrenzt</td><td>Phasen 1 &amp; 2 · pricing-research</td><td>L</td></tr>
+    <tr><td><strong>4 · Companion-Vision (Richtung 3)</strong></td><td>„Heute"-Dashboard · Packliste/Tagesplaner · echter Deal-Feed (Affiliate) · eigenes Ocean-Designsystem</td><td>Phase 3 · Marktvalidierung</td><td>XL</td></tr>
+  </table>
+  <p class="muted">Quick Wins zuerst: Phase 0 macht die App ehrlich (keine toten Features) und testbar — unabhängig davon, welche Designrichtung du letztlich wählst.</p>
+
+  <!-- GATE LOG -->
+  <h2 id="gates">Gate-Log</h2>
+  <p class="muted">Gewählter Modus: <strong>Final-Gate</strong> — Audit solo erstellt, anschließend Codex (Befunde/Vorschläge, adversarial) und Gemini (Report-Klarheit &amp; IST/SOLL-Qualität) als Gegenleser. Verdikte werden vor Auslieferung eingearbeitet.</p>
+  <table>
+    <tr><th>Gate</th><th>Status</th><th>Modell</th><th>Verdict / Änderung</th></tr>
+    <tr><td>A · Plan</td><td class="gate-skip">übersprungen (Final-Gate)</td><td>—</td><td>Live-Gate nur im Modus „Live-Gates"</td></tr>
+    <tr><td>B · Findings</td><td class="gate-skip">übersprungen (Final-Gate)</td><td>—</td><td>—</td></tr>
+    <tr><td>C · Proposals</td><td class="gate-skip">übersprungen (Final-Gate)</td><td>—</td><td>—</td></tr>
+    <tr><td>D · Final — Gemini (Report)</td><td class="gate-ok">gelaufen</td><td>Gemini 3.5-flash</td><td>10 Punkte; eingearbeitet: Monetarisierung in Summary vorgezogen, Reifegrad-Gesamtnote, glaubwürdigere Mockup-Statusbar, Lock-/Premium-Eindeutigkeit, Klartext bei Fachbegriffen, Tippfehler, Evolutions-Hinweis Pass/Deals</td></tr>
+    <tr><td>D · Final — Codex (Befunde/Code)</td><td class="gate-ok">gelaufen</td><td>Codex gpt-5.5</td><td>Bestätigt: C1 (Notification-Totcode), H1 (keine Tests), H2 (kein StoreKit), M1 (Debug-Logs). 2 neue Befunde ergänzt: stiller Import-Datenverlust (Medium), fehlende Enddatum-Validierung im KI-Pfad (Low). Codex' Versuch, H4 (Foto-Decoding) zu widerlegen, wurde gegengeprüft und <em>verworfen</em>: <code>CruiseCardView.swift:25</code> enthält <code>UIImage(data:)</code> nachweislich — der Codex-Grep war fehlerhaft, der Befund bleibt.</td></tr>
+  </table>
+
+  <!-- ANHANG -->
+  <h2 id="appendix">Anhang</h2>
+  <details class="finding"><summary>Projekt-Map</summary><div class="body">
+    <p><strong>Stack:</strong> SwiftUI 5 · SwiftData (lokal, kein CloudKit aktiv) · MapKit · Swift Charts · Google Gemini 2.5 Flash (direkter Client-Call) · Keychain · UserNotifications (ungenutzt). Deployment-Target iOS 18.5, Swift 5.0, Bundle <code>com.andre.ShipTrip</code>, v1.4.1 (Build 4).</p>
+    <p><strong>Umfang:</strong> 26 Swift-Dateien, ~7.260 Zeilen (davon <code>PortSuggestion.swift</code> = 2.233 Zeilen Hafen-Datenbank).</p>
+    <p><strong>Einstiege/Tabs:</strong> <code>ShipTripApp</code> → <code>MainTabView</code> → Reisen (<code>CruiseListView</code>) · Karte (<code>MapView</code>) · Angebote (<code>DealsView</code>) · Statistik (<code>StatsView</code>) · Mehr (<code>SettingsView</code>).</p>
+    <p><strong>Datenmodelle:</strong> Cruise · Port · Expense · Deal · Photo (alle <code>@Model</code>; Cascade-Delete; Bilder <code>externalStorage</code>).</p>
+    <p><strong>Services:</strong> GeminiService (KI-Extraktion) · ExportImportService (JSON/ZIP, handgeschriebener ZIP-Parser) · KeychainService · NotificationService (definiert, nicht verdrahtet).</p>
+    <p><strong>Externe Dienste:</strong> Google Gemini (Bring-your-own-Key). Kein eigenes Backend. Keine Analytics.</p>
+  </div></details>
+  <details class="finding"><summary>Checks gelaufen / nicht gelaufen</summary><div class="body">
+    <p><strong>Gelaufen (read-only):</strong> Vollständige Lektüre aller 26 Quelldateien · projektweite Grep-Verifikation (Notification-Aufrufe, Settings-Verdrahtung, StoreKit-Abwesenheit, Foto-Decoding) · pbxproj-/Entitlements-/Info-Plist-Auswertung · git-Historie (15 Commits).</p>
+    <p><strong>Nicht gelaufen:</strong> Kein <code>xcodebuild</code>/Compile-Lauf (Audit ist read-only, Build verändert DerivedData) · keine Tests (es existieren keine) · kein Instruments-Profiler (Foto-Performance daher statisch beurteilt, nicht gemessen) · keine Live-Geräte-Screenshots (Mockups bilden den Code maßstäblich nach).</p>
+  </div></details>
+  <details class="finding"><summary>Unsicherheiten &amp; offene Fragen</summary><div class="body">
+    <ul class="plain">
+      <li>Foto-Performance (H4) ist statisch beurteilt — der genaue Schmerzpunkt hängt von typischer Fotomenge ab; Profiler-Lauf würde es quantifizieren.</li>
+      <li>Preispunkte im Paywall-Mockup (3,99 €/19,99 €) sind Platzhalter — vor Umsetzung kurze <em>pricing-research</em> in der Kategorie.</li>
+      <li>Affiliate-Deal-Feed (Richtung 3) setzt verfügbare Kreuzfahrt-Partnerprogramme/APIs voraus — Marktprüfung nötig.</li>
+      <li>Der „Web-App"-Import legt nahe, dass eine Web-Variante existiert; deren Zustand wurde nicht mitgeprüft (außerhalb des Scopes dieses iOS-Audits).</li>
+    </ul>
+  </div></details>
+
+</div>
+<script>
+  function showDir(i, btn) {
+    document.querySelectorAll('.direction').forEach((d, j) => d.classList.toggle('active', i === j));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+  }
+</script>
+</body>
+</html>

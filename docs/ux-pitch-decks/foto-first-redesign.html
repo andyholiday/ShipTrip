@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Foto-First Redesign</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ocean:   #0C8CE9;
+    --oceanL:  #36A9F0;
+    --navy:    #1A365D;
+    --orange:  #FF6B35;
+    --green:   #34C759;
+    --bg:      #0A0A0F;
+    --card:    #1C1C1E;
+    --card2:   #2C2C2E;
+    --text:    #F5F5F7;
+    --muted:   rgba(255,255,255,0.55);
+    --border:  rgba(255,255,255,0.10);
+    --r16: 16px; --r12: 12px; --r10: 10px; --r6: 6px;
+  }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, system-ui, sans-serif; }
+
+  /* ── Slide engine ─────────────────────────────────────────── */
+  .deck { width: 100%; height: 100%; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 48px 64px;
+    opacity: 0; pointer-events: none;
+    transition: opacity .35s ease;
+    overflow: hidden;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* progress bar */
+  #progress { position: fixed; top: 0; left: 0; height: 3px; background: var(--ocean); transition: width .3s ease; z-index: 100; }
+
+  /* slide counter */
+  #counter { position: fixed; bottom: 18px; right: 24px; font-size: 12px; color: var(--muted); z-index: 100; letter-spacing: .05em; }
+
+  /* nav arrows */
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,.07); border: 1px solid var(--border);
+    color: var(--muted); width: 40px; height: 40px;
+    border-radius: 50%; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; transition: background .2s, color .2s;
+    user-select: none;
+  }
+  .nav-arrow:hover { background: rgba(255,255,255,.14); color: var(--text); }
+  #prev { left: 16px; }
+  #next { right: 16px; }
+
+  /* ── Typography helpers ───────────────────────────────────── */
+  .label-tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--ocean); margin-bottom: 12px;
+  }
+  .headline { font-size: clamp(28px, 4vw, 48px); font-weight: 800; line-height: 1.15; }
+  .subhead { font-size: clamp(15px, 1.8vw, 20px); color: var(--muted); line-height: 1.5; margin-top: 12px; max-width: 640px; }
+  .section-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+  .caption { font-size: 12px; color: var(--muted); }
+
+  /* ── Grid helpers ─────────────────────────────────────────── */
+  .cols { display: flex; gap: 24px; align-items: flex-start; width: 100%; }
+  .cols > * { flex: 1; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+
+  /* ── Card ─────────────────────────────────────────────────── */
+  .card {
+    background: var(--card); border-radius: var(--r12);
+    padding: 20px; border: 1px solid var(--border);
+  }
+  .card-sm { background: var(--card); border-radius: var(--r10); padding: 14px 16px; border: 1px solid var(--border); }
+
+  /* badge */
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px;
+  }
+  .badge-orange { background: var(--orange); color: #fff; }
+  .badge-ocean  { background: var(--ocean);  color: #fff; }
+  .badge-green  { background: var(--green);  color: #fff; }
+  .badge-muted  { background: var(--card2);  color: var(--muted); }
+
+  /* severity dots */
+  .dot-high { width: 8px; height: 8px; border-radius: 50%; background: #FF453A; flex-shrink: 0; }
+  .dot-med  { width: 8px; height: 8px; border-radius: 50%; background: #FF9F0A; flex-shrink: 0; }
+  .dot-low  { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+  /* ── iPhone frame ─────────────────────────────────────────── */
+  .iphone {
+    width: 210px; flex-shrink: 0;
+    background: #000; border-radius: 44px;
+    border: 6px solid #3A3A3C;
+    box-shadow: 0 24px 64px rgba(0,0,0,.8);
+    overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .iphone-notch {
+    width: 90px; height: 26px;
+    background: #000; border-radius: 0 0 18px 18px;
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    z-index: 10;
+  }
+  .iphone-screen {
+    background: #000; flex: 1;
+    overflow: hidden; display: flex; flex-direction: column;
+    position: relative; min-height: 440px;
+  }
+  .iphone-statusbar {
+    height: 44px; display: flex; align-items: flex-end; justify-content: space-between;
+    padding: 0 20px 6px; font-size: 11px; font-weight: 600; color: #fff; flex-shrink: 0;
+  }
+  .iphone-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+  .iphone-tabbar {
+    height: 56px; background: rgba(28,28,30,.92);
+    border-top: 1px solid rgba(255,255,255,.1);
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 0 4px 6px; flex-shrink: 0;
+  }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; flex: 1; cursor: pointer; }
+  .tab-icon { font-size: 18px; line-height: 1; }
+  .tab-label { font-size: 8px; color: var(--muted); }
+  .tab-item.active .tab-icon { filter: none; }
+  .tab-item.active .tab-label { color: var(--ocean); }
+
+  /* ── Slide-specific ───────────────────────────────────────── */
+
+  /* S1 Cover */
+  #s1 { background: radial-gradient(ellipse 80% 60% at 50% 30%, #0C3A6B 0%, var(--bg) 70%); }
+  .cover-wave {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 180px;
+    background: linear-gradient(to top, rgba(12,140,233,.15), transparent);
+    pointer-events: none;
+  }
+
+  /* S2 Problem */
+  .finding-row {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 12px 14px; background: var(--card);
+    border-radius: var(--r10); border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .finding-text { flex: 1; }
+  .finding-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .finding-sub { font-size: 11px; color: var(--muted); }
+  .finding-ref { font-size: 10px; color: var(--ocean); font-family: monospace; }
+
+  /* S3 Benchmarks */
+  .bench-card {
+    background: var(--card); border-radius: var(--r12);
+    padding: 16px; border: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .bench-app { font-size: 13px; font-weight: 700; }
+  .bench-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .bench-tag { font-size: 10px; background: rgba(12,140,233,.2); color: var(--oceanL); padding: 2px 7px; border-radius: 10px; display: inline-block; }
+
+  /* ── iPhone screen content helpers ───────────────────────── */
+  .nav-bar-mock {
+    padding: 4px 14px 8px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .nav-title { font-size: 22px; font-weight: 800; color: #fff; }
+  .nav-icon { font-size: 16px; color: var(--ocean); }
+
+  /* Hero card mock */
+  .hero-card-mock {
+    margin: 0 10px 8px;
+    border-radius: 14px; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .hero-media {
+    height: 160px; position: relative;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 10px;
+  }
+  .hero-title-mock { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2; }
+  .hero-sub-mock   { font-size: 9px; color: rgba(255,255,255,.75); margin-top: 2px; }
+  .hero-meta {
+    background: #1C1C1E; padding: 7px 10px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hero-meta-text { font-size: 9px; color: rgba(255,255,255,.55); }
+  .hero-meta-link { font-size: 9px; color: var(--ocean); font-weight: 600; }
+
+  /* timeline row mock */
+  .tl-row {
+    display: flex; gap: 8px; align-items: center;
+    margin: 0 10px 5px;
+    background: #1C1C1E; border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .tl-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .tl-text { flex: 1; }
+  .tl-title { font-size: 10px; font-weight: 700; color: #fff; }
+  .tl-sub { font-size: 8px; color: var(--muted); margin-top: 1px; }
+  .tl-thumb { width: 28px; height: 28px; border-radius: 5px; overflow: hidden; flex-shrink: 0; }
+
+  /* stats strip mock */
+  .stats-strip-mock {
+    display: flex; gap: 0; margin: 6px 10px 8px;
+    background: #1C1C1E; border-radius: 10px; overflow: hidden;
+  }
+  .stat-chip {
+    flex: 1; padding: 8px 4px; text-align: center;
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+  .stat-chip:last-child { border-right: none; }
+  .stat-v { font-size: 12px; font-weight: 800; color: #fff; }
+  .stat-l { font-size: 7px; color: var(--muted); margin-top: 1px; }
+
+  /* year divider mock */
+  .year-div { font-size: 9px; font-weight: 700; color: var(--muted); padding: 4px 10px 2px; letter-spacing: .08em; text-transform: uppercase; }
+
+  /* gradient overlays for media zones */
+  .scrim { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,.75) 100%); }
+
+  /* map mock */
+  .map-bg {
+    flex: 1; position: relative; overflow: hidden;
+  }
+
+  /* section label */
+  .sec-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 12px;
+  }
+
+  /* roadmap */
+  .phase {
+    background: var(--card); border-radius: var(--r12);
+    padding: 16px 18px; border-left: 3px solid var(--ocean);
+  }
+  .phase-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .phase-items { font-size: 12px; color: var(--muted); line-height: 1.8; }
+  .phase.p2 { border-left-color: var(--orange); }
+  .phase.p3 { border-left-color: var(--green); }
+
+  /* before/after label */
+  .ba-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; text-align: center;
+    margin-bottom: 8px;
+  }
+  .ba-before { color: #FF453A; }
+  .ba-after  { color: var(--green); }
+
+  /* improvement slide layout */
+  .improvement-layout { display: flex; gap: 40px; align-items: flex-start; width: 100%; }
+  .improvement-phones { display: flex; gap: 20px; flex-shrink: 0; }
+  .improvement-desc { flex: 1; }
+  .why-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
+  .why-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(12,140,233,.2); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .why-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+  .why-text strong { color: var(--text); }
+
+  /* deal row mock */
+  .deal-row {
+    display: flex; gap: 8px; align-items: center;
+    margin: 0 10px 5px;
+    background: #1C1C1E; border-radius: 8px;
+    padding: 8px 10px;
+  }
+  .deal-logo { width: 28px; height: 28px; border-radius: 5px; background: #2C2C2E; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .deal-text { flex: 1; }
+  .deal-title { font-size: 9px; font-weight: 700; color: #fff; }
+  .deal-sub { font-size: 8px; color: var(--muted); margin-top: 1px; }
+  .deal-price { text-align: right; }
+  .deal-main-price { font-size: 11px; font-weight: 800; color: var(--green); }
+  .deal-badge-red { font-size: 8px; background: #FF453A; color: #fff; padding: 1px 5px; border-radius: 8px; }
+
+  /* stat card mock */
+  .stat-card-mock {
+    background: #1C1C1E; border-radius: 8px; padding: 10px; flex: 1;
+  }
+  .stat-icon-mock { font-size: 16px; margin-bottom: 4px; }
+  .stat-val-mock { font-size: 16px; font-weight: 800; color: #fff; }
+  .stat-name-mock { font-size: 8px; color: var(--muted); margin-top: 2px; }
+
+  /* settings mock */
+  .settings-section-header {
+    font-size: 9px; font-weight: 700; color: var(--muted);
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: 8px 14px 4px;
+  }
+  .settings-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: #1C1C1E;
+    margin: 0 10px 1px; border-radius: 4px;
+  }
+  .settings-row:first-of-type { border-radius: 8px 8px 4px 4px; }
+  .settings-row:last-of-type { border-radius: 4px 4px 8px 8px; margin-bottom: 8px; }
+  .settings-icon-box { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .settings-label { font-size: 10px; color: #fff; flex: 1; }
+  .settings-value { font-size: 9px; color: var(--muted); }
+  .settings-chevron { font-size: 9px; color: var(--muted); }
+
+  /* profile header mock */
+  .profile-header {
+    padding: 8px 14px 12px;
+    background: linear-gradient(160deg, #1A365D 0%, #0C8CE9 100%);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .profile-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .profile-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .profile-chips { display: flex; gap: 6px; }
+  .profile-chip { font-size: 9px; background: rgba(255,255,255,.18); color: #fff; padding: 2px 8px; border-radius: 10px; }
+
+  /* fullscreen hero slide */
+  .hero-fullscreen {
+    flex: 1; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 14px;
+  }
+  .hero-fs-gradient { position: absolute; inset: 0; }
+
+  /* scroll strip */
+  .scroll-strip {
+    display: flex; gap: 6px; overflow-x: hidden;
+    padding: 0 10px 0;
+    flex-shrink: 0; margin-bottom: 8px;
+  }
+  .scroll-chip {
+    flex-shrink: 0; font-size: 9px; font-weight: 600;
+    padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+  }
+  .chip-active { background: var(--ocean); color: #fff; }
+  .chip-idle { background: #2C2C2E; color: var(--muted); }
+
+  /* map pins */
+  .map-pin-mock {
+    position: absolute; transform: translate(-50%, -100%);
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .pin-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid #fff; }
+  .pin-label { font-size: 7px; color: #fff; background: rgba(0,0,0,.6); padding: 1px 4px; border-radius: 4px; margin-top: 2px; white-space: nowrap; }
+
+  /* bottom sheet mock */
+  .bottom-sheet-mock {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: #1C1C1E; border-radius: 14px 14px 0 0;
+    padding: 10px 14px 14px;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .sheet-handle { width: 32px; height: 3px; background: rgba(255,255,255,.3); border-radius: 2px; margin: 0 auto 10px; }
+
+  /* chart bar mock */
+  .chart-bars { display: flex; gap: 4px; align-items: flex-end; height: 60px; padding: 0 10px; flex-shrink: 0; margin-bottom: 8px; }
+  .chart-bar { flex: 1; border-radius: 3px 3px 0 0; background: var(--ocean); opacity: .7; }
+  .chart-bar.active { opacity: 1; background: linear-gradient(to top, var(--ocean), var(--oceanL)); }
+
+  /* section sub */
+  .slide-content { width: 100%; max-width: 1100px; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<div id="counter">1 / 12</div>
+<button class="nav-arrow" id="prev">&#8592;</button>
+<button class="nav-arrow" id="next">&#8594;</button>
+
+<div class="deck">
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S1 COVER -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide active" id="s1">
+  <div class="cover-wave"></div>
+  <div style="text-align:center; position:relative; z-index:1;">
+    <div class="label-tag">ShipTrip — UI/UX Konzept 2026</div>
+    <div class="headline">Immersiv &amp; Foto-First</div>
+    <div class="subhead" style="text-align:center; margin: 12px auto 0;">
+      Dunkler Modus als Star. Hero-Fotos als Erlebnis.<br>
+      Eine durchgehende Designsprache — alle 5 Tabs.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:28px; flex-wrap:wrap;">
+      <span class="badge badge-ocean">Meine Reisen</span>
+      <span class="badge badge-muted">Karte</span>
+      <span class="badge badge-muted">Merkliste</span>
+      <span class="badge badge-muted">Statistik</span>
+      <span class="badge badge-muted">Mehr</span>
+    </div>
+    <div style="margin-top:40px;">
+      <!-- Mini-device tease -->
+      <div style="display:flex; justify-content:center;">
+        <div class="iphone" style="transform:scale(.7); transform-origin:top center; margin-bottom:-120px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:400px;">
+            <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="iphone-content">
+              <!-- fullscreen hero preview -->
+              <div class="hero-fullscreen">
+                <div class="hero-fs-gradient" style="background:linear-gradient(160deg,#0C3A6B 0%,#0F2640 40%,rgba(0,0,0,0) 100%);"></div>
+                <!-- Geo fallback art -->
+                <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.35;" viewBox="0 0 210 400">
+                  <defs>
+                    <radialGradient id="cg1" cx="30%" cy="40%"><stop offset="0%" stop-color="#FF6B35" stop-opacity=".8"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+                    <radialGradient id="cg2" cx="70%" cy="55%"><stop offset="0%" stop-color="#0C8CE9" stop-opacity=".7"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+                    <radialGradient id="cg3" cx="50%" cy="70%"><stop offset="0%" stop-color="#34C759" stop-opacity=".5"/><stop offset="100%" stop-color="transparent"/></radialGradient>
+                  </defs>
+                  <rect width="210" height="400" fill="#0A1628"/>
+                  <circle cx="63" cy="160" r="80" fill="url(#cg1)"/>
+                  <circle cx="147" cy="220" r="90" fill="url(#cg2)"/>
+                  <circle cx="105" cy="280" r="70" fill="url(#cg3)"/>
+                  <!-- port dots -->
+                  <circle cx="50" cy="140" r="4" fill="#FF6B35"/>
+                  <circle cx="80" cy="130" r="3" fill="#0C8CE9"/>
+                  <circle cx="110" cy="150" r="3" fill="#0C8CE9"/>
+                  <circle cx="130" cy="170" r="3" fill="#0C8CE9"/>
+                  <circle cx="155" cy="145" r="3" fill="#0C8CE9"/>
+                  <circle cx="160" cy="210" r="4" fill="#34C759"/>
+                  <!-- route line -->
+                  <polyline points="50,140 80,130 110,150 130,170 155,145 160,210" fill="none" stroke="#0C8CE9" stroke-width="1.5" stroke-dasharray="4,3" opacity=".7"/>
+                </svg>
+                <div style="position:relative; z-index:1;">
+                  <div style="font-size:9px; background:var(--orange); color:#fff; padding:2px 7px; border-radius:10px; display:inline-block; margin-bottom:6px;">In 42 Tagen</div>
+                  <div style="font-size:14px; font-weight:800; color:#fff; line-height:1.2;">Westliches Mittelmeer</div>
+                  <div style="font-size:9px; color:rgba(255,255,255,.7); margin-top:2px;">🛳 Costa Cruises · Costa Toscana</div>
+                </div>
+              </div>
+              <div class="hero-meta">
+                <span class="hero-meta-text">3 Länder · 6 Häfen · 2.340 €</span>
+                <span class="hero-meta-link">Details →</span>
+              </div>
+            </div>
+            <div class="iphone-tabbar">
+              <div class="tab-item active"><div class="tab-icon">⛴</div><div class="tab-label" style="color:var(--ocean);">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S2 PROBLEM -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="slide-content">
+    <div class="label-tag">IST-Analyse</div>
+    <div class="headline" style="font-size:32px; margin-bottom:24px;">Was heute bremst</div>
+    <div class="grid2">
+
+      <div class="finding-row">
+        <div class="dot-high" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Fotos verschwinden hinter System-Weiss</div>
+          <div class="finding-sub">Hero-Karte nutzt <code>secondarySystemBackground</code> als Meta-Leiste — im Light Mode dominiert Grau statt Bild.</div>
+          <div class="finding-ref">CruiseHeroCardView.swift:93</div>
+        </div>
+        <span class="badge badge-orange" style="font-size:9px; align-self:flex-start;">High</span>
+      </div>
+
+      <div class="finding-row">
+        <div class="dot-high" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Statistik-Farben ohne Brand-Bezug</div>
+          <div class="finding-sub">StatCard nutzt rohe <code>.blue/.cyan/.orange/.purple/.yellow</code> — kein Token, kein Dark-Mode-Kontrast-Test.</div>
+          <div class="finding-ref">StatsView.swift:51–90</div>
+        </div>
+        <span class="badge badge-orange" style="font-size:9px; align-self:flex-start;">High</span>
+      </div>
+
+      <div class="finding-row">
+        <div class="dot-med" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Kein visuelles Primärziel im Light Mode</div>
+          <div class="finding-sub">Weiße Liste ohne Akzent-Hierarchie — alle Kacheln gleichwertig, kein "Hier ist dein nächster Trip".</div>
+          <div class="finding-ref">CruiseListView.swift:115–168</div>
+        </div>
+        <span class="badge badge-muted" style="font-size:9px; align-self:flex-start;">Med</span>
+      </div>
+
+      <div class="finding-row">
+        <div class="dot-med" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Merkliste-Rabatt-Badge hardcodiert Rot</div>
+          <div class="finding-sub"><code>.red</code> statt <code>sunsetOrange</code>-Token — bricht die Farbstory auf dem Tab.</div>
+          <div class="finding-ref">DealsView.swift (DealRowView)</div>
+        </div>
+        <span class="badge badge-muted" style="font-size:9px; align-self:flex-start;">Med</span>
+      </div>
+
+      <div class="finding-row">
+        <div class="dot-med" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Mehr-Tab: reine System-Form, keine Marke</div>
+          <div class="finding-sub">NavigationStack + List = generisches iOS. Kein Nutzerprofil-Gefühl, keine Stat-Chips, kein Brand-Header.</div>
+          <div class="finding-ref">SettingsView.swift:26–80</div>
+        </div>
+        <span class="badge badge-muted" style="font-size:9px; align-self:flex-start;">Med</span>
+      </div>
+
+      <div class="finding-row">
+        <div class="dot-low" style="margin-top:3px;"></div>
+        <div class="finding-text">
+          <div class="finding-title">Scheme-Picker ohne Icons</div>
+          <div class="finding-sub">Nur Text "Hell / Dunkel / System" — keine Segmented-Icons, kein Preview-Feedback.</div>
+          <div class="finding-ref">SettingsView.swift:29–35</div>
+        </div>
+        <span class="badge badge-green" style="font-size:9px; align-self:flex-start;">Low</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S3 BENCHMARKS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="slide-content">
+    <div class="label-tag">Design-Benchmark 2026</div>
+    <div class="headline" style="font-size:28px; margin-bottom:24px;">Was Best-in-Class macht</div>
+    <div class="grid3" style="grid-template-columns:1fr 1fr 1fr; gap:14px;">
+
+      <div class="bench-card">
+        <div class="bench-app">Polarsteps</div>
+        <div class="bench-desc">Vollflächige Foto-Karte als Primär-Ansicht. Jede Reise = ein Kapitel mit eigenem Farbklima aus dem Foto.</div>
+        <div><span class="bench-tag">Foto-First</span> <span class="bench-tag">Kapitelstruktur</span></div>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Unfold / Stories</div>
+        <div class="bench-desc">Dunkler Canvas + typografische Hierarchie. Hero-Fläche schlägt Listenzeile — ein Bild sagt mehr als 5 Metadaten.</div>
+        <div><span class="bench-tag">Dark-Canvas</span> <span class="bench-tag">Typo-Hierarchie</span></div>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Spotify</div>
+        <div class="bench-desc">Dynamische Farbverläufe aus Artwork-Dominant-Farbe. Jede Karte atmet eigene Stimmung — keine zwei Kacheln gleich.</div>
+        <div><span class="bench-tag">Dynamic Gradient</span> <span class="bench-tag">Dominant Color</span></div>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Wander</div>
+        <div class="bench-desc">Reisetagebuch-App: Fullscreen-Onboarding, geostampte Fotos als primäre Navigation, Timeline als filmischer Scroll.</div>
+        <div><span class="bench-tag">Geo-Stamp</span> <span class="bench-tag">Film-Timeline</span></div>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Apple Fotos (iOS 18)</div>
+        <div class="bench-desc">Memories-Feature: automatischer Farbverlauf aus Fotodominanten. "Reise" als emotionaler Rückblick, nicht Datenliste.</div>
+        <div><span class="bench-tag">Memory-Mood</span> <span class="bench-tag">Scrim-Pattern</span></div>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Airbnb</div>
+        <div class="bench-desc">Wish-List als Hero-Karten mit Foto-Gradient — Merkliste fühlt sich wie Traumreise-Moodboard an, nicht wie Tabelle.</div>
+        <div><span class="bench-tag">Wish-Moodboard</span> <span class="bench-tag">Price-Overlay</span></div>
+      </div>
+
+    </div>
+    <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div class="badge badge-ocean">Adoptiert: Geo-Gradient aus Hafenkoordinaten</div>
+      <div class="badge badge-ocean">Adoptiert: Scrim-Typ ≥ 0.65 Opazitaet</div>
+      <div class="badge badge-ocean">Adoptiert: Profil-Header navy→ocean</div>
+      <div class="badge badge-muted">Abgelehnt: ML-Dominant-Color (kein Framework)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S4 VERBESSERUNG 1: Hero erweitern + Dark-Modus als Default -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="slide-content">
+    <div class="label-tag">Verbesserung 1 — Meine Reisen</div>
+    <div class="headline" style="font-size:26px; margin-bottom:6px;">Hero-Karte als Immersions-Anker</div>
+    <div class="subhead" style="font-size:13px; margin-bottom:24px;">Die Schwerpunkt-Reise bekommt maximale Buehne. Geo-Gradient + tieferer Scrim + schwarze Meta-Leiste.</div>
+
+    <div class="improvement-layout">
+      <div class="improvement-phones">
+        <!-- BEFORE -->
+        <div>
+          <div class="ba-label ba-before">Vorher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar" style="background:#f5f5f7; color:#000;"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content" style="background:#f5f5f7;">
+                <div class="nav-bar-mock" style="background:#f5f5f7;">
+                  <span style="font-size:22px; font-weight:800; color:#000;">Meine Reisen</span>
+                  <span style="font-size:16px; color:#0C8CE9;">＋</span>
+                </div>
+                <!-- Stats strip light -->
+                <div class="stats-strip-mock" style="background:#e8e8ed; margin: 0 10px 8px;">
+                  <div class="stat-chip"><div class="stat-v" style="color:#000;">4</div><div class="stat-l">Reisen</div></div>
+                  <div class="stat-chip"><div class="stat-v" style="color:#0C8CE9;">6</div><div class="stat-l">Länder</div></div>
+                  <div class="stat-chip"><div class="stat-v" style="color:#FF6B35;">34</div><div class="stat-l">Tage</div></div>
+                  <div class="stat-chip"><div class="stat-v" style="color:#34C759;">12k</div><div class="stat-l">sm</div></div>
+                </div>
+                <!-- Hero card light: shallow scrim -->
+                <div class="hero-card-mock">
+                  <div class="hero-media" style="background:#c8d8e8;">
+                    <div class="scrim" style="background:linear-gradient(to bottom, transparent 50%, rgba(0,0,0,.45) 100%);"></div>
+                    <div style="position:relative; z-index:1;">
+                      <div class="hero-title-mock">Westliches Mittelmeer</div>
+                      <div class="hero-sub-mock">🛳 Costa · Costa Toscana · 12. Jul–20. Jul</div>
+                    </div>
+                  </div>
+                  <!-- Light meta bar -->
+                  <div class="hero-meta" style="background:#e8e8ed;">
+                    <span class="hero-meta-text" style="color:#888;">3 Länder · 6 Häfen · 2.340 €</span>
+                    <span class="hero-meta-link">Details →</span>
+                  </div>
+                </div>
+                <!-- Timeline row light -->
+                <div class="year-div" style="color:#888;">2024</div>
+                <div class="tl-row" style="background:#e8e8ed;">
+                  <div class="tl-dot" style="background:#0C8CE9;"></div>
+                  <div class="tl-text">
+                    <div class="tl-title" style="color:#000;">Karibik Westfahrt</div>
+                    <div class="tl-sub">MSC 🚢 · 14 Tage · 3 Länder</div>
+                  </div>
+                  <div class="tl-thumb" style="background:#c0c8d0;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AFTER -->
+        <div>
+          <div class="ba-label ba-after">Nachher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <div class="nav-bar-mock">
+                  <span class="nav-title">Meine Reisen</span>
+                  <span class="nav-icon">＋</span>
+                </div>
+                <!-- Stats strip dark, brandtokens -->
+                <div class="stats-strip-mock">
+                  <div class="stat-chip"><div class="stat-v">4</div><div class="stat-l" style="color:var(--ocean);">Reisen</div></div>
+                  <div class="stat-chip"><div class="stat-v">6</div><div class="stat-l" style="color:var(--oceanL);">Länder</div></div>
+                  <div class="stat-chip"><div class="stat-v">34</div><div class="stat-l" style="color:var(--orange);">Tage</div></div>
+                  <div class="stat-chip"><div class="stat-v">12k</div><div class="stat-l" style="color:var(--green);">sm</div></div>
+                </div>
+                <!-- Hero card dark: deep scrim, black meta -->
+                <div class="hero-card-mock">
+                  <div class="hero-media" style="position:relative; overflow:hidden;">
+                    <!-- Geo gradient richer -->
+                    <div style="position:absolute;inset:0; background:linear-gradient(135deg,#1A365D 0%,#0C8CE9 50%,#34C759 100%); opacity:.9;"></div>
+                    <!-- Port dots SVG -->
+                    <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 198 160">
+                      <circle cx="35" cy="90" r="4" fill="#FF6B35"/>
+                      <circle cx="65" cy="75" r="3" fill="#0C8CE9"/>
+                      <circle cx="95" cy="85" r="3" fill="#0C8CE9"/>
+                      <circle cx="118" cy="70" r="3" fill="#0C8CE9"/>
+                      <circle cx="148" cy="82" r="3" fill="#0C8CE9"/>
+                      <circle cx="162" cy="115" r="4" fill="#34C759"/>
+                      <polyline points="35,90 65,75 95,85 118,70 148,82 162,115" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-dasharray="4,3"/>
+                    </svg>
+                    <div class="scrim" style="background:linear-gradient(to bottom, transparent 20%, rgba(0,0,0,.78) 100%);"></div>
+                    <!-- Badge -->
+                    <div style="position:absolute; top:8px; left:8px; background:var(--orange); color:#fff; font-size:8px; font-weight:700; padding:2px 7px; border-radius:10px;">In 42 Tagen</div>
+                    <div style="position:relative; z-index:1;">
+                      <div class="hero-title-mock" style="font-size:14px;">Westliches Mittelmeer</div>
+                      <div class="hero-sub-mock">🛳 Costa Toscana · 12.–20. Jul</div>
+                    </div>
+                  </div>
+                  <!-- Black meta bar -->
+                  <div class="hero-meta" style="background:#0A0A0F;">
+                    <span class="hero-meta-text">3 Länder · 6 Häfen · 2.340 €</span>
+                    <span class="hero-meta-link">Details →</span>
+                  </div>
+                </div>
+                <!-- Timeline dark -->
+                <div class="year-div">2024</div>
+                <div class="tl-row">
+                  <div class="tl-dot" style="background:var(--ocean);"></div>
+                  <div class="tl-text">
+                    <div class="tl-title">Karibik Westfahrt</div>
+                    <div class="tl-sub">MSC 🚢 · 14 Tage · 3 Länder</div>
+                  </div>
+                  <div class="tl-thumb" style="background:linear-gradient(135deg,#1A365D,#0C8CE9);"></div>
+                </div>
+                <div class="tl-row">
+                  <div class="tl-dot" style="background:var(--green);"></div>
+                  <div class="tl-text">
+                    <div class="tl-title">Norwegische Fjorde</div>
+                    <div class="tl-sub">AIDA 🚢 · 10 Tage · 2 Länder</div>
+                  </div>
+                  <div class="tl-thumb" style="background:linear-gradient(135deg,#003030,#34C759);"></div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item active"><div class="tab-icon">⛴</div><div class="tab-label" style="color:var(--ocean);">Reisen</div></div>
+                <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="improvement-desc">
+        <div class="why-item"><div class="why-icon">🖤</div><div class="why-text"><strong>Schwarze Meta-Leiste</strong> statt System-Grau — Hero-Foto läuft nahtlos durch, kein visueller Bruch.</div></div>
+        <div class="why-item"><div class="why-icon">🎨</div><div class="why-text"><strong>Tieferer Scrim (0.78)</strong> — Text garantiert WCAG-AA-konform, auch ohne Upload-Foto.</div></div>
+        <div class="why-item"><div class="why-icon">🌐</div><div class="why-text"><strong>Stats-Strip-Tokens</strong> — Lifetime-Zahlen erhalten Brand-Farben (ocean/oceanLight/orange/green) statt Systemgrau.</div></div>
+        <div class="why-item"><div class="why-icon">📍</div><div class="why-text"><strong>Geo-Gradient dichter</strong> — Fallback ohne Foto nutzt Hafen-Koordinaten-Routing sichtbarer als bisher.</div></div>
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(12,140,233,.1); border-left:3px solid var(--ocean); border-radius:4px; font-size:12px; color:var(--muted);">
+          Implementierung: <code>CruiseHeroCardView</code> Z.93 — <code>Color(.secondarySystemBackground)</code> durch <code>Color(.black)</code> ersetzen. Stats-Strip-Farben via <code>Color+Theme.swift</code>-Tokens.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S5 VERBESSERUNG 2: Karte — Fokus-Modus + Bottom Sheet -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s5">
+  <div class="slide-content">
+    <div class="label-tag">Verbesserung 2 — Karte</div>
+    <div class="headline" style="font-size:26px; margin-bottom:6px;">Karte: Chip-Filter + Hafen-Sheet</div>
+    <div class="subhead" style="font-size:13px; margin-bottom:24px;">Chip-Switcher (Alle / Region) am oberen Rand. Tap auf Pin öffnet Bottom-Sheet mit Hafen-Details und Foto-Strip.</div>
+
+    <div class="improvement-layout">
+      <div class="improvement-phones">
+        <!-- BEFORE map -->
+        <div>
+          <div class="ba-label ba-before">Vorher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <!-- Map fullscreen before -->
+                <div class="map-bg" style="background:linear-gradient(160deg,#1a2a3a 0%,#253545 100%);">
+                  <!-- Simple grid -->
+                  <svg style="width:100%;height:100%;position:absolute;top:0;left:0;" viewBox="0 0 200 340" preserveAspectRatio="none">
+                    <rect width="200" height="340" fill="#1e2d3d"/>
+                    <line x1="0" y1="60" x2="200" y2="55" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="120" x2="200" y2="115" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="180" x2="200" y2="185" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="240" x2="200" y2="245" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="50" y1="0" x2="48" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="110" y1="0" x2="112" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="160" y1="0" x2="158" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <!-- route -->
+                    <polyline points="40,200 70,190 100,200 125,185 155,195 165,230" fill="none" stroke="#0C8CE9" stroke-width="2" opacity=".8"/>
+                    <!-- pins -->
+                    <circle cx="40" cy="200" r="5" fill="#FF6B35"/>
+                    <circle cx="70" cy="190" r="4" fill="#0C8CE9"/>
+                    <circle cx="100" cy="200" r="4" fill="#0C8CE9"/>
+                    <circle cx="125" cy="185" r="4" fill="#0C8CE9"/>
+                    <circle cx="155" cy="195" r="4" fill="#0C8CE9"/>
+                    <circle cx="165" cy="230" r="5" fill="#34C759"/>
+                  </svg>
+                  <!-- Old legend box -->
+                  <div style="position:absolute; top:8px; right:8px; background:rgba(28,28,30,.85); border-radius:8px; padding:6px 8px; font-size:8px; color:var(--muted);">
+                    <div style="color:#fff; font-weight:700; margin-bottom:3px;">Legende</div>
+                    <div>⬤ Start</div>
+                    <div>⬤ Hafen</div>
+                    <div>⬤ Ende</div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item"><div class="tab-icon">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item active"><div class="tab-icon">🗺</div><div class="tab-label" style="color:var(--ocean);">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AFTER map -->
+        <div>
+          <div class="ba-label ba-after">Nachher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <div class="map-bg" style="background:linear-gradient(160deg,#1a2a3a 0%,#253545 100%);">
+                  <svg style="width:100%;height:100%;position:absolute;top:0;left:0;" viewBox="0 0 200 340" preserveAspectRatio="none">
+                    <rect width="200" height="340" fill="#1e2d3d"/>
+                    <line x1="0" y1="60" x2="200" y2="55" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="120" x2="200" y2="115" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="180" x2="200" y2="185" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="0" y1="240" x2="200" y2="245" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="50" y1="0" x2="48" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="110" y1="0" x2="112" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <line x1="160" y1="0" x2="158" y2="340" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+                    <polyline points="40,200 70,190 100,200 125,185 155,195 165,230" fill="none" stroke="#0C8CE9" stroke-width="2.5" opacity=".9"/>
+                    <circle cx="40" cy="200" r="5" fill="#FF6B35"/>
+                    <circle cx="40" cy="200" r="8" fill="#FF6B35" opacity=".2"/>
+                    <circle cx="70" cy="190" r="4" fill="#0C8CE9"/>
+                    <circle cx="100" cy="200" r="4" fill="#0C8CE9"/>
+                    <!-- selected pin -->
+                    <circle cx="125" cy="185" r="6" fill="#0C8CE9"/>
+                    <circle cx="125" cy="185" r="10" fill="#0C8CE9" opacity=".25"/>
+                    <circle cx="155" cy="195" r="4" fill="#0C8CE9"/>
+                    <circle cx="165" cy="230" r="5" fill="#34C759"/>
+                    <circle cx="165" cy="230" r="8" fill="#34C759" opacity=".2"/>
+                  </svg>
+                  <!-- Chip switcher -->
+                  <div class="scroll-strip" style="position:absolute; top:10px; left:0; right:0; padding:0 10px;">
+                    <span class="scroll-chip chip-active">Alle</span>
+                    <span class="scroll-chip chip-idle">Mittelmeer</span>
+                    <span class="scroll-chip chip-idle">Karibik</span>
+                  </div>
+                  <!-- Bottom sheet on pin-tap -->
+                  <div class="bottom-sheet-mock">
+                    <div class="sheet-handle"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <div>
+                        <div style="font-size:12px; font-weight:700; color:#fff;">Marseille</div>
+                        <div style="font-size:9px; color:var(--muted);">Frankreich · Ankunft 14:30</div>
+                      </div>
+                      <div style="font-size:9px; background:var(--ocean); color:#fff; padding:2px 7px; border-radius:10px;">Zwischenstopp</div>
+                    </div>
+                    <!-- Mini foto strip -->
+                    <div style="display:flex; gap:4px; margin-bottom:8px; overflow:hidden;">
+                      <div style="width:36px;height:28px;border-radius:4px;background:linear-gradient(135deg,#2a4a6a,#0C8CE9);flex-shrink:0;"></div>
+                      <div style="width:36px;height:28px;border-radius:4px;background:linear-gradient(135deg,#3a2a1a,#FF6B35);flex-shrink:0;"></div>
+                      <div style="width:36px;height:28px;border-radius:4px;background:linear-gradient(135deg,#1a3a2a,#34C759);flex-shrink:0;opacity:.5;"></div>
+                      <div style="width:36px;height:28px;border-radius:4px;background:var(--card2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--muted);">+5</div>
+                    </div>
+                    <div style="font-size:9px; color:var(--muted);">Westliches Mittelmeer · Costa Toscana</div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item"><div class="tab-icon">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item active"><div class="tab-icon">🗺</div><div class="tab-label" style="color:var(--ocean);">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="improvement-desc">
+        <div class="why-item"><div class="why-icon">🏷</div><div class="why-text"><strong>Chip-Switcher</strong> (Alle/Region) filtert Routen ohne Menu — ein Tap statt drei. Implementierbar als <code>ScrollView(.horizontal)</code> + <code>@State selectedRegion</code>.</div></div>
+        <div class="why-item"><div class="why-icon">📌</div><div class="why-text"><strong>Tap-Pin-Sheet</strong> ersetzt Legende — zeigt Hafen-Name, Datum, Foto-Strip aus <code>Port.imageData</code> + Reise-Kontext. SwiftUI <code>.sheet</code> + <code>MapKit annotation selection</code>.</div></div>
+        <div class="why-item"><div class="why-icon">💡</div><div class="why-text"><strong>Pulse-Ring bei aktivem Pin</strong> — doppelter Kreis (10pt + 16pt, opacity .25) zeigt Auswahl ohne Overlay. Reiner SwiftUI-Effekt, kein externes Framework.</div></div>
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(12,140,233,.1); border-left:3px solid var(--ocean); border-radius:4px; font-size:12px; color:var(--muted);">
+          Region-Chips: aus <code>Port.country</code> ableiten, unique-Set bilden. Bottom-Sheet: <code>@State selectedPort: Port?</code> in <code>MapView</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S6 VERBESSERUNG 3: Merkliste als Moodboard -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s6">
+  <div class="slide-content">
+    <div class="label-tag">Verbesserung 3 — Merkliste</div>
+    <div class="headline" style="font-size:26px; margin-bottom:6px;">Merkliste: Moodboard statt Tabelle</div>
+    <div class="subhead" style="font-size:13px; margin-bottom:24px;">Bestes Angebot als Hero mit Geo-Gradient. Rabatt-Badge in sunsetOrange. Preis als visuelles Gewicht.</div>
+
+    <div class="improvement-layout">
+      <div class="improvement-phones">
+        <!-- BEFORE deals -->
+        <div>
+          <div class="ba-label ba-before">Vorher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar" style="background:#f5f5f7; color:#000;"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content" style="background:#f5f5f7;">
+                <div class="nav-bar-mock" style="background:#f5f5f7;">
+                  <span style="font-size:22px; font-weight:800; color:#000;">Merkliste</span>
+                  <span style="font-size:16px; color:#0C8CE9;">＋</span>
+                </div>
+                <!-- plain rows light -->
+                <div class="deal-row" style="background:#e8e8ed; margin-top:4px;">
+                  <div class="deal-logo" style="background:#d0d0d8;">🛳</div>
+                  <div class="deal-text">
+                    <div class="deal-title" style="color:#000;">AIDA Norweg. Fjorde</div>
+                    <div class="deal-sub">Fjordland · 10 Tage</div>
+                  </div>
+                  <div class="deal-price">
+                    <div class="deal-main-price" style="color:#1c7c34;">ab 899 €</div>
+                    <div class="deal-badge-red">-20%</div>
+                  </div>
+                </div>
+                <div class="deal-row" style="background:#e8e8ed;">
+                  <div class="deal-logo" style="background:#d0d0d8;">🚢</div>
+                  <div class="deal-text">
+                    <div class="deal-title" style="color:#000;">MSC Östl. Karibik</div>
+                    <div class="deal-sub">Karibik · 14 Tage</div>
+                  </div>
+                  <div class="deal-price">
+                    <div class="deal-main-price" style="color:#1c7c34;">ab 1.249 €</div>
+                    <div class="deal-badge-red">-15%</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AFTER deals -->
+        <div>
+          <div class="ba-label ba-after">Nachher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <div class="nav-bar-mock">
+                  <span class="nav-title">Merkliste</span>
+                  <span class="nav-icon">＋</span>
+                </div>
+                <!-- Hero deal card -->
+                <div class="hero-card-mock" style="margin:0 10px 8px;">
+                  <div class="hero-media" style="height:120px; position:relative; overflow:hidden;">
+                    <div style="position:absolute;inset:0; background:linear-gradient(135deg,#003060 0%,#0C8CE9 60%,#36A9F0 100%);"></div>
+                    <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 198 120">
+                      <!-- fjord silhouette shapes -->
+                      <path d="M0,80 Q25,60 50,70 Q75,80 100,65 Q125,50 150,65 Q175,80 198,70 L198,120 L0,120 Z" fill="rgba(0,80,160,.4)"/>
+                      <path d="M0,90 Q40,75 80,85 Q120,95 160,80 Q180,75 198,82 L198,120 L0,120 Z" fill="rgba(0,50,120,.5)"/>
+                    </svg>
+                    <div class="scrim" style="background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,.72) 100%);"></div>
+                    <!-- Badge sunsetOrange -->
+                    <div style="position:absolute; top:8px; right:8px; background:var(--orange); color:#fff; font-size:8px; font-weight:700; padding:2px 7px; border-radius:10px;">-20%</div>
+                    <div style="position:relative; z-index:1;">
+                      <div class="hero-title-mock" style="font-size:12px;">AIDA Norweg. Fjorde</div>
+                      <div class="hero-sub-mock">10 Tage · Fjordland ab Bergen</div>
+                    </div>
+                  </div>
+                  <div class="hero-meta" style="background:#0A0A0F;">
+                    <span class="hero-meta-text">ab <span style="color:var(--green); font-size:11px; font-weight:800;">899 €</span></span>
+                    <span class="hero-meta-link">Merken →</span>
+                  </div>
+                </div>
+                <!-- Second deal as timeline row -->
+                <div class="deal-row">
+                  <div class="deal-logo" style="background:linear-gradient(135deg,#1a2a40,#0C8CE9);">🚢</div>
+                  <div class="deal-text">
+                    <div class="deal-title">MSC Östl. Karibik</div>
+                    <div class="deal-sub">Karibik · 14 Tage</div>
+                  </div>
+                  <div class="deal-price">
+                    <div class="deal-main-price">1.249 €</div>
+                    <div style="font-size:8px; background:var(--orange); color:#fff; padding:1px 5px; border-radius:8px;">-15%</div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item"><div class="tab-icon">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+                <div class="tab-item active"><div class="tab-icon">🔖</div><div class="tab-label" style="color:var(--ocean);">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="improvement-desc">
+        <div class="why-item"><div class="why-icon">🏆</div><div class="why-text"><strong>Bestes Angebot als Hero</strong> — günstigstes <code>Deal</code> (sortiert nach <code>price</code>) bekommt Hero-Card-Slot analog zur Schwerpunkt-Reise.</div></div>
+        <div class="why-item"><div class="why-icon">🎫</div><div class="why-text"><strong>sunsetOrange-Badge</strong> — <code>.red</code> durch <code>Color.sunsetOrange</code>-Token ersetzt. Konsistent mit Timeline-Spine-Punkt "bevorstehend".</div></div>
+        <div class="why-item"><div class="why-icon">💶</div><div class="why-text"><strong>Preis als Gewicht</strong> — grüner Preis in der Meta-Leiste (.headline + green) als Conversion-Trigger. <code>Deal.formattedPrice</code> bereits computed.</div></div>
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(12,140,233,.1); border-left:3px solid var(--ocean); border-radius:4px; font-size:12px; color:var(--muted);">
+          Hero-Deal: <code>deals.min(by: {$0.price ?? .infinity &lt; $1.price ?? .infinity})</code>. Badge: einzeiliger Austausch <code>Color.red</code> → <code>Color.sunsetOrange</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck — slides 7-12 follow via script injection -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S7 VERBESSERUNG 4: Statistik — Brand-Tokens + Hero-Strip -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s7">
+  <div class="slide-content">
+    <div class="label-tag">Verbesserung 4 — Statistik</div>
+    <div class="headline" style="font-size:26px; margin-bottom:6px;">Statistik: Hero-Strip + Brand-Farben</div>
+    <div class="subhead" style="font-size:13px; margin-bottom:24px;">Gradient-Header mit 4 Kernwerten. StatCards mit Ocean/Orange/Green-Tokens statt rohem iOS-Blau.</div>
+
+    <div class="improvement-layout">
+      <div class="improvement-phones">
+        <!-- BEFORE stats -->
+        <div>
+          <div class="ba-label ba-before">Vorher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar" style="background:#f5f5f7; color:#000;"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content" style="background:#efeff4;">
+                <div class="nav-bar-mock" style="background:#efeff4;">
+                  <span style="font-size:22px; font-weight:800; color:#000;">Statistik</span>
+                </div>
+                <!-- 2x3 grid light, raw iOS colors -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 10px; margin-bottom:8px;">
+                  <div class="stat-card-mock" style="background:#e4e4eb;">
+                    <div class="stat-icon-mock" style="color:#007AFF;">⛴</div>
+                    <div class="stat-val-mock" style="color:#000;">4</div>
+                    <div class="stat-name-mock">Kreuzfahrten</div>
+                  </div>
+                  <div class="stat-card-mock" style="background:#e4e4eb;">
+                    <div class="stat-icon-mock" style="color:#32ADE6;">📅</div>
+                    <div class="stat-val-mock" style="color:#000;">34</div>
+                    <div class="stat-name-mock">Reisetage</div>
+                  </div>
+                  <div class="stat-card-mock" style="background:#e4e4eb;">
+                    <div class="stat-icon-mock" style="color:#FF9500;">📍</div>
+                    <div class="stat-val-mock" style="color:#000;">28</div>
+                    <div class="stat-name-mock">Häfen</div>
+                  </div>
+                  <div class="stat-card-mock" style="background:#e4e4eb;">
+                    <div class="stat-icon-mock" style="color:#34C759;">🌍</div>
+                    <div class="stat-val-mock" style="color:#000;">6</div>
+                    <div class="stat-name-mock">Länder</div>
+                  </div>
+                </div>
+                <!-- Bar chart light -->
+                <div style="background:#e4e4eb; margin:0 10px; border-radius:8px; padding:8px;">
+                  <div style="font-size:9px; font-weight:700; color:#000; margin-bottom:6px;">Reisen pro Jahr</div>
+                  <div class="chart-bars" style="height:50px;">
+                    <div class="chart-bar" style="height:50%; background:#007AFF; opacity:.5;"></div>
+                    <div class="chart-bar" style="height:80%; background:#007AFF;"></div>
+                    <div class="chart-bar" style="height:100%; background:#007AFF;"></div>
+                    <div class="chart-bar" style="height:40%; background:#007AFF; opacity:.5;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AFTER stats -->
+        <div>
+          <div class="ba-label ba-after">Nachher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <!-- Gradient hero strip -->
+                <div style="background:linear-gradient(160deg,#1A365D 0%,#0C8CE9 100%); padding:8px 14px 14px;">
+                  <div style="font-size:10px; font-weight:700; color:rgba(255,255,255,.6); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;">Dein Überblick</div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                    <div>
+                      <div style="font-size:20px; font-weight:800; color:#fff;">34</div>
+                      <div style="font-size:9px; color:rgba(255,255,255,.65);">Reisetage</div>
+                    </div>
+                    <div>
+                      <div style="font-size:20px; font-weight:800; color:#fff;">12.4k</div>
+                      <div style="font-size:9px; color:rgba(255,255,255,.65);">Seemeilen</div>
+                    </div>
+                    <div>
+                      <div style="font-size:20px; font-weight:800; color:#fff;">6</div>
+                      <div style="font-size:9px; color:rgba(255,255,255,.65);">Länder</div>
+                    </div>
+                    <div>
+                      <div style="font-size:20px; font-weight:800; color:#fff;">4.8 ★</div>
+                      <div style="font-size:9px; color:rgba(255,255,255,.65);">Ø Bewertung</div>
+                    </div>
+                  </div>
+                </div>
+                <!-- 2x2 token StatCards -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px 10px;">
+                  <div class="stat-card-mock">
+                    <div class="stat-icon-mock" style="color:var(--ocean);">⛴</div>
+                    <div class="stat-val-mock">4</div>
+                    <div class="stat-name-mock">Kreuzfahrten</div>
+                  </div>
+                  <div class="stat-card-mock">
+                    <div class="stat-icon-mock" style="color:var(--orange);">📍</div>
+                    <div class="stat-val-mock">28</div>
+                    <div class="stat-name-mock">Häfen</div>
+                  </div>
+                </div>
+                <!-- Bar chart dark, ocean gradient bars -->
+                <div style="background:#1C1C1E; margin:0 10px; border-radius:8px; padding:8px;">
+                  <div style="font-size:9px; font-weight:700; color:#fff; margin-bottom:6px;">Reisen pro Jahr</div>
+                  <div class="chart-bars" style="height:50px;">
+                    <div class="chart-bar" style="height:50%; background:var(--ocean); opacity:.5;"></div>
+                    <div class="chart-bar active" style="height:80%;"></div>
+                    <div class="chart-bar active" style="height:100%;"></div>
+                    <div class="chart-bar" style="height:40%; background:var(--ocean); opacity:.5;"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item"><div class="tab-icon">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-label" style="color:var(--ocean);">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="improvement-desc">
+        <div class="why-item"><div class="why-icon">📊</div><div class="why-text"><strong>Gradient-Hero-Strip</strong> (navy→ocean) trägt die 4 emotionalen Kennwerte: Tage, Seemeilen, Länder, Bewertung. Kein neues Datenfeld — alles aus <code>Cruise.computed</code>.</div></div>
+        <div class="why-item"><div class="why-icon">🎨</div><div class="why-text"><strong>Brand-Tokens im Grid</strong> — <code>StatCard.color</code> von <code>.blue/.cyan</code> auf <code>Color.oceanBlue / Color.sunsetOrange / Color.seaGreen</code> umstellen. Ein-Zeilen-Änderung pro Card.</div></div>
+        <div class="why-item"><div class="why-icon">📈</div><div class="why-text"><strong>Bar-Chart oceanBlue-Gradient</strong> — <code>.foregroundStyle(.blue.gradient)</code> → <code>.foregroundStyle(Color.oceanBlue.gradient)</code>. Swift Charts, kein Hack.</div></div>
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(12,140,233,.1); border-left:3px solid var(--ocean); border-radius:4px; font-size:12px; color:var(--muted);">
+          Hero-Strip: neues <code>StatsHeroView</code>. Seemeilen: aus <code>Port.latitude/longitude</code> Haversine-Summe — bereits alle Daten vorhanden.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S8 VERBESSERUNG 5: Mehr — Profil-Header + Icon-Kacheln -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s8">
+  <div class="slide-content">
+    <div class="label-tag">Verbesserung 5 — Mehr</div>
+    <div class="headline" style="font-size:26px; margin-bottom:6px;">Mehr: Profil-Header + farbige Kacheln</div>
+    <div class="subhead" style="font-size:13px; margin-bottom:24px;">navy→ocean Gradient-Header mit Stat-Chips. Settings-Rows erhalten farbige Icon-Kacheln statt generischer SF-Icons.</div>
+
+    <div class="improvement-layout">
+      <div class="improvement-phones">
+        <!-- BEFORE settings -->
+        <div>
+          <div class="ba-label ba-before">Vorher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar" style="background:#f5f5f7; color:#000;"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content" style="background:#efeff4;">
+                <div class="nav-bar-mock" style="background:#efeff4;">
+                  <span style="font-size:22px; font-weight:800; color:#000;">Mehr</span>
+                </div>
+                <!-- Generic iOS form light -->
+                <div style="font-size:9px; color:#888; padding:6px 14px 3px; letter-spacing:.06em; text-transform:uppercase;">Erscheinungsbild</div>
+                <div style="background:#fff; margin:0 10px; border-radius:8px; overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e5ea;">
+                    <span style="font-size:14px;">🌗</span>
+                    <span style="font-size:11px; color:#000;">Farbschema</span>
+                    <span style="margin-left:auto; font-size:11px; color:#888;">System ›</span>
+                  </div>
+                </div>
+                <div style="font-size:9px; color:#888; padding:12px 14px 3px; letter-spacing:.06em; text-transform:uppercase;">KI-Funktionen</div>
+                <div style="background:#fff; margin:0 10px; border-radius:8px; overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e5ea;">
+                    <span style="font-size:14px;">✨</span>
+                    <span style="font-size:11px; color:#000;">Gemini API</span>
+                    <span style="margin-left:auto; font-size:11px; color:#888;">Nicht konfiguriert</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; padding:10px 12px;">
+                    <span style="font-size:14px;">🔑</span>
+                    <span style="font-size:11px; color:#007AFF;">API-Key eingeben</span>
+                    <span style="margin-left:auto; font-size:11px; color:#888;">›</span>
+                  </div>
+                </div>
+                <div style="font-size:9px; color:#888; padding:12px 14px 3px; letter-spacing:.06em; text-transform:uppercase;">Daten</div>
+                <div style="background:#fff; margin:0 10px; border-radius:8px; overflow:hidden;">
+                  <div style="display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid #e5e5ea;">
+                    <span style="font-size:14px;">📤</span>
+                    <span style="font-size:11px; color:#007AFF;">Exportieren</span>
+                    <span style="margin-left:auto; font-size:11px; color:#888;">›</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px; padding:10px 12px;">
+                    <span style="font-size:14px;">🗑</span>
+                    <span style="font-size:11px; color:#FF3B30;">Alle Daten löschen</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AFTER settings -->
+        <div>
+          <div class="ba-label ba-after">Nachher</div>
+          <div class="iphone">
+            <div class="iphone-notch"></div>
+            <div class="iphone-screen">
+              <div class="iphone-statusbar"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+              <div class="iphone-content">
+                <!-- Profile header gradient -->
+                <div class="profile-header">
+                  <div style="height:16px;"></div>
+                  <div class="profile-avatar">⚓</div>
+                  <div class="profile-name">Mein ShipTrip</div>
+                  <div class="profile-chips">
+                    <div class="profile-chip">4 Reisen</div>
+                    <div class="profile-chip">6 Länder</div>
+                    <div class="profile-chip">★ 4.8</div>
+                  </div>
+                </div>
+                <!-- Settings sections dark with colored icon tiles -->
+                <div class="settings-section-header" style="margin-top:8px;">Erscheinungsbild</div>
+                <div class="settings-row" style="border-radius:8px 8px 8px 8px; margin-bottom:8px;">
+                  <div class="settings-icon-box" style="background:#2C2C2E;">🌗</div>
+                  <div class="settings-label">Farbschema</div>
+                  <div class="settings-value">Dunkel</div>
+                  <div class="settings-chevron">›</div>
+                </div>
+                <div class="settings-section-header">KI-Funktionen</div>
+                <div class="settings-row" style="border-radius:8px 8px 4px 4px;">
+                  <div class="settings-icon-box" style="background:linear-gradient(135deg,#1a2a50,#0C8CE9);">✨</div>
+                  <div class="settings-label">Gemini API</div>
+                  <div style="font-size:9px; color:var(--green);">● Aktiv</div>
+                </div>
+                <div class="settings-row" style="border-radius:4px 4px 8px 8px; margin-bottom:8px;">
+                  <div class="settings-icon-box" style="background:linear-gradient(135deg,#2a1a0a,#FF6B35);">🔑</div>
+                  <div class="settings-label" style="color:var(--ocean);">API-Key ändern</div>
+                  <div class="settings-chevron">›</div>
+                </div>
+                <div class="settings-section-header">Daten</div>
+                <div class="settings-row" style="border-radius:8px 8px 4px 4px;">
+                  <div class="settings-icon-box" style="background:linear-gradient(135deg,#0a2a1a,#34C759);">📤</div>
+                  <div class="settings-label" style="color:var(--ocean);">Exportieren</div>
+                  <div class="settings-chevron">›</div>
+                </div>
+                <div class="settings-row" style="border-radius:4px 4px 8px 8px;">
+                  <div class="settings-icon-box" style="background:linear-gradient(135deg,#2a0a0a,#FF453A);">🗑</div>
+                  <div class="settings-label" style="color:#FF453A;">Alle Daten löschen</div>
+                </div>
+              </div>
+              <div class="iphone-tabbar">
+                <div class="tab-item"><div class="tab-icon">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item active"><div class="tab-icon">•••</div><div class="tab-label" style="color:var(--ocean);">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="improvement-desc">
+        <div class="why-item"><div class="why-icon">👤</div><div class="why-text"><strong>Profil-Header</strong> (navy→ocean) trägt Stat-Chips aus Lifetime-Daten — kein neuer State, nur <code>cruises.count</code> + <code>countriesVisited</code> + <code>averageRating</code>.</div></div>
+        <div class="why-item"><div class="why-icon">🎨</div><div class="why-text"><strong>Farbige Icon-Kacheln</strong> (r5 Gradient) statt monochromer SF-Icons — Muster aus iOS Settings-App, vollständig in SwiftUI ohne externe Assets.</div></div>
+        <div class="why-item"><div class="why-icon">🔆</div><div class="why-text"><strong>Aktiv-Status grün</strong> — API-Key-State als <code>● Aktiv</code> in <code>seaGreen</code> statt Text "Nicht konfiguriert". Klarer Feedback-Loop.</div></div>
+        <div style="margin-top:16px; padding:12px 14px; background:rgba(12,140,233,.1); border-left:3px solid var(--ocean); border-radius:4px; font-size:12px; color:var(--muted);">
+          Header: <code>LinearGradient(navyDark, oceanBlue)</code> als <code>listRowBackground</code> oder separater <code>VStack</code>-Header über <code>List</code>. Icon-Kacheln: <code>RoundedRectangle</code> + <code>LinearGradient</code> als Label-Icon.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S9 DESIGNSPRACHE: Token-Tabelle -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s9">
+  <div class="slide-content">
+    <div class="label-tag">Designsprache</div>
+    <div class="headline" style="font-size:28px; margin-bottom:24px;">Eine Sprache — alle 5 Tabs</div>
+    <div class="cols" style="gap:32px; align-items:flex-start;">
+
+      <!-- Color tokens -->
+      <div style="flex:1;">
+        <div class="sec-label">Farb-Tokens</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#0C8CE9;flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">oceanBlue #0C8CE9</div><div style="font-size:11px; color:var(--muted);">Primär — Links, aktive Tabs, Bar-Charts</div></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#36A9F0;flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">oceanLight #36A9F0</div><div style="font-size:11px; color:var(--muted);">Seetag-Pin, Gradient-Mitte</div></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#1A365D;flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">navyDark #1A365D</div><div style="font-size:11px; color:var(--muted);">Header-Gradient Start, Nacht-Canvas</div></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#FF6B35;flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">sunsetOrange #FF6B35</div><div style="font-size:11px; color:var(--muted);">Bald/Badge/Rabatt — nie für Fehler</div></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#34C759;flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">seaGreen #34C759</div><div style="font-size:11px; color:var(--muted);">Preis, Bewertung, Status aktiv</div></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#0A0A0F;border:1px solid rgba(255,255,255,.15);flex-shrink:0;"></div>
+            <div><div style="font-size:12px; font-weight:700;">bg #0A0A0F</div><div style="font-size:11px; color:var(--muted);">Canvas — dunkler als System-Black</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Radius + Type -->
+      <div style="flex:1;">
+        <div class="sec-label">Radius-Hierarchie</div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:24px;">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:48px;height:32px;border-radius:16px;background:var(--card);border:1px solid var(--border);flex-shrink:0;"></div>
+            <div style="font-size:12px;"><strong>r16</strong> <span style="color:var(--muted);">Hero-Cards (CruiseHeroCardView, Deal-Hero)</span></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:48px;height:32px;border-radius:12px;background:var(--card);border:1px solid var(--border);flex-shrink:0;"></div>
+            <div style="font-size:12px;"><strong>r12</strong> <span style="color:var(--muted);">cardStyle() — Chart-Panels, Stat-Cards</span></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:48px;height:32px;border-radius:10px;background:var(--card);border:1px solid var(--border);flex-shrink:0;"></div>
+            <div style="font-size:12px;"><strong>r10</strong> <span style="color:var(--muted);">Timeline-Rows, Stats-Strip</span></div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div style="width:48px;height:32px;border-radius:6px;background:var(--card);border:1px solid var(--border);flex-shrink:0;"></div>
+            <div style="font-size:12px;"><strong>r6</strong> <span style="color:var(--muted);">Thumbnails, Icon-Kacheln</span></div>
+          </div>
+        </div>
+
+        <div class="sec-label">Typo-Rhythmus</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:20px; font-weight:800; color:#fff;">.title3 .heavy — Hero-Titel</div>
+          <div style="font-size:14px; font-weight:700; color:#fff;">.subheadline .bold — Row-Titel</div>
+          <div style="font-size:12px; font-weight:600; color:var(--muted);">.caption .semibold — Labels</div>
+          <div style="font-size:10px; font-weight:600; color:var(--muted);">.caption2 — Port-Preview, Rating</div>
+        </div>
+      </div>
+
+      <!-- Motion / interaction -->
+      <div style="flex:1;">
+        <div class="sec-label">Interaktions-Vokabular</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div class="card-sm">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px;">Tap Hero-Card</div>
+            <div style="font-size:11px; color:var(--muted);">NavigationLink → CruiseDetailView. Kein Custom-Transition nötig.</div>
+          </div>
+          <div class="card-sm">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px;">Tap Karten-Pin</div>
+            <div style="font-size:11px; color:var(--muted);">Pulse-Ring + Bottom-Sheet. <code>MapKit annotation selection</code>.</div>
+          </div>
+          <div class="card-sm">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px;">Swipe Row</div>
+            <div style="font-size:11px; color:var(--muted);">Löschen-Action (bereits vorhanden). Kein Änderungsbedarf.</div>
+          </div>
+          <div class="card-sm">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px;">Chip-Tap Filter</div>
+            <div style="font-size:11px; color:var(--muted);">Karte + optional Merkliste. <code>@State</code> + <code>withAnimation(.spring)</code>.</div>
+          </div>
+          <div class="card-sm">
+            <div style="font-size:12px; font-weight:700; margin-bottom:4px;">Long-Press Row</div>
+            <div style="font-size:11px; color:var(--muted);">Context-Menu (löschen/bearbeiten). SwiftUI <code>.contextMenu</code>.</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S10 ALLE 5 TABS: Übersicht nebeneinander -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s10">
+  <div class="slide-content">
+    <div class="label-tag">Alle 5 Tabs — Überblick</div>
+    <div class="headline" style="font-size:24px; margin-bottom:20px;">Die neue Sprache auf einem Blick</div>
+
+    <div style="display:flex; gap:14px; justify-content:center; align-items:flex-start; overflow-x:auto; padding-bottom:8px;">
+
+      <!-- Tab 0: Reisen -->
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); margin-bottom:6px; letter-spacing:.06em; text-transform:uppercase;">Reisen</div>
+        <div class="iphone" style="width:160px; transform:scale(.85); transform-origin:top center; margin-bottom:-60px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:320px;">
+            <div class="iphone-statusbar" style="font-size:9px;"><span>9:41</span><span>●●●</span></div>
+            <div class="iphone-content">
+              <div style="padding:4px 10px 6px; font-size:16px; font-weight:800;">Meine Reisen</div>
+              <div class="stats-strip-mock" style="margin:0 8px 6px;">
+                <div class="stat-chip"><div class="stat-v" style="font-size:10px;">4</div><div class="stat-l" style="color:var(--ocean); font-size:6px;">Reisen</div></div>
+                <div class="stat-chip"><div class="stat-v" style="font-size:10px;">6</div><div class="stat-l" style="color:var(--oceanL); font-size:6px;">Länder</div></div>
+                <div class="stat-chip"><div class="stat-v" style="font-size:10px;">34</div><div class="stat-l" style="color:var(--orange); font-size:6px;">Tage</div></div>
+              </div>
+              <div class="hero-card-mock" style="margin:0 8px 6px;">
+                <div class="hero-media" style="height:90px;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1A365D,#0C8CE9);"></div>
+                  <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 144 90"><polyline points="20,55 40,48 65,52 85,44 105,50 115,65" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="1.2" stroke-dasharray="3,2"/><circle cx="20" cy="55" r="3" fill="#FF6B35"/><circle cx="115" cy="65" r="3" fill="#34C759"/></svg>
+                  <div class="scrim"></div>
+                  <div style="position:relative;z-index:1;">
+                    <div style="font-size:9px; font-weight:800; color:#fff;">Westliches Mittelmeer</div>
+                    <div style="font-size:7px; color:rgba(255,255,255,.7);">Costa Toscana · Jul</div>
+                  </div>
+                </div>
+                <div class="hero-meta" style="background:#0A0A0F; padding:4px 8px;">
+                  <span style="font-size:7px; color:var(--muted);">3 Länder · 6 Häfen</span>
+                  <span style="font-size:7px; color:var(--ocean);">Details →</span>
+                </div>
+              </div>
+              <div class="tl-row" style="margin:0 8px 4px; padding:5px 7px;">
+                <div class="tl-dot" style="background:var(--ocean); width:5px;height:5px;"></div>
+                <div class="tl-text"><div style="font-size:8px;font-weight:700;">Karibik</div><div style="font-size:6px;color:var(--muted);">MSC · 14 Tage</div></div>
+                <div style="width:20px;height:20px;border-radius:4px;background:linear-gradient(135deg,#1A365D,#0C8CE9);"></div>
+              </div>
+            </div>
+            <div class="iphone-tabbar" style="height:42px; padding:0 2px 4px;">
+              <div class="tab-item active"><div class="tab-icon" style="font-size:13px;">⛴</div><div class="tab-label" style="color:var(--ocean); font-size:6px;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🗺</div><div class="tab-label" style="font-size:6px;">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🔖</div><div class="tab-label" style="font-size:6px;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">📊</div><div class="tab-label" style="font-size:6px;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">•••</div><div class="tab-label" style="font-size:6px;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 1: Karte -->
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); margin-bottom:6px; letter-spacing:.06em; text-transform:uppercase;">Karte</div>
+        <div class="iphone" style="width:160px; transform:scale(.85); transform-origin:top center; margin-bottom:-60px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:320px;">
+            <div class="iphone-statusbar" style="font-size:9px;"><span>9:41</span><span>●●●</span></div>
+            <div class="iphone-content">
+              <div class="map-bg" style="flex:1; position:relative; background:#1e2d3d;">
+                <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 160 240" preserveAspectRatio="none">
+                  <rect width="160" height="240" fill="#1e2d3d"/>
+                  <polyline points="30,140 55,132 80,140 100,128 125,135 132,160" fill="none" stroke="#0C8CE9" stroke-width="2" opacity=".9"/>
+                  <circle cx="30" cy="140" r="4" fill="#FF6B35"/>
+                  <circle cx="30" cy="140" r="7" fill="#FF6B35" opacity=".2"/>
+                  <circle cx="55" cy="132" r="3" fill="#0C8CE9"/>
+                  <circle cx="80" cy="140" r="3" fill="#0C8CE9"/>
+                  <circle cx="100" cy="128" r="5" fill="#0C8CE9"/>
+                  <circle cx="100" cy="128" r="9" fill="#0C8CE9" opacity=".2"/>
+                  <circle cx="125" cy="135" r="3" fill="#0C8CE9"/>
+                  <circle cx="132" cy="160" r="4" fill="#34C759"/>
+                </svg>
+                <!-- Chips -->
+                <div style="position:absolute; top:8px; left:8px; display:flex; gap:4px;">
+                  <span style="font-size:7px; background:var(--ocean); color:#fff; padding:2px 6px; border-radius:10px;">Alle</span>
+                  <span style="font-size:7px; background:#2C2C2E; color:var(--muted); padding:2px 6px; border-radius:10px;">Mittel.</span>
+                </div>
+                <!-- Mini bottom sheet -->
+                <div style="position:absolute; bottom:0; left:0; right:0; background:#1C1C1E; border-radius:10px 10px 0 0; padding:6px 10px;">
+                  <div style="width:20px;height:2px;background:rgba(255,255,255,.3);border-radius:2px;margin:0 auto 5px;"></div>
+                  <div style="font-size:9px;font-weight:700;color:#fff;">Marseille</div>
+                  <div style="font-size:7px;color:var(--muted);">Frankreich · Ankunft 14:30</div>
+                </div>
+              </div>
+            </div>
+            <div class="iphone-tabbar" style="height:42px; padding:0 2px 4px;">
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">⛴</div><div class="tab-label" style="font-size:6px;">Reisen</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:13px;">🗺</div><div class="tab-label" style="color:var(--ocean); font-size:6px;">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🔖</div><div class="tab-label" style="font-size:6px;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">📊</div><div class="tab-label" style="font-size:6px;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">•••</div><div class="tab-label" style="font-size:6px;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Merkliste -->
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); margin-bottom:6px; letter-spacing:.06em; text-transform:uppercase;">Merkliste</div>
+        <div class="iphone" style="width:160px; transform:scale(.85); transform-origin:top center; margin-bottom:-60px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:320px;">
+            <div class="iphone-statusbar" style="font-size:9px;"><span>9:41</span><span>●●●</span></div>
+            <div class="iphone-content">
+              <div style="padding:4px 10px 6px; font-size:16px; font-weight:800;">Merkliste</div>
+              <div class="hero-card-mock" style="margin:0 8px 6px;">
+                <div class="hero-media" style="height:90px;">
+                  <div style="position:absolute;inset:0;background:linear-gradient(135deg,#003060,#0C8CE9);"></div>
+                  <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 144 90"><path d="M0,55 Q36,40 72,50 Q108,60 144,48 L144,90 L0,90 Z" fill="rgba(0,60,140,.4)"/></svg>
+                  <div class="scrim"></div>
+                  <div style="position:absolute;top:6px;right:6px;background:var(--orange);color:#fff;font-size:7px;font-weight:700;padding:1px 5px;border-radius:8px;">-20%</div>
+                  <div style="position:relative;z-index:1;">
+                    <div style="font-size:9px;font-weight:800;color:#fff;">AIDA Norweg. Fjorde</div>
+                    <div style="font-size:7px;color:rgba(255,255,255,.7);">10 Tage · ab Bergen</div>
+                  </div>
+                </div>
+                <div class="hero-meta" style="background:#0A0A0F; padding:4px 8px;">
+                  <span style="font-size:7px; color:var(--muted);">ab <span style="color:var(--green);font-weight:800;">899 €</span></span>
+                  <span style="font-size:7px; color:var(--ocean);">Merken →</span>
+                </div>
+              </div>
+              <div class="deal-row" style="margin:0 8px; padding:6px 8px;">
+                <div class="deal-logo" style="width:22px;height:22px;font-size:11px;">🚢</div>
+                <div class="deal-text"><div style="font-size:8px;font-weight:700;">MSC Östl. Karibik</div><div style="font-size:6px;color:var(--muted);">14 Tage</div></div>
+                <div><div style="font-size:9px;font-weight:800;color:var(--green);">1.249 €</div><div style="font-size:6px;background:var(--orange);color:#fff;padding:1px 4px;border-radius:6px;">-15%</div></div>
+              </div>
+            </div>
+            <div class="iphone-tabbar" style="height:42px; padding:0 2px 4px;">
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">⛴</div><div class="tab-label" style="font-size:6px;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🗺</div><div class="tab-label" style="font-size:6px;">Karte</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:13px;">🔖</div><div class="tab-label" style="color:var(--ocean); font-size:6px;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">📊</div><div class="tab-label" style="font-size:6px;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">•••</div><div class="tab-label" style="font-size:6px;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Statistik -->
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); margin-bottom:6px; letter-spacing:.06em; text-transform:uppercase;">Statistik</div>
+        <div class="iphone" style="width:160px; transform:scale(.85); transform-origin:top center; margin-bottom:-60px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:320px;">
+            <div class="iphone-statusbar" style="font-size:9px;"><span>9:41</span><span>●●●</span></div>
+            <div class="iphone-content">
+              <div style="background:linear-gradient(160deg,#1A365D,#0C8CE9);padding:6px 10px 10px;">
+                <div style="font-size:7px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:5px;">Dein Überblick</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+                  <div><div style="font-size:14px;font-weight:800;color:#fff;">34</div><div style="font-size:7px;color:rgba(255,255,255,.6);">Reisetage</div></div>
+                  <div><div style="font-size:14px;font-weight:800;color:#fff;">12.4k</div><div style="font-size:7px;color:rgba(255,255,255,.6);">Seemeilen</div></div>
+                  <div><div style="font-size:14px;font-weight:800;color:#fff;">6</div><div style="font-size:7px;color:rgba(255,255,255,.6);">Länder</div></div>
+                  <div><div style="font-size:14px;font-weight:800;color:#fff;">4.8★</div><div style="font-size:7px;color:rgba(255,255,255,.6);">Ø Wertung</div></div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:6px 8px;">
+                <div class="stat-card-mock" style="padding:7px;"><div style="font-size:12px;color:var(--ocean);">⛴</div><div style="font-size:12px;font-weight:800;color:#fff;">4</div><div style="font-size:6px;color:var(--muted);">Kreuzfahrten</div></div>
+                <div class="stat-card-mock" style="padding:7px;"><div style="font-size:12px;color:var(--orange);">📍</div><div style="font-size:12px;font-weight:800;color:#fff;">28</div><div style="font-size:6px;color:var(--muted);">Häfen</div></div>
+              </div>
+              <div style="background:#1C1C1E;margin:0 8px;border-radius:6px;padding:6px 8px;">
+                <div style="font-size:7px;font-weight:700;margin-bottom:4px;">Reisen/Jahr</div>
+                <div style="display:flex;gap:3px;align-items:flex-end;height:36px;">
+                  <div style="flex:1;height:50%;background:var(--ocean);opacity:.5;border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:80%;background:linear-gradient(to top,var(--ocean),var(--oceanL));border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:100%;background:linear-gradient(to top,var(--ocean),var(--oceanL));border-radius:2px 2px 0 0;"></div>
+                  <div style="flex:1;height:40%;background:var(--ocean);opacity:.5;border-radius:2px 2px 0 0;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="iphone-tabbar" style="height:42px; padding:0 2px 4px;">
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">⛴</div><div class="tab-label" style="font-size:6px;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🗺</div><div class="tab-label" style="font-size:6px;">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🔖</div><div class="tab-label" style="font-size:6px;">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:13px;">📊</div><div class="tab-label" style="color:var(--ocean); font-size:6px;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">•••</div><div class="tab-label" style="font-size:6px;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Mehr -->
+      <div style="text-align:center; flex-shrink:0;">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); margin-bottom:6px; letter-spacing:.06em; text-transform:uppercase;">Mehr</div>
+        <div class="iphone" style="width:160px; transform:scale(.85); transform-origin:top center; margin-bottom:-60px;">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen" style="min-height:320px;">
+            <div class="iphone-statusbar" style="font-size:9px;"><span>9:41</span><span>●●●</span></div>
+            <div class="iphone-content">
+              <div class="profile-header" style="padding:6px 10px 10px;">
+                <div style="height:10px;"></div>
+                <div class="profile-avatar" style="width:32px;height:32px;font-size:16px;">⚓</div>
+                <div style="font-size:10px;font-weight:700;color:#fff;">Mein ShipTrip</div>
+                <div style="display:flex;gap:4px;">
+                  <div style="font-size:7px;background:rgba(255,255,255,.18);color:#fff;padding:1px 5px;border-radius:8px;">4 Reisen</div>
+                  <div style="font-size:7px;background:rgba(255,255,255,.18);color:#fff;padding:1px 5px;border-radius:8px;">6 Länder</div>
+                  <div style="font-size:7px;background:rgba(255,255,255,.18);color:#fff;padding:1px 5px;border-radius:8px;">★ 4.8</div>
+                </div>
+              </div>
+              <div style="padding:5px 8px 2px; font-size:7px; font-weight:700; color:var(--muted); letter-spacing:.08em; text-transform:uppercase;">Erscheinungsbild</div>
+              <div style="background:#1C1C1E;margin:0 8px 5px;border-radius:7px;padding:7px 10px;display:flex;gap:6px;align-items:center;">
+                <div style="width:18px;height:18px;border-radius:4px;background:#2C2C2E;display:flex;align-items:center;justify-content:center;font-size:10px;">🌗</div>
+                <div style="font-size:9px;color:#fff;flex:1;">Farbschema</div>
+                <div style="font-size:8px;color:var(--muted);">Dunkel ›</div>
+              </div>
+              <div style="padding:0 8px 2px; font-size:7px; font-weight:700; color:var(--muted); letter-spacing:.08em; text-transform:uppercase;">KI</div>
+              <div style="background:#1C1C1E;margin:0 8px;border-radius:7px;overflow:hidden;">
+                <div style="padding:6px 10px;display:flex;gap:6px;align-items:center;border-bottom:1px solid rgba(255,255,255,.06);">
+                  <div style="width:18px;height:18px;border-radius:4px;background:linear-gradient(135deg,#1a2a50,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:10px;">✨</div>
+                  <div style="font-size:9px;color:#fff;flex:1;">Gemini API</div>
+                  <div style="font-size:8px;color:var(--green);">● Aktiv</div>
+                </div>
+                <div style="padding:6px 10px;display:flex;gap:6px;align-items:center;">
+                  <div style="width:18px;height:18px;border-radius:4px;background:linear-gradient(135deg,#2a1a0a,#FF6B35);display:flex;align-items:center;justify-content:center;font-size:10px;">🔑</div>
+                  <div style="font-size:9px;color:var(--ocean);flex:1;">API-Key ändern</div>
+                  <div style="font-size:8px;color:var(--muted);">›</div>
+                </div>
+              </div>
+            </div>
+            <div class="iphone-tabbar" style="height:42px; padding:0 2px 4px;">
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">⛴</div><div class="tab-label" style="font-size:6px;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🗺</div><div class="tab-label" style="font-size:6px;">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">🔖</div><div class="tab-label" style="font-size:6px;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:13px;">📊</div><div class="tab-label" style="font-size:6px;">Statistik</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:13px;">•••</div><div class="tab-label" style="color:var(--ocean); font-size:6px;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S11 ROADMAP -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div class="slide-content">
+    <div class="label-tag">Implementierung</div>
+    <div class="headline" style="font-size:28px; margin-bottom:28px;">Roadmap — 3 Phasen</div>
+
+    <div class="grid3" style="gap:20px; align-items:stretch;">
+
+      <div class="phase">
+        <div style="font-size:10px; font-weight:700; color:var(--ocean); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;">Phase 1 — Quick Wins</div>
+        <div class="phase-title">Token-Konsolidierung &amp; Dark-Default</div>
+        <div class="phase-items">
+          — Meta-Leiste Hero-Card: <code>secondarySystemBackground</code> → <code>.black</code><br>
+          — StatsView: 6 StatCard-Farben auf Brand-Tokens umstellen<br>
+          — DealsView: Badge <code>.red</code> → <code>Color.sunsetOrange</code><br>
+          — Bar-Chart: <code>.blue.gradient</code> → <code>Color.oceanBlue.gradient</code><br>
+          — Scheme-Picker: Icon-Segmented (SF Symbols)
+        </div>
+        <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge-ocean" style="font-size:9px;">~2h Aufwand</span>
+          <span class="badge badge-green" style="font-size:9px;">Low Risk</span>
+        </div>
+      </div>
+
+      <div class="phase p2">
+        <div style="font-size:10px; font-weight:700; color:var(--orange); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;">Phase 2 — Struktur</div>
+        <div class="phase-title">Hero-Elemente &amp; Profile-Header</div>
+        <div class="phase-items">
+          — <code>StatsHeroView</code>: Gradient-Strip (navy→ocean) mit 4 Werten<br>
+          — <code>SettingsView</code>: Profil-Header als neues Section-Top<br>
+          — Merkliste: beste Deal-Karte als Hero-Slot<br>
+          — Karte: Chip-Switcher (Alle/Region) aus <code>Port.country</code><br>
+          — Icon-Kacheln in Settings (farbige Gradient-Tiles)
+        </div>
+        <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge-orange" style="font-size:9px;">~1 Sprint</span>
+          <span class="badge badge-muted" style="font-size:9px;">Med Risk</span>
+        </div>
+      </div>
+
+      <div class="phase p3">
+        <div style="font-size:10px; font-weight:700; color:var(--green); letter-spacing:.1em; text-transform:uppercase; margin-bottom:8px;">Phase 3 — Interaktion</div>
+        <div class="phase-title">Bottom-Sheets &amp; Chip-Navigation</div>
+        <div class="phase-items">
+          — Karte: Tap-Pin → Bottom-Sheet + Foto-Strip<br>
+          — Karte: Pulse-Ring-Effekt bei Pin-Auswahl<br>
+          — Merkliste: Chip-Filter (Destination / Preis)<br>
+          — Long-Press auf Timeline-Row → ContextMenu<br>
+          — Seemeilen-Berechnung Haversine in <code>Cruise.computed</code>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="badge badge-green" style="font-size:9px;">~2 Sprints</span>
+          <span class="badge badge-muted" style="font-size:9px;">Med Risk</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:24px; background:var(--card); border-radius:var(--r12); padding:16px 20px; border:1px solid var(--border);">
+      <div style="font-size:12px; font-weight:700; margin-bottom:8px;">Nicht-Ziele dieser Roadmap</div>
+      <div style="display:flex; gap:24px; flex-wrap:wrap;">
+        <div style="font-size:12px; color:var(--muted);">✗ Kein ML / CoreML (keine Infrastruktur)</div>
+        <div style="font-size:12px; color:var(--muted);">✗ Kein Custom-Transition-Framework</div>
+        <div style="font-size:12px; color:var(--muted);">✗ Kein Lottie / Rive (externe Deps)</div>
+        <div style="font-size:12px; color:var(--muted);">✗ Kein Redesign Datenmodell</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- S12 CLOSING -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="slide" id="s12">
+  <div style="text-align:center; max-width:700px; position:relative; z-index:1;">
+    <div class="label-tag">Nächste Schritte</div>
+    <div class="headline" style="margin-bottom:16px;">Drei Entscheidungen</div>
+    <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:32px; text-align:left;">
+      <div class="card" style="display:flex; gap:14px; align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#1a2a50,#0C8CE9);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">1</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Phase 1 jetzt freigeben</div>
+          <div style="font-size:12px; color:var(--muted);">Token-Tausch + Meta-Leiste = 2h Arbeit, sichtbarer Impact. Kein Risiko.</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex; gap:14px; align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2a1a0a,#FF6B35);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">2</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Hero-Strip Statistik priorisieren</div>
+          <div style="font-size:12px; color:var(--muted);">Stärkste emotionale Wirkung pro Aufwand. Zahlen auf navy→ocean Gradient = Premium-Moment.</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex; gap:14px; align-items:flex-start;">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#0a2a1a,#34C759);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">3</div>
+        <div>
+          <div style="font-size:14px; font-weight:700; margin-bottom:4px;">Phase 3 nach TestFlight-Feedback</div>
+          <div style="font-size:12px; color:var(--muted);">Bottom-Sheet + Chips nach User-Reaktion auf Phase 1+2 entscheiden — kein Over-Engineering vorab.</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:14px; color:var(--muted);">
+      Alle Verbesserungen basieren auf <strong style="color:#fff;">vorhandenen SwiftData-Feldern</strong> und <strong style="color:#fff;">nativem SwiftUI</strong>.<br>
+      Kein neues Framework, kein neues Datenmodell.
+    </div>
+  </div>
+  <!-- Background accent -->
+  <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 80%, rgba(12,140,233,.12) 0%, transparent 70%);pointer-events:none;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- Navigation Script -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  function show(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(total - 1, n));
+    slides[current].classList.add('active');
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress').style.width = ((current + 1) / total * 100) + '%';
+    window.location.hash = current + 1;
+  }
+
+  document.getElementById('prev').addEventListener('click', function() { show(current - 1); });
+  document.getElementById('next').addEventListener('click', function() { show(current + 1); });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); show(0); }
+    if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+  });
+
+  // Deep-link via hash
+  var hash = parseInt(window.location.hash.replace('#',''));
+  if (hash >= 1 && hash <= total) show(hash - 1);
+  else show(0);
+})();
+</script>
+</body>
+</html>

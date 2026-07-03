@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip · Mehr/Einstellungen · 3 Design-Vorschläge</title>
+<style>
+  /* ── Design Tokens (aus _consistency-brief.md) ── */
+  :root {
+    --ocean-blue:   #0C8CE9;
+    --ocean-light:  #36A9F0;
+    --navy-dark:    #1A365D;
+    --sunset-orange:#FF6B35;
+    --sea-green:    #34C759;
+    --bg-deck:      #0f1923;
+    --card-light:   #F2F2F7;
+    --card-dark:    #1C1C1E;
+    --sep:          rgba(120,120,128,0.2);
+    --r16:          16px;
+    --r10:          10px;
+    --r6:           6px;
+  }
+
+  /* ── Reset & Base ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; background: var(--bg-deck); color: #fff; overflow: hidden; }
+
+  /* ── Slides ── */
+  .deck { width: 100vw; height: 100vh; position: relative; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+    padding: 32px 24px;
+  }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* ── Progress bar ── */
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: var(--ocean-blue);
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  /* ── Slide counter ── */
+  #counter {
+    position: fixed; bottom: 20px; right: 24px;
+    font-size: 12px; color: rgba(255,255,255,0.45);
+    letter-spacing: 0.05em;
+    z-index: 100;
+  }
+
+  /* ── Nav arrows ── */
+  .nav-arrow {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.08);
+    border: none; color: rgba(255,255,255,0.5);
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+    z-index: 100;
+  }
+  .nav-arrow:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  #prev { left: 16px; }
+  #next { right: 16px; }
+
+  /* ── Section tag ── */
+  .section-tag {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ocean-blue);
+    margin-bottom: 10px;
+  }
+
+  /* ── Slide headings ── */
+  .slide-title {
+    font-size: clamp(22px, 3vw, 36px);
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .slide-sub {
+    font-size: clamp(13px, 1.6vw, 16px);
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    max-width: 560px;
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+
+  /* ── iPhone Frame ── */
+  .iphone {
+    width: 195px;
+    height: 422px;
+    background: #111;
+    border-radius: 44px;
+    border: 6px solid #3a3a3c;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+  .iphone.light { background: #F2F2F7; border-color: #c7c7cc; }
+
+  /* Dynamic Island */
+  .iphone::before {
+    content: '';
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    width: 72px; height: 20px;
+    background: #111;
+    border-radius: 14px;
+    z-index: 10;
+  }
+  .iphone.light::before { background: #1c1c1e; }
+
+  /* Screen area */
+  .screen {
+    position: absolute;
+    inset: 0;
+    border-radius: 38px;
+    overflow: hidden;
+    background: #F2F2F7;
+  }
+  .screen.dark { background: #000; }
+
+  /* Status bar */
+  .status-bar {
+    height: 44px;
+    display: flex; align-items: flex-end; padding-bottom: 6px;
+    padding-left: 20px; padding-right: 16px;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .status-bar .time {
+    font-size: 11px; font-weight: 700;
+    color: #1c1c1e;
+  }
+  .screen.dark .status-bar .time { color: #fff; }
+  .status-icons {
+    display: flex; gap: 4px; align-items: center;
+  }
+  .status-icons span {
+    font-size: 10px; color: #1c1c1e;
+  }
+  .screen.dark .status-icons span { color: #fff; }
+
+  /* Nav bar */
+  .nav-bar {
+    padding: 2px 16px 8px;
+  }
+  .nav-bar .page-title {
+    font-size: 26px; font-weight: 800;
+    color: #1c1c1e; line-height: 1.1;
+  }
+  .screen.dark .nav-bar .page-title { color: #fff; }
+
+  /* Settings List generic */
+  .settings-list {
+    flex: 1;
+    overflow: hidden;
+    padding: 0 16px;
+  }
+
+  .list-section {
+    margin-bottom: 8px;
+  }
+  .section-header {
+    font-size: 11px; font-weight: 600;
+    color: #6e6e73;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0 4px 4px;
+  }
+  .section-body {
+    background: #fff;
+    border-radius: var(--r10);
+    overflow: hidden;
+  }
+  .screen.dark .section-body { background: #1c1c1e; }
+
+  .list-row {
+    display: flex; align-items: center;
+    padding: 8px 12px;
+    gap: 8px;
+    min-height: 36px;
+    border-bottom: 0.5px solid rgba(120,120,128,0.2);
+    position: relative;
+  }
+  .list-row:last-child { border-bottom: none; }
+
+  .row-icon {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .row-label {
+    flex: 1;
+    font-size: 13px;
+    color: #1c1c1e;
+    font-weight: 400;
+  }
+  .screen.dark .row-label { color: #fff; }
+  .row-value {
+    font-size: 12px; color: #8e8e93;
+  }
+  .row-chevron {
+    font-size: 11px; color: #c7c7cc;
+    margin-left: 2px;
+  }
+
+  /* Pill badges */
+  .badge-green {
+    background: rgba(52,199,89,0.15);
+    color: var(--sea-green);
+    font-size: 10px; font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+  .badge-orange {
+    background: rgba(255,107,53,0.15);
+    color: var(--sunset-orange);
+    font-size: 10px; font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+  .badge-blue {
+    background: rgba(12,140,233,0.15);
+    color: var(--ocean-blue);
+    font-size: 10px; font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+  .badge-gray {
+    background: rgba(120,120,128,0.15);
+    color: #8e8e93;
+    font-size: 10px; font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+  }
+
+  /* Tab bar */
+  .tab-bar {
+    height: 56px;
+    display: flex; align-items: flex-start;
+    padding-top: 6px;
+    border-top: 0.5px solid rgba(120,120,128,0.2);
+    background: rgba(242,242,247,0.9);
+  }
+  .screen.dark .tab-bar {
+    background: rgba(28,28,30,0.9);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .tab-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+  }
+  .tab-icon { font-size: 18px; }
+  .tab-label { font-size: 8px; color: #8e8e93; }
+  .tab-item.active .tab-icon { filter: drop-shadow(0 0 0 var(--ocean-blue)); }
+  .tab-item.active .tab-label { color: var(--ocean-blue); }
+
+  /* ── Before/After layout ── */
+  .phones-row {
+    display: flex; gap: 32px; align-items: flex-start;
+  }
+  .phone-col {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .phone-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+  }
+  .phone-label.after { color: var(--ocean-blue); }
+
+  /* ── Bullet list ── */
+  .bullet-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 8px;
+    max-width: 320px;
+  }
+  .bullet-list li {
+    display: flex; align-items: flex-start; gap: 8px;
+    font-size: 13px; line-height: 1.45;
+    color: rgba(255,255,255,0.8);
+  }
+  .bullet-list li::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--ocean-blue);
+    margin-top: 5px; flex-shrink: 0;
+  }
+
+  /* ── Pain point grid ── */
+  .pain-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; width: 100%; max-width: 680px;
+  }
+  .pain-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--r10);
+    padding: 12px 14px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .pain-sev {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 4px; flex-shrink: 0;
+  }
+  .pain-sev.high { background: var(--sunset-orange); }
+  .pain-sev.med  { background: var(--ocean-blue); }
+  .pain-sev.low  { background: var(--sea-green); }
+  .pain-text { font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.4; }
+  .pain-code { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; font-family: monospace; }
+
+  /* ── Roadmap ── */
+  .roadmap-row {
+    display: flex; gap: 12px; max-width: 700px; width: 100%;
+  }
+  .roadmap-phase {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--r16);
+    padding: 16px;
+    border-top: 3px solid var(--ocean-blue);
+  }
+  .roadmap-phase.p2 { border-color: var(--sunset-orange); }
+  .roadmap-phase.p3 { border-color: var(--sea-green); }
+  .phase-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ocean-blue); margin-bottom: 6px; }
+  .roadmap-phase.p2 .phase-label { color: var(--sunset-orange); }
+  .roadmap-phase.p3 .phase-label { color: var(--sea-green); }
+  .phase-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+  .phase-items { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.6; }
+
+  /* ── Cover specifics ── */
+  .cover-hero {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--navy-dark), var(--ocean-blue));
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 20px;
+    box-shadow: 0 16px 40px rgba(12,140,233,0.35);
+  }
+
+  /* ── Slide 1: Cover ── */
+  #s1 { background: radial-gradient(ellipse at 50% 30%, rgba(12,140,233,0.18) 0%, transparent 70%), var(--bg-deck); }
+
+  /* ── Benchmark cards ── */
+  .bench-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 10px; max-width: 700px; width: 100%;
+  }
+  .bench-card {
+    background: rgba(255,255,255,0.05);
+    border-radius: var(--r10);
+    padding: 12px;
+  }
+  .bench-app { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--ocean-light); }
+  .bench-desc { font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.4; }
+
+  /* ── Main content layout for proposal slides ── */
+  .proposal-layout {
+    display: flex; gap: 32px; align-items: flex-start;
+    max-width: 820px; width: 100%;
+  }
+  .proposal-text { flex: 1; }
+  .proposal-phones { flex-shrink: 0; }
+
+  /* ── Scrollable screen content ── */
+  .screen-scroll {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Slide 1: Vorschlag 1 — Profil-Header + gruppiert ── */
+  /* Profile header card */
+  .profile-header {
+    margin: 0 16px 12px;
+    background: linear-gradient(135deg, var(--navy-dark) 0%, var(--ocean-blue) 100%);
+    border-radius: var(--r16);
+    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .profile-avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .profile-info { flex: 1; }
+  .profile-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .profile-stats { font-size: 10px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+
+  .profile-stat-row {
+    margin: 0 16px 12px;
+    display: flex; gap: 6px;
+  }
+  .profile-stat-chip {
+    flex: 1;
+    background: #fff;
+    border-radius: var(--r10);
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .screen.dark .profile-stat-chip { background: #1c1c1e; }
+  .chip-val { font-size: 14px; font-weight: 800; color: var(--ocean-blue); }
+  .chip-lbl { font-size: 9px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.03em; }
+
+  /* Vorschlag 2 — Karten-Sektionen */
+  .card-section-block {
+    margin: 0 16px 10px;
+    background: #fff;
+    border-radius: var(--r16);
+    overflow: hidden;
+    box-shadow: none;
+  }
+  .screen.dark .card-section-block { background: #1c1c1e; }
+
+  .card-section-title {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 12px 6px;
+    border-bottom: 0.5px solid rgba(120,120,128,0.15);
+  }
+  .card-section-icon {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .card-section-label {
+    font-size: 12px; font-weight: 700;
+    color: #1c1c1e;
+  }
+  .screen.dark .card-section-label { color: #fff; }
+
+  .card-row {
+    display: flex; align-items: center;
+    padding: 7px 12px;
+    gap: 8px;
+    border-bottom: 0.5px solid rgba(120,120,128,0.12);
+  }
+  .card-row:last-child { border-bottom: none; }
+  .card-row-icon {
+    width: 22px; height: 22px;
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .card-row-label { flex: 1; font-size: 11.5px; color: #1c1c1e; }
+  .screen.dark .card-row-label { color: #fff; }
+
+  /* Vorschlag 3 — Schlank nativ mit Marken-Akzenten */
+  .accent-header {
+    margin: 0 16px 10px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: rgba(12,140,233,0.08);
+    border-radius: var(--r10);
+    border-left: 3px solid var(--ocean-blue);
+  }
+  .accent-header-icon { font-size: 20px; }
+  .accent-header-text { flex: 1; }
+  .accent-header-title { font-size: 12px; font-weight: 700; color: var(--ocean-blue); }
+  .accent-header-sub { font-size: 10px; color: rgba(12,140,233,0.7); }
+
+  .slim-section { margin: 0 16px 8px; }
+  .slim-section-label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: #6e6e73;
+    padding: 0 0 3px 4px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .slim-section-accent { width: 3px; height: 10px; border-radius: 2px; background: var(--ocean-blue); }
+  .slim-section-accent.orange { background: var(--sunset-orange); }
+  .slim-section-accent.green { background: var(--sea-green); }
+
+  .slim-body {
+    background: #fff;
+    border-radius: var(--r10);
+    overflow: hidden;
+  }
+  .screen.dark .slim-body { background: #1c1c1e; }
+
+  .slim-row {
+    display: flex; align-items: center;
+    padding: 7px 10px; gap: 7px;
+    border-bottom: 0.5px solid rgba(120,120,128,0.15);
+  }
+  .slim-row:last-child { border-bottom: none; }
+  .slim-icon {
+    width: 22px; height: 22px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+  .slim-label { flex: 1; font-size: 11.5px; color: #1c1c1e; }
+  .screen.dark .slim-label { color: #fff; }
+
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter"></div>
+<button class="nav-arrow" id="prev">&#8592;</button>
+<button class="nav-arrow" id="next">&#8594;</button>
+
+<div class="deck">
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 1 · Cover                                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide active" id="s1">
+    <div class="cover-hero">&#9965;</div>
+    <div class="section-tag">UX Pitch · ShipTrip 1.5.1</div>
+    <h1 class="slide-title">Tab „Mehr" — Einstellungen<br>3 Design-Vorschläge</h1>
+    <p class="slide-sub">
+      Konsistent zur redesignten Hauptseite „Meine Reisen" (Build 8).<br>
+      Tokens: oceanBlue · sunsetOrange · seaGreen · navyDark.
+    </p>
+    <div style="display:flex; gap:24px; margin-top:8px;">
+      <div style="text-align:center;">
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px;">Vorschlag A</div>
+        <div style="font-size:13px; font-weight:600; color:var(--ocean-light);">Profil-Header<br>+ Gruppiert</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,0.1);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px;">Vorschlag B</div>
+        <div style="font-size:13px; font-weight:600; color:var(--sunset-orange);">Karten-<br>Sektionen</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,0.1);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:4px;">Vorschlag C</div>
+        <div style="font-size:13px; font-weight:600; color:var(--sea-green);">Schlank nativ<br>+ Marken-Akzente</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 2 · Problem (IST)                                  -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s2">
+    <div class="section-tag">IST-Analyse · SettingsView.swift</div>
+    <h2 class="slide-title">Das Problem: Generische Default-Liste</h2>
+    <p class="slide-sub">6 Findings mit Datei-Referenz — keine Marken-Identität, keine visuelle Hierarchie.</p>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="pain-sev high"></div>
+        <div>
+          <div class="pain-text">Kein Marken-Token: Gemini-Status nutzt rohes <code style="font-size:10px;">.green</code>/<code style="font-size:10px;">.red</code> statt seaGreen/sunsetOrange.</div>
+          <div class="pain-code">SettingsView.swift:43–49</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-sev high"></div>
+        <div>
+          <div class="pain-text">Kein Profil-Kontext: Nutzer sieht nicht, wie viele Reisen/Länder er hat — die Einstellungen sind anonym.</div>
+          <div class="pain-code">SettingsView.swift:26–135</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-sev med"></div>
+        <div>
+          <div class="pain-text">Keine Icon-Hintergründe: Labels ohne farbige Kachel-Ikonen wirken flach verglichen mit iOS-Systemeinstellungen.</div>
+          <div class="pain-code">SettingsView.swift:30–34, 41, 55, 68</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-sev med"></div>
+        <div>
+          <div class="pain-text">Keine Sektions-Hierarchie: „Synchronisation" (Placeholder) steht gleichwertig neben KI-Funktionen — keine visuelle Gewichtung.</div>
+          <div class="pain-code">SettingsView.swift:73–81</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-sev med"></div>
+        <div>
+          <div class="pain-text">Picker ohne Kontext: Farbschema-Picker ohne Vorschau-Icons wirkt nüchtern; keine Verbindung zur Markensprache.</div>
+          <div class="pain-code">SettingsView.swift:29–35</div>
+        </div>
+      </div>
+      <div class="pain-card">
+        <div class="pain-sev low"></div>
+        <div>
+          <div class="pain-text">Version-Zeile hat kein Icon; GitHub-Link verliert sich im Info-Block ohne visuelle Differenzierung.</div>
+          <div class="pain-code">SettingsView.swift:123–134</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 3 · Benchmarks                                     -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s3">
+    <div class="section-tag">Benchmark · Settings-Patterns 2025/2026</div>
+    <h2 class="slide-title">Was Best-in-Class-Apps machen</h2>
+    <p class="slide-sub">Reise- und Premium-Apps mit ausgezeichneten Settings-UX — konkrete übertragbare Patterns.</p>
+    <div class="bench-grid">
+      <div class="bench-card">
+        <div class="bench-app">Polarsteps</div>
+        <div class="bench-desc">Profil-Header mit Avatar + Trip-Statistiken (Reisen, km, Länder) direkt oben — Settings als Extension des Profils.</div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Daylio</div>
+        <div class="bench-desc">Farbige Icon-Kacheln (SF Symbols auf Farb-Hintergrund) pro Einstellungs-Zeile; Sektions-Label mit Akzentstreifen.</div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Day One</div>
+        <div class="bench-desc">Karten-Sektionen statt flacher Liste; Sync-Status prominent als Card-Badge; Premium-Sektion visuell abgesetzt.</div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Apple Health</div>
+        <div class="bench-desc">Section-Header mit grobem Icon + Kurzbeschreibung; Zebra-Fill für verwandte Gruppen; keine Rand-Ablenkung.</div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">Wanderlog</div>
+        <div class="bench-desc">Stats-Chips (Trips/Countries/Days) horizontal in der Settings-Kopfzeile; KI-Feature-Zeile mit „Connected"-Badge.</div>
+      </div>
+      <div class="bench-card">
+        <div class="bench-app">iOS Einstellungen</div>
+        <div class="bench-desc">Gruppen-Karten mit r10 und nahtlosem Fill, gerundete Ikonen-Kacheln 29×29, Chevron-Indikator, Sektions-Footer-Text.</div>
+      </div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:16px; flex-wrap:wrap; justify-content:center;">
+      <div style="font-size:12px; color:rgba(255,255,255,0.5);">Übertragbare Patterns:
+        <span style="color:var(--ocean-light); font-weight:600;"> Profil-Header-Stats &middot; Icon-Kacheln &middot; Marken-Status-Badge &middot; Sektions-Akzentstreifen &middot; Karten-Gruppen</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 4 · Vorschlag A — Before                           -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s4">
+    <div class="section-tag">Vorschlag A &middot; Before</div>
+    <h2 class="slide-title">Profil-Header + Gruppiert</h2>
+    <p class="slide-sub">Heute: generische InsetGroupedList ohne jede Marken-Identität.</p>
+    <div class="phones-row">
+      <!-- BEFORE light -->
+      <div class="phone-col">
+        <div class="phone-label">Vorher (Hell)</div>
+        <div class="iphone light">
+          <div class="screen" style="display:flex; flex-direction:column;">
+            <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>&#9679;&#9679;&#9679;</span><span>WiFi</span><span>100%</span></div></div>
+            <div class="nav-bar"><div class="page-title">Einstellungen</div></div>
+            <div style="flex:1; overflow:hidden; padding:0 16px;">
+              <!-- Erscheinungsbild -->
+              <div class="list-section">
+                <div class="section-header">Erscheinungsbild</div>
+                <div class="section-body">
+                  <div class="list-row">
+                    <span class="row-label">Farbschema</span>
+                    <span class="row-value">System</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                </div>
+              </div>
+              <!-- KI -->
+              <div class="list-section">
+                <div class="section-header">KI-Funktionen</div>
+                <div class="section-body">
+                  <div class="list-row">
+                    <span class="row-label">Gemini API</span>
+                    <span style="color:#34C759; font-size:14px;">&#10003;</span>
+                  </div>
+                  <div class="list-row">
+                    <span class="row-label">API-Key ändern</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                  <div class="list-row">
+                    <span class="row-label" style="color:#ff3b30;">API-Key entfernen</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Sync -->
+              <div class="list-section">
+                <div class="section-header">Synchronisation</div>
+                <div class="section-body">
+                  <div class="list-row">
+                    <span class="row-label">iCloud Sync</span>
+                    <span class="row-value">Geplant</span>
+                  </div>
+                </div>
+              </div>
+              <!-- More -->
+              <div class="list-section">
+                <div class="section-body">
+                  <div class="list-row">
+                    <span class="row-label">Erinnerungen</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                  <div class="list-row">
+                    <span class="row-label">Daten verwalten</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- tab bar -->
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- BEFORE dark -->
+      <div class="phone-col">
+        <div class="phone-label">Vorher (Dunkel)</div>
+        <div class="iphone">
+          <div class="screen dark" style="display:flex; flex-direction:column;">
+            <div class="status-bar"><span class="time" style="color:#fff;">9:41</span><div class="status-icons"><span style="color:#fff;">&#9679;&#9679;&#9679; WiFi 100%</span></div></div>
+            <div class="nav-bar"><div class="page-title" style="color:#fff;">Einstellungen</div></div>
+            <div style="flex:1; overflow:hidden; padding:0 16px;">
+              <div class="list-section">
+                <div class="section-header">Erscheinungsbild</div>
+                <div class="section-body" style="background:#1c1c1e;">
+                  <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                    <span class="row-label" style="color:#fff;">Farbschema</span>
+                    <span class="row-value">System</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">KI-Funktionen</div>
+                <div class="section-body" style="background:#1c1c1e;">
+                  <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                    <span class="row-label" style="color:#fff;">Gemini API</span>
+                    <span style="color:#34C759; font-size:14px;">&#10003;</span>
+                  </div>
+                  <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                    <span class="row-label" style="color:#fff;">API-Key ändern</span>
+                  </div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-body" style="background:#1c1c1e;">
+                  <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                    <span class="row-label" style="color:#fff;">Erinnerungen</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                  <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                    <span class="row-label" style="color:#fff;">Daten verwalten</span>
+                    <span class="row-chevron">›</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:16px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:16px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:16px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:16px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:16px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 5 · Vorschlag A — After                            -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s5">
+    <div class="section-tag">Vorschlag A &middot; After</div>
+    <h2 class="slide-title">Profil-Header + Gruppiert</h2>
+    <p class="slide-sub">Navy-Gradient-Header mit Stats-Chips + farbige Icon-Kacheln in nativer Gruppenstruktur.</p>
+    <div class="proposal-layout">
+      <div class="proposal-text">
+        <ul class="bullet-list">
+          <li>Navy→OceanBlue-Gradient-Header zeigt 4 Reisen / 6 Länder als kleine Stat-Chips — Nutzer sieht sofort seinen „Reise-Footprint".</li>
+          <li>Farbige Icon-Kacheln (r6, Marken-Tokens) pro Zeile verbinden die Einstellungen mit der visuellen Sprache der Hauptseite.</li>
+          <li>KI-Status als seaGreen-Badge „Verbunden" statt rohes .green — Token-konform.</li>
+          <li>Dezenter „ShipTrip Premium"-Platzhalter-Eintrag (badge: „Bald") für Phase-3-Vorbereitung — kein Ablenkungspotenzial.</li>
+          <li>Konsistenz: r10 Karten, secondarySystemBackground-Fill, Separator 0.5pt — identisch zu Timeline-Row.</li>
+        </ul>
+      </div>
+      <div class="proposal-phones">
+        <div class="phones-row">
+          <!-- After Light -->
+          <div class="phone-col">
+            <div class="phone-label after">Nachher (Hell)</div>
+            <div class="iphone light">
+              <div class="screen" style="display:flex; flex-direction:column;">
+                <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>&#9679;&#9679;&#9679; 100%</span></div></div>
+                <div class="nav-bar" style="padding-bottom:4px;"><div class="page-title">Einstellungen</div></div>
+                <!-- Profile Header -->
+                <div class="profile-header" style="margin:0 12px 8px;">
+                  <div class="profile-avatar">&#128100;</div>
+                  <div class="profile-info">
+                    <div class="profile-name">Mein Profil</div>
+                    <div class="profile-stats">ShipTrip 1.5.1 (8)</div>
+                  </div>
+                </div>
+                <!-- Stat chips -->
+                <div class="profile-stat-row" style="margin:0 12px 10px; gap:5px;">
+                  <div class="profile-stat-chip">
+                    <div class="chip-val" style="color:var(--ocean-blue); font-size:13px;">4</div>
+                    <div class="chip-lbl">Reisen</div>
+                  </div>
+                  <div class="profile-stat-chip">
+                    <div class="chip-val" style="color:var(--sea-green); font-size:13px;">6</div>
+                    <div class="chip-lbl">Länder</div>
+                  </div>
+                  <div class="profile-stat-chip">
+                    <div class="chip-val" style="color:var(--sunset-orange); font-size:13px;">DE</div>
+                    <div class="chip-lbl">Sprache</div>
+                  </div>
+                </div>
+                <!-- List sections -->
+                <div style="flex:1; overflow:hidden; padding:0 12px;">
+                  <!-- Darstellung -->
+                  <div class="list-section">
+                    <div class="section-header">Darstellung</div>
+                    <div class="section-body">
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(12,140,233,0.12);">&#9728;</div>
+                        <span class="row-label" style="font-size:12px;">Farbschema</span>
+                        <span class="row-value">System</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- KI -->
+                  <div class="list-section">
+                    <div class="section-header">KI-Funktionen</div>
+                    <div class="section-body">
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(52,199,89,0.15);">&#10024;</div>
+                        <span class="row-label" style="font-size:12px;">Gemini API</span>
+                        <span class="badge-green">Verbunden</span>
+                      </div>
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(255,107,53,0.12);">&#128273;</div>
+                        <span class="row-label" style="font-size:12px;">API-Key ändern</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Weitere -->
+                  <div class="list-section">
+                    <div class="section-body">
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(12,140,233,0.12);">&#9993;</div>
+                        <span class="row-label" style="font-size:12px;">Erinnerungen</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(255,107,53,0.12);">&#128190;</div>
+                        <span class="row-label" style="font-size:12px;">Daten verwalten</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                      <div class="list-row">
+                        <div class="row-icon" style="background:rgba(52,199,89,0.12);">&#9729;</div>
+                        <span class="row-label" style="font-size:12px;">iCloud Sync</span>
+                        <span class="badge-gray">Bald</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tab-bar">
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+                  <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- After Dark -->
+          <div class="phone-col">
+            <div class="phone-label after">Nachher (Dunkel)</div>
+            <div class="iphone">
+              <div class="screen dark" style="display:flex; flex-direction:column;">
+                <div class="status-bar"><span class="time" style="color:#fff;">9:41</span><div class="status-icons"><span style="color:#fff;">&#9679;&#9679;&#9679; 100%</span></div></div>
+                <div class="nav-bar"><div class="page-title" style="color:#fff;">Einstellungen</div></div>
+                <div class="profile-header" style="margin:0 12px 8px;">
+                  <div class="profile-avatar">&#128100;</div>
+                  <div class="profile-info">
+                    <div class="profile-name">Mein Profil</div>
+                    <div class="profile-stats">ShipTrip 1.5.1 (8)</div>
+                  </div>
+                </div>
+                <div class="profile-stat-row" style="margin:0 12px 10px; gap:5px;">
+                  <div class="profile-stat-chip" style="background:#2c2c2e;">
+                    <div class="chip-val" style="color:var(--ocean-blue); font-size:13px;">4</div>
+                    <div class="chip-lbl" style="color:#8e8e93;">Reisen</div>
+                  </div>
+                  <div class="profile-stat-chip" style="background:#2c2c2e;">
+                    <div class="chip-val" style="color:var(--sea-green); font-size:13px;">6</div>
+                    <div class="chip-lbl" style="color:#8e8e93;">Länder</div>
+                  </div>
+                  <div class="profile-stat-chip" style="background:#2c2c2e;">
+                    <div class="chip-val" style="color:var(--sunset-orange); font-size:13px;">DE</div>
+                    <div class="chip-lbl" style="color:#8e8e93;">Sprache</div>
+                  </div>
+                </div>
+                <div style="flex:1; overflow:hidden; padding:0 12px;">
+                  <div class="list-section">
+                    <div class="section-header">Darstellung</div>
+                    <div class="section-body" style="background:#1c1c1e;">
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(12,140,233,0.2);">&#9728;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">Farbschema</span>
+                        <span class="row-value">System</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="list-section">
+                    <div class="section-header">KI-Funktionen</div>
+                    <div class="section-body" style="background:#1c1c1e;">
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(52,199,89,0.2);">&#10024;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">Gemini API</span>
+                        <span class="badge-green">Verbunden</span>
+                      </div>
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(255,107,53,0.2);">&#128273;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">API-Key ändern</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="list-section">
+                    <div class="section-body" style="background:#1c1c1e;">
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(12,140,233,0.2);">&#9993;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">Erinnerungen</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(255,107,53,0.2);">&#128190;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">Daten verwalten</span>
+                        <span class="row-chevron">›</span>
+                      </div>
+                      <div class="list-row" style="border-color:rgba(255,255,255,0.08);">
+                        <div class="row-icon" style="background:rgba(52,199,89,0.2);">&#9729;</div>
+                        <span class="row-label" style="color:#fff; font-size:12px;">iCloud Sync</span>
+                        <span class="badge-gray">Bald</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="tab-bar">
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+                  <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+                  <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 6 · Vorschlag B — Before (reuses S4 before-frame) -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s6">
+    <div class="section-tag">Vorschlag B &middot; Before / After</div>
+    <h2 class="slide-title">Karten-Sektionen</h2>
+    <p class="slide-sub">Heute: flache Liste. Nachher: jede Sektion als eigene Karte r16 mit farbigem Icon-Header.</p>
+    <div class="phones-row">
+      <!-- BEFORE -->
+      <div class="phone-col">
+        <div class="phone-label">Vorher</div>
+        <div class="iphone light">
+          <div class="screen" style="display:flex; flex-direction:column;">
+            <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>&#9679;&#9679;&#9679; 100%</span></div></div>
+            <div class="nav-bar"><div class="page-title">Einstellungen</div></div>
+            <div style="flex:1; overflow:hidden; padding:0 16px;">
+              <div class="list-section">
+                <div class="section-header">Erscheinungsbild</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Farbschema</span><span class="row-value">System</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">KI-Funktionen</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Gemini API</span><span style="color:#34C759; font-size:12px;">&#10003; Verbunden</span></div>
+                  <div class="list-row"><span class="row-label">API-Key ändern</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">Synchronisation</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">iCloud Sync</span><span class="row-value">Geplant</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Erinnerungen</span><span class="row-chevron">›</span></div>
+                  <div class="list-row"><span class="row-label">Daten verwalten</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">Info</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Version</span><span class="row-value">1.5.1</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER DARK — Karten-Sektionen -->
+      <div class="phone-col">
+        <div class="phone-label after">Nachher (Dunkel)</div>
+        <div class="iphone">
+          <div class="screen dark" style="display:flex; flex-direction:column; background:#000;">
+            <div class="status-bar"><span class="time" style="color:#fff;">9:41</span><div class="status-icons"><span style="color:#fff;">&#9679;&#9679;&#9679; 100%</span></div></div>
+            <div class="nav-bar"><div class="page-title" style="color:#fff;">Einstellungen</div></div>
+            <!-- Stats mini-header -->
+            <div style="display:flex; gap:5px; margin:0 12px 10px; padding:8px 10px; background:linear-gradient(135deg,#1A365D,#0C8CE9); border-radius:var(--r10);">
+              <div style="flex:1; text-align:center;">
+                <div style="font-size:14px; font-weight:800; color:#fff; font-variant-numeric:tabular-nums;">4</div>
+                <div style="font-size:9px; color:rgba(255,255,255,0.65); text-transform:uppercase;">Reisen</div>
+              </div>
+              <div style="width:0.5px; background:rgba(255,255,255,0.2);"></div>
+              <div style="flex:1; text-align:center;">
+                <div style="font-size:14px; font-weight:800; color:#fff; font-variant-numeric:tabular-nums;">6</div>
+                <div style="font-size:9px; color:rgba(255,255,255,0.65); text-transform:uppercase;">Länder</div>
+              </div>
+            </div>
+            <div style="flex:1; overflow:hidden; padding:0 12px;">
+              <!-- KI-Karte -->
+              <div class="card-section-block" style="background:#1c1c1e; margin:0 0 8px;">
+                <div class="card-section-title" style="border-color:rgba(255,255,255,0.08);">
+                  <div class="card-section-icon" style="background:rgba(52,199,89,0.2);">&#10024;</div>
+                  <span class="card-section-label" style="color:#fff;">KI-Funktionen</span>
+                  <span class="badge-green" style="margin-left:auto;">Aktiv</span>
+                </div>
+                <div class="card-row" style="border-color:rgba(255,255,255,0.08);">
+                  <div class="card-row-icon" style="background:rgba(52,199,89,0.15);">&#10024;</div>
+                  <span class="card-row-label" style="color:#fff;">Gemini API</span>
+                  <span class="badge-green">Verbunden</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(255,107,53,0.2);">&#128273;</div>
+                  <span class="card-row-label" style="color:#fff;">API-Key ändern</span>
+                  <span style="color:#48484a; font-size:11px;">›</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(12,140,233,0.2);">&#128279;</div>
+                  <span class="card-row-label" style="color:#fff; font-size:11px;">Bei Google erstellen</span>
+                  <span style="color:#48484a; font-size:11px;">&#8599;</span>
+                </div>
+              </div>
+              <!-- Darstellung + Daten -->
+              <div class="card-section-block" style="background:#1c1c1e; margin:0 0 8px;">
+                <div class="card-section-title" style="border-color:rgba(255,255,255,0.08);">
+                  <div class="card-section-icon" style="background:rgba(12,140,233,0.2);">&#9881;</div>
+                  <span class="card-section-label" style="color:#fff;">App &amp; Daten</span>
+                </div>
+                <div class="card-row" style="border-color:rgba(255,255,255,0.08);">
+                  <div class="card-row-icon" style="background:rgba(12,140,233,0.2);">&#9728;</div>
+                  <span class="card-row-label" style="color:#fff;">Farbschema</span>
+                  <span style="color:#8e8e93; font-size:10px;">System</span>
+                  <span style="color:#48484a; font-size:11px; margin-left:3px;">›</span>
+                </div>
+                <div class="card-row" style="border-color:rgba(255,255,255,0.08);">
+                  <div class="card-row-icon" style="background:rgba(255,107,53,0.2);">&#9993;</div>
+                  <span class="card-row-label" style="color:#fff;">Erinnerungen</span>
+                  <span style="color:#48484a; font-size:11px;">›</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(52,199,89,0.2);">&#128190;</div>
+                  <span class="card-row-label" style="color:#fff;">Daten verwalten</span>
+                  <span style="color:#48484a; font-size:11px;">›</span>
+                </div>
+              </div>
+              <!-- Info -->
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 4px;">
+                <span style="font-size:10px; color:#48484a;">Version 1.5.1 (8)</span>
+                <span style="font-size:10px; color:var(--ocean-blue);">GitHub &#8599;</span>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- After Light — Karten-Sektionen -->
+      <div class="phone-col">
+        <div class="phone-label after">Nachher (Hell)</div>
+        <div class="iphone light">
+          <div class="screen" style="display:flex; flex-direction:column; background:#F2F2F7;">
+            <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>&#9679;&#9679;&#9679; 100%</span></div></div>
+            <div class="nav-bar"><div class="page-title">Einstellungen</div></div>
+            <div style="display:flex; gap:5px; margin:0 12px 10px; padding:8px 10px; background:linear-gradient(135deg,#1A365D,#0C8CE9); border-radius:var(--r10);">
+              <div style="flex:1; text-align:center;">
+                <div style="font-size:14px; font-weight:800; color:#fff;">4</div>
+                <div style="font-size:9px; color:rgba(255,255,255,0.7); text-transform:uppercase;">Reisen</div>
+              </div>
+              <div style="width:0.5px; background:rgba(255,255,255,0.3);"></div>
+              <div style="flex:1; text-align:center;">
+                <div style="font-size:14px; font-weight:800; color:#fff;">6</div>
+                <div style="font-size:9px; color:rgba(255,255,255,0.7); text-transform:uppercase;">Länder</div>
+              </div>
+            </div>
+            <div style="flex:1; overflow:hidden; padding:0 12px;">
+              <div class="card-section-block" style="margin:0 0 8px;">
+                <div class="card-section-title">
+                  <div class="card-section-icon" style="background:rgba(52,199,89,0.15);">&#10024;</div>
+                  <span class="card-section-label">KI-Funktionen</span>
+                  <span class="badge-green" style="margin-left:auto;">Aktiv</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(52,199,89,0.12);">&#10024;</div>
+                  <span class="card-row-label">Gemini API</span>
+                  <span class="badge-green">Verbunden</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(255,107,53,0.12);">&#128273;</div>
+                  <span class="card-row-label">API-Key ändern</span>
+                  <span style="color:#c7c7cc; font-size:11px;">›</span>
+                </div>
+              </div>
+              <div class="card-section-block" style="margin:0 0 8px;">
+                <div class="card-section-title">
+                  <div class="card-section-icon" style="background:rgba(12,140,233,0.12);">&#9881;</div>
+                  <span class="card-section-label">App &amp; Daten</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(12,140,233,0.1);">&#9728;</div>
+                  <span class="card-row-label">Farbschema</span>
+                  <span style="color:#8e8e93; font-size:10px;">System ›</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(255,107,53,0.1);">&#9993;</div>
+                  <span class="card-row-label">Erinnerungen</span>
+                  <span style="color:#c7c7cc; font-size:11px;">›</span>
+                </div>
+                <div class="card-row">
+                  <div class="card-row-icon" style="background:rgba(52,199,89,0.1);">&#128190;</div>
+                  <span class="card-row-label">Daten verwalten</span>
+                  <span style="color:#c7c7cc; font-size:11px;">›</span>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:4px 4px;">
+                <span style="font-size:10px; color:#8e8e93;">Version 1.5.1 (8)</span>
+                <span style="font-size:10px; color:var(--ocean-blue);">GitHub &#8599;</span>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 7 · Vorschlag B — Bullets                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s7">
+    <div class="section-tag">Vorschlag B &middot; Warum besser?</div>
+    <h2 class="slide-title">Karten-Sektionen — Kernargumente</h2>
+    <p class="slide-sub">Maximale thematische Trennung, KI-Sektion sofort erkennbar.</p>
+    <div style="display:flex; gap:40px; align-items:flex-start; max-width:720px; width:100%;">
+      <ul class="bullet-list" style="flex:1;">
+        <li>Jede Sektion ist eine eigenständige Karte (r16) — dieselbe Hierarchie wie die Hero-Card auf der Hauptseite, nur schlanker.</li>
+        <li>KI-Sektion trägt einen eigenen Status-Header (seaGreen „Aktiv"-Badge) — KI-Verbindungsstatus wird zur primären Information, nicht Nebenzeile.</li>
+        <li>Stats-Gradient-Strip (navyDark→oceanBlue) am Top verankert Nutzer im App-Kontext: 4 Reisen / 6 Länder immer sichtbar.</li>
+        <li>Größter Implementierungsaufwand der drei Vorschläge — erfordert Abkehr von Standard-List-Style; eigene ScrollView + VStack-Karten.</li>
+        <li>Dezenter Premium-Platzhalter integrierbar als eigene Karte mit ocean-Gradient-Rand (Phase 3).</li>
+      </ul>
+      <div style="flex:1;">
+        <div style="background:rgba(255,255,255,0.05); border-radius:var(--r10); padding:16px;">
+          <div style="font-size:11px; font-weight:700; color:var(--sunset-orange); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Aufwand-Einschätzung</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Stats-Strip Header</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">S · 1h</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Karten-Layout</span>
+              <span style="font-size:11px; color:var(--sunset-orange); font-weight:600;">M · 4h</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Icon-Kacheln</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">S · 1h</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Status-Badges</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">S · 30min</span>
+            </div>
+            <div style="height:0.5px; background:rgba(255,255,255,0.1); margin:4px 0;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:#fff; font-weight:700;">Gesamt</span>
+              <span style="font-size:12px; color:var(--sunset-orange); font-weight:700;">~6–7h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 8 · Vorschlag C — Before / After                   -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s8">
+    <div class="section-tag">Vorschlag C &middot; Before / After</div>
+    <h2 class="slide-title">Schlank nativ + Marken-Akzente</h2>
+    <p class="slide-sub">Heute: blank. Nachher: native grouped list, farbige Sektions-Akzentstreifen + oceanBlue-Mini-Header.</p>
+    <div class="phones-row">
+      <!-- BEFORE -->
+      <div class="phone-col">
+        <div class="phone-label">Vorher</div>
+        <div class="iphone light">
+          <div class="screen" style="display:flex; flex-direction:column;">
+            <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>100%</span></div></div>
+            <div class="nav-bar"><div class="page-title">Einstellungen</div></div>
+            <div style="flex:1; overflow:hidden; padding:0 16px;">
+              <div class="list-section">
+                <div class="section-header">KI-Funktionen</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Gemini API</span><span style="color:#34C759;font-size:12px;">&#10003;</span></div>
+                  <div class="list-row"><span class="row-label">API-Key ändern</span><span class="row-chevron">›</span></div>
+                  <div class="list-row"><span class="row-label" style="font-size:11px; color:#8e8e93;">Neuen Key bei Google erstellen</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">Benachrichtigungen</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Erinnerungen</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">Daten</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Daten verwalten</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+              <div class="list-section">
+                <div class="section-header">Info</div>
+                <div class="section-body">
+                  <div class="list-row"><span class="row-label">Version</span><span class="row-value">1.5.1</span></div>
+                  <div class="list-row"><span class="row-label">GitHub</span><span class="row-chevron">›</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER Light -->
+      <div class="phone-col">
+        <div class="phone-label after">Nachher (Hell)</div>
+        <div class="iphone light">
+          <div class="screen" style="display:flex; flex-direction:column; background:#F2F2F7;">
+            <div class="status-bar"><span class="time">9:41</span><div class="status-icons"><span>100%</span></div></div>
+            <div class="nav-bar"><div class="page-title">Einstellungen</div></div>
+            <!-- Mini Stats accent -->
+            <div class="accent-header" style="margin:0 12px 8px; background:rgba(12,140,233,0.07);">
+              <div class="accent-header-icon">&#9965;</div>
+              <div class="accent-header-text">
+                <div class="accent-header-title">4 Reisen · 6 Länder</div>
+                <div class="accent-header-sub">ShipTrip 1.5.1 (8) · Deutsch</div>
+              </div>
+            </div>
+            <div style="flex:1; overflow:hidden; padding:0 12px;">
+              <!-- Darstellung -->
+              <div class="slim-section">
+                <div class="slim-section-label"><div class="slim-section-accent"></div>Darstellung</div>
+                <div class="slim-body">
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(12,140,233,0.1);">&#9728;</div>
+                    <span class="slim-label">Farbschema</span>
+                    <span style="font-size:10px; color:#8e8e93;">System</span>
+                    <span style="font-size:11px; color:#c7c7cc; margin-left:3px;">›</span>
+                  </div>
+                </div>
+              </div>
+              <!-- KI -->
+              <div class="slim-section">
+                <div class="slim-section-label"><div class="slim-section-accent" style="background:var(--sea-green);"></div>KI-Funktionen</div>
+                <div class="slim-body">
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(52,199,89,0.12);">&#10024;</div>
+                    <span class="slim-label">Gemini API</span>
+                    <span class="badge-green">Verbunden</span>
+                  </div>
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(255,107,53,0.12);">&#128273;</div>
+                    <span class="slim-label">API-Key ändern</span>
+                    <span style="font-size:11px; color:#c7c7cc;">›</span>
+                  </div>
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(12,140,233,0.1);">&#128279;</div>
+                    <span class="slim-label" style="font-size:10.5px;">Key bei Google holen</span>
+                    <span style="font-size:11px; color:var(--ocean-blue);">&#8599;</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Tools -->
+              <div class="slim-section">
+                <div class="slim-section-label"><div class="slim-section-accent orange"></div>Werkzeuge</div>
+                <div class="slim-body">
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(255,107,53,0.1);">&#9993;</div>
+                    <span class="slim-label">Erinnerungen</span>
+                    <span style="font-size:11px; color:#c7c7cc;">›</span>
+                  </div>
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(52,199,89,0.1);">&#128190;</div>
+                    <span class="slim-label">Daten verwalten</span>
+                    <span style="font-size:11px; color:#c7c7cc;">›</span>
+                  </div>
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(120,120,128,0.1);">&#9729;</div>
+                    <span class="slim-label">iCloud Sync</span>
+                    <span class="badge-gray">Bald</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Info -->
+              <div style="display:flex; justify-content:space-between; padding:6px 4px 0;">
+                <span style="font-size:10px; color:#8e8e93;">v1.5.1 (8)</span>
+                <span style="font-size:10px; color:var(--ocean-blue);">GitHub &#8599;</span>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER Dark -->
+      <div class="phone-col">
+        <div class="phone-label after">Nachher (Dunkel)</div>
+        <div class="iphone">
+          <div class="screen dark" style="display:flex; flex-direction:column; background:#000;">
+            <div class="status-bar"><span class="time" style="color:#fff;">9:41</span><div class="status-icons"><span style="color:#fff;">100%</span></div></div>
+            <div class="nav-bar"><div class="page-title" style="color:#fff;">Einstellungen</div></div>
+            <div style="margin:0 12px 8px; background:rgba(12,140,233,0.12); border-radius:var(--r10); padding:9px 12px; display:flex; align-items:center; gap:10px; border-left:3px solid var(--ocean-blue);">
+              <span style="font-size:18px;">&#9965;</span>
+              <div>
+                <div style="font-size:12px; font-weight:700; color:var(--ocean-blue);">4 Reisen · 6 Länder</div>
+                <div style="font-size:10px; color:rgba(12,140,233,0.6);">ShipTrip 1.5.1 (8) · Deutsch</div>
+              </div>
+            </div>
+            <div style="flex:1; overflow:hidden; padding:0 12px;">
+              <div class="slim-section">
+                <div class="slim-section-label" style="color:#636366;"><div class="slim-section-accent"></div>Darstellung</div>
+                <div class="slim-body" style="background:#1c1c1e;">
+                  <div class="slim-row" style="border-color:rgba(255,255,255,0.08);">
+                    <div class="slim-icon" style="background:rgba(12,140,233,0.2);">&#9728;</div>
+                    <span class="slim-label" style="color:#fff;">Farbschema</span>
+                    <span style="font-size:10px; color:#8e8e93;">System ›</span>
+                  </div>
+                </div>
+              </div>
+              <div class="slim-section">
+                <div class="slim-section-label" style="color:#636366;"><div class="slim-section-accent" style="background:var(--sea-green);"></div>KI-Funktionen</div>
+                <div class="slim-body" style="background:#1c1c1e;">
+                  <div class="slim-row" style="border-color:rgba(255,255,255,0.08);">
+                    <div class="slim-icon" style="background:rgba(52,199,89,0.2);">&#10024;</div>
+                    <span class="slim-label" style="color:#fff;">Gemini API</span>
+                    <span class="badge-green">Verbunden</span>
+                  </div>
+                  <div class="slim-row" style="border-color:rgba(255,255,255,0.08);">
+                    <div class="slim-icon" style="background:rgba(255,107,53,0.2);">&#128273;</div>
+                    <span class="slim-label" style="color:#fff;">API-Key ändern</span>
+                    <span style="font-size:11px; color:#48484a;">›</span>
+                  </div>
+                </div>
+              </div>
+              <div class="slim-section">
+                <div class="slim-section-label" style="color:#636366;"><div class="slim-section-accent orange"></div>Werkzeuge</div>
+                <div class="slim-body" style="background:#1c1c1e;">
+                  <div class="slim-row" style="border-color:rgba(255,255,255,0.08);">
+                    <div class="slim-icon" style="background:rgba(255,107,53,0.2);">&#9993;</div>
+                    <span class="slim-label" style="color:#fff;">Erinnerungen</span>
+                    <span style="font-size:11px; color:#48484a;">›</span>
+                  </div>
+                  <div class="slim-row" style="border-color:rgba(255,255,255,0.08);">
+                    <div class="slim-icon" style="background:rgba(52,199,89,0.2);">&#128190;</div>
+                    <span class="slim-label" style="color:#fff;">Daten verwalten</span>
+                    <span style="font-size:11px; color:#48484a;">›</span>
+                  </div>
+                  <div class="slim-row">
+                    <div class="slim-icon" style="background:rgba(120,120,128,0.2);">&#9729;</div>
+                    <span class="slim-label" style="color:#fff;">iCloud Sync</span>
+                    <span class="badge-gray">Bald</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:6px 4px 0;">
+                <span style="font-size:10px; color:#48484a;">v1.5.1 (8)</span>
+                <span style="font-size:10px; color:var(--ocean-blue);">GitHub &#8599;</span>
+              </div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128674;</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#127758;</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#128202;</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="font-size:15px;">&#9733;</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon" style="font-size:15px; color:var(--ocean-blue);">&#9881;</div><div class="tab-label" style="color:var(--ocean-blue);">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 9 · Vorschlag C — Bullets                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s9">
+    <div class="section-tag">Vorschlag C &middot; Warum besser?</div>
+    <h2 class="slide-title">Schlank nativ + Marken-Akzente — Kernargumente</h2>
+    <p class="slide-sub">Geringstes Implementierungsrisiko, maximale iOS-Plattformkonsistenz.</p>
+    <div style="display:flex; gap:40px; align-items:flex-start; max-width:720px; width:100%;">
+      <ul class="bullet-list" style="flex:1;">
+        <li>Bleibt bei Standard-SwiftUI-List — kein Umbau der View-Hierarchie, geringster Refactoring-Aufwand.</li>
+        <li>Sektions-Akzentstreifen (3px farbiger Balken links vom Header-Label) differenzieren Gruppen klar ohne strukturellen Umbau.</li>
+        <li>oceanBlue-Accent-Block (3px border-left) für den Stats-Mini-Header ist ein einfaches HStack-Overlay — kein eigener View nötig.</li>
+        <li>Status-Tokens (seaGreen „Verbunden", gray „Bald") ersetzen rohes .green/.red in einer Zeile pro Aufruf.</li>
+        <li>Eignet sich als Einstieg für Phase 1.5.x — Vorschlag A oder B bauen auf denselben Grundelementen auf.</li>
+      </ul>
+      <div style="flex:1;">
+        <div style="background:rgba(255,255,255,0.05); border-radius:var(--r10); padding:16px;">
+          <div style="font-size:11px; font-weight:700; color:var(--sea-green); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px;">Aufwand-Einschätzung</div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Accent-Header Block</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">XS · 30min</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Icon-Kacheln</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">S · 1h</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Status-Badges Tokens</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">XS · 20min</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:rgba(255,255,255,0.7);">Sektions-Akzentstreifen</span>
+              <span style="font-size:11px; color:var(--sea-green); font-weight:600;">XS · 30min</span>
+            </div>
+            <div style="height:0.5px; background:rgba(255,255,255,0.1); margin:4px 0;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:#fff; font-weight:700;">Gesamt</span>
+              <span style="font-size:12px; color:var(--sea-green); font-weight:700;">~2–3h</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 10 · Roadmap & Empfehlung                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s10">
+    <div class="section-tag">Roadmap &amp; Empfehlung</div>
+    <h2 class="slide-title">Empfohlene Implementierungs-Sequenz</h2>
+    <p class="slide-sub">Drei Phasen — aufbauend, reversibel, jeweils eigenständig lieferbar.</p>
+    <div class="roadmap-row">
+      <div class="roadmap-phase">
+        <div class="phase-label">Phase 1 · sofort · 2–3h</div>
+        <div class="phase-title">Vorschlag C: Schlank nativ</div>
+        <div class="phase-items">
+          · Icon-Kacheln (r6, Marken-Farbe) in allen Zeilen<br>
+          · Status-Badges: seaGreen „Verbunden" / gray „Bald"<br>
+          · Sektions-Akzentstreifen (3px, tokenfarben)<br>
+          · oceanBlue-Mini-Header: 4 Reisen · 6 Länder<br>
+          · GitHub-Zeile mit &#8599;-Icon
+        </div>
+      </div>
+      <div class="roadmap-phase p2">
+        <div class="phase-label">Phase 2 · 1.6.x · 4–6h</div>
+        <div class="phase-title">Vorschlag A: Profil-Header</div>
+        <div class="phase-items">
+          · navyDark→oceanBlue Gradient-Header<br>
+          · Stat-Chips (Reisen / Länder / Sprache)<br>
+          · Erweiterung der Icon-Kacheln<br>
+          · Prüfung: @Query in SettingsView für Live-Counts
+        </div>
+      </div>
+      <div class="roadmap-phase p3">
+        <div class="phase-label">Phase 3 · später · 6–8h</div>
+        <div class="phase-title">Vorschlag B: Karten-Sektionen</div>
+        <div class="phase-items">
+          · Umbau auf ScrollView + VStack statt List<br>
+          · Karten r16, KI-Card mit Header-Badge<br>
+          · Premium-Card-Platzhalter (Phase-3-Abo)<br>
+          · Anpassung Accessibility / VoiceOver
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px; background:rgba(12,140,233,0.08); border-radius:var(--r10); padding:14px 18px; max-width:700px; width:100%; border-left:3px solid var(--ocean-blue);">
+      <div style="font-size:12px; font-weight:700; color:var(--ocean-blue); margin-bottom:6px;">Empfehlung</div>
+      <div style="font-size:13px; color:rgba(255,255,255,0.75); line-height:1.55;">
+        Start mit <strong style="color:#fff;">Vorschlag C</strong> im nächsten Build — minimales Risiko, sofortiger Marken-Gewinn.
+        Vorschlag A als natürliche Erweiterung, sobald @Query-Counts in SettingsView verfügbar.
+        Vorschlag B ist der richtige Schritt wenn Phase-3-Premium-Teaser sichtbar werden soll.
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- SLIDE 11 · Nächste Schritte                              -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <section class="slide" id="s11">
+    <div class="section-tag">Abschluss</div>
+    <h2 class="slide-title">Nächste Schritte</h2>
+    <p class="slide-sub">Entscheidung beim Product Owner — danach direkte Übergabe an Developer-Spawn.</p>
+    <div style="display:flex; gap:16px; max-width:640px; width:100%; flex-wrap:wrap; justify-content:center;">
+      <div style="background:rgba(255,255,255,0.05); border-radius:var(--r10); padding:16px; flex:1; min-width:160px;">
+        <div style="font-size:20px; margin-bottom:8px;">A</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:6px;">Vorschlag wählen</div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.55); line-height:1.5;">C sofort · A Phase 2 · B Phase 3. Oder Hybrid: C-Icons + A-Header.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05); border-radius:var(--r10); padding:16px; flex:1; min-width:160px;">
+        <div style="font-size:20px; margin-bottom:8px;">B</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:6px;">Developer-Spawn</div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.55); line-height:1.5;">Deck + Code-Refs (SettingsView.swift:43–49, :73–81) als Input für Implementierung.</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05); border-radius:var(--r10); padding:16px; flex:1; min-width:160px;">
+        <div style="font-size:20px; margin-bottom:8px;">C</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:6px;">Parallelarbeit</div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.55); line-height:1.5;">Merkliste- und Stats-Pitch-Decks folgen als eigene Scopes — teilen denselben Consistency-Brief.</div>
+      </div>
+    </div>
+    <div style="margin-top:24px; font-size:11px; color:rgba(255,255,255,0.25);">
+      ShipTrip · Tab Mehr/Einstellungen · Design-Pitch · 2026-06-17 · Alle Mockups offline, keine externen Assets.
+    </div>
+  </section>
+
+</div><!-- /deck -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  // Check hash on load
+  const hash = parseInt(window.location.hash.slice(1));
+  if (!isNaN(hash) && hash >= 1 && hash <= total) current = hash - 1;
+
+  function show(idx) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(total - 1, idx));
+    slides[current].classList.add('active');
+    window.location.hash = current + 1;
+    document.getElementById('counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress-bar').style.width = ((current + 1) / total * 100) + '%';
+  }
+
+  show(current);
+
+  document.getElementById('prev').addEventListener('click', () => show(current - 1));
+  document.getElementById('next').addEventListener('click', () => show(current + 1));
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); show(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); show(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); show(0); }
+    if (e.key === 'End') { e.preventDefault(); show(total - 1); }
+  });
+</script>
+</body>
+</html>

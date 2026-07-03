@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Editorial Redesign</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ocean:#0C8CE9;--ocean-light:#36A9F0;--navy:#1A365D;
+  --sunset:#FF6B35;--green:#34C759;
+  --ink:#0A1628;--ink2:#3D4F6A;--ink3:#7A8FA6;
+  --paper:#FAFAF8;--paper2:#F2F0EB;--paper3:#E8E4DC;
+  --white:#FFFFFF;
+  --serif:Georgia,"Times New Roman",serif;
+  --sans:-apple-system,system-ui,sans-serif;
+}
+html,body{height:100%;background:#0A1628;color:var(--ink);font-family:var(--sans)}
+
+/* DECK SHELL */
+.deck{width:100%;height:100vh;overflow:hidden;position:relative}
+.slide{
+  position:absolute;inset:0;display:none;
+  flex-direction:column;overflow:hidden;
+}
+.slide.active{display:flex}
+
+/* NAV */
+#nav{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  display:flex;align-items:center;gap:16px;z-index:100;
+  background:rgba(10,22,40,0.85);backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,0.12);border-radius:999px;
+  padding:8px 20px;
+}
+#nav button{
+  background:none;border:none;color:rgba(255,255,255,0.6);
+  font-size:18px;cursor:pointer;padding:4px 8px;border-radius:6px;
+  transition:color .2s;
+}
+#nav button:hover{color:#fff}
+#counter{color:rgba(255,255,255,0.5);font-size:12px;min-width:42px;text-align:center;font-family:var(--sans)}
+#progress{
+  position:fixed;top:0;left:0;height:2px;
+  background:linear-gradient(90deg,var(--ocean),var(--ocean-light));
+  transition:width .35s ease;z-index:200;
+}
+
+/* ─── SHARED COMPONENTS ─── */
+.iphone{
+  width:200px;height:432px;
+  background:var(--paper);
+  border-radius:38px;
+  border:6px solid #1a2535;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.08),0 32px 64px rgba(0,0,0,0.5);
+  overflow:hidden;
+  position:relative;
+  flex-shrink:0;
+}
+.iphone .notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:80px;height:22px;
+  background:#1a2535;border-radius:0 0 14px 14px;z-index:10;
+}
+.iphone .status-bar{
+  height:28px;background:transparent;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 14px 4px;font-size:8px;color:var(--ink2);position:relative;z-index:5;
+}
+.iphone .screen{
+  height:calc(100% - 28px - 44px);overflow:hidden;position:relative;
+}
+.iphone .tab-bar{
+  height:44px;background:rgba(250,250,248,0.95);
+  border-top:0.5px solid var(--paper3);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:0 4px;
+}
+.iphone .tab-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:7px;color:var(--ink3);flex:1;padding:4px 0;
+}
+.iphone .tab-item.active{color:var(--ocean)}
+.tab-icon{font-size:14px;line-height:1}
+
+/* geo fallback card */
+.geo-bg{
+  background:linear-gradient(160deg,var(--navy) 0%,var(--ocean) 60%,var(--ocean-light) 100%);
+  position:relative;overflow:hidden;
+}
+.geo-bg::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 40% at 70% 60%, rgba(255,255,255,0.08) 0%, transparent 70%);
+}
+.scrim{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.1) 60%,transparent 100%);
+}
+
+/* typography helpers */
+.serif{font-family:var(--serif)}
+.label-caps{font-size:9px;letter-spacing:0.12em;text-transform:uppercase;font-weight:600;opacity:0.5}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 1 — COVER */
+/* ─────────────────────────────────────────── */
+#s1{
+  background:linear-gradient(160deg,#0A1628 0%,#0d2244 50%,#0C3870 100%);
+  align-items:center;justify-content:center;text-align:center;
+}
+#s1 .kicker{
+  font-size:11px;letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--ocean-light);font-weight:600;margin-bottom:20px;
+}
+#s1 h1{
+  font-family:var(--serif);font-size:52px;font-weight:700;
+  color:#fff;line-height:1.1;margin-bottom:8px;
+}
+#s1 .rule{width:48px;height:2px;background:var(--sunset);margin:24px auto;}
+#s1 .tagline{font-size:17px;color:rgba(255,255,255,0.6);max-width:420px;line-height:1.6;}
+#s1 .meta{
+  margin-top:48px;font-size:11px;color:rgba(255,255,255,0.3);
+  letter-spacing:0.06em;
+}
+/* wave decoration */
+#s1 .wave{
+  position:absolute;bottom:0;left:0;right:0;opacity:0.06;
+}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 2 — PHILOSOPHIE */
+/* ─────────────────────────────────────────── */
+#s2{background:var(--paper);align-items:stretch;}
+#s2 .left{
+  width:50%;background:var(--navy);
+  display:flex;flex-direction:column;justify-content:center;
+  padding:64px 56px;
+}
+#s2 .left h2{font-family:var(--serif);font-size:38px;color:#fff;line-height:1.2;margin-bottom:24px;}
+#s2 .left p{font-size:15px;color:rgba(255,255,255,0.65);line-height:1.7;}
+#s2 .right{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:64px 56px;gap:32px;
+}
+#s2 .pillar{display:flex;gap:16px;align-items:flex-start;}
+#s2 .pillar-num{
+  font-family:var(--serif);font-size:32px;font-weight:700;
+  color:var(--paper3);line-height:1;flex-shrink:0;width:32px;
+}
+#s2 .pillar-body h3{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+#s2 .pillar-body p{font-size:13px;color:var(--ink2);line-height:1.6;}
+#s2 .accent-rule{width:3px;height:100%;background:linear-gradient(to bottom,var(--ocean),var(--ocean-light));border-radius:2px;position:absolute;left:0;}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 3 — IST-ANALYSE */
+/* ─────────────────────────────────────────── */
+#s3{background:var(--paper2);flex-direction:column;padding:0;}
+#s3 .slide-header{
+  background:var(--navy);padding:32px 64px 24px;
+  display:flex;align-items:baseline;gap:20px;
+}
+#s3 .slide-header h2{font-family:var(--serif);font-size:28px;color:#fff;}
+#s3 .slide-header .badge{
+  background:var(--sunset);color:#fff;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:999px;
+}
+#s3 .pain-grid{
+  flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--paper3);
+}
+#s3 .pain-cell{
+  background:var(--paper2);padding:24px 28px;
+  display:flex;flex-direction:column;gap:8px;
+}
+#s3 .pain-cell .sev{
+  font-size:9px;letter-spacing:0.14em;text-transform:uppercase;font-weight:700;
+}
+#s3 .pain-cell .sev.high{color:var(--sunset)}
+#s3 .pain-cell .sev.med{color:var(--ocean)}
+#s3 .pain-cell .sev.low{color:var(--green)}
+#s3 .pain-cell h3{font-size:14px;font-weight:700;color:var(--ink);line-height:1.3;}
+#s3 .pain-cell p{font-size:12px;color:var(--ink2);line-height:1.55;}
+#s3 .pain-cell .ref{font-size:10px;color:var(--ink3);font-family:monospace;margin-top:auto;}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 4 — BENCHMARK */
+/* ─────────────────────────────────────────── */
+#s4{background:var(--paper);flex-direction:column;padding:0;}
+#s4 .slide-header{
+  background:#0A1628;padding:28px 64px 20px;
+  display:flex;align-items:baseline;gap:16px;
+}
+#s4 .slide-header h2{font-family:var(--serif);font-size:28px;color:#fff;}
+#s4 .slide-header span{font-size:13px;color:rgba(255,255,255,0.4);}
+#s4 .bm-grid{
+  flex:1;display:grid;grid-template-columns:repeat(5,1fr);
+}
+#s4 .bm-app{
+  padding:24px 20px;border-right:1px solid var(--paper3);
+  display:flex;flex-direction:column;gap:10px;
+}
+#s4 .bm-app:last-child{border-right:none}
+#s4 .bm-logo{
+  width:40px;height:40px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:4px;
+}
+#s4 .bm-app h3{font-size:13px;font-weight:700;color:var(--ink);}
+#s4 .bm-app .bm-category{font-size:10px;color:var(--ink3);margin-top:-6px;}
+#s4 .bm-app ul{font-size:11px;color:var(--ink2);line-height:1.6;padding-left:12px;}
+#s4 .pattern-row{
+  background:var(--paper2);border-top:1px solid var(--paper3);
+  padding:12px 64px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+}
+#s4 .pattern-chip{
+  background:var(--white);border:1px solid var(--paper3);
+  font-size:11px;color:var(--ink2);padding:4px 12px;border-radius:999px;
+}
+#s4 .pattern-chip.adopted{
+  background:var(--ocean);border-color:var(--ocean);color:#fff;
+}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 5 — VERBESSERUNG 1: MEINE REISEN */
+/* ─────────────────────────────────────────── */
+#s5{background:var(--paper2);flex-direction:column;}
+.improvement-slide{flex-direction:column;padding:0;}
+.imp-header{
+  background:var(--paper);border-bottom:1px solid var(--paper3);
+  padding:20px 64px;display:flex;align-items:baseline;gap:16px;
+}
+.imp-header .imp-num{
+  font-family:var(--serif);font-size:13px;color:var(--ink3);
+}
+.imp-header h2{font-family:var(--serif);font-size:24px;color:var(--ink);}
+.imp-header .pitch{
+  margin-left:auto;font-size:13px;color:var(--ink2);
+  max-width:380px;text-align:right;line-height:1.5;
+}
+.ba-area{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  gap:48px;padding:24px 64px;
+}
+.ba-col{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.ba-label{
+  font-size:10px;letter-spacing:0.14em;text-transform:uppercase;
+  font-weight:700;color:var(--ink3);
+}
+.why-bar{
+  background:var(--navy);padding:16px 64px;
+  display:flex;gap:32px;align-items:flex-start;
+}
+.why-item{display:flex;gap:10px;align-items:flex-start;}
+.why-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--ocean-light);
+  flex-shrink:0;margin-top:5px;
+}
+.why-text{font-size:12px;color:rgba(255,255,255,0.7);line-height:1.5;}
+
+/* BEFORE phone — current style simulation */
+.screen-before{
+  width:100%;height:100%;background:var(--paper2);overflow:hidden;
+  font-family:var(--sans);
+}
+.sb-nav{
+  height:52px;background:var(--paper2);
+  padding:0 12px;display:flex;align-items:flex-end;padding-bottom:8px;
+}
+.sb-nav-title{font-size:14px;font-weight:700;color:var(--ink);}
+.sb-stats{
+  display:flex;background:var(--paper);border-radius:10px;
+  margin:0 8px 6px;border:0.5px solid var(--paper3);overflow:hidden;
+}
+.sb-stat{flex:1;padding:6px 4px;text-align:center;border-right:0.5px solid var(--paper3);}
+.sb-stat:last-child{border-right:none}
+.sb-stat-val{font-size:11px;font-weight:700;color:var(--ocean);}
+.sb-stat-lbl{font-size:7px;color:var(--ink3);}
+.sb-hero{
+  margin:0 8px 6px;height:100px;border-radius:10px;overflow:hidden;position:relative;
+}
+.sb-hero-img{width:100%;height:100%;background:linear-gradient(140deg,#1A365D,#0C8CE9);}
+.sb-hero-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 60%);}
+.sb-hero-text{position:absolute;bottom:6px;left:8px;right:8px;}
+.sb-hero-title{font-size:10px;font-weight:700;color:#fff;}
+.sb-hero-sub{font-size:7px;color:rgba(255,255,255,0.7);}
+.sb-row{
+  margin:0 8px 4px;background:var(--paper);border-radius:8px;
+  padding:6px 8px;display:flex;gap:6px;align-items:center;
+}
+.sb-row-thumb{
+  width:24px;height:24px;border-radius:4px;
+  background:linear-gradient(135deg,#1A365D,#0C8CE9);flex-shrink:0;
+}
+.sb-row-body{flex:1;}
+.sb-row-title{font-size:9px;font-weight:600;color:var(--ink);}
+.sb-row-sub{font-size:7px;color:var(--ink3);}
+.sb-year{
+  margin:4px 8px 2px;font-size:8px;font-weight:600;
+  color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;
+}
+
+/* AFTER phone — editorial style */
+.screen-after{
+  width:100%;height:100%;background:var(--paper);overflow:hidden;
+  font-family:var(--sans);
+}
+.sa-header{
+  padding:8px 10px 4px;
+  display:flex;align-items:baseline;justify-content:space-between;
+}
+.sa-title{
+  font-family:var(--serif);font-size:15px;font-weight:700;color:var(--ink);
+  line-height:1.1;
+}
+.sa-add{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--ocean);display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:14px;line-height:1;
+}
+/* editorial stats strip */
+.sa-strip{
+  margin:0 10px 8px;padding:8px 0;
+  display:flex;border-top:1px solid var(--paper3);border-bottom:1px solid var(--paper3);
+}
+.sa-stat{
+  flex:1;text-align:center;border-right:1px solid var(--paper3);padding:2px 0;
+}
+.sa-stat:last-child{border-right:none}
+.sa-stat-val{font-family:var(--serif);font-size:13px;font-weight:700;color:var(--ink);}
+.sa-stat-lbl{font-size:6px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink3);}
+/* hero editorial */
+.sa-hero{
+  margin:0 10px 8px;border-radius:10px;overflow:hidden;position:relative;height:96px;
+}
+.sa-hero-bg{
+  width:100%;height:100%;
+  background:linear-gradient(145deg,#0d2244 0%,#0C8CE9 70%,#36A9F0 100%);
+  position:relative;
+}
+/* subtle port dots on geo */
+.sa-hero-bg::after{
+  content:'';position:absolute;
+  width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.5);
+  top:40%;left:25%;box-shadow:18px -8px 0 rgba(255,255,255,0.35),30px 10px 0 rgba(255,255,255,0.4),46px 2px 0 rgba(255,255,255,0.3),58px 12px 0 rgba(255,255,255,0.35),70px -4px 0 rgba(255,255,255,0.3);
+}
+.sa-hero-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.05) 55%,transparent 100%);}
+.sa-hero-meta{position:absolute;top:6px;right:6px;}
+.sa-hero-badge{
+  background:rgba(255,107,53,0.9);color:#fff;font-size:6px;font-weight:700;
+  padding:2px 5px;border-radius:999px;
+}
+.sa-hero-body{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;}
+.sa-hero-eyebrow{
+  font-size:6px;letter-spacing:0.12em;text-transform:uppercase;
+  color:rgba(255,255,255,0.65);margin-bottom:2px;
+}
+.sa-hero-title{
+  font-family:var(--serif);font-size:11px;font-weight:700;
+  color:#fff;line-height:1.2;
+}
+.sa-hero-sub{font-size:6.5px;color:rgba(255,255,255,0.7);margin-top:1px;}
+.sa-hero-footer{
+  padding:4px 8px;background:rgba(250,250,248,0.95);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.sa-hero-kpis{font-size:6px;color:var(--ink2);}
+.sa-hero-link{font-size:6px;color:var(--ocean);font-weight:600;}
+/* year divider */
+.sa-year{
+  margin:0 10px 3px;padding:3px 0;
+  border-bottom:1px solid var(--paper3);
+  font-size:7px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--ink3);font-weight:600;
+  display:flex;align-items:center;gap:6px;
+}
+.sa-year::before{
+  content:'';width:20px;height:1px;background:var(--paper3);
+}
+/* timeline row editorial */
+.sa-row{
+  margin:0 10px 3px;padding:6px 8px;
+  border-radius:8px;background:var(--paper2);
+  display:flex;gap:6px;align-items:center;
+  border-left:2px solid var(--ocean);
+}
+.sa-row-spine{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.sa-row-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--ocean);flex-shrink:0;
+}
+.sa-row-body{flex:1;}
+.sa-row-title{font-size:8.5px;font-weight:700;color:var(--ink);}
+.sa-row-sub{font-size:7px;color:var(--ink3);}
+.sa-row-ports{font-size:6.5px;color:var(--green);}
+.sa-row-thumb{
+  width:24px;height:24px;border-radius:5px;
+  background:linear-gradient(135deg,#0d2244,#0C8CE9);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 6 — VERBESSERUNG 2: KARTE */
+/* ─────────────────────────────────────────── */
+/* map before */
+.map-before{
+  width:100%;height:100%;
+  background:linear-gradient(160deg,#cfe4f5 0%,#a8cfed 100%);
+  position:relative;overflow:hidden;
+}
+.map-before-overlay{
+  position:absolute;bottom:8px;left:8px;right:8px;
+  background:rgba(255,255,255,0.9);border-radius:8px;padding:6px 8px;
+}
+.map-before-title{font-size:8px;font-weight:600;color:var(--ink);}
+.map-before-sub{font-size:7px;color:var(--ink3);}
+.map-land{fill:#d4e8c2;stroke:#b8d4a0;stroke-width:0.5}
+.map-sea{fill:#cfe4f5}
+/* map after */
+.map-after{
+  width:100%;height:100%;
+  background:#1a2f4a;
+  position:relative;overflow:hidden;
+}
+.map-dark-land{fill:#243550;stroke:#2e4468;stroke-width:0.5}
+.map-dark-sea{fill:#1a2f4a}
+.map-route-line{
+  stroke:var(--ocean-light);stroke-width:1.5;fill:none;
+  stroke-dasharray:3,2;opacity:0.8;
+}
+.map-pin-start{fill:var(--sunset)}
+.map-pin-mid{fill:var(--ocean)}
+.map-pin-end{fill:var(--green)}
+.map-sheet{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(26,47,74,0.96);
+  border-radius:10px 10px 0 0;padding:8px 10px 6px;
+  border-top:1px solid rgba(255,255,255,0.1);
+}
+.map-sheet-handle{
+  width:24px;height:3px;border-radius:2px;
+  background:rgba(255,255,255,0.2);margin:0 auto 6px;
+}
+.map-sheet-title{font-size:9px;font-weight:700;color:#fff;}
+.map-sheet-sub{font-size:7px;color:rgba(255,255,255,0.5);}
+.map-chips{
+  display:flex;gap:4px;margin-top:5px;overflow:hidden;
+}
+.map-chip{
+  font-size:6.5px;padding:2px 6px;border-radius:999px;
+  background:rgba(12,140,233,0.25);color:var(--ocean-light);
+  border:0.5px solid rgba(12,140,233,0.4);
+  white-space:nowrap;
+}
+.map-chip.active{background:var(--ocean);color:#fff;border-color:var(--ocean);}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 7 — VERBESSERUNG 3: MERKLISTE */
+/* ─────────────────────────────────────────── */
+.deals-before{
+  width:100%;height:100%;background:var(--paper2);overflow:hidden;
+}
+.db-nav{height:44px;background:var(--paper);padding:0 10px;display:flex;align-items:flex-end;padding-bottom:6px;border-bottom:0.5px solid var(--paper3);}
+.db-nav-title{font-size:12px;font-weight:700;color:var(--ink);}
+.db-row{
+  margin:4px 8px;background:var(--paper);border-radius:6px;
+  padding:6px 8px;display:flex;gap:6px;align-items:center;
+}
+.db-row-logo{font-size:16px;flex-shrink:0}
+.db-row-body{flex:1;}
+.db-row-title{font-size:9px;font-weight:600;color:var(--ink);}
+.db-row-sub{font-size:7px;color:var(--ink3);}
+.db-row-price{text-align:right;}
+.db-row-amount{font-size:10px;font-weight:700;color:var(--ink);}
+.db-row-badge{
+  font-size:7px;background:#ff3b30;color:#fff;
+  padding:1px 4px;border-radius:4px;
+}
+
+.deals-after{
+  width:100%;height:100%;background:var(--paper);overflow:hidden;
+}
+.da-nav{padding:8px 10px 4px;display:flex;align-items:baseline;justify-content:space-between;}
+.da-nav-title{font-family:var(--serif);font-size:14px;font-weight:700;color:var(--ink);}
+.da-nav-add{font-size:13px;color:var(--ocean);}
+/* hero deal */
+.da-hero{
+  margin:0 10px 6px;border-radius:10px;overflow:hidden;position:relative;height:88px;
+}
+.da-hero-bg{
+  width:100%;height:100%;
+  background:linear-gradient(140deg,#0d2244,var(--ocean));
+}
+.da-hero-scrim{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 60%);}
+.da-hero-badge{
+  position:absolute;top:6px;right:6px;
+  background:var(--sunset);color:#fff;font-size:6.5px;font-weight:700;
+  padding:2px 6px;border-radius:999px;
+}
+.da-hero-body{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;}
+.da-hero-eyebrow{font-size:6px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);}
+.da-hero-title{font-family:var(--serif);font-size:10px;font-weight:700;color:#fff;line-height:1.2;}
+.da-hero-price{font-size:7px;color:rgba(255,255,255,0.7);}
+/* deal row */
+.da-row{
+  margin:0 10px 3px;padding:6px 8px;border-radius:8px;
+  background:var(--paper2);display:flex;gap:8px;align-items:center;
+}
+.da-row-geo{
+  width:40px;height:40px;border-radius:6px;flex-shrink:0;
+  background:linear-gradient(135deg,#0d2244,var(--ocean-light));
+  display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.da-row-body{flex:1;}
+.da-row-title{font-size:8.5px;font-weight:700;color:var(--ink);}
+.da-row-sub{font-size:7px;color:var(--ink3);margin-top:1px;}
+.da-row-price-block{text-align:right;flex-shrink:0;}
+.da-row-price{font-family:var(--serif);font-size:11px;font-weight:700;color:var(--ink);}
+.da-row-save{font-size:6.5px;color:var(--sunset);font-weight:700;}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 8 — VERBESSERUNG 4: STATISTIK */
+/* ─────────────────────────────────────────── */
+.stats-before{
+  width:100%;height:100%;background:var(--paper2);overflow:hidden;
+}
+.stb-nav{height:44px;background:var(--paper);padding:0 10px;display:flex;align-items:flex-end;padding-bottom:6px;}
+.stb-nav-title{font-size:12px;font-weight:700;color:var(--ink);}
+.stb-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:4px 8px;
+}
+.stb-card{
+  background:var(--paper);border-radius:8px;padding:8px;
+}
+.stb-card-val{font-size:14px;font-weight:700;color:.blue;}
+.stb-card-lbl{font-size:7px;color:var(--ink3);}
+/* colors hardcoded just like real app */
+.stb-card:nth-child(1) .stb-card-val{color:#007aff}
+.stb-card:nth-child(2) .stb-card-val{color:#32ade6}
+.stb-card:nth-child(3) .stb-card-val{color:#ff9500}
+.stb-card:nth-child(4) .stb-card-val{color:#bf5af2}
+.stb-bar-row{margin:4px 8px 2px;background:var(--paper);border-radius:6px;padding:6px 8px;}
+.stb-bar-title{font-size:8px;font-weight:600;color:var(--ink);margin-bottom:4px;}
+.stb-bar{height:8px;border-radius:4px;background:#007aff;margin-bottom:2px;}
+.stb-bar-lbl{font-size:7px;color:var(--ink3);}
+
+.stats-after{
+  width:100%;height:100%;background:var(--paper);overflow:hidden;
+}
+/* editorial hero strip */
+.sta-hero{
+  height:64px;
+  background:linear-gradient(135deg,var(--navy) 0%,var(--ocean) 100%);
+  padding:10px 10px 8px;display:flex;align-items:flex-end;gap:0;
+}
+.sta-hero-kpi{flex:1;text-align:center;}
+.sta-hero-val{
+  font-family:var(--serif);font-size:13px;font-weight:700;color:#fff;
+}
+.sta-hero-lbl{font-size:6px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.55);}
+.sta-hero-div{width:1px;background:rgba(255,255,255,0.15);align-self:stretch;margin:2px 0;}
+/* token grid */
+.sta-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 8px;
+}
+.sta-card{
+  border-radius:8px;padding:7px 8px;
+  display:flex;align-items:center;gap:6px;
+}
+.sta-card-icon{font-size:14px;flex-shrink:0;}
+.sta-card-val{font-size:12px;font-weight:700;}
+.sta-card-lbl{font-size:6.5px;color:var(--ink3);}
+/* ocean token */
+.sta-card.ocean{background:rgba(12,140,233,0.08);}
+.sta-card.ocean .sta-card-val{color:var(--ocean);}
+.sta-card.sunset{background:rgba(255,107,53,0.08);}
+.sta-card.sunset .sta-card-val{color:var(--sunset);}
+.sta-card.green{background:rgba(52,199,89,0.08);}
+.sta-card.green .sta-card-val{color:var(--green);}
+.sta-card.navy{background:rgba(26,54,93,0.08);}
+.sta-card.navy .sta-card-val{color:var(--navy);}
+/* bar chart with brand tokens */
+.sta-chart{margin:2px 8px 4px;background:var(--paper2);border-radius:8px;padding:6px 8px;}
+.sta-chart-title{font-size:7.5px;font-weight:600;color:var(--ink);margin-bottom:4px;letter-spacing:0.04em;}
+.sta-bar-row{display:flex;align-items:center;gap:4px;margin-bottom:2px;}
+.sta-bar-lbl{font-size:6.5px;color:var(--ink2);width:20px;text-align:right;flex-shrink:0;}
+.sta-bar-track{flex:1;height:7px;background:var(--paper3);border-radius:4px;overflow:hidden;}
+.sta-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--ocean),var(--ocean-light));}
+.sta-bar-val{font-size:6px;color:var(--ink3);width:10px;flex-shrink:0;}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 9 — VERBESSERUNG 5: MEHR */
+/* ─────────────────────────────────────────── */
+.mehr-before{
+  width:100%;height:100%;background:var(--paper2);overflow:hidden;
+}
+.mb-nav{height:44px;background:var(--paper);padding:0 10px;display:flex;align-items:flex-end;padding-bottom:6px;}
+.mb-nav-title{font-size:12px;font-weight:700;color:var(--ink);}
+.mb-section{margin:6px 8px 2px;}
+.mb-section-title{font-size:8px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;padding:0 4px;margin-bottom:3px;}
+.mb-rows{background:var(--paper);border-radius:8px;overflow:hidden;}
+.mb-row{padding:6px 8px;border-bottom:0.5px solid var(--paper3);display:flex;align-items:center;justify-content:space-between;}
+.mb-row:last-child{border-bottom:none}
+.mb-row-label{font-size:8.5px;color:var(--ink);}
+.mb-row-right{font-size:8.5px;color:var(--ink3);}
+
+.mehr-after{
+  width:100%;height:100%;background:var(--paper);overflow:hidden;
+}
+/* profile header */
+.ma-profile{
+  height:70px;
+  background:linear-gradient(145deg,var(--navy) 0%,var(--ocean) 100%);
+  padding:8px 10px;display:flex;flex-direction:column;justify-content:flex-end;
+}
+.ma-profile-name{font-family:var(--serif);font-size:13px;font-weight:700;color:#fff;}
+.ma-profile-chips{display:flex;gap:4px;margin-top:3px;}
+.ma-profile-chip{
+  font-size:6px;padding:2px 6px;border-radius:999px;
+  background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.85);
+}
+/* icon grid settings */
+.ma-section{margin:6px 8px 2px;}
+.ma-section-title{font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding-bottom:3px;}
+.ma-rows{background:var(--paper2);border-radius:8px;overflow:hidden;}
+.ma-row{
+  padding:5px 8px;border-bottom:0.5px solid var(--paper3);
+  display:flex;align-items:center;gap:6px;
+}
+.ma-row:last-child{border-bottom:none}
+.ma-row-icon{
+  width:20px;height:20px;border-radius:5px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;
+  flex-shrink:0;
+}
+.ma-row-label{font-size:8.5px;color:var(--ink);flex:1;}
+.ma-row-right{font-size:7.5px;color:var(--ink3);}
+.ma-row-icon.blue{background:rgba(12,140,233,0.12);}
+.ma-row-icon.orange{background:rgba(255,107,53,0.12);}
+.ma-row-icon.green{background:rgba(52,199,89,0.12);}
+.ma-row-icon.navy{background:rgba(26,54,93,0.12);}
+.ma-row-icon.red{background:rgba(255,59,48,0.12);}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 10 — TYPOGRAFIE & TOKENS */
+/* ─────────────────────────────────────────── */
+#s10{background:var(--paper);flex-direction:column;}
+#s10 .slide-header{background:var(--paper2);border-bottom:1px solid var(--paper3);padding:28px 64px 20px;}
+#s10 .slide-header h2{font-family:var(--serif);font-size:28px;color:var(--ink);}
+#s10 .content{flex:1;display:grid;grid-template-columns:1fr 1fr;padding:0;}
+#s10 .half{padding:40px 56px;border-right:1px solid var(--paper3);}
+#s10 .half:last-child{border-right:none}
+#s10 .half h3{font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin-bottom:20px;}
+.type-row{margin-bottom:16px;}
+.type-row .type-label{font-size:10px;color:var(--ink3);margin-bottom:4px;}
+.type-serif-hero{font-family:var(--serif);font-size:36px;font-weight:700;color:var(--ink);line-height:1.1;}
+.type-serif-sub{font-family:var(--serif);font-size:22px;font-weight:400;color:var(--ink2);line-height:1.3;}
+.type-caps{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;font-weight:600;color:var(--ink2);}
+.type-body{font-size:15px;color:var(--ink2);line-height:1.7;}
+.type-caption{font-size:12px;color:var(--ink3);}
+/* color tokens */
+.token-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+.token{display:flex;flex-direction:column;align-items:center;gap:4px;}
+.token-swatch{width:36px;height:36px;border-radius:8px;}
+.token-name{font-size:9px;color:var(--ink3);text-align:center;}
+.token-hex{font-size:8px;color:var(--ink3);font-family:monospace;}
+/* radius guide */
+.radius-row{display:flex;gap:12px;align-items:flex-end;margin-top:8px;}
+.radius-box{background:var(--ocean);opacity:0.15;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;}
+.radius-box-label{font-size:9px;color:var(--ink2);}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 11 — ROADMAP */
+/* ─────────────────────────────────────────── */
+#s11{background:var(--paper2);flex-direction:column;}
+#s11 .slide-header{background:var(--navy);padding:28px 64px 20px;}
+#s11 .slide-header h2{font-family:var(--serif);font-size:28px;color:#fff;}
+#s11 .slide-header p{font-size:14px;color:rgba(255,255,255,0.5);margin-top:4px;}
+#s11 .roadmap{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--paper3);}
+.rm-phase{background:var(--paper);padding:32px 36px;}
+.rm-phase-num{
+  font-family:var(--serif);font-size:48px;font-weight:700;
+  color:var(--paper3);line-height:1;margin-bottom:8px;
+}
+.rm-phase-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;}
+.rm-phase-effort{
+  display:inline-block;font-size:10px;padding:2px 8px;
+  border-radius:999px;margin-bottom:14px;font-weight:600;
+}
+.rm-phase-effort.s{background:rgba(52,199,89,0.12);color:var(--green);}
+.rm-phase-effort.m{background:rgba(12,140,233,0.12);color:var(--ocean);}
+.rm-phase-effort.l{background:rgba(255,107,53,0.12);color:var(--sunset);}
+.rm-items{list-style:none;display:flex;flex-direction:column;gap:8px;}
+.rm-item{display:flex;gap:8px;font-size:13px;color:var(--ink2);line-height:1.5;}
+.rm-item-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--ocean);
+  flex-shrink:0;margin-top:6px;
+}
+
+/* ─────────────────────────────────────────── */
+/* SLIDE 12 — CLOSING */
+/* ─────────────────────────────────────────── */
+#s12{
+  background:linear-gradient(160deg,var(--navy) 0%,#0d1e3a 60%,#0C8CE9 200%);
+  align-items:center;justify-content:center;text-align:center;
+  flex-direction:column;gap:24px;
+}
+#s12 .kicker{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--ocean-light);font-weight:600;}
+#s12 h2{font-family:var(--serif);font-size:42px;color:#fff;line-height:1.2;}
+#s12 .rule{width:48px;height:2px;background:var(--sunset);margin:0 auto;}
+#s12 .decisions{display:flex;gap:24px;margin-top:16px;}
+#s12 .dec{
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;padding:20px 24px;text-align:left;max-width:220px;
+}
+#s12 .dec h3{font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;}
+#s12 .dec p{font-size:12px;color:rgba(255,255,255,0.55);line-height:1.6;}
+#s12 .meta{font-size:11px;color:rgba(255,255,255,0.25);margin-top:24px;}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<div class="deck">
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 1 — COVER
+══════════════════════════════════════════════════════ -->
+<div class="slide active" id="s1">
+  <svg class="wave" viewBox="0 0 1200 120" preserveAspectRatio="none" style="height:120px">
+    <path d="M0,60 C200,100 400,20 600,60 C800,100 1000,20 1200,60 L1200,120 L0,120 Z" fill="rgba(12,140,233,0.15)"/>
+    <path d="M0,80 C300,40 600,120 900,60 C1050,30 1150,80 1200,70 L1200,120 L0,120 Z" fill="rgba(54,169,240,0.08)"/>
+  </svg>
+  <div class="kicker">ShipTrip — UX Redesign Pitch</div>
+  <h1 class="serif">Editorial</h1>
+  <div style="font-family:var(--serif);font-size:52px;font-weight:300;color:rgba(255,255,255,0.35);margin-top:-12px;margin-bottom:0;">Reise&shy;magazin</div>
+  <div class="rule"></div>
+  <p class="tagline">Grosszügige Typo · Foto-Hero · viel Weissraum · ruhige Eleganz<br>— wie ein gedrucktes Reisetagebuch.</p>
+  <div class="meta">5 Tabs · alle Screens · SwiftUI / SwiftData · umsetzbar in Phase 2</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 2 — PHILOSOPHIE
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s2">
+  <div class="left">
+    <h2>Warum<br>Editorial?</h2>
+    <p>ShipTrip ist ein Reisetagebuch, kein Buchungs-Tool. Die aktuelle UI denkt in System-Cards und iOS-Defaults. Die neue Richtung denkt in <em>Drucksatz, Weissraum und Bildsprache</em> — und bleibt trotzdem 100% nativ.</p>
+  </div>
+  <div class="right">
+    <div class="pillar">
+      <div class="pillar-num">1</div>
+      <div class="pillar-body">
+        <h3>Serif-Hierarchie</h3>
+        <p>Titel und Kennzahlen in Georgia. Lesebarer, Premium-Gefühl ohne Font-Import — Georgia ist systemweit auf iOS verfügbar.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">2</div>
+      <div class="pillar-body">
+        <h3>Weissraum als Gestaltmittel</h3>
+        <p>Nicht mehr Padding = mehr Inhalt. Mehr Padding = Atemraum, Qualitätssignal. Stats-Strip und Zeitstrahl bekommen Luft.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">3</div>
+      <div class="pillar-body">
+        <h3>Eyebrow + Kicker</h3>
+        <p>Jeder Kontext-Block trägt eine Kapitälchen-Zeile — Reederei, Jahreszahl, Kategorie. Orientierung ohne Tab-Wechsel.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">4</div>
+      <div class="pillar-body">
+        <h3>Brand-Tokens durchgängig</h3>
+        <p>oceanBlue, sunsetOrange, seaGreen ersetzen .blue / .red / .orange. Alle 5 Tabs sprechen dieselbe Farbe.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-num">5</div>
+      <div class="pillar-body">
+        <h3>Geo-Fallback als Feature</h3>
+        <p>Kein Foto? Der navy→ocean-Gradient mit Port-Punkten bleibt — jetzt visuell konsistenter und linienmässiger positioniert.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 3 — IST-ANALYSE
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s3">
+  <div class="slide-header">
+    <h2>IST-Analyse — grösste Schwächen</h2>
+    <div class="badge">6 Findings</div>
+  </div>
+  <div class="pain-grid">
+    <div class="pain-cell">
+      <span class="sev high">HIGH</span>
+      <h3>Farb-Inkonsistenz Nebentabs</h3>
+      <p>StatsView, DealsView, SettingsView nutzen .blue, .red, .orange statt Brand-Tokens. Statistik-Cards sehen aus wie Xcode-Template.</p>
+      <div class="ref">StatsView.swift:51 · DealsView.swift DealRowView</div>
+    </div>
+    <div class="pain-cell">
+      <span class="sev high">HIGH</span>
+      <h3>Keine Serif-Hierarchie</h3>
+      <p>Alle Titel sind SF Pro. Kein visuelles Gewicht-Gefälle zwischen Hero-Titel, Section-Header und Body-Text. Alles liest sich gleich.</p>
+      <div class="ref">CruiseHeroCardView.swift · StatsView.swift</div>
+    </div>
+    <div class="pain-cell">
+      <span class="sev high">HIGH</span>
+      <h3>Stats-Strip ohne Identität</h3>
+      <p>Vier Kennzahlen in uniformen Token-Kacheln, kein Gesamt-Kontext. Kein Bezug zur Hero-Reise. Fühlt sich wie Daten-Dump an.</p>
+      <div class="ref">CruiseStatsStripView.swift</div>
+    </div>
+    <div class="pain-cell">
+      <span class="sev med">MED</span>
+      <h3>Karte: Legende hart 200 px</h3>
+      <p>MapView-Legende als feste Overlay-Card ohne responsive Anpassung. Verdeckt Routen auf kleinen iPhones.</p>
+      <div class="ref">MapView.swift — Legende-Overlay hardcoded</div>
+    </div>
+    <div class="pain-cell">
+      <span class="sev med">MED</span>
+      <h3>Merkliste: kein Preis-Kontext</h3>
+      <p>Rabatt-Badge fixiert auf .red statt sunsetOrange. Keine Preisvergleich-Kontext-Zeile. Hero-Karte fehlt ganz.</p>
+      <div class="ref">DealsView.swift · DealRowView.swift</div>
+    </div>
+    <div class="pain-cell">
+      <span class="sev low">LOW</span>
+      <h3>Mehr: kein Profil-Kontext</h3>
+      <p>SettingsView öffnet direkt mit Form-Sections, kein Profil-Header, kein Reise-Überblick. Wirkt anonym und generisch.</p>
+      <div class="ref">SettingsView.swift:1 — kein Header</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 4 — BENCHMARK
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s4">
+  <div class="slide-header">
+    <h2>Benchmark — Best-in-Class 2026</h2>
+    <span>Travel Journal · Maps · Editorial iOS</span>
+  </div>
+  <div class="bm-grid">
+    <div class="bm-app">
+      <div class="bm-logo" style="background:#1a1a2e;font-size:22px;">📓</div>
+      <h3>Day One</h3>
+      <div class="bm-category">Journal / Tagebuch</div>
+      <ul>
+        <li>Serif-Titel im Tages-Hero</li>
+        <li>Foto-Mosaic als Jahres-Header</li>
+        <li>Weissraum als Kernmerkmal</li>
+        <li>Timeline mit Jahr-Divider</li>
+      </ul>
+    </div>
+    <div class="bm-app">
+      <div class="bm-logo" style="background:#f5f0e8;font-size:22px;">✈️</div>
+      <h3>Wanderlog</h3>
+      <div class="bm-category">Trip Planning</div>
+      <ul>
+        <li>Karte + Bottom-Sheet-Drill-down</li>
+        <li>Reise-Card mit Geo-Fallback</li>
+        <li>Eyebrow-Zeile pro Card</li>
+        <li>Scrub-Timeline Reise→Tag</li>
+      </ul>
+    </div>
+    <div class="bm-app">
+      <div class="bm-logo" style="background:#e8f4fc;font-size:22px;">🗺️</div>
+      <h3>Maps (Apple)</h3>
+      <div class="bm-category">Native Maps</div>
+      <ul>
+        <li>Dark-Map + farbige Pins</li>
+        <li>Chip-Switcher Kategorien</li>
+        <li>Bottom-Sheet interaktiv</li>
+        <li>Fokus-Zoom pro Reise</li>
+      </ul>
+    </div>
+    <div class="bm-app">
+      <div class="bm-logo" style="background:#fef3e2;font-size:22px;">📊</div>
+      <h3>Seatfrog / Cruise Critic</h3>
+      <div class="bm-category">Cruise Discovery</div>
+      <ul>
+        <li>Hero-Card mit Gradient+Scrim</li>
+        <li>Preis-Badge sunsetOrange</li>
+        <li>Reederei-Logo prominent</li>
+        <li>Spar-% als primäre KPI</li>
+      </ul>
+    </div>
+    <div class="bm-app">
+      <div class="bm-logo" style="background:#f0f4ff;font-size:22px;">📰</div>
+      <h3>Condé Nast Traveler</h3>
+      <div class="bm-category">Editorial Travel</div>
+      <ul>
+        <li>Serif-Header durchgängig</li>
+        <li>Kicker / Eyebrow jeder Karte</li>
+        <li>Grosszügige Zeilenabstände</li>
+        <li>Paper-Palette (Off-White)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="pattern-row">
+    <span style="font-size:11px;color:var(--ink3);margin-right:4px;">Übernommen:</span>
+    <span class="pattern-chip adopted">Serif-Hero-Titel</span>
+    <span class="pattern-chip adopted">Eyebrow/Kicker</span>
+    <span class="pattern-chip adopted">Paper-Palette</span>
+    <span class="pattern-chip adopted">Dark-Map Bottom-Sheet</span>
+    <span class="pattern-chip adopted">Brand-Token Badges</span>
+    <span class="pattern-chip">AR-Karte (zu aufwändig)</span>
+    <span class="pattern-chip">Social-Share (Out-of-Scope)</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 5 — MEINE REISEN
+══════════════════════════════════════════════════════ -->
+<div class="slide improvement-slide" id="s5">
+  <div class="imp-header">
+    <span class="imp-num">01 / 05</span>
+    <h2>Meine Reisen — Editorial Hero</h2>
+    <div class="pitch">Stats-Strip als Magazin-Zeile. Hero mit Serif-Titel und Eyebrow. Zeitstrahl mit linker Akzent-Linie statt grauem Card-Block.</div>
+  </div>
+  <div class="ba-area">
+    <div class="ba-col">
+      <div class="ba-label">Vorher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="screen-before">
+            <div class="sb-nav"><span class="sb-nav-title">Meine Reisen</span></div>
+            <div class="sb-stats">
+              <div class="sb-stat"><div class="sb-stat-val">4</div><div class="sb-stat-lbl">Reisen</div></div>
+              <div class="sb-stat"><div class="sb-stat-val">6</div><div class="sb-stat-lbl">Länder</div></div>
+              <div class="sb-stat"><div class="sb-stat-val">34</div><div class="sb-stat-lbl">Seetage</div></div>
+              <div class="sb-stat"><div class="sb-stat-val">12.4k</div><div class="sb-stat-lbl">sm</div></div>
+            </div>
+            <div class="sb-hero">
+              <div class="sb-hero-img"></div>
+              <div class="sb-hero-scrim"></div>
+              <div class="sb-hero-text">
+                <div class="sb-hero-title">Westliches Mittelmeer</div>
+                <div class="sb-hero-sub">Costa 🚢 Costa Toscana · 8 Tage</div>
+              </div>
+            </div>
+            <div class="sb-year">2025</div>
+            <div class="sb-row">
+              <div class="sb-row-thumb"></div>
+              <div class="sb-row-body"><div class="sb-row-title">Kanaren Runde</div><div class="sb-row-sub">AIDA 🚢 · 14 Tage · 3 Länder</div></div>
+            </div>
+            <div class="sb-year">2024</div>
+            <div class="sb-row">
+              <div class="sb-row-thumb"></div>
+              <div class="sb-row-body"><div class="sb-row-title">Nordsee Explorer</div><div class="sb-row-sub">TUI 🚢 · 7 Tage · 2 Länder</div></div>
+            </div>
+            <div class="sb-row">
+              <div class="sb-row-thumb"></div>
+              <div class="sb-row-body"><div class="sb-row-title">Adria Classic</div><div class="sb-row-sub">MSC 🚢 · 10 Tage · 3 Länder</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item active"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink3);font-size:13px;">
+      <div style="font-size:20px;color:var(--ocean)">→</div>
+    </div>
+
+    <div class="ba-col">
+      <div class="ba-label">Nachher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="screen-after">
+            <div class="sa-header">
+              <div class="sa-title">Meine Reisen</div>
+              <div class="sa-add">+</div>
+            </div>
+            <!-- editorial stats strip -->
+            <div class="sa-strip">
+              <div class="sa-stat">
+                <div class="sa-stat-val">4</div>
+                <div class="sa-stat-lbl">Reisen</div>
+              </div>
+              <div class="sa-stat">
+                <div class="sa-stat-val">6</div>
+                <div class="sa-stat-lbl">Länder</div>
+              </div>
+              <div class="sa-stat">
+                <div class="sa-stat-val">34</div>
+                <div class="sa-stat-lbl">Seetage</div>
+              </div>
+              <div class="sa-stat">
+                <div class="sa-stat-val">12.4k</div>
+                <div class="sa-stat-lbl">sm</div>
+              </div>
+            </div>
+            <!-- hero card editorial -->
+            <div class="sa-hero">
+              <div class="sa-hero-bg"></div>
+              <div class="sa-hero-scrim"></div>
+              <div class="sa-hero-meta">
+                <div class="sa-hero-badge">Geplant</div>
+              </div>
+              <div class="sa-hero-body">
+                <div class="sa-hero-eyebrow">Costa · Costa Toscana</div>
+                <div class="sa-hero-title">Westliches<br>Mittelmeer</div>
+                <div class="sa-hero-sub">Mai 2026 · 8 Tage · 5 Häfen</div>
+              </div>
+            </div>
+            <div class="sa-hero-footer" style="margin:0 10px 6px;border-radius:0 0 10px 10px;border-top:0.5px solid var(--paper3);">
+              <div class="sa-hero-kpis">5 Länder · BCN→MRS→GEN→NAP→PMI</div>
+              <div class="sa-hero-link">Details →</div>
+            </div>
+            <!-- year + timeline -->
+            <div class="sa-year">2025</div>
+            <div class="sa-row">
+              <div class="sa-row-body">
+                <div class="sa-row-title">Kanaren Runde</div>
+                <div class="sa-row-sub">AIDA 🚢 · 14 Tage · 3 Länder</div>
+                <div class="sa-row-ports">Las Palmas · Teneriffa</div>
+              </div>
+              <div class="sa-row-thumb">🌍</div>
+            </div>
+            <div class="sa-year">2024</div>
+            <div class="sa-row">
+              <div class="sa-row-body">
+                <div class="sa-row-title">Nordsee Explorer</div>
+                <div class="sa-row-sub">TUI 🚢 · 7 Tage · 2 Länder</div>
+                <div class="sa-row-ports">Hamburg · Kopenhagen</div>
+              </div>
+              <div class="sa-row-thumb">⚓</div>
+            </div>
+            <div class="sa-row" style="border-left-color:var(--green);">
+              <div class="sa-row-body">
+                <div class="sa-row-title">Adria Classic</div>
+                <div class="sa-row-sub">MSC 🚢 · 10 Tage · 3 Länder</div>
+                <div class="sa-row-ports">Venedig · Dubrovnik</div>
+              </div>
+              <div class="sa-row-thumb">⛵</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item active"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why-bar">
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Serif-Titel auf Hero-Card: +Premiumgefühl ohne Font-Import (Georgia = System)</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Eyebrow-Zeile "Costa · Costa Toscana" schafft Kontext vor dem Lesen des Titels</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Linke Akzent-Linie im Zeitstrahl: visueller Rhythmus ohne zusätzliche Card-Border</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Stats-Strip trennt mit Border statt Card-Hintergrund — mehr Weissraum, weniger Kacheln</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 6 — KARTE
+══════════════════════════════════════════════════════ -->
+<div class="slide improvement-slide" id="s6">
+  <div class="imp-header">
+    <span class="imp-num">02 / 05</span>
+    <h2>Karte — Dark-Map + Bottom-Sheet</h2>
+    <div class="pitch">Dunkle Karte hebt Routen und Pins dramatisch hervor. Bottom-Sheet beim Port-Tap gibt Hafen-Kontext ohne Overlay-Kachel.</div>
+  </div>
+  <div class="ba-area">
+    <div class="ba-col">
+      <div class="ba-label">Vorher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar" style="color:var(--ink2)"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="map-before">
+            <svg width="100%" height="100%" viewBox="0 0 188 280">
+              <rect class="map-sea" width="188" height="280"/>
+              <!-- simplified Europe/Mediterranean landmasses -->
+              <path class="map-land" d="M20,40 Q40,30 70,35 Q90,38 100,50 Q95,65 80,70 Q65,75 50,68 Q30,60 20,40Z"/>
+              <path class="map-land" d="M85,55 Q110,45 130,55 Q145,65 140,80 Q125,90 108,85 Q90,78 85,55Z"/>
+              <path class="map-land" d="M40,80 Q55,75 65,82 Q70,95 60,100 Q45,100 40,88Z"/>
+              <path class="map-land" d="M100,90 Q120,85 135,95 Q138,110 125,115 Q108,112 100,100Z"/>
+              <!-- route line -->
+              <polyline points="55,105 75,95 105,88 118,108 90,120 65,118" stroke="var(--ocean)" stroke-width="2" fill="none" stroke-dasharray="4,2"/>
+              <!-- pins -->
+              <circle cx="55" cy="105" r="4" fill="var(--sunset)"/>
+              <circle cx="75" cy="95" r="3" fill="var(--ocean)"/>
+              <circle cx="105" cy="88" r="3" fill="var(--ocean)"/>
+              <circle cx="118" cy="108" r="3" fill="var(--ocean)"/>
+              <circle cx="65" cy="118" r="4" fill="var(--green)"/>
+            </svg>
+            <div class="map-before-overlay">
+              <div class="map-before-title">Legende — Westl. Mittelmeer</div>
+              <div class="map-before-sub">Start · Hafen · Endpunkt · Seetag</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item active"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink3);font-size:13px;">
+      <div style="font-size:20px;color:var(--ocean)">→</div>
+    </div>
+
+    <div class="ba-col">
+      <div class="ba-label">Nachher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar" style="color:rgba(255,255,255,0.7)"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="map-after">
+            <svg width="100%" height="68%" viewBox="0 0 188 200" style="display:block">
+              <rect class="map-dark-sea" width="188" height="200"/>
+              <path class="map-dark-land" d="M20,30 Q40,20 70,25 Q90,28 100,40 Q95,55 80,60 Q65,65 50,58 Q30,50 20,30Z"/>
+              <path class="map-dark-land" d="M85,45 Q110,35 130,45 Q145,55 140,70 Q125,80 108,75 Q90,68 85,45Z"/>
+              <path class="map-dark-land" d="M40,68 Q55,63 65,70 Q70,83 60,88 Q45,88 40,76Z"/>
+              <path class="map-dark-land" d="M100,78 Q120,73 135,83 Q138,98 125,103 Q108,100 100,88Z"/>
+              <polyline class="map-route-line" points="55,95 75,83 105,76 118,96 90,108 65,106"/>
+              <circle cx="55" cy="95" r="5" fill="var(--sunset)"/>
+              <text x="55" y="90" font-size="5" fill="var(--sunset)" text-anchor="middle">BCN</text>
+              <circle cx="75" cy="83" r="4" fill="var(--ocean)"/>
+              <text x="75" y="78" font-size="5" fill="var(--ocean-light)" text-anchor="middle">MRS</text>
+              <circle cx="105" cy="76" r="4" fill="var(--ocean)"/>
+              <text x="105" y="71" font-size="5" fill="var(--ocean-light)" text-anchor="middle">GEN</text>
+              <circle cx="118" cy="96" r="4" fill="var(--ocean)"/>
+              <text x="118" y="91" font-size="5" fill="var(--ocean-light)" text-anchor="middle">NAP</text>
+              <circle cx="90" cy="108" r="4" fill="var(--ocean)"/>
+              <circle cx="65" cy="106" r="5" fill="var(--green)"/>
+              <text x="65" y="101" font-size="5" fill="var(--green)" text-anchor="middle">BCN</text>
+            </svg>
+            <!-- chip switcher -->
+            <div style="position:absolute;top:32px;left:8px;right:8px;display:flex;gap:4px;">
+              <div class="map-chip active">Alle</div>
+              <div class="map-chip">Mittelmeer</div>
+              <div class="map-chip">Atlantik</div>
+            </div>
+            <!-- bottom sheet -->
+            <div class="map-sheet">
+              <div class="map-sheet-handle"></div>
+              <div class="map-sheet-title">Barcelona — Starthafen</div>
+              <div class="map-sheet-sub">Westliches Mittelmeer · 13. Mai 2026</div>
+              <div class="map-chips">
+                <div class="map-chip active">Start</div>
+                <div class="map-chip">Tag 1</div>
+                <div class="map-chip">Costa Toscana</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar" style="background:rgba(26,47,74,0.97);border-top:0.5px solid rgba(255,255,255,0.1);">
+          <div class="tab-item" style="color:rgba(255,255,255,0.4)"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item active" style="color:var(--ocean-light)"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item" style="color:rgba(255,255,255,0.4)"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item" style="color:rgba(255,255,255,0.4)"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item" style="color:rgba(255,255,255,0.4)"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why-bar">
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">MapKit .standard lässt Dark/Light per colorScheme schalten — kein Custom-Tile-Server</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Chip-Switcher filtert nach Reise/Region über bestehende routeColor(at:) Logik</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Bottom-Sheet bei Pin-Tap: Port-Name, Datum, Rolle — ersetzt feste Legende, gibt Kontext</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Port-Label direkt auf Karte (SVG-Text): nur umsetzbar via MKAnnotationView in echter App</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 7 — MERKLISTE
+══════════════════════════════════════════════════════ -->
+<div class="slide improvement-slide" id="s7">
+  <div class="imp-header">
+    <span class="imp-num">03 / 05</span>
+    <h2>Merkliste — Hero-Deal + Preis-Kontext</h2>
+    <div class="pitch">Bestes Angebot als Hero-Card mit Geo-Gradient. Restliche Deals als Editorial-Rows mit Spar-Prozent und Geo-Thumbnail.</div>
+  </div>
+  <div class="ba-area">
+    <div class="ba-col">
+      <div class="ba-label">Vorher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="deals-before">
+            <div class="db-nav"><span class="db-nav-title">Merkliste</span></div>
+            <div style="height:26px;background:var(--paper2);margin:0 8px;border-radius:6px;display:flex;align-items:center;padding:0 8px;margin-bottom:6px;">
+              <span style="font-size:8px;color:var(--ink3)">🔍 Suchen...</span>
+            </div>
+            <div class="db-row">
+              <div class="db-row-logo">🚢</div>
+              <div class="db-row-body">
+                <div class="db-row-title">AIDA Norwegische Fjorde</div>
+                <div class="db-row-sub">Norwegen · 10 Tage</div>
+              </div>
+              <div class="db-row-price">
+                <div class="db-row-amount">ab 899 €</div>
+                <div class="db-row-badge">–18%</div>
+              </div>
+            </div>
+            <div class="db-row">
+              <div class="db-row-logo">🚢</div>
+              <div class="db-row-body">
+                <div class="db-row-title">MSC Östliche Karibik</div>
+                <div class="db-row-sub">Karibik · 14 Tage</div>
+              </div>
+              <div class="db-row-price">
+                <div class="db-row-amount">ab 1.249 €</div>
+                <div class="db-row-badge">–22%</div>
+              </div>
+            </div>
+            <div style="text-align:center;padding:16px;font-size:8px;color:var(--ink3);">2 Angebote gespeichert</div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item active"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:20px;color:var(--ocean)">→</div>
+    </div>
+
+    <div class="ba-col">
+      <div class="ba-label">Nachher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="deals-after">
+            <div class="da-nav">
+              <div class="da-nav-title">Merkliste</div>
+              <div class="da-nav-add">＋</div>
+            </div>
+            <!-- hero deal -->
+            <div class="da-hero">
+              <div class="da-hero-bg"></div>
+              <div class="da-hero-scrim"></div>
+              <div class="da-hero-badge">–18% · Bestes Angebot</div>
+              <div class="da-hero-body">
+                <div class="da-hero-eyebrow">AIDA · Norwegen</div>
+                <div class="da-hero-title">Norwegische<br>Fjorde</div>
+                <div class="da-hero-price">ab 899 € · 10 Tage</div>
+              </div>
+            </div>
+            <!-- deal rows -->
+            <div style="margin:4px 10px 3px;font-size:7px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3);font-weight:600;">Weitere Angebote</div>
+            <div class="da-row">
+              <div class="da-row-geo">🌊</div>
+              <div class="da-row-body">
+                <div class="da-row-title">MSC Östliche Karibik</div>
+                <div class="da-row-sub">Karibik · 14 Tage · MSC Cruises</div>
+              </div>
+              <div class="da-row-price-block">
+                <div class="da-row-price">1.249 €</div>
+                <div class="da-row-save">–22% gespart</div>
+              </div>
+            </div>
+            <div style="margin:8px 10px 0;padding:8px;background:var(--paper2);border-radius:8px;">
+              <div style="font-size:7px;color:var(--ink3);text-align:center;">+ Angebot hinzufügen</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item active"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why-bar">
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Deal mit niedrigstem discountPercent? als Hero — computed aus Deal.price / Deal.originalPrice</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Badge jetzt sunsetOrange statt hartem .red — ein Token-Change in DealRowView</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Serif-Titel auf Hero-Card: Destinations-Namen verdienen Premium-Typo wie echte Reiseanzeige</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Eyebrow "AIDA · Norwegen" aus Deal.shippingLine? + Deal.destination? — keine neuen Felder</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 8 — STATISTIK
+══════════════════════════════════════════════════════ -->
+<div class="slide improvement-slide" id="s8">
+  <div class="imp-header">
+    <span class="imp-num">04 / 05</span>
+    <h2>Statistik — Token-Grid + Brand-Charts</h2>
+    <div class="pitch">Gradient-Hero-Strip für die 4 Kernwerte. StatCards mit Brand-Tokens statt iOS-Systemfarben. Bar-Chart in oceanBlue-Gradient.</div>
+  </div>
+  <div class="ba-area">
+    <div class="ba-col">
+      <div class="ba-label">Vorher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="stats-before">
+            <div class="stb-nav"><span class="stb-nav-title">Statistik</span></div>
+            <div class="stb-grid">
+              <div class="stb-card"><div class="stb-card-val">4</div><div class="stb-card-lbl">Kreuzfahrten</div></div>
+              <div class="stb-card"><div class="stb-card-val">34</div><div class="stb-card-lbl">Reisetage</div></div>
+              <div class="stb-card"><div class="stb-card-val">18</div><div class="stb-card-lbl">Häfen</div></div>
+              <div class="stb-card"><div class="stb-card-val">6</div><div class="stb-card-lbl">Länder</div></div>
+            </div>
+            <div class="stb-bar-row">
+              <div class="stb-bar-title">Reisen pro Jahr</div>
+              <div class="stb-bar" style="width:100%"></div>
+              <div class="stb-bar-lbl">2025 · 2 Reisen</div>
+              <div class="stb-bar" style="width:50%;background:#32ade6"></div>
+              <div class="stb-bar-lbl">2024 · 2 Reisen</div>
+            </div>
+            <div style="margin:4px 8px;background:var(--paper);border-radius:6px;padding:6px 8px;">
+              <div style="font-size:8px;font-weight:600;color:var(--ink);margin-bottom:4px;">Top Reedereien</div>
+              <div style="font-size:8px;color:var(--ink2);">Costa 🚢 · 1 Reise</div>
+              <div style="font-size:8px;color:var(--ink2);">AIDA 🚢 · 1 Reise</div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item active"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:20px;color:var(--ocean)">→</div>
+    </div>
+
+    <div class="ba-col">
+      <div class="ba-label">Nachher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar" style="color:rgba(255,255,255,0.8)"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="stats-after">
+            <!-- gradient hero strip -->
+            <div class="sta-hero">
+              <div class="sta-hero-kpi">
+                <div class="sta-hero-val">4</div>
+                <div class="sta-hero-lbl">Reisen</div>
+              </div>
+              <div class="sta-hero-div"></div>
+              <div class="sta-hero-kpi">
+                <div class="sta-hero-val">34</div>
+                <div class="sta-hero-lbl">Tage</div>
+              </div>
+              <div class="sta-hero-div"></div>
+              <div class="sta-hero-kpi">
+                <div class="sta-hero-val">6</div>
+                <div class="sta-hero-lbl">Länder</div>
+              </div>
+              <div class="sta-hero-div"></div>
+              <div class="sta-hero-kpi">
+                <div class="sta-hero-val">12.4k</div>
+                <div class="sta-hero-lbl">sm</div>
+              </div>
+            </div>
+            <!-- token grid -->
+            <div class="sta-grid">
+              <div class="sta-card ocean">
+                <div class="sta-card-icon">⛴</div>
+                <div><div class="sta-card-val">4</div><div class="sta-card-lbl">Kreuzfahrten</div></div>
+              </div>
+              <div class="sta-card sunset">
+                <div class="sta-card-icon">🌅</div>
+                <div><div class="sta-card-val">34</div><div class="sta-card-lbl">Reisetage</div></div>
+              </div>
+              <div class="sta-card green">
+                <div class="sta-card-icon">⚓</div>
+                <div><div class="sta-card-val">18</div><div class="sta-card-lbl">Häfen</div></div>
+              </div>
+              <div class="sta-card navy">
+                <div class="sta-card-icon">🌍</div>
+                <div><div class="sta-card-val">6</div><div class="sta-card-lbl">Länder</div></div>
+              </div>
+            </div>
+            <!-- brand bar chart -->
+            <div class="sta-chart">
+              <div class="sta-chart-title">Reisen pro Jahr</div>
+              <div class="sta-bar-row">
+                <div class="sta-bar-lbl">2025</div>
+                <div class="sta-bar-track"><div class="sta-bar-fill" style="width:100%"></div></div>
+                <div class="sta-bar-val">2</div>
+              </div>
+              <div class="sta-bar-row">
+                <div class="sta-bar-lbl">2024</div>
+                <div class="sta-bar-track"><div class="sta-bar-fill" style="width:100%"></div></div>
+                <div class="sta-bar-val">2</div>
+              </div>
+            </div>
+            <!-- top lines -->
+            <div style="margin:2px 8px;background:var(--paper2);border-radius:8px;padding:5px 8px;">
+              <div style="font-size:7px;font-weight:600;color:var(--ink);margin-bottom:3px;letter-spacing:0.06em;text-transform:uppercase;">Top Reedereien</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;">
+                <div style="width:50px;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--ocean),var(--ocean-light))"></div>
+                <div style="font-size:7px;color:var(--ink2);">Costa · 1</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:50px;height:5px;border-radius:3px;background:linear-gradient(90deg,var(--sunset),#ff9f70)"></div>
+                <div style="font-size:7px;color:var(--ink2);">AIDA · 1</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item active"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why-bar">
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">navy→ocean Gradient-Strip ersetzt plain NavigationTitle — kein neues Datenmodell</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">StatCard: .blue → oceanBlue-Background 8% Opacity + oceanBlue Text — ein Zeilen-Change</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Bar-Chart Gradient (Charts Library) durch .foregroundStyle(LinearGradient) in bestehendem Chart</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Top-Reederei-Bars mit routeColor(at:) — selbe Farbliste wie Karten-Routen</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 9 — MEHR
+══════════════════════════════════════════════════════ -->
+<div class="slide improvement-slide" id="s9">
+  <div class="imp-header">
+    <span class="imp-num">05 / 05</span>
+    <h2>Mehr — Profil-Header + Icon-Kacheln</h2>
+    <div class="pitch">navy→ocean Gradient-Header mit Reise-Stat-Chips. Jede Settings-Section mit farbiger Icon-Kachel statt blanker Liste.</div>
+  </div>
+  <div class="ba-area">
+    <div class="ba-col">
+      <div class="ba-label">Vorher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="mehr-before">
+            <div class="mb-nav"><span class="mb-nav-title">Mehr</span></div>
+            <div class="mb-section">
+              <div class="mb-section-title">Darstellung</div>
+              <div class="mb-rows">
+                <div class="mb-row"><span class="mb-row-label">Farbschema</span><span class="mb-row-right">System ›</span></div>
+              </div>
+            </div>
+            <div class="mb-section">
+              <div class="mb-section-title">KI</div>
+              <div class="mb-rows">
+                <div class="mb-row"><span class="mb-row-label">Gemini API-Key</span><span class="mb-row-right">›</span></div>
+              </div>
+            </div>
+            <div class="mb-section">
+              <div class="mb-section-title">Daten</div>
+              <div class="mb-rows">
+                <div class="mb-row"><span class="mb-row-label">Exportieren</span><span class="mb-row-right">›</span></div>
+                <div class="mb-row"><span class="mb-row-label">Importieren</span><span class="mb-row-right">›</span></div>
+                <div class="mb-row"><span class="mb-row-label" style="color:#ff3b30">Alle Daten löschen</span><span class="mb-row-right">›</span></div>
+              </div>
+            </div>
+            <div class="mb-section">
+              <div class="mb-section-title">Info</div>
+              <div class="mb-rows">
+                <div class="mb-row"><span class="mb-row-label">Version</span><span class="mb-row-right">1.5.1</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item active"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+      <div style="font-size:20px;color:var(--ocean)">→</div>
+    </div>
+
+    <div class="ba-col">
+      <div class="ba-label">Nachher</div>
+      <div class="iphone">
+        <div class="notch"></div>
+        <div class="status-bar" style="color:rgba(255,255,255,0.8)"><span>9:41</span><span>◼◼◼</span></div>
+        <div class="screen">
+          <div class="mehr-after">
+            <!-- profile header -->
+            <div class="ma-profile">
+              <div class="ma-profile-name">ShipTrip</div>
+              <div class="ma-profile-chips">
+                <div class="ma-profile-chip">4 Reisen</div>
+                <div class="ma-profile-chip">6 Länder</div>
+                <div class="ma-profile-chip">34 Seetage</div>
+              </div>
+            </div>
+            <!-- settings sections -->
+            <div class="ma-section">
+              <div class="ma-section-title">Darstellung</div>
+              <div class="ma-rows">
+                <div class="ma-row">
+                  <div class="ma-row-icon blue">🎨</div>
+                  <div class="ma-row-label">Farbschema</div>
+                  <div class="ma-row-right">System ›</div>
+                </div>
+              </div>
+            </div>
+            <div class="ma-section">
+              <div class="ma-section-title">KI & Daten</div>
+              <div class="ma-rows">
+                <div class="ma-row">
+                  <div class="ma-row-icon orange">✨</div>
+                  <div class="ma-row-label">Gemini API-Key</div>
+                  <div class="ma-row-right">›</div>
+                </div>
+                <div class="ma-row">
+                  <div class="ma-row-icon green">📤</div>
+                  <div class="ma-row-label">Exportieren</div>
+                  <div class="ma-row-right">›</div>
+                </div>
+                <div class="ma-row">
+                  <div class="ma-row-icon navy">📥</div>
+                  <div class="ma-row-label">Importieren</div>
+                  <div class="ma-row-right">›</div>
+                </div>
+                <div class="ma-row">
+                  <div class="ma-row-icon red">🗑</div>
+                  <div class="ma-row-label" style="color:#ff3b30">Alle Daten löschen</div>
+                  <div class="ma-row-right">›</div>
+                </div>
+              </div>
+            </div>
+            <div class="ma-section">
+              <div class="ma-section-title">Info</div>
+              <div class="ma-rows">
+                <div class="ma-row">
+                  <div class="ma-row-icon blue">ℹ</div>
+                  <div class="ma-row-label">Version 1.5.1</div>
+                  <div class="ma-row-right">›</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-bar">
+          <div class="tab-item"><div class="tab-icon">⛴</div>Reisen</div>
+          <div class="tab-item"><div class="tab-icon">🗺</div>Karte</div>
+          <div class="tab-item"><div class="tab-icon">🔖</div>Merkliste</div>
+          <div class="tab-item"><div class="tab-icon">📊</div>Statistik</div>
+          <div class="tab-item active"><div class="tab-icon">···</div>Mehr</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="why-bar">
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Profil-Header aus bestehenden Lifetime-Berechnungen (cruises.count, countriesVisited)</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Icon-Kacheln: SF Symbol in 20×20 RoundedRect, Farbe = Brand-Token-Variante, kein neuer Code</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Sections zusammengelegt (KI + Daten) — reduziert Scroll-Tiefe, da beides selten benutzt</div></div>
+    <div class="why-item"><div class="why-dot"></div><div class="why-text">Gradient-Header identisch zu StatsView-Hero-Strip — konsistente Sprache über beide Tabs</div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 10 — TOKENS & TYPOGRAFIE
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s10">
+  <div class="slide-header">
+    <h2>Design-Tokens & Typografie</h2>
+  </div>
+  <div class="content">
+    <div class="half">
+      <h3>Typografie-Hierarchie</h3>
+      <div class="type-row">
+        <div class="type-label">Hero-Titel (Serif Heavy)</div>
+        <div class="type-serif-hero">Westliches<br>Mittelmeer</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Screen-Titel (Serif Regular)</div>
+        <div class="type-serif-sub">Meine Reisen</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Kicker / Eyebrow</div>
+        <div class="type-caps">Costa · Costa Toscana</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Body / Row-Titel</div>
+        <div class="type-body">Kanaren Runde</div>
+      </div>
+      <div class="type-row">
+        <div class="type-label">Caption / Metadata</div>
+        <div class="type-caption">AIDA · 14 Tage · 3 Länder</div>
+      </div>
+      <div style="margin-top:20px;">
+        <h3 style="margin-bottom:12px;">Paper-Palette</h3>
+        <div style="display:flex;gap:8px;">
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:8px;background:#FAFAF8;border:1px solid #E8E4DC"></div><div style="font-size:9px;color:var(--ink3);margin-top:3px;">paper<br>#FAFAF8</div></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:8px;background:#F2F0EB;border:1px solid #E8E4DC"></div><div style="font-size:9px;color:var(--ink3);margin-top:3px;">paper2<br>#F2F0EB</div></div>
+          <div style="text-align:center"><div style="width:40px;height:40px;border-radius:8px;background:#E8E4DC;border:1px solid #d4cfc5"></div><div style="font-size:9px;color:var(--ink3);margin-top:3px;">paper3<br>#E8E4DC</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="half">
+      <h3>Brand-Token Palette</h3>
+      <div class="token-row">
+        <div class="token"><div class="token-swatch" style="background:#0C8CE9"></div><div class="token-name">oceanBlue</div><div class="token-hex">#0C8CE9</div></div>
+        <div class="token"><div class="token-swatch" style="background:#36A9F0"></div><div class="token-name">oceanLight</div><div class="token-hex">#36A9F0</div></div>
+        <div class="token"><div class="token-swatch" style="background:#1A365D"></div><div class="token-name">navyDark</div><div class="token-hex">#1A365D</div></div>
+        <div class="token"><div class="token-swatch" style="background:#FF6B35"></div><div class="token-name">sunset</div><div class="token-hex">#FF6B35</div></div>
+        <div class="token"><div class="token-swatch" style="background:#34C759"></div><div class="token-name">seaGreen</div><div class="token-hex">#34C759</div></div>
+      </div>
+      <h3 style="margin-top:20px;margin-bottom:12px;">Radius-Hierarchie</h3>
+      <div class="radius-row">
+        <div style="text-align:center">
+          <div style="width:56px;height:56px;border-radius:16px;background:var(--ocean);opacity:0.15;"></div>
+          <div style="font-size:9px;color:var(--ink2);margin-top:4px;">r16<br>Hero</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:48px;height:48px;border-radius:12px;background:var(--ocean);opacity:0.15;"></div>
+          <div style="font-size:9px;color:var(--ink2);margin-top:4px;">r12<br>Card</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--ocean);opacity:0.15;"></div>
+          <div style="font-size:9px;color:var(--ink2);margin-top:4px;">r10<br>Row</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:32px;height:32px;border-radius:6px;background:var(--ocean);opacity:0.15;"></div>
+          <div style="font-size:9px;color:var(--ink2);margin-top:4px;">r6<br>Thumb</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;">
+        <h3 style="margin-bottom:10px;">Was NICHT geändert wird</h3>
+        <div style="font-size:12px;color:var(--ink2);line-height:1.7;">
+          Bestehende Card-Struktur (Hero r16 · cardStyle r12 · Row r10) bleibt identisch.<br>
+          Kein neues Datenmodell, keine neuen SwiftData-Felder.<br>
+          Geo-Fallback (navy→ocean Gradient) bleibt — wird Editorial-Feature.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 11 — ROADMAP
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s11">
+  <div class="slide-header">
+    <h2>Umsetzungs-Roadmap</h2>
+    <p>3 Phasen, kein Backend, kein neues Datenmodell — nur SwiftUI-Polish</p>
+  </div>
+  <div class="roadmap">
+    <div class="rm-phase">
+      <div class="rm-phase-num">1</div>
+      <div class="rm-phase-title">Token-Konsistenz</div>
+      <div class="rm-phase-effort s">S — 1 Sprint</div>
+      <ul class="rm-items">
+        <li class="rm-item"><div class="rm-item-dot"></div>StatsView: .blue → oceanBlue, .orange → sunset, .purple → navy</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>DealsView: Rabatt-Badge .red → sunsetOrange in DealRowView</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>SettingsView: Icon-Kacheln 20×20 RoundedRect + Brand-Farbe</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>Color+Theme.swift: Paper-Palette (#FAFAF8 / #F2F0EB) ergänzen</li>
+      </ul>
+    </div>
+    <div class="rm-phase">
+      <div class="rm-phase-num">2</div>
+      <div class="rm-phase-title">Editorial Typo & Layout</div>
+      <div class="rm-phase-effort m">M — 2 Sprints</div>
+      <ul class="rm-items">
+        <li class="rm-item"><div class="rm-item-dot"></div>CruiseHeroCardView: Titel-Font .serif (Georgia via Font.custom)</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>CruiseHeroCardView: Eyebrow-Zeile "Reederei · Schiff" in Kapitälchen (.caption2 .tracking)</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>CruiseTimelineRowView: linke Akzent-Linie (Rectangle 2pt + Role-Farbe)</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>StatsView: Gradient-Header-Strip (navy→ocean) statt NavigationTitle</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>SettingsView: Profil-Header-Strip mit Lifetime-Stats</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>DealsView: Hero-Deal-Card (Deal mit geringstem discountPercent?)</li>
+      </ul>
+    </div>
+    <div class="rm-phase">
+      <div class="rm-phase-num">3</div>
+      <div class="rm-phase-title">Interaktion & Karte</div>
+      <div class="rm-phase-effort l">L — 3 Sprints</div>
+      <ul class="rm-items">
+        <li class="rm-item"><div class="rm-item-dot"></div>MapView: Dark-Mode Schalter (MapKit colorScheme-aware)</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>MapView: Chip-Switcher (Alle / Reise-Filter) über bestehende routeColor-Logik</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>MapView: Bottom-Sheet bei Pin-Tap (Port-Name, Datum, Rolle) — UIPresentationController</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>StatsView: Bar-Chart Gradient (.foregroundStyle LinearGradient in Swift Charts)</li>
+        <li class="rm-item"><div class="rm-item-dot"></div>Paper-Palette in Light-Mode systemweit aktivieren</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SLIDE 12 — CLOSING
+══════════════════════════════════════════════════════ -->
+<div class="slide" id="s12">
+  <div class="kicker">ShipTrip Editorial Redesign</div>
+  <h2>Bereit für Phase 2?</h2>
+  <div class="rule"></div>
+  <div class="decisions">
+    <div class="dec">
+      <h3>Jetzt entscheiden</h3>
+      <p>Welche Phase zuerst? Token-Konsistenz (Sprint 1) ist der Low-Risk-Einstieg und sofort sichtbar.</p>
+    </div>
+    <div class="dec">
+      <h3>Open Questions</h3>
+      <p>Georgia als Serif-Font oder SF Pro Display? Paper-Palette im Dark Mode (dunkleres Off-Black statt reines #000)?</p>
+    </div>
+    <div class="dec">
+      <h3>Nicht in Scope</h3>
+      <p>CloudKit-Sync · KI-Erfassungs-Flow · Foto-Upload-Redesign · Onboarding. Diese sind eigene Pitch-Decks.</p>
+    </div>
+  </div>
+  <div class="meta">ShipTrip v1.5.1 · Editorial Redesign Pitch · 2026-06-18</div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- NAV BAR -->
+<div id="nav">
+  <button onclick="go(-1)" title="Zurück (←)">&#8592;</button>
+  <span id="counter">1 / 12</span>
+  <button onclick="go(1)" title="Weiter (→)">&#8594;</button>
+</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const counter = document.getElementById('counter');
+const progress = document.getElementById('progress');
+let cur = 0;
+
+function show(n) {
+  slides[cur].classList.remove('active');
+  cur = Math.max(0, Math.min(n, slides.length - 1));
+  slides[cur].classList.add('active');
+  counter.textContent = (cur + 1) + ' / ' + slides.length;
+  progress.style.width = ((cur + 1) / slides.length * 100) + '%';
+  location.hash = cur + 1;
+}
+
+function go(d) { show(cur + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  if (e.key === 'Home') { e.preventDefault(); show(0); }
+  if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+});
+
+// deep-link
+const h = parseInt(location.hash.replace('#','')) - 1;
+if (!isNaN(h) && h >= 0) show(h);
+else progress.style.width = (1 / slides.length * 100) + '%';
+</script>
+</body>
+</html>

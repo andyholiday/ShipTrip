@@ -1,0 +1,1914 @@
+<!-- ShipTrip · Explorer Geo-First · v3 Fragment -->
+<!-- self-contained section + style + script — NO full <html> document -->
+
+<style>
+/* =========================================================
+   TOKENS  (v3- namespace)
+   ========================================================= */
+:root {
+  --v3-bg:        #0A0F1A;
+  --v3-bg2:       #111827;
+  --v3-bg3:       #1C2333;
+  --v3-card:      #1C2333;
+  --v3-border:    rgba(255,255,255,0.08);
+  --v3-ocean:     #0C8CE9;
+  --v3-oceanL:    #36A9F0;
+  --v3-navy:      #1A365D;
+  --v3-sunset:    #FF6B35;
+  --v3-sea:       #34C759;
+  --v3-white:     #FFFFFF;
+  --v3-grey:      rgba(255,255,255,0.55);
+  --v3-grey2:     rgba(255,255,255,0.30);
+  --v3-font:      -apple-system, system-ui, 'Helvetica Neue', sans-serif;
+  --v3-r16:       16px;
+  --v3-r12:       12px;
+  --v3-r10:       10px;
+  --v3-r6:        6px;
+}
+
+/* =========================================================
+   ROOT / LAYOUT
+   ========================================================= */
+.v3-root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 32px 16px 64px;
+  background: #060A12;
+  font-family: var(--v3-font);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* =========================================================
+   iPHONE FRAME  (CSS-only, no images)
+   ========================================================= */
+.v3-phone {
+  position: relative;
+  width: 390px;
+  height: 844px;
+  background: var(--v3-bg);
+  border-radius: 50px;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  box-shadow:
+    0 0 0 6px #0D1117,
+    0 0 0 8px rgba(255,255,255,0.06),
+    0 40px 80px rgba(0,0,0,0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* dynamic island */
+.v3-island {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 100;
+}
+
+/* status bar */
+.v3-statusbar {
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-white);
+  position: relative;
+  z-index: 99;
+}
+
+/* screen area */
+.v3-screen {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* tab-bar */
+.v3-tabbar {
+  height: 82px;
+  flex-shrink: 0;
+  background: rgba(13,18,27,0.95);
+  border-top: 0.5px solid var(--v3-border);
+  display: flex;
+  align-items: flex-start;
+  padding-top: 8px;
+  position: relative;
+  z-index: 50;
+}
+.v3-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 4px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.v3-tab-icon {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.v3-tab-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--v3-grey2);
+  transition: fill 0.15s;
+}
+.v3-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--v3-grey2);
+  transition: color 0.15s;
+}
+.v3-tab.v3-active .v3-tab-icon svg { fill: var(--v3-ocean); }
+.v3-tab.v3-active .v3-tab-label   { color: var(--v3-ocean); }
+
+/* =========================================================
+   SCREENS  (position: absolute, show/hide)
+   ========================================================= */
+.v3-panel {
+  position: absolute;
+  inset: 0;
+  background: var(--v3-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: none;
+  flex-direction: column;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.v3-panel::-webkit-scrollbar { display: none; }
+.v3-panel.v3-visible { display: flex; }
+
+/* =========================================================
+   NAVIGATION BAR
+   ========================================================= */
+.v3-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(10,15,26,0.92);
+  backdrop-filter: blur(12px);
+  padding: 12px 16px 10px;
+  border-bottom: 0.5px solid var(--v3-border);
+  flex-shrink: 0;
+}
+.v3-navbar-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--v3-white);
+  letter-spacing: -0.4px;
+}
+.v3-navbar-sub {
+  font-size: 11px;
+  color: var(--v3-grey);
+  margin-top: 1px;
+}
+
+/* =========================================================
+   SHARED UTILITIES
+   ========================================================= */
+.v3-pad { padding: 0 16px; }
+.v3-gap12 { margin-bottom: 12px; }
+.v3-gap8  { margin-bottom: 8px; }
+.v3-gap16 { margin-bottom: 16px; }
+.v3-gap20 { margin-bottom: 20px; }
+
+.v3-card {
+  background: var(--v3-card);
+  border-radius: var(--v3-r12);
+  overflow: hidden;
+}
+.v3-card-inner { padding: 12px; }
+
+.v3-caption {
+  font-size: 11px;
+  color: var(--v3-grey);
+}
+.v3-caption2 {
+  font-size: 10px;
+  color: var(--v3-grey2);
+}
+.v3-label-ocean { color: var(--v3-ocean); }
+.v3-label-sea   { color: var(--v3-sea); }
+.v3-label-sunset { color: var(--v3-sunset); }
+
+.v3-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.v3-badge-sunset { background: var(--v3-sunset); color: #fff; }
+.v3-badge-sea    { background: var(--v3-sea);    color: #0A1A0F; }
+.v3-badge-ocean  { background: var(--v3-ocean);  color: #fff; }
+.v3-badge-red    { background: #E53E3E;           color: #fff; }
+
+.v3-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.v3-chip-ocean  { background: rgba(12,140,233,0.18); color: var(--v3-oceanL); border: 1px solid rgba(12,140,233,0.35); }
+.v3-chip-sunset { background: rgba(255,107,53,0.18); color: var(--v3-sunset); border: 1px solid rgba(255,107,53,0.30); }
+.v3-chip-sea    { background: rgba(52,199,89,0.18);  color: var(--v3-sea);    border: 1px solid rgba(52,199,89,0.30); }
+.v3-chip-active { opacity: 1 !important; }
+.v3-chip:not(.v3-chip-active) { opacity: 0.6; }
+
+/* =========================================================
+   STATS STRIP  (CruiseStatsStripView)
+   ========================================================= */
+.v3-strip {
+  display: flex;
+  background: var(--v3-card);
+  border-radius: var(--v3-r10);
+  border: 0.5px solid var(--v3-border);
+  overflow: hidden;
+  margin: 8px 16px 12px;
+}
+.v3-strip-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  border-right: 0.5px solid var(--v3-border);
+  position: relative;
+}
+.v3-strip-cell:last-child { border-right: none; }
+.v3-strip-val {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.v3-strip-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--v3-grey);
+  margin-top: 1px;
+}
+/* progress ring decoration on Seetage cell */
+.v3-strip-ring {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================================================
+   HERO CARD  (CruiseHeroCardView)
+   ========================================================= */
+.v3-hero {
+  margin: 0 16px 12px;
+  border-radius: var(--v3-r16);
+  overflow: hidden;
+  cursor: pointer;
+}
+.v3-hero-media {
+  position: relative;
+  height: 190px;
+  overflow: hidden;
+}
+.v3-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.82) 100%);
+  z-index: 2;
+}
+.v3-hero-text {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 3;
+}
+.v3-hero-title {
+  font-size: 17px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.v3-hero-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.78);
+}
+.v3-hero-badge-tl {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 4;
+}
+.v3-hero-badge-tr {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+}
+.v3-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: var(--v3-card);
+  border-top: 0.5px solid var(--v3-border);
+}
+
+/* =========================================================
+   GEO CANVAS  (CruiseGeoFallbackView CSS equivalent)
+   ========================================================= */
+.v3-geo {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1A365D 0%, #0C8CE9 60%, #36A9F0 100%);
+  position: relative;
+  overflow: hidden;
+}
+.v3-geo svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* GEO THUMBNAIL  (34×34 in row) */
+.v3-geo-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--v3-r6);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #1A365D, #0C8CE9);
+  position: relative;
+}
+.v3-geo-thumb svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================================================
+   TIMELINE ROW  (CruiseTimelineRowView)
+   ========================================================= */
+.v3-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--v3-card);
+  border-radius: var(--v3-r10);
+  margin: 0 16px 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.v3-row:active { background: #242d3e; }
+
+.v3-spine {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.v3-row-text { flex: 1; min-width: 0; }
+.v3-row-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--v3-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v3-row-meta {
+  font-size: 11px;
+  color: var(--v3-grey);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.v3-row-ports {
+  font-size: 10px;
+  color: var(--v3-sea);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+.v3-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.v3-row-rating {
+  font-size: 10px;
+  color: var(--v3-sea);
+}
+
+/* year divider */
+.v3-year-div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 16px 4px 26px;
+}
+.v3-year-div span {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--v3-grey);
+  white-space: nowrap;
+}
+.v3-year-div::after {
+  content: '';
+  flex: 1;
+  height: 0.5px;
+  background: var(--v3-border);
+}
+
+/* =========================================================
+   MAP SCREEN
+   ========================================================= */
+.v3-map-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.v3-map-bg {
+  width: 100%;
+  height: 100%;
+  background: #1a2744;
+  position: relative;
+  overflow: hidden;
+}
+/* chip bar at bottom of map */
+.v3-map-chips {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 12px 14px;
+  background: linear-gradient(to top, rgba(10,15,26,0.95) 80%, transparent);
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 20;
+}
+/* map pins */
+.v3-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  z-index: 10;
+}
+.v3-pin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+.v3-pin-label {
+  font-size: 9px;
+  font-weight: 600;
+  background: rgba(10,15,26,0.88);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 6px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+/* port bottom sheet */
+.v3-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--v3-bg2);
+  border-radius: 20px 20px 0 0;
+  padding: 14px 16px 28px;
+  z-index: 30;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+  border-top: 0.5px solid var(--v3-border);
+}
+.v3-sheet.v3-open { transform: translateY(0); }
+.v3-sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
+  margin: 0 auto 14px;
+}
+.v3-sheet-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--v3-white);
+  margin-bottom: 4px;
+}
+.v3-sheet-sub {
+  font-size: 12px;
+  color: var(--v3-grey);
+  margin-bottom: 12px;
+}
+.v3-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--v3-border);
+}
+.v3-sheet-row:last-child { border-bottom: none; }
+.v3-sheet-key {
+  font-size: 12px;
+  color: var(--v3-grey);
+}
+.v3-sheet-val {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--v3-white);
+}
+.v3-excursion-wrap {
+  margin-top: 10px;
+}
+.v3-excursion-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 8px;
+  background: rgba(52,199,89,0.15);
+  color: var(--v3-sea);
+  border-radius: 8px;
+  margin: 3px 3px 0 0;
+}
+
+/* map close overlay */
+.v3-sheet-close {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  background: transparent;
+  cursor: pointer;
+}
+.v3-sheet.v3-open ~ .v3-sheet-close { display: block; }
+
+/* =========================================================
+   STATS SCREEN
+   ========================================================= */
+.v3-stats-hero {
+  margin: 0 16px 14px;
+  border-radius: var(--v3-r12);
+  background: linear-gradient(135deg, var(--v3-navy) 0%, var(--v3-ocean) 100%);
+  padding: 14px 16px 12px;
+  position: relative;
+  overflow: hidden;
+}
+.v3-stats-hero::before {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+}
+.v3-stats-hero-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.v3-stats-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+}
+.v3-stats-hero-cell {
+  display: flex;
+  flex-direction: column;
+}
+.v3-stats-hero-val {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.v3-stats-hero-lbl {
+  font-size: 9px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  margin-top: 1px;
+}
+
+/* world map */
+.v3-world-wrap {
+  margin: 0 16px 14px;
+  background: var(--v3-card);
+  border-radius: var(--v3-r12);
+  padding: 12px;
+}
+.v3-world-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--v3-white);
+  margin-bottom: 8px;
+}
+.v3-world-map {
+  width: 100%;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.v3-world-map svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* token grid (replaces raw .blue/.orange StatCards) */
+.v3-token-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 16px 14px;
+}
+.v3-token-card {
+  background: var(--v3-card);
+  border-radius: var(--v3-r12);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.v3-token-icon {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+.v3-token-val {
+  font-size: 20px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--v3-white);
+}
+.v3-token-lbl {
+  font-size: 10px;
+  color: var(--v3-grey);
+}
+
+/* shipping line mini-bars */
+.v3-shipping-wrap {
+  margin: 0 16px 16px;
+  background: var(--v3-card);
+  border-radius: var(--v3-r12);
+  padding: 12px;
+}
+.v3-shipping-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--v3-white);
+  margin-bottom: 10px;
+}
+.v3-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.v3-bar-logo { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+.v3-bar-name { font-size: 11px; color: var(--v3-grey); flex: 1; }
+.v3-bar-track {
+  width: 80px;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.v3-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--v3-ocean), var(--v3-oceanL));
+}
+
+/* =========================================================
+   DEALS SCREEN
+   ========================================================= */
+.v3-deal-hero {
+  margin: 0 16px 12px;
+  border-radius: var(--v3-r16);
+  overflow: hidden;
+  cursor: pointer;
+}
+.v3-deal-hero-media {
+  height: 120px;
+  position: relative;
+  overflow: hidden;
+}
+.v3-deal-geo {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1A3A5C 0%, #0A5C3A 100%);
+  position: relative;
+  overflow: hidden;
+}
+.v3-deal-geo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(52,199,89,0.15) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(12,140,233,0.15) 0%, transparent 50%);
+}
+.v3-deal-geo-text {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  z-index: 2;
+}
+.v3-deal-geo-label {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+}
+.v3-deal-geo-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+}
+.v3-deal-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  background: var(--v3-card);
+  border-top: 0.5px solid var(--v3-border);
+}
+.v3-deal-price {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--v3-white);
+}
+
+/* deal row */
+.v3-deal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--v3-card);
+  border-radius: var(--v3-r10);
+  margin: 0 16px 6px;
+}
+.v3-deal-logo {
+  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.v3-deal-info { flex: 1; min-width: 0; }
+.v3-deal-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--v3-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v3-deal-dest-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+.v3-dest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: rgba(12,140,233,0.16);
+  color: var(--v3-oceanL);
+}
+.v3-deal-price-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.v3-deal-price-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--v3-white);
+}
+
+/* =========================================================
+   SETTINGS SCREEN
+   ========================================================= */
+.v3-settings-header {
+  background: linear-gradient(160deg, var(--v3-navy) 0%, var(--v3-ocean) 100%);
+  padding: 16px 16px 20px;
+  position: relative;
+  overflow: hidden;
+}
+.v3-settings-header::after {
+  content: '';
+  position: absolute;
+  right: -30px;
+  bottom: -30px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+}
+.v3-settings-app-name {
+  font-size: 22px;
+  font-weight: 900;
+  color: #fff;
+}
+.v3-settings-version {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-top: 2px;
+  margin-bottom: 12px;
+}
+.v3-settings-stat-row {
+  display: flex;
+  gap: 8px;
+}
+.v3-settings-chip {
+  background: rgba(255,255,255,0.12);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.v3-settings-section {
+  margin: 12px 16px 0;
+  background: var(--v3-card);
+  border-radius: var(--v3-r12);
+  overflow: hidden;
+}
+.v3-settings-section-header {
+  padding: 8px 12px 6px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  border-bottom: 0.5px solid var(--v3-border);
+}
+.v3-settings-row {
+  display: flex;
+  align-items: center;
+  padding: 11px 12px;
+  border-bottom: 0.5px solid var(--v3-border);
+  gap: 10px;
+}
+.v3-settings-row:last-child { border-bottom: none; }
+.v3-settings-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.v3-settings-row-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--v3-white);
+}
+.v3-settings-row-val {
+  font-size: 12px;
+  color: var(--v3-grey);
+}
+.v3-settings-row-chevron {
+  font-size: 11px;
+  color: var(--v3-grey2);
+}
+
+/* =========================================================
+   DETAIL SCREEN  (cruise detail — push from hero tap)
+   ========================================================= */
+.v3-detail {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: var(--v3-bg);
+  z-index: 60;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.v3-detail::-webkit-scrollbar { display: none; }
+.v3-detail.v3-open { display: flex; }
+
+.v3-detail-back {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  background: rgba(10,15,26,0.92);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--v3-border);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.v3-detail-back-arrow {
+  font-size: 18px;
+  color: var(--v3-ocean);
+  line-height: 1;
+}
+.v3-detail-back-label {
+  font-size: 15px;
+  color: var(--v3-ocean);
+  font-weight: 500;
+}
+
+.v3-detail-geo {
+  width: 100%;
+  height: 210px;
+  background: linear-gradient(135deg, #1A365D, #0C8CE9, #36A9F0);
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.v3-detail-geo svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.v3-detail-geo-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.75) 100%);
+  z-index: 2;
+}
+.v3-detail-geo-text {
+  position: absolute;
+  bottom: 12px;
+  left: 16px;
+  right: 16px;
+  z-index: 3;
+}
+.v3-detail-geo-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+  margin-bottom: 4px;
+}
+.v3-detail-geo-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.75);
+}
+
+.v3-detail-body { padding: 0 16px 24px; flex: 1; }
+
+.v3-port-timeline { margin-top: 14px; }
+.v3-port-stop {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0;
+  position: relative;
+}
+.v3-port-stop::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: -8px;
+  width: 1.5px;
+  background: var(--v3-border);
+}
+.v3-port-stop:last-child::before { display: none; }
+.v3-port-dot-wrap {
+  width: 16px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding-top: 3px;
+}
+.v3-port-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--v3-bg);
+}
+.v3-port-info { flex: 1; padding-bottom: 12px; }
+.v3-port-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--v3-white);
+}
+.v3-port-times {
+  font-size: 11px;
+  color: var(--v3-grey);
+  margin-top: 1px;
+}
+</style>
+
+<section class="v3-root">
+  <div class="v3-phone" id="v3Phone">
+    <!-- Dynamic Island -->
+    <div class="v3-island"></div>
+
+    <!-- Status Bar -->
+    <div class="v3-statusbar">
+      <span>9:41</span>
+      <span style="display:flex;gap:5px;align-items:center;">
+        <!-- signal -->
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="white" opacity="0.9">
+          <rect x="0" y="7" width="3" height="5" rx="0.8"/>
+          <rect x="4.5" y="4.5" width="3" height="7.5" rx="0.8"/>
+          <rect x="9" y="2" width="3" height="10" rx="0.8"/>
+          <rect x="13.5" y="0" width="3" height="12" rx="0.8"/>
+        </svg>
+        <!-- wifi -->
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="white" stroke-width="1.5" opacity="0.9">
+          <path d="M1 4.5C3.5 2 6.5 0.5 8 0.5s4.5 1.5 7 4"/>
+          <path d="M3.5 7C5 5.5 6.5 4.5 8 4.5s3 1 4.5 2.5"/>
+          <circle cx="8" cy="10" r="1.2" fill="white" stroke="none"/>
+        </svg>
+        <!-- battery -->
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
+          <rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="white" stroke-opacity="0.9"/>
+          <rect x="2" y="2" width="16" height="8" rx="1.5" fill="white" opacity="0.9"/>
+          <path d="M22.5 4v4" stroke="white" stroke-opacity="0.55" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+    </div>
+
+    <!-- ===  SCREEN CONTAINER === -->
+    <div class="v3-screen">
+
+      <!-- ============================================================
+           SCREEN 0: MEINE REISEN
+           ============================================================ -->
+      <div class="v3-panel v3-visible" id="v3S0">
+        <div class="v3-navbar">
+          <div class="v3-navbar-title">Meine Reisen</div>
+          <div class="v3-navbar-sub" style="color:var(--v3-grey2);font-size:10px;margin-top:2px;">4 Kreuzfahrten · 6 Länder</div>
+        </div>
+
+        <!-- Stats Strip with progress ring on Seetage -->
+        <div class="v3-strip">
+          <div class="v3-strip-cell">
+            <span class="v3-strip-val" style="color:var(--v3-ocean);">4</span>
+            <span class="v3-strip-lbl">Reisen</span>
+          </div>
+          <div class="v3-strip-cell">
+            <span class="v3-strip-val" style="color:var(--v3-oceanL);">6</span>
+            <span class="v3-strip-lbl">Länder</span>
+          </div>
+          <div class="v3-strip-cell" style="position:relative;">
+            <!-- Progress ring: Canvas analog — SVG ring -->
+            <svg class="v3-strip-ring" viewBox="0 0 18 18">
+              <circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2.5"/>
+              <circle cx="9" cy="9" r="7" fill="none" stroke="#34C759" stroke-width="2.5"
+                stroke-dasharray="29 44" stroke-dashoffset="11" stroke-linecap="round"
+                transform="rotate(-90 9 9)"/>
+            </svg>
+            <span class="v3-strip-val" style="color:var(--v3-sea);">34</span>
+            <span class="v3-strip-lbl">Seetage</span>
+          </div>
+          <div class="v3-strip-cell">
+            <span class="v3-strip-val" style="color:var(--v3-sunset);">18</span>
+            <span class="v3-strip-lbl">Häfen</span>
+          </div>
+        </div>
+
+        <!-- Hero Card: Westliches Mittelmeer (geplant) -->
+        <div class="v3-hero" id="v3HeroCard" onclick="v3OpenDetail()">
+          <div class="v3-hero-media">
+            <!-- GeoFallbackView CSS equivalent -->
+            <div class="v3-geo">
+              <svg viewBox="0 0 390 190" preserveAspectRatio="xMidYMid slice">
+                <!-- decorative rings -->
+                <circle cx="78" cy="152" r="266" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+                <circle cx="331" cy="28" r="226" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+                <!-- route: Barcelona→Marseille→Genua→Neapel→Palma→Barcelona -->
+                <!-- mapped to canvas: lon 2.18→138, 5.37→167, 8.93→200, 14.26→250, 2.65→143, 2.18→138 -->
+                <!-- lat 41.38→95, 43.30→73, 44.41→62, 40.85→100, 39.57→112, 41.38→95 -->
+                <polyline points="138,95 167,73 200,62 250,100 143,112 138,95"
+                  fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <!-- mid-ports (white dots) -->
+                <circle cx="167" cy="73" r="3.5" fill="rgba(255,255,255,0.6)"/>
+                <circle cx="200" cy="62" r="3.5" fill="rgba(255,255,255,0.6)"/>
+                <circle cx="250" cy="100" r="3.5" fill="rgba(255,255,255,0.6)"/>
+                <!-- start: Barcelona sunsetOrange -->
+                <circle cx="138" cy="95" r="7" fill="none" stroke="white" stroke-width="2"/>
+                <circle cx="138" cy="95" r="5" fill="#FF6B35"/>
+                <!-- end: Barcelona seaGreen -->
+                <circle cx="143" cy="112" r="7" fill="none" stroke="white" stroke-width="2"/>
+                <circle cx="143" cy="112" r="5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="v3-hero-scrim"></div>
+            <div class="v3-hero-badge-tl">
+              <span class="v3-badge v3-badge-sunset">In 42 Tagen</span>
+            </div>
+            <div class="v3-hero-text">
+              <div class="v3-hero-title">Westliches Mittelmeer</div>
+              <div class="v3-hero-sub">🛳 Costa Cruises · Costa Toscana · 15. Sep – 23. Sep</div>
+            </div>
+          </div>
+          <div class="v3-hero-meta">
+            <span class="v3-caption">5 Länder · 6 Häfen · 8 Tage</span>
+            <span class="v3-caption v3-label-ocean" style="font-weight:600;">Details →</span>
+          </div>
+        </div>
+
+        <!-- Year divider -->
+        <div class="v3-year-div"><span>2025</span></div>
+
+        <!-- Timeline Rows with mini GeoFallback thumbs -->
+        <div class="v3-row" onclick="">
+          <div class="v3-spine" style="background:var(--v3-ocean);"></div>
+          <div class="v3-row-text">
+            <div class="v3-row-title">Norwegische Fjorde</div>
+            <div class="v3-row-meta">AIDA Cruises 🚢 · 14T · 3 Länder</div>
+            <div class="v3-row-ports">Bergen · Flåm · Geiranger</div>
+          </div>
+          <div class="v3-row-right">
+            <!-- Mini GeoFallback (CruiseGeoFallbackView thumbnail) -->
+            <div class="v3-geo-thumb">
+              <svg viewBox="0 0 34 34">
+                <circle cx="6" cy="28" r="28" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1"/>
+                <polyline points="8,24 14,18 20,12 28,16"
+                  fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.2" stroke-dasharray="3 2"/>
+                <circle cx="14" cy="18" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="20" cy="12" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="8" cy="24" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="8" cy="24" r="2.5" fill="#FF6B35"/>
+                <circle cx="28" cy="16" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="28" cy="16" r="2.5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="v3-row-rating">★ 4.8</div>
+          </div>
+        </div>
+
+        <div class="v3-year-div"><span>2024</span></div>
+
+        <div class="v3-row" onclick="">
+          <div class="v3-spine" style="background:var(--v3-ocean);"></div>
+          <div class="v3-row-text">
+            <div class="v3-row-title">Östliches Mittelmeer</div>
+            <div class="v3-row-meta">MSC Cruises 🚢 · 11T · 4 Länder</div>
+            <div class="v3-row-ports">Athen · Mykonos · Santorin</div>
+          </div>
+          <div class="v3-row-right">
+            <div class="v3-geo-thumb">
+              <svg viewBox="0 0 34 34">
+                <circle cx="28" cy="6" r="22" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1"/>
+                <polyline points="6,26 12,20 20,16 28,22"
+                  fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.2" stroke-dasharray="3 2"/>
+                <circle cx="12" cy="20" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="20" cy="16" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="6" cy="26" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="6" cy="26" r="2.5" fill="#FF6B35"/>
+                <circle cx="28" cy="22" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="28" cy="22" r="2.5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="v3-row-rating">★ 4.5</div>
+          </div>
+        </div>
+
+        <div class="v3-row" onclick="">
+          <div class="v3-spine" style="background:var(--v3-grey2);"></div>
+          <div class="v3-row-text">
+            <div class="v3-row-title">Karibik Entdecker</div>
+            <div class="v3-row-meta">TUI Cruises 🚢 · 14T · 5 Länder</div>
+            <div class="v3-row-ports">Miami · Nassau · San Juan</div>
+          </div>
+          <div class="v3-row-right">
+            <div class="v3-geo-thumb">
+              <svg viewBox="0 0 34 34">
+                <circle cx="4" cy="30" r="20" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1"/>
+                <polyline points="6,22 12,18 20,20 28,12"
+                  fill="none" stroke="rgba(255,255,255,0.40)" stroke-width="1.2" stroke-dasharray="3 2"/>
+                <circle cx="12" cy="18" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.55)"/>
+                <circle cx="6" cy="22" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="6" cy="22" r="2.5" fill="#FF6B35"/>
+                <circle cx="28" cy="12" r="3.5" fill="none" stroke="white" stroke-width="1.2"/>
+                <circle cx="28" cy="12" r="2.5" fill="#34C759"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:20px;"></div>
+      </div><!-- /S0 -->
+
+      <!-- ============================================================
+           SCREEN 1: KARTE
+           ============================================================ -->
+      <div class="v3-panel" id="v3S1">
+        <div style="flex:1;position:relative;overflow:hidden;">
+          <!-- map background: Mittelmeer simplified SVG -->
+          <div class="v3-map-bg" style="height:100%;">
+            <svg viewBox="0 0 390 660" width="100%" height="100%" preserveAspectRatio="xMidYMid slice"
+                 style="position:absolute;inset:0;">
+              <!-- sea base -->
+              <rect width="390" height="660" fill="#1a2744"/>
+              <!-- simplified land masses (Mediterranean context) -->
+              <!-- Spain/France/Italy rough shapes -->
+              <path d="M0,80 Q40,60 80,70 Q120,65 155,80 Q170,90 165,110 Q150,130 130,145 Q110,160 90,155 Q60,150 30,160 Q10,165 0,155 Z"
+                fill="#2a3a5c" opacity="0.8"/>
+              <!-- Italy peninsula -->
+              <path d="M185,75 Q210,70 230,85 Q245,100 242,125 Q238,150 230,175 Q222,200 218,220 Q215,235 210,230 Q200,215 196,195 Q190,170 188,145 Q182,120 182,100 Z"
+                fill="#2a3a5c" opacity="0.8"/>
+              <!-- North Africa -->
+              <path d="M0,280 Q80,270 160,272 Q240,268 320,274 Q360,278 390,280 L390,340 L0,340 Z"
+                fill="#2a3a5c" opacity="0.8"/>
+              <!-- Greece area -->
+              <path d="M268,90 Q285,85 300,95 Q312,110 305,130 Q295,145 280,140 Q268,130 265,115 Z"
+                fill="#2a3a5c" opacity="0.7"/>
+              <!-- Corsica/Sardinia hint -->
+              <ellipse cx="175" cy="155" rx="8" ry="15" fill="#2a3a5c" opacity="0.6"/>
+              <ellipse cx="178" cy="195" rx="10" ry="20" fill="#2a3a5c" opacity="0.6"/>
+              <!-- route polyline: W-Med (Barcelona→Marseille→Genua→Neapel→Palma→Barcelona) -->
+              <!-- approx pixel mapping for 390×660 view, Med region -->
+              <polyline id="v3Route0"
+                points="112,178  148,148  190,138  232,185  118,215  112,178"
+                fill="none" stroke="#0C8CE9" stroke-width="2.5" opacity="0.9"/>
+              <!-- route 2 hint (Norway - off top) -->
+              <!-- route 3 hint (Eastern Med) -->
+              <polyline id="v3Route2"
+                points="268,168  285,158  295,165  310,175  268,168"
+                fill="none" stroke="#FF6B35" stroke-width="2" opacity="0.6"/>
+
+              <!-- W-Med pins -->
+              <!-- Barcelona (start) -->
+              <circle cx="112" cy="178" r="7" fill="none" stroke="white" stroke-width="1.8"/>
+              <circle cx="112" cy="178" r="5" fill="#FF6B35"/>
+              <!-- Marseille -->
+              <circle cx="148" cy="148" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <!-- Genua -->
+              <circle cx="190" cy="138" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <!-- Neapel -->
+              <circle cx="232" cy="185" r="4" fill="#0C8CE9" opacity="0.85" id="v3PinNeapel"/>
+              <!-- Palma -->
+              <circle cx="118" cy="215" r="4" fill="#0C8CE9" opacity="0.85"/>
+              <!-- Barcelona end -->
+              <circle cx="112" cy="178" r="5" fill="none" stroke="#34C759" stroke-width="2"/>
+              <!-- pin tap zones (invisible, larger) -->
+              <rect x="104" y="170" width="24" height="24" fill="transparent"
+                    onclick="v3OpenPin('Barcelona','Spanien','Ankunft: 15. Sep · Abfahrt: 23. Sep','8 Std','Sagrada Família, Barceloneta')"
+                    style="cursor:pointer;"/>
+              <rect x="140" y="140" width="24" height="24" fill="transparent"
+                    onclick="v3OpenPin('Marseille','Frankreich','Ankunft: 16. Sep · Abfahrt: 17. Sep','10 Std','Château d\'If, Vieux-Port')"
+                    style="cursor:pointer;"/>
+              <rect x="182" y="130" width="24" height="24" fill="transparent"
+                    onclick="v3OpenPin('Genua','Italien','Ankunft: 17. Sep · Abfahrt: 18. Sep','9 Std','Altstadt, Porto Antico')"
+                    style="cursor:pointer;"/>
+              <rect x="224" y="177" width="24" height="24" fill="transparent"
+                    onclick="v3OpenPin('Neapel','Italien','Ankunft: 18. Sep · Abfahrt: 19. Sep','11 Std','Pompeji, Vesuv')"
+                    style="cursor:pointer;"/>
+              <rect x="110" y="207" width="24" height="24" fill="transparent"
+                    onclick="v3OpenPin('Palma de Mallorca','Spanien','Ankunft: 21. Sep · Abfahrt: 22. Sep','12 Std','Kathedrale La Seu, Altstadt')"
+                    style="cursor:pointer;"/>
+
+              <!-- map controls -->
+              <!-- compass -->
+              <circle cx="356" cy="80" r="18" fill="rgba(13,18,27,0.85)"/>
+              <text x="356" y="85" text-anchor="middle" fill="white" font-size="14">⊕</text>
+            </svg>
+
+            <!-- chip bar (replaces legend overlay) -->
+            <div class="v3-map-chips">
+              <div class="v3-chip v3-chip-ocean v3-chip-active" onclick="v3FocusRoute(0, this)">
+                <span style="width:8px;height:8px;border-radius:50%;background:#0C8CE9;display:inline-block;"></span>
+                W. Mittelmeer
+              </div>
+              <div class="v3-chip v3-chip-sunset" onclick="v3FocusRoute(1, this)">
+                <span style="width:8px;height:8px;border-radius:50%;background:#FF6B35;display:inline-block;"></span>
+                Norw. Fjorde
+              </div>
+              <div class="v3-chip" style="background:rgba(52,199,89,0.14);color:var(--v3-sea);border:1px solid rgba(52,199,89,0.28);" onclick="v3FocusRoute(2, this)">
+                <span style="width:8px;height:8px;border-radius:50%;background:#34C759;display:inline-block;"></span>
+                Ö. Mittelmeer
+              </div>
+              <div class="v3-chip" style="background:rgba(168,85,247,0.14);color:#C084FC;border:1px solid rgba(168,85,247,0.28);" onclick="v3FocusRoute(3, this)">
+                <span style="width:8px;height:8px;border-radius:50%;background:#A855F7;display:inline-block;"></span>
+                Karibik
+              </div>
+            </div>
+
+            <!-- bottom sheet (port detail) -->
+            <div class="v3-sheet" id="v3PortSheet">
+              <div class="v3-sheet-handle"></div>
+              <div class="v3-sheet-title" id="v3SheetPortName">Neapel</div>
+              <div class="v3-sheet-sub" id="v3SheetPortCountry">Italien · Westliches Mittelmeer</div>
+              <div class="v3-sheet-row">
+                <span class="v3-sheet-key">Aufenthalt</span>
+                <span class="v3-sheet-val" id="v3SheetTimes">Ankunft: 18. Sep · Abfahrt: 19. Sep</span>
+              </div>
+              <div class="v3-sheet-row">
+                <span class="v3-sheet-key">Aufenthaltsdauer</span>
+                <span class="v3-sheet-val" id="v3SheetDuration">11 Std</span>
+              </div>
+              <div class="v3-excursion-wrap">
+                <div class="v3-sheet-key" style="margin-bottom:5px;">Ausflüge</div>
+                <div id="v3SheetExcursions">
+                  <span class="v3-excursion-tag">Pompeji</span>
+                  <span class="v3-excursion-tag">Vesuv</span>
+                </div>
+              </div>
+            </div>
+            <!-- close overlay -->
+            <div class="v3-sheet-close" id="v3SheetClose" onclick="v3ClosePin()"></div>
+          </div>
+        </div>
+      </div><!-- /S1 -->
+
+      <!-- ============================================================
+           SCREEN 2: MERKLISTE
+           ============================================================ -->
+      <div class="v3-panel" id="v3S2">
+        <div class="v3-navbar">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="v3-navbar-title">Merkliste</div>
+            <span style="font-size:20px;color:var(--v3-ocean);cursor:pointer;">+</span>
+          </div>
+        </div>
+
+        <!-- Best deal hero -->
+        <div class="v3-deal-hero" style="margin-top:12px;">
+          <div class="v3-deal-hero-media">
+            <div class="v3-deal-geo">
+              <!-- geo rings decoration -->
+              <svg viewBox="0 0 358 120" style="position:absolute;inset:0;width:100%;height:100%;">
+                <circle cx="280" cy="10" r="80" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="1"/>
+                <circle cx="30" cy="110" r="60" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+                <!-- simplified Norway fjord silhouette hint -->
+                <path d="M0,80 Q40,60 60,70 Q80,75 90,65 Q100,55 110,60 Q120,68 130,55 Q140,42 155,50 Q165,57 175,48 Q190,38 200,45"
+                  fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>
+              </svg>
+              <div class="v3-deal-geo-text">
+                <div class="v3-deal-geo-label">Norwegische Fjorde</div>
+                <div class="v3-deal-geo-sub">AIDA Cruises · AIDAnova</div>
+              </div>
+            </div>
+            <div class="v3-hero-scrim" style="z-index:1;"></div>
+          </div>
+          <div class="v3-deal-hero-meta">
+            <div>
+              <span class="v3-deal-price">ab 899 EUR</span>
+              <div style="margin-top:2px;display:flex;gap:5px;flex-wrap:wrap;">
+                <span class="v3-dest-chip">🏔 Fjorde</span>
+                <span class="v3-dest-chip">🇳🇴 Norwegen</span>
+              </div>
+            </div>
+            <span class="v3-badge v3-badge-red" style="font-size:11px;padding:4px 10px;">-18%</span>
+          </div>
+        </div>
+
+        <!-- Standard deal rows -->
+        <div style="margin:4px 0 8px;padding:0 16px;">
+          <div style="font-size:11px;color:var(--v3-grey);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Weitere Angebote</div>
+        </div>
+
+        <div class="v3-deal-row">
+          <div class="v3-deal-logo">🚢</div>
+          <div class="v3-deal-info">
+            <div class="v3-deal-title">MSC Östliche Karibik</div>
+            <div class="v3-deal-dest-row">
+              <span class="v3-dest-chip">🌴 Karibik</span>
+              <span class="v3-dest-chip">🇯🇲 Jamaika</span>
+              <span class="v3-caption" style="color:var(--v3-grey2);">14T</span>
+            </div>
+          </div>
+          <div class="v3-deal-price-right">
+            <div class="v3-deal-price-val">1.249 EUR</div>
+            <span class="v3-badge v3-badge-red" style="font-size:9px;padding:2px 6px;">-12%</span>
+          </div>
+        </div>
+
+        <div class="v3-deal-row">
+          <div class="v3-deal-logo">⛴</div>
+          <div class="v3-deal-info">
+            <div class="v3-deal-title">Costa Mittelmeer Klassik</div>
+            <div class="v3-deal-dest-row">
+              <span class="v3-dest-chip">🇮🇹 Italien</span>
+              <span class="v3-dest-chip">🇪🇸 Spanien</span>
+            </div>
+          </div>
+          <div class="v3-deal-price-right">
+            <div class="v3-deal-price-val">749 EUR</div>
+          </div>
+        </div>
+
+        <div style="height:20px;"></div>
+      </div><!-- /S2 -->
+
+      <!-- ============================================================
+           SCREEN 3: STATISTIK
+           ============================================================ -->
+      <div class="v3-panel" id="v3S3">
+        <div class="v3-navbar">
+          <div class="v3-navbar-title">Statistik</div>
+        </div>
+
+        <!-- Hero gradient strip (replaces raw StatCards) -->
+        <div class="v3-stats-hero" style="margin-top:12px;">
+          <div class="v3-stats-hero-title">Reise-Bilanz</div>
+          <div class="v3-stats-hero-grid">
+            <div class="v3-stats-hero-cell">
+              <span class="v3-stats-hero-val">4</span>
+              <span class="v3-stats-hero-lbl">Reisen</span>
+            </div>
+            <div class="v3-stats-hero-cell">
+              <span class="v3-stats-hero-val">34</span>
+              <span class="v3-stats-hero-lbl">Seetage</span>
+            </div>
+            <div class="v3-stats-hero-cell">
+              <span class="v3-stats-hero-val">18</span>
+              <span class="v3-stats-hero-lbl">Häfen</span>
+            </div>
+            <div class="v3-stats-hero-cell">
+              <span class="v3-stats-hero-val">12.4k</span>
+              <span class="v3-stats-hero-lbl">sm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Static world map with countriesVisited highlighted -->
+        <div class="v3-world-wrap">
+          <div class="v3-world-title">Besuchte Länder <span style="color:var(--v3-ocean);font-size:12px;">(6)</span></div>
+          <div class="v3-world-map">
+            <!--
+              Simplified world SVG — countriesVisited: Spanien, Frankreich, Italien, Norwegen, Griechenland, USA
+              Highlighted in oceanBlue. No external assets.
+            -->
+            <svg viewBox="0 0 340 100" preserveAspectRatio="xMidYMid meet"
+                 style="background:#101C2E;width:100%;height:100%;border-radius:8px;">
+              <!-- Ocean background -->
+              <rect width="340" height="100" fill="#101C2E" rx="8"/>
+              <!-- Simplified continents as path polygons (schematic, not geographically precise) -->
+              <!-- North America -->
+              <path d="M10,10 Q25,5 38,12 Q45,18 42,30 Q38,42 30,48 Q20,52 12,45 Q5,38 8,25 Z"
+                fill="#1C2D42" opacity="0.9"/>
+              <!-- Greenland hint -->
+              <ellipse cx="52" cy="6" rx="7" ry="5" fill="#1C2D42" opacity="0.7"/>
+              <!-- South America -->
+              <path d="M38,55 Q46,50 52,58 Q55,68 50,80 Q45,90 38,92 Q30,90 28,80 Q25,68 30,60 Z"
+                fill="#1C2D42" opacity="0.9"/>
+              <!-- Europe (highlighted countries in oceanBlue) -->
+              <!-- Spain -->
+              <path d="M108,28 Q118,24 126,28 Q130,34 126,40 Q120,44 112,42 Q106,38 108,28 Z"
+                fill="#0C8CE9" opacity="0.85"/>
+              <!-- France -->
+              <path d="M118,20 Q128,17 136,22 Q140,28 136,34 Q130,36 122,34 Q116,30 118,20 Z"
+                fill="#0C8CE9" opacity="0.85"/>
+              <!-- Italy -->
+              <path d="M136,22 Q142,20 146,26 Q148,34 144,44 Q141,50 138,48 Q134,42 133,34 Q132,28 136,22 Z"
+                fill="#0C8CE9" opacity="0.85"/>
+              <!-- Norway -->
+              <path d="M128,8 Q135,5 140,10 Q142,16 138,20 Q133,22 128,18 Q124,14 128,8 Z"
+                fill="#0C8CE9" opacity="0.85"/>
+              <!-- Greece -->
+              <path d="M152,30 Q158,28 162,32 Q164,38 160,42 Q155,44 152,40 Q149,36 152,30 Z"
+                fill="#0C8CE9" opacity="0.85"/>
+              <!-- Rest of Europe (unvisited, muted) -->
+              <path d="M138,8 Q155,5 170,12 Q175,20 168,28 Q162,32 152,30 Q146,26 142,20 Q138,20 136,22 Q128,18 128,8 Z"
+                fill="#1C2D42" opacity="0.8"/>
+              <!-- Russia / Asia -->
+              <path d="M170,5 Q220,2 260,8 Q280,14 275,30 Q268,40 250,42 Q225,44 200,38 Q180,32 170,20 Z"
+                fill="#1C2D42" opacity="0.8"/>
+              <!-- Africa -->
+              <path d="M112,50 Q140,46 162,50 Q170,58 165,74 Q158,86 148,90 Q135,92 125,86 Q115,78 112,66 Z"
+                fill="#1C2D42" opacity="0.8"/>
+              <!-- USA (highlighted) -->
+              <path d="M18,30 Q36,26 42,34 Q44,42 38,48 Q28,52 18,48 Q12,42 18,30 Z"
+                fill="#0C8CE9" opacity="0.75"/>
+              <!-- Australia -->
+              <path d="M255,60 Q275,56 285,64 Q288,74 280,82 Q268,86 256,80 Q248,72 255,60 Z"
+                fill="#1C2D42" opacity="0.8"/>
+              <!-- Legend -->
+              <rect x="250" y="88" width="8" height="8" rx="2" fill="#0C8CE9" opacity="0.85"/>
+              <text x="262" y="95" fill="rgba(255,255,255,0.5)" font-size="6" font-family="-apple-system,sans-serif">Besucht</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Token grid (brand colors, no .blue/.orange raw) -->
+        <div class="v3-token-grid">
+          <div class="v3-token-card">
+            <div class="v3-token-icon">🌍</div>
+            <div class="v3-token-val" style="color:var(--v3-oceanL);">6</div>
+            <div class="v3-token-lbl">Länder</div>
+          </div>
+          <div class="v3-token-card">
+            <div class="v3-token-icon">⭐</div>
+            <div class="v3-token-val" style="color:#FBBF24;">4.7</div>
+            <div class="v3-token-lbl">Ø Bewertung</div>
+          </div>
+          <div class="v3-token-card">
+            <div class="v3-token-icon">💶</div>
+            <div class="v3-token-val" style="color:var(--v3-sea);">4.280</div>
+            <div class="v3-token-lbl">Ausgaben (EUR)</div>
+          </div>
+          <div class="v3-token-card">
+            <div class="v3-token-icon">⚓</div>
+            <div class="v3-token-val" style="color:var(--v3-sunset);">18</div>
+            <div class="v3-token-lbl">Häfen gesamt</div>
+          </div>
+        </div>
+
+        <!-- Shipping line mini-bars (token colors, not raw .blue) -->
+        <div class="v3-shipping-wrap">
+          <div class="v3-shipping-title">Top Reedereien</div>
+          <div class="v3-bar-row">
+            <div class="v3-bar-logo">🛳</div>
+            <div class="v3-bar-name">Costa Cruises</div>
+            <div class="v3-bar-track"><div class="v3-bar-fill" style="width:100%;"></div></div>
+          </div>
+          <div class="v3-bar-row">
+            <div class="v3-bar-logo">⛴</div>
+            <div class="v3-bar-name">AIDA Cruises</div>
+            <div class="v3-bar-track"><div class="v3-bar-fill" style="width:75%;"></div></div>
+          </div>
+          <div class="v3-bar-row">
+            <div class="v3-bar-logo">🚢</div>
+            <div class="v3-bar-name">MSC Cruises</div>
+            <div class="v3-bar-track"><div class="v3-bar-fill" style="width:50%;"></div></div>
+          </div>
+          <div class="v3-bar-row">
+            <div class="v3-bar-logo">🛥</div>
+            <div class="v3-bar-name">TUI Cruises</div>
+            <div class="v3-bar-track"><div class="v3-bar-fill" style="width:25%;"></div></div>
+          </div>
+        </div>
+
+        <div style="height:20px;"></div>
+      </div><!-- /S3 -->
+
+      <!-- ============================================================
+           SCREEN 4: MEHR
+           ============================================================ -->
+      <div class="v3-panel" id="v3S4">
+        <!-- Gradient header (navy→oceanBlue, stat chips) -->
+        <div class="v3-settings-header">
+          <div class="v3-settings-app-name">ShipTrip</div>
+          <div class="v3-settings-version">Version 1.5.1 · Build 8</div>
+          <div class="v3-settings-stat-row">
+            <div class="v3-settings-chip">4 Reisen</div>
+            <div class="v3-settings-chip">6 Länder</div>
+            <div class="v3-settings-chip">34 Seetage</div>
+          </div>
+        </div>
+
+        <!-- Section: Erscheinungsbild -->
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-oceanL);">Erscheinungsbild</div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(12,140,233,0.15);">🌓</div>
+            <div class="v3-settings-row-label">Farbschema</div>
+            <div class="v3-settings-row-val">System</div>
+            <div class="v3-settings-row-chevron">›</div>
+          </div>
+        </div>
+
+        <!-- Section: KI-Funktionen -->
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-sea);">KI-Funktionen</div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(52,199,89,0.15);">✨</div>
+            <div class="v3-settings-row-label">Gemini API</div>
+            <div class="v3-settings-row-val" style="color:var(--v3-sea);">Aktiv</div>
+            <div class="v3-settings-row-chevron">›</div>
+          </div>
+        </div>
+
+        <!-- Section: Synchronisation -->
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-oceanL);">Synchronisation</div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(12,140,233,0.12);">☁️</div>
+            <div class="v3-settings-row-label">iCloud Sync</div>
+            <div class="v3-settings-row-val">Geplant</div>
+          </div>
+        </div>
+
+        <!-- Section: Benachrichtigungen -->
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-sunset);">Benachrichtigungen</div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(255,107,53,0.15);">🔔</div>
+            <div class="v3-settings-row-label">Erinnerungen</div>
+            <div class="v3-settings-row-chevron">›</div>
+          </div>
+        </div>
+
+        <!-- Section: Daten -->
+        <div class="v3-settings-section">
+          <div class="v3-settings-section-header" style="color:var(--v3-grey);">Daten</div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(255,255,255,0.07);">💾</div>
+            <div class="v3-settings-row-label">Daten verwalten</div>
+            <div class="v3-settings-row-chevron">›</div>
+          </div>
+          <div class="v3-settings-row">
+            <div class="v3-settings-icon" style="background:rgba(255,255,255,0.07);">ℹ️</div>
+            <div class="v3-settings-row-label">Version</div>
+            <div class="v3-settings-row-val">1.5.1</div>
+          </div>
+        </div>
+
+        <div style="height:24px;"></div>
+      </div><!-- /S4 -->
+
+      <!-- ============================================================
+           DETAIL OVERLAY  (Westliches Mittelmeer)
+           ============================================================ -->
+      <div class="v3-detail" id="v3Detail">
+        <div class="v3-detail-back" onclick="v3CloseDetail()">
+          <div class="v3-detail-back-arrow">‹</div>
+          <div class="v3-detail-back-label">Meine Reisen</div>
+        </div>
+
+        <!-- Large GeoFallback as hero -->
+        <div class="v3-detail-geo">
+          <svg viewBox="0 0 390 210" style="position:absolute;inset:0;width:100%;height:100%;" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="v3DetailGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1A365D"/>
+                <stop offset="60%" stop-color="#0C8CE9"/>
+                <stop offset="100%" stop-color="#36A9F0"/>
+              </linearGradient>
+            </defs>
+            <rect width="390" height="210" fill="url(#v3DetailGrad)"/>
+            <circle cx="78" cy="168" r="266" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+            <circle cx="312" cy="42" r="226" fill="none" stroke="rgba(255,255,255,0.17)" stroke-width="1.5"/>
+            <!-- Route Barcelona→Marseille→Genua→Neapel→Palma→Barcelona -->
+            <polyline points="90,140 148,102 206,88 270,138 96,165 90,140"
+              fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="1.8" stroke-dasharray="5 3"/>
+            <!-- mid ports -->
+            <circle cx="148" cy="102" r="4" fill="rgba(255,255,255,0.65)"/>
+            <circle cx="206" cy="88"  r="4" fill="rgba(255,255,255,0.65)"/>
+            <circle cx="270" cy="138" r="4" fill="rgba(255,255,255,0.65)"/>
+            <!-- start Barcelona -->
+            <circle cx="90" cy="140" r="8" fill="none" stroke="white" stroke-width="2"/>
+            <circle cx="90" cy="140" r="5.5" fill="#FF6B35"/>
+            <!-- end Barcelona -->
+            <circle cx="96" cy="165" r="8" fill="none" stroke="white" stroke-width="2"/>
+            <circle cx="96" cy="165" r="5.5" fill="#34C759"/>
+          </svg>
+          <div class="v3-detail-geo-scrim"></div>
+          <div class="v3-detail-geo-text">
+            <div class="v3-detail-geo-title">Westliches Mittelmeer</div>
+            <div class="v3-detail-geo-sub">🛳 Costa Cruises · Costa Toscana · Sep 2026 · 8 Tage</div>
+          </div>
+        </div>
+
+        <div class="v3-detail-body">
+          <!-- route timeline -->
+          <div class="v3-port-timeline">
+            <div style="font-size:13px;font-weight:700;color:var(--v3-white);margin-bottom:10px;">Route</div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#FF6B35;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Barcelona <span class="v3-badge v3-badge-sunset" style="font-size:9px;padding:1px 6px;margin-left:4px;">Start</span></div>
+                <div class="v3-port-times">Abfahrt: 15. Sep 2026, 18:00</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#0C8CE9;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Marseille</div>
+                <div class="v3-port-times">16. Sep · 08:00 – 18:00 · 10 Std</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#0C8CE9;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Genua</div>
+                <div class="v3-port-times">17. Sep · 07:00 – 16:00 · 9 Std</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#0C8CE9;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Neapel</div>
+                <div class="v3-port-times">18. Sep · 07:00 – 18:00 · 11 Std</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#36A9F0;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Seetag <span style="font-size:10px;color:var(--v3-grey);">· Adria</span></div>
+                <div class="v3-port-times">19. Sep</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#0C8CE9;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Palma de Mallorca</div>
+                <div class="v3-port-times">21. Sep · 08:00 – 20:00 · 12 Std</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#36A9F0;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Seetag <span style="font-size:10px;color:var(--v3-grey);">· Balearensee</span></div>
+                <div class="v3-port-times">22. Sep</div>
+              </div>
+            </div>
+
+            <div class="v3-port-stop">
+              <div class="v3-port-dot-wrap">
+                <div class="v3-port-dot" style="background:#34C759;"></div>
+              </div>
+              <div class="v3-port-info">
+                <div class="v3-port-name">Barcelona <span class="v3-badge v3-badge-sea" style="font-size:9px;padding:1px 6px;margin-left:4px;">Endpunkt</span></div>
+                <div class="v3-port-times">Ankunft: 23. Sep 2026, 07:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /Detail -->
+
+    </div><!-- /v3-screen -->
+
+    <!-- Tab Bar -->
+    <div class="v3-tabbar">
+      <div class="v3-tab v3-active" id="v3Tab0" onclick="v3Switch(0)">
+        <div class="v3-tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 18H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2zm-8-8l-4 4h3v4h2v-4h3z"/></svg>
+        </div>
+        <div class="v3-tab-label">Reisen</div>
+      </div>
+      <div class="v3-tab" id="v3Tab1" onclick="v3Switch(1)">
+        <div class="v3-tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        </div>
+        <div class="v3-tab-label">Karte</div>
+      </div>
+      <div class="v3-tab" id="v3Tab2" onclick="v3Switch(2)">
+        <div class="v3-tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2z"/></svg>
+        </div>
+        <div class="v3-tab-label">Merkliste</div>
+      </div>
+      <div class="v3-tab" id="v3Tab3" onclick="v3Switch(3)">
+        <div class="v3-tab-icon">
+          <svg viewBox="0 0 24 24"><path d="M5 20h2v-8H5v8zm4 0h2V4H9v16zm4 0h2v-4h-2v4zm4 0h2v-12h-2v12z"/></svg>
+        </div>
+        <div class="v3-tab-label">Statistik</div>
+      </div>
+      <div class="v3-tab" id="v3Tab4" onclick="v3Switch(4)">
+        <div class="v3-tab-icon">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </div>
+        <div class="v3-tab-label">Mehr</div>
+      </div>
+    </div>
+  </div><!-- /v3-phone -->
+</section>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- Tab switching ----
+  var tabs    = [0,1,2,3,4];
+  var current = 0;
+
+  function v3Switch(idx) {
+    // hide current
+    document.getElementById('v3S' + current).classList.remove('v3-visible');
+    document.getElementById('v3Tab' + current).classList.remove('v3-active');
+    // show new
+    current = idx;
+    document.getElementById('v3S' + idx).classList.add('v3-visible');
+    document.getElementById('v3Tab' + idx).classList.add('v3-active');
+    // close detail if switching away from tab 0
+    if (idx !== 0) {
+      var detail = document.getElementById('v3Detail');
+      if (detail) detail.classList.remove('v3-open');
+    }
+  }
+  window.v3Switch = v3Switch;
+
+  // ---- Detail overlay ----
+  function v3OpenDetail() {
+    document.getElementById('v3Detail').classList.add('v3-open');
+  }
+  function v3CloseDetail() {
+    document.getElementById('v3Detail').classList.remove('v3-open');
+  }
+  window.v3OpenDetail  = v3OpenDetail;
+  window.v3CloseDetail = v3CloseDetail;
+
+  // ---- Port bottom sheet ----
+  function v3OpenPin(name, country, times, duration, excursions) {
+    document.getElementById('v3SheetPortName').textContent    = name;
+    document.getElementById('v3SheetPortCountry').textContent = country + ' · Westliches Mittelmeer';
+    document.getElementById('v3SheetTimes').textContent       = times;
+    document.getElementById('v3SheetDuration').textContent    = duration;
+
+    var exWrap = document.getElementById('v3SheetExcursions');
+    exWrap.innerHTML = '';
+    if (excursions) {
+      excursions.split(',').forEach(function(ex) {
+        var span = document.createElement('span');
+        span.className = 'v3-excursion-tag';
+        span.textContent = ex.trim();
+        exWrap.appendChild(span);
+      });
+    }
+
+    document.getElementById('v3PortSheet').classList.add('v3-open');
+    document.getElementById('v3SheetClose').style.display = 'block';
+  }
+  function v3ClosePin() {
+    document.getElementById('v3PortSheet').classList.remove('v3-open');
+    document.getElementById('v3SheetClose').style.display = 'none';
+  }
+  window.v3OpenPin  = v3OpenPin;
+  window.v3ClosePin = v3ClosePin;
+
+  // ---- Route chip focus (visual toggle) ----
+  function v3FocusRoute(routeIdx, chipEl) {
+    // toggle active on chips
+    var chips = document.querySelectorAll('#v3S1 .v3-chip');
+    chips.forEach(function(c) { c.classList.remove('v3-chip-active'); });
+    chipEl.classList.add('v3-chip-active');
+  }
+  window.v3FocusRoute = v3FocusRoute;
+
+})();
+</script>

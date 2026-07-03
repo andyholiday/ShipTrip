@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Karte: 3 Design-Vorschlaege</title>
+<style>
+  /* ===== DESIGN TOKENS ===== */
+  :root {
+    --ocean-blue: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy-dark: #1A365D;
+    --sunset-orange: #FF6B35;
+    --sea-green: #34C759;
+    --secondary-bg: #F2F2F7;
+    --secondary-bg-dark: #1C1C1E;
+    --separator: rgba(60,60,67,0.29);
+    --card-radius-hero: 16px;
+    --card-radius-std: 10px;
+    --card-radius-thumb: 6px;
+
+    /* Deck UI */
+    --deck-bg: #0A1628;
+    --slide-bg: #111827;
+    --slide-accent: #0C8CE9;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deck-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ===== SLIDE ENGINE ===== */
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 48px 40px 56px;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  /* Progress bar */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ocean-blue), var(--ocean-light));
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+
+  /* Slide counter */
+  #counter {
+    position: fixed;
+    bottom: 18px; right: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+  }
+
+  /* Nav arrows */
+  .nav-btn {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px; color: var(--text-secondary);
+    z-index: 100;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); }
+  #nav-prev { left: 12px; }
+  #nav-next { right: 12px; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .slide-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ocean-light);
+    margin-bottom: 12px;
+  }
+  h1 { font-size: 42px; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 28px; font-weight: 700; line-height: 1.2; }
+  h3 { font-size: 18px; font-weight: 600; }
+  .subtitle { font-size: 16px; color: var(--text-secondary); margin-top: 12px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag-high { background: rgba(255,59,48,0.18); color: #FF6B6B; }
+  .tag-med  { background: rgba(255,149,0,0.18); color: #FFAA44; }
+  .tag-low  { background: rgba(52,199,89,0.18); color: #34C759; }
+
+  /* ===== LAYOUT HELPERS ===== */
+  .row { display: flex; gap: 24px; align-items: flex-start; width: 100%; }
+  .col { flex: 1; }
+  .gap-sm { gap: 12px; }
+  .center { align-items: center; justify-content: center; text-align: center; }
+
+  .card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .card-sm {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  /* ===== COVER SLIDE ===== */
+  .cover-gradient {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 40%, rgba(12,140,233,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(255,107,53,0.12) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background: linear-gradient(135deg, var(--navy-dark), #0C3B6E);
+    border: 1px solid rgba(12,140,233,0.4);
+    border-radius: 40px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ocean-light);
+    letter-spacing: 0.06em;
+    margin-bottom: 32px;
+  }
+
+  /* ===== IPHONE MOCKUP ===== */
+  .iphone {
+    width: 180px;
+    height: 370px;
+    background: #1A1A1A;
+    border-radius: 36px;
+    border: 2px solid #3A3A3C;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .iphone-large {
+    width: 210px;
+    height: 430px;
+    border-radius: 42px;
+  }
+  .iphone-inner {
+    position: absolute;
+    inset: 8px;
+    border-radius: 28px;
+    overflow: hidden;
+    background: var(--secondary-bg);
+  }
+  .iphone-inner.dark { background: var(--secondary-bg-dark); }
+
+  /* Dynamic island */
+  .dynamic-island {
+    width: 80px; height: 26px;
+    background: #1A1A1A;
+    border-radius: 20px;
+    margin: 8px auto 0;
+    z-index: 10;
+    position: relative;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    font-size: 8px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status-bar.light { color: #1C1C1E; }
+  .status-bar.dark { color: #F2F2F7; }
+
+  /* Nav bar */
+  .nav-bar {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .nav-bar.light { background: rgba(242,242,247,0.94); color: #1C1C1E; border-bottom: 0.5px solid rgba(0,0,0,0.12); }
+  .nav-bar.dark { background: rgba(28,28,30,0.94); color: #F2F2F7; border-bottom: 0.5px solid rgba(255,255,255,0.08); }
+  .nav-bar-right { margin-left: auto; }
+
+  /* Tab bar */
+  .tab-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 4px;
+    flex-shrink: 0;
+    border-top: 0.5px solid rgba(60,60,67,0.29);
+  }
+  .tab-bar.light { background: rgba(249,249,249,0.94); }
+  .tab-bar.dark { background: rgba(28,28,30,0.94); border-top-color: rgba(255,255,255,0.1); }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tab-icon { font-size: 18px; }
+  .tab-label { font-size: 7px; font-weight: 500; }
+  .tab-item.active .tab-icon,
+  .tab-item.active .tab-label { color: var(--ocean-blue); }
+  .tab-item:not(.active) .tab-icon,
+  .tab-item:not(.active) .tab-label { color: #8E8E93; }
+
+  /* Map area */
+  .map-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* SVG map background */
+  .map-bg {
+    width: 100%; height: 100%;
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ===== MAP COLOURS ===== */
+  .pin-orange { color: var(--sunset-orange); }
+  .pin-blue   { color: var(--ocean-blue); }
+  .pin-green  { color: var(--sea-green); }
+  .pin-lblue  { color: var(--ocean-light); }
+
+  /* ===== LEGEND OVERLAY STYLES ===== */
+  .legend-overlay {
+    position: absolute;
+    bottom: 8px; left: 6px;
+    background: rgba(242,242,247,0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 10px;
+    padding: 8px 10px;
+    width: 110px;
+    border: 0.5px solid rgba(60,60,67,0.18);
+  }
+  .legend-overlay.dark {
+    background: rgba(28,28,30,0.88);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .legend-title { font-size: 8px; font-weight: 700; margin-bottom: 5px; }
+  .legend-row { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+  .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .legend-text { font-size: 7px; line-height: 1.2; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-actions { display: flex; gap: 6px; }
+  .legend-icon { font-size: 9px; color: #8E8E93; cursor: pointer; }
+
+  /* ===== FOCUS STRIP ===== */
+  .focus-strip {
+    background: var(--secondary-bg);
+    border-bottom: 0.5px solid rgba(60,60,67,0.18);
+    padding: 8px 10px;
+    flex-shrink: 0;
+  }
+  .focus-strip.dark { background: #2C2C2E; border-bottom-color: rgba(255,255,255,0.08); }
+
+  /* ===== BOTTOM SHEET ===== */
+  .bottom-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    border-radius: 16px 16px 0 0;
+    padding: 12px 12px 8px;
+  }
+  .bottom-sheet.light { background: var(--secondary-bg); }
+  .bottom-sheet.dark { background: #2C2C2E; }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: rgba(60,60,67,0.3);
+    border-radius: 2px;
+    margin: 0 auto 10px;
+  }
+  .sheet-title { font-size: 13px; font-weight: 700; }
+  .sheet-sub { font-size: 9px; color: #8E8E93; margin-top: 1px; }
+  .sheet-meta { font-size: 8px; color: var(--ocean-blue); margin-top: 4px; }
+
+  /* Port photo strip */
+  .photo-strip {
+    display: flex;
+    gap: 5px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .photo-thumb {
+    width: 42px; height: 42px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .add-thumb {
+    width: 42px; height: 42px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.06);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: var(--ocean-blue);
+    border: 1px dashed rgba(12,140,233,0.4);
+    flex-shrink: 0;
+  }
+
+  /* ===== PROBLEM GRID ===== */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-top: 20px;
+  }
+  .problem-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 15px;
+  }
+  .problem-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .problem-num { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; margin-top: 1px; }
+  .problem-title { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .problem-body { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .code-ref { font-size: 10px; color: var(--text-muted); font-family: 'SF Mono', monospace; margin-top: 4px; }
+
+  /* ===== BENCHMARK TABLE ===== */
+  .bench-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 16px; }
+  .bench-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .bench-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  .bench-table td:first-child { color: var(--text-primary); font-weight: 500; }
+  .yes { color: var(--sea-green) !important; font-weight: 600; }
+  .partial { color: #FFAA44 !important; }
+  .no { color: var(--text-muted) !important; }
+
+  /* ===== BEFORE / AFTER ===== */
+  .ba-container { display: flex; gap: 24px; align-items: flex-start; justify-content: center; width: 100%; }
+  .ba-phone-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ba-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .ba-label.before { color: #FF6B6B; }
+  .ba-label.after  { color: var(--sea-green); }
+  .ba-bullets { flex: 1; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+  .ba-bullet { display: flex; gap: 10px; align-items: flex-start; }
+  .ba-bullet-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+  .ba-bullet-icon.plus { background: rgba(52,199,89,0.2); color: var(--sea-green); }
+  .ba-bullet-text { font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+  .ba-bullet-text strong { color: var(--text-primary); }
+
+  /* ===== ROADMAP ===== */
+  .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; margin-top: 20px; }
+  .roadmap-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 18px 16px; }
+  .roadmap-phase { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ocean-light); margin-bottom: 6px; }
+  .roadmap-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+  .roadmap-items { display: flex; flex-direction: column; gap: 6px; }
+  .roadmap-item { font-size: 11px; color: var(--text-secondary); display: flex; gap: 6px; }
+  .roadmap-item::before { content: "—"; color: var(--text-muted); flex-shrink: 0; }
+  .effort-tag { display: inline-block; margin-top: 10px; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; background: rgba(12,140,233,0.15); color: var(--ocean-light); }
+
+  /* ===== SLIDE SPECIFIC ===== */
+  .slide-full-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+  /* Proposal header */
+  .proposal-header { display: flex; align-items: center; gap: 16px; width: 100%; margin-bottom: 20px; }
+  .proposal-num { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; flex-shrink: 0; }
+  .p1-num { background: linear-gradient(135deg, #0C8CE9, #36A9F0); }
+  .p2-num { background: linear-gradient(135deg, #FF6B35, #FF9F75); }
+  .p3-num { background: linear-gradient(135deg, #34C759, #30D158); }
+  .proposal-meta h2 { font-size: 20px; }
+  .proposal-meta p { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ===== SLIDE 7 — Vorschlag 2 Detail-Sheet ===== */
+  .detail-slide-phones { display: flex; gap: 20px; align-items: flex-start; justify-content: center; }
+
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter"></div>
+<button class="nav-btn" id="nav-prev">&#8592;</button>
+<button class="nav-btn" id="nav-next">&#8594;</button>
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — COVER -->
+<!-- ============================================================ -->
+<div class="slide active" id="s1">
+  <div class="cover-gradient"></div>
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative; z-index:1; gap:0;">
+    <div class="cover-badge">UX PITCH DECK — KARTE-TAB</div>
+    <div style="font-size: 56px; font-weight: 900; line-height: 1.0; letter-spacing: -2px;">
+      <span style="color: var(--ocean-blue);">Ship</span><span style="color: #F9FAFB;">Trip</span>
+    </div>
+    <div style="font-size: 22px; font-weight: 300; color: var(--text-secondary); margin-top: 10px; letter-spacing: 0.02em;">
+      3 Design-Vorschlaege — Karte-Tab
+    </div>
+    <div style="width: 48px; height: 2px; background: linear-gradient(90deg, var(--ocean-blue), var(--ocean-light)); border-radius: 1px; margin: 28px auto;"></div>
+    <div style="display: flex; gap: 32px; font-size: 13px; color: var(--text-secondary);">
+      <span>IST-Analyse</span>
+      <span style="color: var(--border);">|</span>
+      <span>Benchmark</span>
+      <span style="color: var(--border);">|</span>
+      <span>3 Richtungen</span>
+      <span style="color: var(--border);">|</span>
+      <span>Roadmap</span>
+    </div>
+    <div style="margin-top: 48px; display: flex; gap: 40px;">
+      <div style="text-align:center;">
+        <div style="font-size: 28px; font-weight: 800; color: var(--ocean-blue); font-variant-numeric: tabular-nums;">4</div>
+        <div style="font-size: 11px; color: var(--text-muted);">Reisen</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size: 28px; font-weight: 800; color: var(--sunset-orange); font-variant-numeric: tabular-nums;">6</div>
+        <div style="font-size: 11px; color: var(--text-muted);">Laender</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size: 28px; font-weight: 800; color: var(--sea-green); font-variant-numeric: tabular-nums;">34</div>
+        <div style="font-size: 11px; color: var(--text-muted);">Hafentage</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — PROBLEM / IST-ANALYSE -->
+<!-- ============================================================ -->
+<div class="slide" id="s2">
+  <div class="slide-label">Problem — IST-Analyse</div>
+  <h2>Was an der aktuellen Karte nicht funktioniert</h2>
+  <p class="subtitle" style="margin-bottom:0;">8 code-verankerte Findings aus MapView.swift &mdash; <span class="tag tag-high">high</span> = blockiert Kern-Use-Case &nbsp;<span class="tag tag-med">med</span> = Reibung/Inkonsistenz &nbsp;<span class="tag tag-low">low</span> = kosmetisch</p>
+
+  <div class="problem-grid">
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">01</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-high">high</span></div>
+          <div class="problem-title">Keine Hafen-Detail-Ansicht</div>
+        </div>
+      </div>
+      <div class="problem-body">Tippen auf einen Pin macht nichts. Die meiste Interaktion — Fotos, Notizen, Hafeninfos — existiert auf der Karte nicht.</div>
+      <div class="code-ref">MapView.swift:64 — Annotation ohne onTap/selection</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">02</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-high">high</span></div>
+          <div class="problem-title">Rolle-blind: alle Pins gleiche Routenfarbe</div>
+        </div>
+      </div>
+      <div class="problem-body">Start (orange), Endpunkt (gruen), Seetag (hellblau) — korrekte Tokens in PortPinView definiert, aber auf der Karte ignoriert. Alle Pins erben die Reise-Farbe.</div>
+      <div class="code-ref">MapView.swift:71–76 — routeColor(at:) statt homePortPin/endPortPin</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">03</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-high">high</span></div>
+          <div class="problem-title">Legenden-Stil bricht Card-Standard</div>
+        </div>
+      </div>
+      <div class="problem-body">Legend nutzt .ultraThinMaterial + cornerRadius 12. Konsistenz-Brief: secondarySystemBackground + radius 10 (Standard-Card). Material-Blur wirkt unverbunden.</div>
+      <div class="code-ref">MapView.swift:169–170 — .ultraThinMaterial, cornerRadius 12</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">04</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-med">med</span></div>
+          <div class="problem-title">Port-Labels bei Welt-Zoom: visuelles Rauschen</div>
+        </div>
+      </div>
+      <div class="problem-body">Jeder Hafen zeigt immer seinen Namen als Capsule. Beim globalen Zoom-Level (alle 4 Reisen) entsteht ein unlesbares Label-Cluster.</div>
+      <div class="code-ref">MapView.swift:83–88 — Text(port.name) immer sichtbar, kein Zoom-Gate</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">05</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-med">med</span></div>
+          <div class="problem-title">Legende: fixed bottom-left, kein Peek/Collapse</div>
+        </div>
+      </div>
+      <div class="problem-body">Die Legende blockiert die Karte unten-links dauerhaft ohne interaktives Erweitern/Kollabieren. State-of-the-Art: Peek-Sheet, expandierbar.</div>
+      <div class="code-ref">MapView.swift:127–172 — frame(maxHeight:200), kein Drag-Handle</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">06</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-med">med</span></div>
+          <div class="problem-title">Kein Fokus-Modus: alle Reisen gleichwertig</div>
+        </div>
+      </div>
+      <div class="problem-body">Alle 4 Reisen (Mittelmeer + Norwegen + Karibik) werden gleichzeitig mit gleicher visueller Gewichtung gerendert. Kein Weg, eine Reise in den Vordergrund zu stellen.</div>
+      <div class="code-ref">MapView.swift:49 — ForEach cruises ohne selectedCruise-Fokus-Logik</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">07</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-med">med</span></div>
+          <div class="problem-title">Kein Stats-Kontext auf der Karte</div>
+        </div>
+      </div>
+      <div class="problem-body">Die Hauptseite zeigt einen Stats-Strip (Reisen/Laender/Haefen/Tage). Die Karte startet kalt ohne Kontext — kein schnelles "Was sehe ich hier?"</div>
+      <div class="code-ref">MapView.swift:44–125 — kein CruiseStatsStripView / kein Header</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header">
+        <span class="problem-num">08</span>
+        <div>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;"><span class="tag tag-low">low</span></div>
+          <div class="problem-title">Kein Empty-State</div>
+        </div>
+      </div>
+      <div class="problem-body">Keine Reisen = leere Karte ohne Hinweis. ContentUnavailableView mit Aktion fehlt. Inkonsistent zu Reisen-Tab und Merkliste.</div>
+      <div class="code-ref">MapView.swift:45 — @Query ohne empty-branch</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — BENCHMARK -->
+<!-- ============================================================ -->
+<div class="slide" id="s3">
+  <div class="slide-label">Benchmark — State-of-the-Art 2026</div>
+  <h2>Was fuehrende Karten-Apps richtig machen</h2>
+
+  <table class="bench-table" style="margin-top: 20px;">
+    <thead>
+      <tr>
+        <th style="width:140px;">App / Referenz</th>
+        <th>Bottom Sheet</th>
+        <th>Rollen-Pins</th>
+        <th>Zoom-adaptiv</th>
+        <th>Fokus-Modus</th>
+        <th>Foto-Galerie</th>
+        <th style="width:100px;">uebertragbar?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Apple Karten</td>
+        <td class="yes">Ja</td>
+        <td class="partial">Partial</td>
+        <td class="yes">Ja</td>
+        <td class="no">Nein</td>
+        <td class="partial">Partial</td>
+        <td class="yes">Hoch</td>
+      </tr>
+      <tr>
+        <td>Google Maps</td>
+        <td class="yes">Ja (3-Stufen)</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Ja</td>
+        <td class="no">Nein</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Hoch</td>
+      </tr>
+      <tr>
+        <td>Komoot</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Ja (Etappe)</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Ja (Route)</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Sehr hoch</td>
+      </tr>
+      <tr>
+        <td>MarineTraffic</td>
+        <td class="partial">Partial</td>
+        <td class="yes">Ja (Schiff)</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Ja (Schiff)</td>
+        <td class="no">Nein</td>
+        <td class="partial">Mittel</td>
+      </tr>
+      <tr>
+        <td>Polarsteps</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Ja (Tage)</td>
+        <td class="partial">Partial</td>
+        <td class="yes">Ja (Trip)</td>
+        <td class="yes">Ja</td>
+        <td class="yes">Sehr hoch</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-top:20px; width:100%;">
+    <div class="card-sm">
+      <div style="font-size:11px; font-weight:700; color:var(--ocean-light); margin-bottom:6px;">Pattern 1 — Peek-Sheet</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5;">Pin-Tap oeffnet kleines Peek-Sheet (Hafen-Name, Datum, 1–2 Metadaten). Wisch-hoch = vollstaendige Detail-Ansicht mit Fotos + Notizen.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px; font-weight:700; color:var(--ocean-light); margin-bottom:6px;">Pattern 2 — Route-Fokus</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5;">Beim Tippen auf eine Routenlinie oder Reisenamen dimmt die Karte alle anderen Routen aus. Die Fokus-Reise springt in den Vordergrund.</div>
+    </div>
+    <div class="card-sm">
+      <div style="font-size:11px; font-weight:700; color:var(--ocean-light); margin-bottom:6px;">Pattern 3 — Zoom-adaptive Labels</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5;">Labels erst ab bestimmtem Zoom-Level sichtbar. Darunter: nur Pin-Symbol. Cluster bei vielen nahen Pins. Verbessert Lesbarkeit dramatisch.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — VORSCHLAG 1: "REISE-FOKUS" -->
+<!-- ============================================================ -->
+<div class="slide" id="s4">
+  <div class="proposal-header">
+    <div class="proposal-num p1-num">1</div>
+    <div class="proposal-meta">
+      <h2>Reise-Fokus — Chip-Switcher mit Fokus-Karte</h2>
+      <p>Loest Probleme <strong>#02</strong> Rollenfarben &bull; <strong>#03</strong> Legende-Stil &bull; <strong>#04</strong> Label-Rauschen &bull; <strong>#06</strong> Fokus-Modus</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <!-- BEFORE -->
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <!-- Dynamic island -->
+          <div style="background:#1C1C1E; padding: 6px 0 2px;">
+            <div class="dynamic-island"></div>
+          </div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar dark">
+            <span>Karte</span>
+            <span class="nav-bar-right" style="font-size:18px;">&#9776;</span>
+          </div>
+          <!-- Map area with all routes visible, chaotic -->
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 220" xmlns="http://www.w3.org/2000/svg">
+              <!-- ocean background -->
+              <rect width="180" height="220" fill="#B8D4E8"/>
+              <!-- simplified continents -->
+              <ellipse cx="60" cy="80" rx="50" ry="35" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="130" cy="60" rx="30" ry="20" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="30" cy="140" rx="20" ry="25" fill="#C8D8A0" opacity="0.7"/>
+              <!-- Route 1: Mittelmeer — all same blue color (bug!) -->
+              <polyline points="50,90 65,85 72,88 78,92 85,89 75,92" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <!-- Route 2: Norwegen — same orange but should be different role -->
+              <polyline points="70,50 80,42 90,38 95,32" fill="none" stroke="#FF6B35" stroke-width="2.5"/>
+              <!-- Route 3: Karibik -->
+              <polyline points="20,130 30,135 38,128" fill="none" stroke="#34C759" stroke-width="2.5"/>
+              <!-- Pins all same color as route (bug) — crowded labels -->
+              <circle cx="50" cy="90" r="4" fill="#0C8CE9"/>
+              <circle cx="65" cy="85" r="3" fill="#0C8CE9"/>
+              <circle cx="72" cy="88" r="3" fill="#0C8CE9"/>
+              <circle cx="78" cy="92" r="3" fill="#0C8CE9"/>
+              <circle cx="85" cy="89" r="3" fill="#0C8CE9"/>
+              <circle cx="75" cy="92" r="4" fill="#0C8CE9"/>
+              <!-- Label chaos -->
+              <rect x="52" y="93" width="28" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+              <text x="66" y="100" font-size="4" text-anchor="middle" fill="#1C1C1E">Barcelona</text>
+              <rect x="58" y="78" width="22" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+              <text x="69" y="85" font-size="4" text-anchor="middle" fill="#1C1C1E">Marseille</text>
+              <rect x="63" y="80" width="18" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+              <text x="72" y="87" font-size="3.5" text-anchor="middle" fill="#1C1C1E">Genua</text>
+              <rect x="68" y="94" width="18" height="8" rx="4" fill="rgba(255,255,255,0.6)"/>
+              <text x="77" y="101" font-size="4" text-anchor="middle" fill="#1C1C1E">Neapel</text>
+              <!-- Norway pins -->
+              <circle cx="70" cy="50" r="4" fill="#FF6B35"/>
+              <circle cx="80" cy="42" r="3" fill="#FF6B35"/>
+              <circle cx="95" cy="32" r="4" fill="#FF6B35"/>
+              <!-- Caribbean pins -->
+              <circle cx="20" cy="130" r="4" fill="#34C759"/>
+              <circle cx="38" cy="128" r="4" fill="#34C759"/>
+            </svg>
+            <!-- old legend overlay — wrong style -->
+            <div style="position:absolute; bottom:8px; left:6px; background:rgba(200,208,220,0.7); backdrop-filter:blur(6px); border-radius:12px; padding:8px; width:105px; font-size:7px;">
+              <div style="font-weight:700; margin-bottom:4px; font-size:8px; color:#1C1C1E;">Routen</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;"><div style="width:7px;height:7px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div><span style="color:#1C1C1E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Westl. Mittelmeer</span></div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;"><div style="width:7px;height:7px;border-radius:50%;background:#FF6B35;flex-shrink:0;"></div><span style="color:#1C1C1E;">Norwegen</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><div style="width:7px;height:7px;border-radius:50%;background:#34C759;flex-shrink:0;"></div><span style="color:#1C1C1E;">Karibik Ost</span></div>
+            </div>
+          </div>
+          <!-- Tab bar -->
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bullets -->
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Chip-Switcher</strong> oben — Alle | Mittelmeer | Norwegen | Karibik. Fokus-Reise wird hervorgehoben, andere Routen auf 30% Opacity gedimmt.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Rollenrichtige Pins</strong>: Barcelona = orange mappin (Start), Barcelona-End = gruen flag, Seetage = hellblau waves. Identisch zu Detail-Ansicht.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Legende als Card</strong>: secondarySystemBackground + radius 10, kein Material-Blur. Konsistent zu Stats-Strip auf Hauptseite.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Labels zoom-adaptiv</strong>: bei globalem Zoom nur Pins, Labels erscheinen erst ab Reise-Detailzoom.</div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding: 6px 0 2px;">
+            <div class="dynamic-island"></div>
+          </div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar dark">
+            <span>Karte</span>
+            <span class="nav-bar-right" style="font-size:18px; color: var(--ocean-blue);">&#9776;</span>
+          </div>
+          <!-- Chip switcher strip -->
+          <div style="background:#1C1C1E; padding:6px 8px; display:flex; gap:5px; overflow:hidden; border-bottom:0.5px solid rgba(255,255,255,0.08); flex-shrink:0;">
+            <div style="background:var(--ocean-blue); border-radius:14px; padding:3px 8px; font-size:7px; font-weight:700; color:#fff; white-space:nowrap;">Alle</div>
+            <div style="background:rgba(255,255,255,0.1); border-radius:14px; padding:3px 8px; font-size:7px; color:rgba(255,255,255,0.7); white-space:nowrap;">Mittelmeer</div>
+            <div style="background:rgba(255,255,255,0.1); border-radius:14px; padding:3px 8px; font-size:7px; color:rgba(255,255,255,0.7); white-space:nowrap;">Norwegen</div>
+            <div style="background:rgba(255,255,255,0.1); border-radius:14px; padding:3px 8px; font-size:7px; color:rgba(255,255,255,0.7); white-space:nowrap;">Karibik</div>
+          </div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 210" xmlns="http://www.w3.org/2000/svg">
+              <rect width="180" height="210" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="80" rx="50" ry="35" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="130" cy="60" rx="30" ry="20" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="30" cy="140" rx="20" ry="25" fill="#C8D8A0" opacity="0.7"/>
+              <!-- Route 1 Mittelmeer — full opacity (selected) -->
+              <polyline points="50,90 65,85 72,88 78,92 85,89 75,92" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <!-- Route 2: Norwegen — dimmed -->
+              <polyline points="70,50 80,42 90,38 95,32" fill="none" stroke="#FF6B35" stroke-width="2.5" opacity="0.3"/>
+              <!-- Route 3: Karibik — dimmed -->
+              <polyline points="20,130 30,135 38,128" fill="none" stroke="#34C759" stroke-width="2.5" opacity="0.3"/>
+              <!-- START pin — ORANGE (correct role) -->
+              <circle cx="50" cy="90" r="5" fill="#FF6B35"/>
+              <circle cx="50" cy="90" r="7" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.4"/>
+              <!-- Intermediate pins — BLUE (correct role) -->
+              <circle cx="65" cy="85" r="3" fill="#0C8CE9"/>
+              <circle cx="72" cy="88" r="3" fill="#0C8CE9"/>
+              <!-- Sea day — light blue wave indicator -->
+              <circle cx="78" cy="92" r="3" fill="#36A9F0" opacity="0.8"/>
+              <circle cx="85" cy="89" r="3" fill="#0C8CE9"/>
+              <!-- END pin — GREEN (correct role) -->
+              <circle cx="75" cy="92" r="5" fill="#34C759"/>
+              <circle cx="75" cy="92" r="7" fill="none" stroke="#34C759" stroke-width="1.5" opacity="0.4"/>
+              <!-- Labels only on start/end at this zoom -->
+              <rect x="38" y="97" width="22" height="7" rx="3" fill="rgba(255,107,53,0.2)" stroke="#FF6B35" stroke-width="0.5"/>
+              <text x="49" y="103" font-size="4" text-anchor="middle" fill="#FF6B35" font-weight="700">Start</text>
+              <rect x="64" y="97" width="20" height="7" rx="3" fill="rgba(52,199,89,0.2)" stroke="#34C759" stroke-width="0.5"/>
+              <text x="74" y="103" font-size="4" text-anchor="middle" fill="#34C759" font-weight="700">Ende</text>
+              <!-- dimmed Norway pins -->
+              <circle cx="70" cy="50" r="4" fill="#FF6B35" opacity="0.25"/>
+              <circle cx="95" cy="32" r="4" fill="#34C759" opacity="0.25"/>
+              <!-- dimmed Caribbean -->
+              <circle cx="20" cy="130" r="4" fill="#FF6B35" opacity="0.25"/>
+              <circle cx="38" cy="128" r="4" fill="#34C759" opacity="0.25"/>
+            </svg>
+            <!-- legend — correct card style -->
+            <div style="position:absolute; bottom:8px; left:6px; background:rgba(28,28,30,0.92); border-radius:10px; padding:8px 10px; width:108px; border:0.5px solid rgba(255,255,255,0.08);">
+              <div style="font-weight:700; margin-bottom:5px; font-size:8px; color:#F2F2F7;">Routen</div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;"><div style="width:7px;height:7px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div><span style="color:#F2F2F7;font-size:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">Westl. Mittelmeer</span><span style="font-size:7px;">&#128065;</span></div>
+              <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px;"><div style="width:7px;height:7px;border-radius:50%;background:#FF6B35;flex-shrink:0;opacity:0.4;"></div><span style="color:#8E8E93;font-size:7px;flex:1;">Norwegen</span></div>
+              <div style="display:flex;align-items:center;gap:5px;"><div style="width:7px;height:7px;border-radius:50%;background:#34C759;flex-shrink:0;opacity:0.4;"></div><span style="color:#8E8E93;font-size:7px;flex:1;">Karibik Ost</span></div>
+              <div style="margin-top:6px; display:flex; gap:10px;">
+                <div style="display:flex;align-items:center;gap:3px;"><div style="width:5px;height:5px;border-radius:50%;background:#FF6B35;"></div><span style="font-size:6px;color:#8E8E93;">Start</span></div>
+                <div style="display:flex;align-items:center;gap:3px;"><div style="width:5px;height:5px;border-radius:50%;background:#34C759;"></div><span style="font-size:6px;color:#8E8E93;">End</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — VORSCHLAG 2: "BOTTOM SHEET + HAFEN-DETAIL" -->
+<!-- ============================================================ -->
+<div class="slide" id="s5">
+  <div class="proposal-header">
+    <div class="proposal-num p2-num">2</div>
+    <div class="proposal-meta">
+      <h2>Peek-Sheet — interaktive Hafen-Details per Tap</h2>
+      <p>Loest Probleme <strong>#01</strong> Kein Tap-Detail &bull; <strong>#02</strong> Rollenfarben &bull; <strong>#05</strong> Legende-Interaktion &bull; <strong>#08</strong> Empty-State</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <!-- BEFORE: No tap detail -->
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher — kein Tap-Detail</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding: 6px 0 2px;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar dark"><span>Karte</span></div>
+          <div class="map-area">
+            <svg viewBox="0 0 180 290" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <rect width="180" height="290" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="120" rx="55" ry="40" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="140" cy="90" rx="30" ry="22" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="50,125 68,115 78,118 88,122 95,118 82,123" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <circle cx="50" cy="125" r="5" fill="#0C8CE9"/>
+              <circle cx="68" cy="115" r="3" fill="#0C8CE9"/>
+              <circle cx="78" cy="118" r="3" fill="#0C8CE9"/>
+              <circle cx="88" cy="122" r="3" fill="#0C8CE9"/>
+              <circle cx="95" cy="118" r="3" fill="#0C8CE9"/>
+              <circle cx="82" cy="123" r="5" fill="#0C8CE9"/>
+              <!-- All labels shown at all times — cluttered -->
+              <rect x="38" y="132" width="26" height="7" rx="3" fill="rgba(200,210,220,0.7)"/>
+              <text x="51" y="138" font-size="4" text-anchor="middle" fill="#1C1C1E">Barcelona</text>
+              <rect x="60" y="107" width="22" height="7" rx="3" fill="rgba(200,210,220,0.7)"/>
+              <text x="71" y="113" font-size="4" text-anchor="middle" fill="#1C1C1E">Marseille</text>
+              <rect x="68" y="110" width="16" height="7" rx="3" fill="rgba(200,210,220,0.7)"/>
+              <text x="76" y="116" font-size="3.5" text-anchor="middle" fill="#1C1C1E">Genua</text>
+              <!-- Tap indicator — nothing happens -->
+              <circle cx="68" cy="115" r="9" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="2,2"/>
+              <text x="68" y="140" font-size="6" text-anchor="middle" fill="rgba(255,255,255,0.4)">Tap → nichts</text>
+            </svg>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER: Peek sheet on tap -->
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher — Peek Sheet auf Tap</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding: 6px 0 2px;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar dark"><span>Karte</span></div>
+          <div class="map-area" style="position:relative;">
+            <svg viewBox="0 0 180 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <rect width="180" height="200" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="90" rx="55" ry="40" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="50,95 68,85 78,88 88,92 95,88 82,93" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <!-- Roles correct -->
+              <circle cx="50" cy="95" r="5" fill="#FF6B35"/>
+              <circle cx="50" cy="95" r="8" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.35"/>
+              <circle cx="68" cy="85" r="4" fill="#0C8CE9"/>
+              <!-- Tapped pin — Marseille -->
+              <circle cx="68" cy="85" r="9" fill="rgba(12,140,233,0.25)"/>
+              <circle cx="68" cy="85" r="4" fill="#fff"/>
+              <circle cx="68" cy="85" r="3" fill="#0C8CE9"/>
+              <circle cx="78" cy="88" r="3" fill="#0C8CE9"/>
+              <circle cx="88" cy="92" r="3" fill="#36A9F0"/>
+              <circle cx="95" cy="88" r="3" fill="#0C8CE9"/>
+              <circle cx="82" cy="93" r="5" fill="#34C759"/>
+              <circle cx="82" cy="93" r="8" fill="none" stroke="#34C759" stroke-width="1.5" opacity="0.35"/>
+            </svg>
+            <!-- Bottom Sheet -->
+            <div style="position:absolute; bottom:0; left:0; right:0; background:#2C2C2E; border-radius:16px 16px 0 0; padding:10px 12px 10px;">
+              <div class="sheet-handle"></div>
+              <!-- Port header -->
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <div style="width:22px; height:22px; border-radius:50%; background:rgba(12,140,233,0.2); display:flex;align-items:center;justify-content:center; font-size:12px;">&#128205;</div>
+                <div>
+                  <div style="font-size:12px; font-weight:700; color:#F2F2F7;">Marseille</div>
+                  <div style="font-size:8px; color:#8E8E93;">Tag 2 — 15. Aug. 2024</div>
+                </div>
+                <div style="margin-left:auto; font-size:8px; color:var(--ocean-blue); font-weight:600;">Details &#8594;</div>
+              </div>
+              <!-- Photo strip -->
+              <div style="display:flex; gap:5px; margin-bottom:8px;">
+                <div style="width:44px; height:44px; border-radius:6px; background:linear-gradient(135deg,#4A90D9,#357ABD); flex-shrink:0;"></div>
+                <div style="width:44px; height:44px; border-radius:6px; background:linear-gradient(135deg,#6BB5A0,#4A9B87); flex-shrink:0;"></div>
+                <div style="width:44px; height:44px; border-radius:6px; background:linear-gradient(135deg,#D4A869,#C49559); flex-shrink:0;"></div>
+                <div style="width:44px; height:44px; border-radius:6px; background:rgba(255,255,255,0.08); border:1px dashed rgba(12,140,233,0.4); display:flex;align-items:center;justify-content:center; font-size:16px; flex-shrink:0; color:var(--ocean-blue);">+</div>
+              </div>
+              <!-- Meta row -->
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1; background:rgba(255,255,255,0.05); border-radius:8px; padding:6px 8px; text-align:center;">
+                  <div style="font-size:11px; font-weight:800; color:#F2F2F7; font-variant-numeric:tabular-nums;">3</div>
+                  <div style="font-size:7px; font-weight:600; color:#8E8E93; text-transform:uppercase;">Fotos</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.05); border-radius:8px; padding:6px 8px; text-align:center;">
+                  <div style="font-size:11px; font-weight:800; color:#F2F2F7; font-variant-numeric:tabular-nums;">★ 4</div>
+                  <div style="font-size:7px; font-weight:600; color:#8E8E93; text-transform:uppercase;">Rating</div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.05); border-radius:8px; padding:6px 8px; text-align:center;">
+                  <div style="font-size:11px; font-weight:800; color:var(--sea-green); font-variant-numeric:tabular-nums;">8h</div>
+                  <div style="font-size:7px; font-weight:600; color:#8E8E93; text-transform:uppercase;">Aufenthalt</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bullets -->
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Tap auf Pin</strong> oeffnet Peek-Sheet mit Hafen-Name, Datum, Foto-Strip, Rating, Aufenthaltsdauer. Wisch-hoch = volle Detail-Ansicht.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Foto-Strip direkt im Sheet</strong> — Fotos zum Hafen sichtbar ohne Tab-Wechsel. Plus-Thumb zum schnellen Hinzufuegen neuer Fotos.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Stats-Kacheln im Sheet</strong>: Fotos / Rating / Aufenthalt mit identischem Stil zum Stats-Strip der Hauptseite (r10, sekundaerer Fill).</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Getippter Pin</strong> hebt sich hervor (weisser Ring, Halo). Alle semantischen Roles bleiben korrekt: Orange Start, Blau Hafen, Gruen Ende.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — VORSCHLAG 3: "EDITORIAL STATS HEADER" -->
+<!-- ============================================================ -->
+<div class="slide" id="s6">
+  <div class="proposal-header">
+    <div class="proposal-num p3-num">3</div>
+    <div class="proposal-meta">
+      <h2>Editorial Stats-Header — Karte als Daten-Dashboard</h2>
+      <p>Loest Probleme <strong>#07</strong> Kein Stats-Kontext &bull; <strong>#02</strong> Rollenfarben &bull; <strong>#03</strong> Legende-Stil &bull; <strong>#08</strong> Empty-State</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <!-- BEFORE: cold start, no context -->
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher — kalter Einstieg</div>
+      <div class="iphone">
+        <div class="iphone-inner" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding: 6px 0 2px;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar light"><span>Karte</span><span class="nav-bar-right">&#9776;</span></div>
+          <div class="map-area">
+            <svg viewBox="0 0 180 280" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <rect width="180" height="280" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="120" rx="55" ry="40" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="140" cy="90" rx="30" ry="22" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="50,125 68,115 78,118 88,122 95,118 82,123" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <circle cx="50" cy="125" r="5" fill="#0C8CE9"/>
+              <circle cx="82" cy="123" r="5" fill="#0C8CE9"/>
+              <!-- No context text, no stats -->
+              <text x="90" y="200" font-size="9" text-anchor="middle" fill="rgba(0,0,0,0.2)">Keine Kontext-Info</text>
+            </svg>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon" style="color:var(--ocean-blue);">&#9678;</span><span class="tab-label" style="color:var(--ocean-blue);">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFTER: editorial light mode with stats strip -->
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher — Stats + Geo-Kontext</div>
+      <div class="iphone">
+        <div class="iphone-inner" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding: 6px 0 2px;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar light" style="height:32px;">
+            <span style="font-size:15px;">Karte</span>
+            <span class="nav-bar-right" style="color:var(--ocean-blue); font-size:15px;">&#9776;</span>
+          </div>
+          <!-- Stats strip — consistent with Hauptseite -->
+          <div style="background:#F2F2F7; padding:6px 10px; border-bottom:0.5px solid rgba(60,60,67,0.18); flex-shrink:0;">
+            <div style="background:white; border-radius:10px; border:0.5px solid rgba(60,60,67,0.18); display:flex; overflow:hidden;">
+              <div style="flex:1; padding:6px 0; text-align:center; border-right:0.5px solid rgba(60,60,67,0.18);">
+                <div style="font-size:13px; font-weight:800; color:var(--ocean-blue); font-variant-numeric:tabular-nums;">4</div>
+                <div style="font-size:6px; font-weight:600; color:#8E8E93; text-transform:uppercase; letter-spacing:0.04em;">Reisen</div>
+              </div>
+              <div style="flex:1; padding:6px 0; text-align:center; border-right:0.5px solid rgba(60,60,67,0.18);">
+                <div style="font-size:13px; font-weight:800; color:var(--ocean-light); font-variant-numeric:tabular-nums;">6</div>
+                <div style="font-size:6px; font-weight:600; color:#8E8E93; text-transform:uppercase; letter-spacing:0.04em;">Laender</div>
+              </div>
+              <div style="flex:1; padding:6px 0; text-align:center; border-right:0.5px solid rgba(60,60,67,0.18);">
+                <div style="font-size:13px; font-weight:800; color:var(--sunset-orange); font-variant-numeric:tabular-nums;">34</div>
+                <div style="font-size:6px; font-weight:600; color:#8E8E93; text-transform:uppercase; letter-spacing:0.04em;">Hafentage</div>
+              </div>
+              <div style="flex:1; padding:6px 0; text-align:center;">
+                <div style="font-size:13px; font-weight:800; color:var(--sea-green); font-variant-numeric:tabular-nums;">12</div>
+                <div style="font-size:6px; font-weight:600; color:#8E8E93; text-transform:uppercase; letter-spacing:0.04em;">Seetage</div>
+              </div>
+            </div>
+          </div>
+          <!-- Map with correct pins -->
+          <div class="map-area">
+            <svg viewBox="0 0 180 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+              <rect width="180" height="200" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="90" rx="55" ry="38" fill="#C8D8A0" opacity="0.7"/>
+              <ellipse cx="140" cy="70" rx="28" ry="20" fill="#C8D8A0" opacity="0.7"/>
+              <!-- Mittelmeer route -->
+              <polyline points="50,95 68,85 78,88 88,92 95,88 82,93" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <!-- Norway route (dimmed) -->
+              <polyline points="72,42 80,36 92,30" fill="none" stroke="#FF6B35" stroke-width="2" opacity="0.4"/>
+              <!-- Caribbean (dimmed) -->
+              <polyline points="18,140 28,145 36,138" fill="none" stroke="#34C759" stroke-width="2" opacity="0.4"/>
+              <!-- START orange -->
+              <circle cx="50" cy="95" r="6" fill="#FF6B35"/>
+              <circle cx="50" cy="95" r="9" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.3"/>
+              <!-- Intermediate blue -->
+              <circle cx="68" cy="85" r="3.5" fill="#0C8CE9"/>
+              <circle cx="78" cy="88" r="3.5" fill="#0C8CE9"/>
+              <!-- Sea day light blue -->
+              <circle cx="88" cy="92" r="3.5" fill="#36A9F0"/>
+              <circle cx="95" cy="88" r="3.5" fill="#0C8CE9"/>
+              <!-- END green -->
+              <circle cx="82" cy="93" r="6" fill="#34C759"/>
+              <circle cx="82" cy="93" r="9" fill="none" stroke="#34C759" stroke-width="1.5" opacity="0.3"/>
+              <!-- Geo-Hero badge current cruise -->
+              <rect x="92" y="155" width="80" height="40" rx="10" fill="rgba(26,54,93,0.85)"/>
+              <text x="100" y="168" font-size="6" fill="rgba(255,255,255,0.6)">Aktuelle Reise</text>
+              <text x="100" y="178" font-size="7.5" fill="white" font-weight="700">Westl. Mittelmeer</text>
+              <text x="100" y="188" font-size="6" fill="rgba(255,255,255,0.6)">Costa Toscana  8 Tage</text>
+            </svg>
+            <!-- Legend — bottom left, correct card style -->
+            <div style="position:absolute; bottom:8px; left:6px; background:rgba(242,242,247,0.92); border-radius:10px; padding:7px 10px; width:85px; border:0.5px solid rgba(60,60,67,0.18);">
+              <div style="font-size:7px; font-weight:700; margin-bottom:4px; color:#1C1C1E;">Legende</div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><div style="width:6px;height:6px;border-radius:50%;background:#FF6B35;flex-shrink:0;"></div><span style="font-size:6px;color:#3C3C43;">Start</span></div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><div style="width:6px;height:6px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div><span style="font-size:6px;color:#3C3C43;">Hafen</span></div>
+              <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px;"><div style="width:6px;height:6px;border-radius:50%;background:#36A9F0;flex-shrink:0;"></div><span style="font-size:6px;color:#3C3C43;">Seetag</span></div>
+              <div style="display:flex;align-items:center;gap:4px;"><div style="width:6px;height:6px;border-radius:50%;background:#34C759;flex-shrink:0;"></div><span style="font-size:6px;color:#3C3C43;">Ende</span></div>
+            </div>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon" style="color:var(--ocean-blue);">&#9678;</span><span class="tab-label" style="color:var(--ocean-blue);">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bullets -->
+    <div class="ba-bullets">
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Stats-Strip</strong> identisch zur Hauptseite (r10, separator-Rand, 4 Zellen: Reisen/Laender/Hafentage/Seetage). Sofortige Orientierung ohne Tab-Wechsel.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Geo-Hero-Badge</strong> auf der Karte zeigt die juengste/geplante Reise als kleine navyDark-Karte — identisch zum Fallback-Muster aus CruiseGeoFallbackView.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Light-Mode-Variante</strong>: Karte-Tab im hellen Modus sieht als einziger Vorschlag nicht wie eine Karte aus, sondern wie ein integriertes Dashboard.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Rollen-Legende</strong> als kleine Card (r10) statt Reise-Legende — erklaert das Pin-System allen Nutzern, die den Detail-Tab noch nicht kennen.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — VORSCHLAG 2 FORTGESETZT: HAFEN-DETAIL FULL SHEET -->
+<!-- ============================================================ -->
+<div class="slide" id="s7">
+  <div class="slide-label">Vorschlag 2 — Hafen-Detail vertieft</div>
+  <h2>Peek Sheet &#8594; Voll-Sheet: die komplette Interaktion</h2>
+  <p class="subtitle" style="margin-bottom: 16px;">Was beim Wischen nach oben aus dem Peek-Sheet wird</p>
+
+  <div style="display:flex; gap:24px; align-items:flex-start; justify-content:center;">
+
+    <!-- State 1: Peek -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--ocean-light);">1. Tap auf Pin</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:4px 0 2px;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-bar dark"><span>Karte</span></div>
+          <div class="map-area" style="position:relative;">
+            <svg viewBox="0 0 180 200" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" style="position:absolute;inset:0;">
+              <rect width="180" height="200" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="80" rx="55" ry="38" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="50,85 68,75 78,78 88,82 95,78 82,83" fill="none" stroke="#0C8CE9" stroke-width="2.5"/>
+              <circle cx="50" cy="85" r="5" fill="#FF6B35"/>
+              <circle cx="68" cy="75" r="4" fill="#0C8CE9"/>
+              <!-- tapped -->
+              <circle cx="68" cy="75" r="10" fill="rgba(12,140,233,0.2)"/>
+              <circle cx="68" cy="75" r="4" fill="white"/>
+              <circle cx="68" cy="75" r="3" fill="#0C8CE9"/>
+              <circle cx="78" cy="78" r="3" fill="#0C8CE9"/>
+              <circle cx="88" cy="82" r="3" fill="#36A9F0"/>
+              <circle cx="95" cy="78" r="3" fill="#0C8CE9"/>
+              <circle cx="82" cy="83" r="5" fill="#34C759"/>
+            </svg>
+            <!-- Peek sheet: small, 90px -->
+            <div style="position:absolute; bottom:0; left:0; right:0; background:#2C2C2E; border-radius:16px 16px 0 0; padding:8px 12px 8px;">
+              <div class="sheet-handle"></div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:20px;height:20px;border-radius:50%;background:rgba(12,140,233,0.2);display:flex;align-items:center;justify-content:center;font-size:11px;">&#128205;</div>
+                <div>
+                  <div style="font-size:11px;font-weight:700;color:#F2F2F7;">Marseille</div>
+                  <div style="font-size:7.5px;color:#8E8E93;">Tag 2 &bull; 15. Aug. 2024</div>
+                </div>
+                <div style="margin-left:auto;font-size:7.5px;color:var(--ocean-blue);font-weight:600;">Details &#8594;</div>
+              </div>
+              <div style="margin-top:8px; font-size:7.5px; color:#8E8E93;">&#8593; Wischen zum Ausklappen</div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div style="display:flex; align-items:center; padding-top:200px; font-size:24px; color:var(--text-muted);">&#8594;</div>
+
+    <!-- State 2: Full Sheet -->
+    <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+      <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--sea-green);">2. Wisch nach oben</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:4px 0 2px;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+          <!-- Full sheet overlay -->
+          <div style="flex:1; background:#2C2C2E; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="padding:8px 12px 0;">
+              <div class="sheet-handle"></div>
+              <!-- Header -->
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; margin-top:4px;">
+                <div style="width:28px;height:28px;border-radius:50%;background:rgba(12,140,233,0.18);display:flex;align-items:center;justify-content:center;font-size:16px;">&#128205;</div>
+                <div>
+                  <div style="font-size:14px;font-weight:800;color:#F2F2F7;">Marseille</div>
+                  <div style="font-size:8.5px;color:#8E8E93;">Westl. Mittelmeer &bull; Tag 2</div>
+                </div>
+                <div style="margin-left:auto;">
+                  <div style="background:rgba(12,140,233,0.15);border-radius:12px;padding:3px 8px;">
+                    <span style="font-size:8px;font-weight:600;color:var(--ocean-blue);">&#9733; 4,0</span>
+                  </div>
+                </div>
+              </div>
+              <!-- Date meta -->
+              <div style="font-size:8px;color:#8E8E93;margin-bottom:8px;">15. August 2024 &bull; 8h Aufenthalt</div>
+              <!-- Photo gallery -->
+              <div style="font-size:9px;font-weight:700;color:#F2F2F7;margin-bottom:6px;">Fotos (3)</div>
+              <div style="display:flex;gap:5px;margin-bottom:10px;overflow:hidden;">
+                <div style="width:56px;height:52px;border-radius:6px;background:linear-gradient(135deg,#4A90D9,#2E6DA3);flex-shrink:0;"></div>
+                <div style="width:56px;height:52px;border-radius:6px;background:linear-gradient(135deg,#6BB5A0,#4A9B87);flex-shrink:0;"></div>
+                <div style="width:56px;height:52px;border-radius:6px;background:linear-gradient(135deg,#D4A869,#B88A45);flex-shrink:0;"></div>
+              </div>
+              <!-- Notiz -->
+              <div style="font-size:9px;font-weight:700;color:#F2F2F7;margin-bottom:4px;">Notiz</div>
+              <div style="background:rgba(255,255,255,0.05);border-radius:8px;padding:8px;font-size:8px;color:#9CA3AF;line-height:1.5;margin-bottom:10px;">"Alter Hafen und Bouillabaise — unbedingt Panier-Markt besuchen&#8230;"</div>
+              <!-- Stats row -->
+              <div style="display:flex;gap:6px;">
+                <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:8px;padding:6px;text-align:center;">
+                  <div style="font-size:12px;font-weight:800;color:#F2F2F7;font-variant-numeric:tabular-nums;">3</div>
+                  <div style="font-size:6px;font-weight:600;color:#8E8E93;text-transform:uppercase;">Fotos</div>
+                </div>
+                <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:8px;padding:6px;text-align:center;">
+                  <div style="font-size:12px;font-weight:800;color:var(--sea-green);font-variant-numeric:tabular-nums;">8h</div>
+                  <div style="font-size:6px;font-weight:600;color:#8E8E93;text-transform:uppercase;">Aufenthalt</div>
+                </div>
+                <div style="flex:1;background:rgba(255,255,255,0.05);border-radius:8px;padding:6px;text-align:center;">
+                  <div style="font-size:12px;font-weight:800;color:var(--ocean-blue);font-variant-numeric:tabular-nums;">FR</div>
+                  <div style="font-size:6px;font-weight:600;color:#8E8E93;text-transform:uppercase;">Land</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#9776;</span><span class="tab-label">Reisen</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#9678;</span><span class="tab-label">Karte</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9636;</span><span class="tab-label">Statistik</span></div>
+            <div class="tab-item"><span class="tab-icon">&#9670;</span><span class="tab-label">Mehr</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="ba-bullets" style="max-width:220px;">
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>3 UISheetPresentationController-Detents</strong>: small (~90pt Peek) / medium (~55% Foto+Stats) / large (full — vollstaendige Detail-Ansicht mit Notizen).</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Hinter dem Sheet</strong> bleibt die Karte sichtbar und interaktiv. Tippen auf einen anderen Pin schliesst das Sheet und oeffnet den neuen.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Sheet-Stats</strong> (r8, sekundaerer Fill) sind pixel-gleich zum Stats-Strip der Hauptseite — konsistente Designsprache durchgehend.</div>
+      </div>
+      <div class="ba-bullet">
+        <div class="ba-bullet-icon plus">+</div>
+        <div class="ba-bullet-text"><strong>Seetag-Sheet</strong> zeigt Wave-Icon statt Pin-Icon, keine Fotos-Section (kein Hafen), stattdessen Distanz-Zelle — kontextsensitiv.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — KOMBINATIONSEMPFEHLUNG -->
+<!-- ============================================================ -->
+<div class="slide" id="s8">
+  <div class="slide-label">Kombinations-Empfehlung</div>
+  <h2>Die 3 Vorschlaege erganzen sich — ideal kombiniert</h2>
+  <p class="subtitle" style="margin-bottom: 20px;">Jeder Vorschlag loest andere Probleme; alle sind unabhaengig ship-bar</p>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; width:100%; margin-bottom:20px;">
+    <div class="card" style="border-top: 3px solid var(--ocean-blue);">
+      <div style="font-size:11px; font-weight:700; color:var(--ocean-blue); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em;">Vorschlag 1</div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:8px;">Reise-Fokus</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">Chip-Switcher dimmt inaktive Routen. Rollenfarben korrekt. Legende als konsistente Card.</div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <span style="font-size:10px; background:rgba(12,140,233,0.15); color:var(--ocean-light); padding:2px 7px; border-radius:10px;">Rollenfarben</span>
+        <span style="font-size:10px; background:rgba(12,140,233,0.15); color:var(--ocean-light); padding:2px 7px; border-radius:10px;">Fokus-Modus</span>
+        <span style="font-size:10px; background:rgba(12,140,233,0.15); color:var(--ocean-light); padding:2px 7px; border-radius:10px;">Card-Konsistenz</span>
+      </div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--sunset-orange);">
+      <div style="font-size:11px; font-weight:700; color:var(--sunset-orange); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em;">Vorschlag 2</div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:8px;">Peek-Sheet</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">Hafen-Tap-Detail: Foto-Strip, Rating, Notiz-Preview, Stats-Kacheln. Wisch nach oben = volle Detail-Ansicht.</div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <span style="font-size:10px; background:rgba(255,107,53,0.15); color:var(--sunset-orange); padding:2px 7px; border-radius:10px;">Hafen-Detail</span>
+        <span style="font-size:10px; background:rgba(255,107,53,0.15); color:var(--sunset-orange); padding:2px 7px; border-radius:10px;">Fotos</span>
+        <span style="font-size:10px; background:rgba(255,107,53,0.15); color:var(--sunset-orange); padding:2px 7px; border-radius:10px;">Tagebuch</span>
+      </div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--sea-green);">
+      <div style="font-size:11px; font-weight:700; color:var(--sea-green); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em;">Vorschlag 3</div>
+      <div style="font-size:14px; font-weight:700; margin-bottom:8px;">Stats-Header</div>
+      <div style="font-size:11px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">Stats-Strip oben (Reisen/Laender/Hafentage/Seetage) identisch zur Hauptseite. Geo-Badge fuer aktuelle Reise.</div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <span style="font-size:10px; background:rgba(52,199,89,0.15); color:var(--sea-green); padding:2px 7px; border-radius:10px;">Stats-Kontext</span>
+        <span style="font-size:10px; background:rgba(52,199,89,0.15); color:var(--sea-green); padding:2px 7px; border-radius:10px;">Konsistenz</span>
+        <span style="font-size:10px; background:rgba(52,199,89,0.15); color:var(--sea-green); padding:2px 7px; border-radius:10px;">Dashboard</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Combined recommendation -->
+  <div class="card" style="width:100%; border: 1px solid rgba(12,140,233,0.3); background: rgba(12,140,233,0.06);">
+    <div style="font-size:11px; font-weight:700; color:var(--ocean-light); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.08em;">Empfehlung — Kombinations-Stack</div>
+    <div style="display:flex; gap:16px; align-items:flex-start;">
+      <div style="flex:1; font-size:12px; color:var(--text-secondary); line-height:1.6;">
+        <strong style="color:var(--text-primary);">Pflicht (Sprint 1):</strong> Rollenfarben korrigieren (V1, 1h) + Legende als Card (V1, 30min) + Empty State (30min). Diese drei Fixes beseitigen die grossen Inkonsistenzen ohne neue Architektur.<br><br>
+        <strong style="color:var(--text-primary);">Kern-Mehrwert (Sprint 2):</strong> Peek-Sheet (V2) — die fehlende Hafen-Interaktion. Erfordert UISheetPresentationController + Port-Daten-Query. Groesster UX-Gewinn.<br><br>
+        <strong style="color:var(--text-primary);">Dashboard (Sprint 3):</strong> Stats-Strip-Header (V3) + Chip-Switcher/Fokus (V1). Transformiert die Karte vom leeren Viewer zur Daten-Bühne.
+      </div>
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; min-width:120px;">
+        <div style="display:flex;gap:8px;align-items:center;font-size:11px;"><span style="color:var(--ocean-blue);">Sprint 1</span><span style="color:var(--text-muted);">~2h</span><span style="background:rgba(52,199,89,0.15);color:var(--sea-green);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600;">S</span></div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:11px;"><span style="color:var(--ocean-blue);">Sprint 2</span><span style="color:var(--text-muted);">~1 Tag</span><span style="background:rgba(255,149,0,0.15);color:#FFAA44;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600;">M</span></div>
+        <div style="display:flex;gap:8px;align-items:center;font-size:11px;"><span style="color:var(--ocean-blue);">Sprint 3</span><span style="color:var(--text-muted);">~2 Tage</span><span style="background:rgba(255,59,48,0.15);color:#FF6B6B;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600;">L</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — ROADMAP -->
+<!-- ============================================================ -->
+<div class="slide" id="s9">
+  <div class="slide-label">Roadmap</div>
+  <h2>3-Sprint-Plan — Karte-Tab Redesign</h2>
+
+  <div class="roadmap-grid">
+    <div class="roadmap-card" style="border-top: 2px solid var(--sea-green);">
+      <div class="roadmap-phase">Sprint 1 — ~2h</div>
+      <div class="roadmap-title">Konsistenz-Fix</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Pin-Farben: homePortPin / endPortPin / seaDayPin statt routeColor(at:) in MapView.swift:71–76</div>
+        <div class="roadmap-item">Legende: .ultraThinMaterial entfernen, secondarySystemBackground + cornerRadius(10) einsetzen</div>
+        <div class="roadmap-item">Zoom-Gate fuer Port-Labels (nur ab region.span.latitudeDelta &lt; 8 zeigen)</div>
+        <div class="roadmap-item">Empty-State: ContentUnavailableView("Keine Reisen", ...) wenn cruises.isEmpty</div>
+      </div>
+      <div class="effort-tag">S — Ship-ready sofort</div>
+    </div>
+    <div class="roadmap-card" style="border-top: 2px solid var(--sunset-orange);">
+      <div class="roadmap-phase">Sprint 2 — ~1 Tag</div>
+      <div class="roadmap-title">Peek-Sheet + Hafen-Detail</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">MapView: @State selectedPort: Port? + .sheet(item:) mit UISheetPresentationController-Detents</div>
+        <div class="roadmap-item">Annotation auf Tap: selectedPort = port setzen</div>
+        <div class="roadmap-item">PortMapDetailSheet: Name, Datum, Foto-Strip, Rating, Notiz-Preview, Stats-Kacheln (r8)</div>
+        <div class="roadmap-item">Seetag-Sheet: Wave-Icon statt Pin, Distanz statt Fotos</div>
+        <div class="roadmap-item">Details-&#8594;-CTA navigiert zu CruiseDetailView</div>
+      </div>
+      <div class="effort-tag">M — groesster UX-Gewinn</div>
+    </div>
+    <div class="roadmap-card" style="border-top: 2px solid var(--ocean-blue);">
+      <div class="roadmap-phase">Sprint 3 — ~2 Tage</div>
+      <div class="roadmap-title">Stats-Header + Fokus-Chips</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Stats-Strip-Header ueber Karte (VStack: Strip + Map), identisch CruiseStatsStripView aber mit Karten-Werten</div>
+        <div class="roadmap-item">Horizontal-ScrollView Chip-Switcher: "Alle" + eine Chip je Reise</div>
+        <div class="roadmap-item">Fokus-Logik: selectedCruise nil = alle; sonst andere Routen auf opacity(0.25)</div>
+        <div class="roadmap-item">Aktuelle/juengste Reise als Geo-Hero-Badge auf der Karte (navyDark, r10)</div>
+        <div class="roadmap-item">Zoom-to-fit bei Chip-Tap (bereits in zoomTo(cruise:) vorhanden)</div>
+      </div>
+      <div class="effort-tag">L — vollstaendige Transformation</div>
+    </div>
+  </div>
+
+  <!-- Token reminder -->
+  <div style="width:100%; margin-top:16px; background:rgba(255,255,255,0.04); border-radius:10px; padding:12px 16px; border:1px solid var(--border);">
+    <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">Konsistenz-Check-Liste — alle 3 Sprints</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; secondarySystemBackground statt Material-Blur</span>
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; cornerRadius 10 (Card) / 16 (Sheet-Hero)</span>
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; homePortPin #FF6B35 / portPin #0C8CE9 / seaDayPin #36A9F0 / endPortPin #34C759</span>
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; kein Rand / kein Schatten ausser Stats-Strip-Stroke</span>
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; monospacedDigit() auf allen Zahlenwerten</span>
+      <span style="font-size:10px; color:var(--text-secondary);">&#9989; listRowSeparator(.hidden) / systemGroupedBackground — nicht auf Karte relevant</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — CLOSING -->
+<!-- ============================================================ -->
+<div class="slide slide-full-center" id="s10">
+  <div class="cover-gradient"></div>
+  <div style="position:relative; z-index:1; text-align:center; max-width:600px;">
+    <div style="font-size:48px; margin-bottom:16px;">&#9875;</div>
+    <h1 style="font-size:32px; margin-bottom:12px;">Naechster Schritt</h1>
+    <p class="subtitle" style="font-size:14px; max-width:440px; margin:0 auto 32px;">
+      Entscheid, welcher Sprint zuerst umgesetzt wird — oder ob der Kombinations-Stack als
+      zusammenhaengendes MapView-Redesign direkt an Developer geht.
+    </p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <div class="card-sm" style="min-width:160px; text-align:center;">
+        <div style="font-size:20px; margin-bottom:6px;">&#9989;</div>
+        <div style="font-size:12px; font-weight:700;">Sprint 1 jetzt</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">2h Fix — sofort bessere Karte</div>
+      </div>
+      <div class="card-sm" style="min-width:160px; text-align:center;">
+        <div style="font-size:20px; margin-bottom:6px;">&#128196;</div>
+        <div style="font-size:12px; font-weight:700;">Komplett-Redesign</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Alle 3 Sprints als Developer-Brief</div>
+      </div>
+      <div class="card-sm" style="min-width:160px; text-align:center;">
+        <div style="font-size:20px; margin-bottom:6px;">&#128172;</div>
+        <div style="font-size:12px; font-weight:700;">Feedback / Iteration</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Einen Vorschlag vertiefen</div>
+      </div>
+    </div>
+
+    <div style="margin-top:40px; font-size:12px; color:var(--text-muted);">
+      ShipTrip &bull; Karte-Tab Redesign &bull; 3 Vorschlaege &bull; 2026-06-17
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- NAVIGATION SCRIPT -->
+<!-- ============================================================ -->
+<script>
+  const TOTAL = 10;
+  let current = 1;
+
+  function goTo(n) {
+    n = Math.max(1, Math.min(TOTAL, n));
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    document.getElementById('counter').textContent = n + ' / ' + TOTAL;
+    document.getElementById('progress-bar').style.width = (n / TOTAL * 100) + '%';
+    current = n;
+    // update hash
+    history.replaceState(null, '', '#' + n);
+  }
+
+  // Keyboard
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(1); }
+    if (e.key === 'End') { e.preventDefault(); goTo(TOTAL); }
+  });
+
+  // Buttons
+  document.getElementById('nav-prev').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('nav-next').addEventListener('click', () => goTo(current + 1));
+
+  // Hash
+  const hash = parseInt(window.location.hash.replace('#', ''));
+  goTo(isNaN(hash) ? 1 : hash);
+</script>
+</body>
+</html>

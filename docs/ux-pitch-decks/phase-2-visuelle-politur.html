@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Phase 2: Visuelle Politur</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ShipTrip Brand */
+  --ocean: #0C8CE9;
+  --ocean-light: #36A9F0;
+  --navy: #1A365D;
+  --navy-dark: #0d1f35;
+  --sunset: #FF6B35;
+  --sea: #34C759;
+  --magenta: #E10A78; /* AIDA-Referenzfarbe */
+  /* Deck UI */
+  --bg: #07101c;
+  --surface: #0f1e30;
+  --surface2: #152840;
+  --border: #1e3350;
+  --text: #e8edf5;
+  --muted: #7a9ab8;
+  --accent: var(--ocean);
+  /* Severities */
+  --red: #ff4d5e;
+  --amber: #ffa940;
+  --green: var(--sea);
+}
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text);
+}
+
+/* ===== SLIDE ENGINE ===== */
+#deck { width: 100vw; height: 100vh; position: relative; }
+
+.slide {
+  display: none;
+  position: absolute; inset: 0;
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+
+/* Progress bar */
+#progress {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--ocean), var(--sunset));
+  transition: width .3s ease;
+  z-index: 100;
+}
+
+/* Slide counter */
+#counter {
+  position: fixed; bottom: 20px; right: 28px;
+  font-size: 12px; color: var(--muted); font-weight: 600;
+  letter-spacing: .05em; z-index: 100;
+}
+
+/* Nav arrows */
+.nav-btn {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(12, 140, 233, 0.15);
+  border: 1px solid rgba(12, 140, 233, 0.3);
+  color: var(--ocean); font-size: 18px;
+  cursor: pointer; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, opacity .2s;
+  opacity: .6;
+}
+.nav-btn:hover { background: rgba(12,140,233,.3); opacity: 1; }
+#nav-prev { left: 16px; }
+#nav-next { right: 72px; }
+
+/* ===== SHARED LAYOUT ===== */
+.slide-inner {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  padding: 48px 64px 40px;
+  overflow-y: auto;
+}
+
+.slide-label {
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ocean);
+  margin-bottom: 10px;
+}
+.slide-title {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 800; line-height: 1.15;
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+.slide-sub {
+  font-size: 15px; color: var(--muted); line-height: 1.6;
+  max-width: 620px; margin-bottom: 36px;
+}
+
+/* ===== IPHONE MOCKUP ===== */
+.phone {
+  width: 200px; flex-shrink: 0;
+  background: #08111d;
+  border-radius: 36px;
+  padding: 8px;
+  box-shadow:
+    0 0 0 1.5px #1a2e45,
+    0 0 0 3px #0d1e2e,
+    0 28px 60px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+  position: relative;
+}
+.phone-inner {
+  width: 100%;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #f2f2f7;
+  position: relative;
+  /* dynamic island */
+}
+.phone-inner::before {
+  content: '';
+  position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+  width: 72px; height: 16px;
+  background: #08111d;
+  border-radius: 12px;
+  z-index: 10;
+}
+/* phone screen content */
+.scr {
+  width: 100%; background: #f2f2f7;
+  color: #1c1c1e; font-size: 9px; line-height: 1.3;
+  position: relative;
+}
+.scr * { box-sizing: border-box; }
+.scr.dark { background: #0a1929; color: #dceeff; }
+
+.sbar {
+  height: 22px; padding: 0 14px; padding-top: 6px;
+  display: flex; align-items: center;
+  justify-content: space-between;
+  font-size: 7.5px; font-weight: 700;
+  color: #1c1c1e;
+}
+.sbar.light-text { color: #fff; }
+
+.nbar {
+  padding: 2px 12px 6px;
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+}
+.nbar-title {
+  font-size: 15px; font-weight: 800;
+  letter-spacing: -.3px; color: #1c1c1e;
+}
+.nbar-btn { font-size: 13px; color: var(--ocean); font-weight: 700; }
+
+.tabbar {
+  height: 44px; border-top: .5px solid rgba(0,0,0,.1);
+  display: flex; background: rgba(248,248,251,.97);
+  backdrop-filter: blur(8px);
+}
+.tab {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px; font-size: 6px; color: #9aa0aa;
+}
+.tab.on { color: var(--ocean); }
+.tab .ic { font-size: 11px; line-height: 1; }
+
+/* card inside phone */
+.card-list { padding: 4px 10px; }
+.crd {
+  background: #fff; border-radius: 12px;
+  margin-bottom: 8px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+}
+.crd-hero {
+  height: 72px; background: #dfe1e6;
+  display: flex; align-items: center;
+  justify-content: center; color: #b0b5bf;
+  font-size: 22px; position: relative;
+}
+.crd-body { padding: 7px 9px 9px; }
+.crd-title { font-weight: 800; font-size: 10px; color: #1c1c1e; }
+.crd-meta { color: #8a8f99; font-size: 8px; margin-top: 2px; }
+.pill {
+  display: inline-block; font-size: 6.5px; font-weight: 800;
+  padding: 2px 6px; border-radius: 99px;
+}
+.pill-rate { background: rgba(255,200,0,.18); color: #d9930a; }
+.pill-soon { background: rgba(12,140,233,.16); color: var(--ocean); }
+
+/* info grid inside phone */
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 5px; padding: 6px 10px;
+}
+.info-card {
+  background: #e9eaee; border-radius: 8px; padding: 6px;
+}
+.info-label { font-size: 7px; color: #8a8f99; margin-bottom: 1px; }
+.info-val { font-weight: 700; font-size: 8.5px; }
+
+/* ===== BEFORE / AFTER LAYOUT ===== */
+.ba-row {
+  display: flex; gap: 28px; align-items: flex-start;
+  flex: 1;
+}
+.ba-col {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px; flex: 1;
+}
+.ba-label {
+  font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 99px;
+}
+.ba-label.before { background: rgba(255,77,94,.15); color: var(--red); }
+.ba-label.after { background: rgba(52,199,89,.15); color: var(--sea); }
+.ba-caption {
+  font-size: 11px; color: var(--muted); text-align: center;
+  max-width: 200px; line-height: 1.5;
+}
+
+.why-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 24px;
+  flex: 1; min-width: 220px; max-width: 320px;
+}
+.why-title {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ocean); margin-bottom: 12px;
+}
+.why-item {
+  display: flex; gap: 10px; margin-bottom: 10px;
+  font-size: 13px; line-height: 1.5;
+}
+.why-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ocean); margin-top: 7px; flex-shrink: 0;
+}
+.effort-row {
+  display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap;
+}
+.badge {
+  font-size: 10px; font-weight: 700; padding: 3px 10px;
+  border-radius: 99px;
+}
+.badge-m { background: rgba(255,169,64,.15); color: var(--amber); }
+.badge-s { background: rgba(52,199,89,.15); color: var(--sea); }
+.badge-l { background: rgba(255,77,94,.15); color: var(--red); }
+.badge-ok { background: rgba(12,140,233,.15); color: var(--ocean); }
+
+/* ===== SLIDE 1: COVER ===== */
+#s1 {
+  background: radial-gradient(ellipse 80% 60% at 60% 30%, rgba(12,140,233,.25) 0%, transparent 70%),
+              linear-gradient(160deg, #07101c 0%, #0d1f35 100%);
+  align-items: center; justify-content: center;
+}
+#s1 .cover-inner {
+  text-align: center; max-width: 640px;
+}
+.cover-badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ocean); border: 1px solid rgba(12,140,233,.4);
+  padding: 5px 16px; border-radius: 99px; margin-bottom: 24px;
+}
+.cover-title {
+  font-size: clamp(2.6rem, 6vw, 4rem); font-weight: 900;
+  letter-spacing: -.03em; line-height: 1.05;
+  background: linear-gradient(135deg, #fff 40%, var(--ocean-light));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+.cover-sub {
+  font-size: 18px; color: var(--muted); line-height: 1.6;
+  max-width: 500px; margin: 0 auto 36px;
+}
+.cover-meta {
+  display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+}
+.cover-chip {
+  font-size: 12px; color: var(--muted);
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 6px 14px; border-radius: 99px;
+}
+
+/* ocean wave SVG decoration */
+.wave-deco {
+  position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+  opacity: .07; pointer-events: none;
+}
+
+/* ===== SLIDE 2: IST-ANALYSE ===== */
+#s2 { align-items: stretch; }
+#s2 .slide-inner { justify-content: flex-start; }
+.problem-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px; flex: 1;
+}
+.problem-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px;
+}
+.problem-card.sev-high { border-top: 3px solid var(--red); }
+.problem-card.sev-med  { border-top: 3px solid var(--amber); }
+.problem-card.sev-low  { border-top: 3px solid var(--ocean); }
+.problem-sev {
+  font-size: 9px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.sev-high .problem-sev { color: var(--red); }
+.sev-med  .problem-sev { color: var(--amber); }
+.sev-low  .problem-sev { color: var(--ocean); }
+.problem-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; line-height: 1.4; }
+.problem-ref { font-size: 10px; color: var(--muted); font-family: 'SF Mono', 'Fira Code', monospace; }
+
+/* ===== SLIDE 3: BENCHMARK ===== */
+#s3 .slide-inner { gap: 24px; }
+.bench-row {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; flex: 1;
+}
+.bench-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px;
+}
+.bench-app { font-size: 13px; font-weight: 800; margin-bottom: 6px; color: #fff; }
+.bench-cat { font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+.bench-pattern {
+  font-size: 11.5px; line-height: 1.6; color: #c8d8e8;
+  border-left: 2px solid var(--ocean); padding-left: 10px;
+  margin-bottom: 8px;
+}
+.bench-tag {
+  display: inline-block; font-size: 9px; font-weight: 700;
+  background: rgba(12,140,233,.15); color: var(--ocean);
+  padding: 2px 8px; border-radius: 99px; margin-right: 4px; margin-top: 4px;
+}
+.pattern-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  background: var(--surface); border-radius: 10px; overflow: hidden;
+}
+.pattern-table th {
+  background: var(--surface2); padding: 8px 12px; text-align: left;
+  font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pattern-table td {
+  padding: 8px 12px; border-top: 1px solid var(--border); vertical-align: top;
+}
+.pattern-table td.yes { color: var(--sea); font-weight: 700; }
+.pattern-table td.par { color: var(--amber); font-weight: 600; }
+.pattern-table td.no  { color: #444; }
+
+/* ===== ROADMAP SLIDE ===== */
+.roadmap-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px; flex: 1;
+}
+.roadmap-phase {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px;
+}
+.phase-num {
+  font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ocean); margin-bottom: 6px;
+}
+.phase-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.phase-sub { font-size: 12px; color: var(--muted); margin-bottom: 14px; }
+.phase-item {
+  display: flex; gap: 8px; font-size: 12px; line-height: 1.5;
+  margin-bottom: 8px; align-items: flex-start;
+}
+.phase-dot {
+  width: 5px; height: 5px; border-radius: 50%; margin-top: 6px; flex-shrink: 0;
+}
+.dot-ocean { background: var(--ocean); }
+.dot-amber { background: var(--amber); }
+.dot-sea { background: var(--sea); }
+
+/* assumption box */
+.assumption {
+  background: rgba(255,169,64,.08);
+  border: 1px solid rgba(255,169,64,.3);
+  border-radius: 10px; padding: 12px 16px;
+  font-size: 12px; color: #f0c070; line-height: 1.5;
+  margin-top: 12px;
+}
+.assumption strong { color: #ffa940; }
+
+/* closing slide */
+#s12 {
+  background: radial-gradient(ellipse 80% 60% at 40% 40%, rgba(12,140,233,.2) 0%, transparent 70%),
+              linear-gradient(160deg, #07101c 0%, #0d1f35 100%);
+  align-items: center; justify-content: center;
+}
+
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<button class="nav-btn" id="nav-prev" onclick="go(-1)">&#8592;</button>
+<button class="nav-btn" id="nav-next" onclick="go(+1)">&#8594;</button>
+<div id="counter"></div>
+
+<div id="deck">
+
+<!-- ===================================================================
+     SLIDE 1 — COVER
+=================================================================== -->
+<div class="slide active" id="s1">
+  <div class="cover-inner">
+    <div class="cover-badge">ShipTrip &middot; Design-Proposal &middot; 2026</div>
+    <div class="cover-title">Phase 2<br>Visuelle Politur</div>
+    <div class="cover-sub">
+      Von der Funktions-App zum Premium-Reisetagebuch —
+      6 gezielte Design-Eingriffe, die das Erscheinungsbild
+      in eine andere Liga heben, ohne die Substanz anzutasten.
+    </div>
+    <div class="cover-meta">
+      <span class="cover-chip">Scope: Richtung 1 &mdash; Behutsame Politur</span>
+      <span class="cover-chip">6 Verbesserungen</span>
+      <span class="cover-chip">Aufwand: M gesamt</span>
+      <span class="cover-chip">Risiko: Niedrig</span>
+    </div>
+  </div>
+  <svg class="wave-deco" width="900" height="180" viewBox="0 0 900 180" fill="none">
+    <path d="M0 90 C150 20 300 160 450 90 S750 20 900 90" stroke="white" stroke-width="3" fill="none"/>
+    <path d="M0 110 C150 40 300 180 450 110 S750 40 900 110" stroke="white" stroke-width="2" fill="none"/>
+    <path d="M0 70 C150 0 300 140 450 70 S750 0 900 70" stroke="white" stroke-width="1.5" fill="none"/>
+  </svg>
+</div>
+
+<!-- ===================================================================
+     SLIDE 2 — IST-ANALYSE / PROBLEM
+=================================================================== -->
+<div class="slide" id="s2">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 2 / 12 &mdash; Ist-Analyse</div>
+    <div class="slide-title">Was heute bremst</div>
+    <div class="slide-sub">6 code-verankerte Befunde aus Audit &amp; Quellcode-Lekt&uuml;re &mdash; sortiert nach sichtbarem Impact.</div>
+
+    <div class="problem-grid">
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Ersteindruck</div>
+        <div class="problem-title">Graue Platzhalter-Kacheln dominieren die Reise-Liste</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          Ohne Foto: gro&szlig;e graue Fl&auml;che + Fährsymbol. Erste Impression = Hobby-App.
+          Kein Foto-Held, keine visuelle Hierarchie.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">CruiseListView.swift &rarr; CruiseCardView, Z.&nbsp;crd-hero</div>
+      </div>
+
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Markenidentit&auml;t</div>
+        <div class="problem-title">Emoji als Reederei-Logos wirken unprofessionell</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          AIDA = 💋, Cunard = 🎩, Royal Caribbean = 👑 &mdash; generische Zeichen ohne Markenbezug.
+          Direkt sichtbar in Listen- und Detailansicht.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">ShippingLine.swift:23&ndash;71 (logo-Feld)</div>
+      </div>
+
+      <div class="problem-card sev-high">
+        <div class="problem-sev">Hoch &mdash; Hierarchie</div>
+        <div class="problem-title">Detail-Header: 6 gleichf&ouml;rmige Info-Kacheln, kein Ankerpunkt</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          LazyVGrid aus InfoCards f&uuml;llt den Header-Bereich gleichm&auml;&szlig;ig &mdash;
+          kein visuelles Gewicht, kein emotionaler Einstieg. Foto verschwindet dahinter.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">CruiseDetailView.swift:150&ndash;166 (LazyVGrid InfoCards)</div>
+      </div>
+
+      <div class="problem-card sev-med">
+        <div class="problem-sev">Mittel &mdash; Konsistenz</div>
+        <div class="problem-title">Hafen-Pins: drei verschiedene Farb-/Icon-Schemas &uuml;ber drei Views</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          MapView: routefarb-abh&auml;ngig (blau/orange/gr&uuml;n&hellip;),
+          CruiseDetailView: blau,
+          PortFormView: Standard-accentColor. Drei verschiedene Wahrheiten.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">MapView.swift:44,70&ndash;72 &bull; CruiseDetailView.swift:194&ndash;196</div>
+      </div>
+
+      <div class="problem-card sev-med">
+        <div class="problem-sev">Mittel &mdash; Farb-Governance</div>
+        <div class="problem-title">Color+Theme existiert, wird aber nicht konsequent genutzt</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          MapView.swift:44 definiert ein eigenes routeColors-Array statt
+          Color.routeColors aus Color+Theme zu verwenden. Ad-hoc-Farben in mehreren Views.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">Color+Theme.swift:41 vs. MapView.swift:44 (Duplikat)</div>
+      </div>
+
+      <div class="problem-card sev-med">
+        <div class="problem-sev">Mittel &mdash; Onboarding</div>
+        <div class="problem-title">KI-Mehrwert unsichtbar &mdash; direkt API-Key-Wall statt Wert-Demo</div>
+        <p style="font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:6px;">
+          isConfigured=false blendet KI-Funktion komplett aus.
+          Nutzer sehen nie, warum es sich lohnt, einen Key einzugeben.
+          Gr&ouml;&szlig;tes Verkaufsargument verpufft beim Erstkontakt.
+        </p>
+        <div class="problem-ref" style="margin-top:8px;">GeminiService.swift (isConfigured) &bull; SettingsView.swift:36&ndash;69</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 3 — BENCHMARKS
+=================================================================== -->
+<div class="slide" id="s3">
+  <div class="slide-inner" style="gap:20px;">
+    <div class="slide-label">Slide 3 / 12 &mdash; Benchmarks</div>
+    <div class="slide-title">Best-in-Class: was wir lernen k&ouml;nnen</div>
+    <div class="slide-sub" style="margin-bottom:16px;">3 Referenz-Apps, die in genau unseren 6 Scopes das Niveau setzen &mdash; Patterns, keine Kopiervorlagen.</div>
+
+    <div class="bench-row">
+      <div class="bench-card">
+        <div class="bench-app">Polarsteps</div>
+        <div class="bench-cat">Reise-Tagebuch &bull; iOS / Android</div>
+        <div class="bench-pattern">
+          <strong>Foto-zentrierte Karten:</strong> Jede Reise beginnt als
+          Vollbild-Cover-Foto mit Titel-Overlay und Gradient. Ohne Foto:
+          automatisch generierter Karten-Ausschnitt statt Grau-Platzhalter.
+        </div>
+        <div class="bench-pattern">
+          <strong>Hero-Detail:</strong> Foto nimmt die obere H&auml;lfte des Screens ein,
+          Metadaten scrollen darunter. Scrollt man, kollabiert der Hero zu einer Titelzeile (sticky).
+        </div>
+        <span class="bench-tag">Foto-Held</span>
+        <span class="bench-tag">Map-Fallback</span>
+        <span class="bench-tag">Sticky Hero</span>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Day One</div>
+        <div class="bench-cat">Journal &bull; Apple Design Award</div>
+        <div class="bench-pattern">
+          <strong>Konsistente Ikonographie:</strong> Ein einziges Icon-System durchg&auml;ngig
+          &mdash; Farbe als semantisches Signal, nicht als Dekoration.
+          Kein Icon-Mix (SF Symbols + Emoji + Custom).
+        </div>
+        <div class="bench-pattern">
+          <strong>KI-Onboarding ohne Friction:</strong> Feature-Vorschau mit
+          Beispiel-Screenshot und einem Satz Nutzen, bevor Login verlangt wird.
+          &bdquo;Sieh, was du bekommst&ldquo; vor &bdquo;Gib uns deine Daten&ldquo;.
+        </div>
+        <span class="bench-tag">Semantische Farbe</span>
+        <span class="bench-tag">Wert-vor-Hürde</span>
+      </div>
+
+      <div class="bench-card">
+        <div class="bench-app">Wanderlog</div>
+        <div class="bench-cat">Reise-Planer &bull; Travel Journal</div>
+        <div class="bench-pattern">
+          <strong>Marken-Badges statt generischer Symbole:</strong>
+          Airline/Hotel-Logos als farbige Monogramm-Chips (2&ndash;3 Buchstaben
+          in Markenfarbe) &mdash; erkennbar ohne Logo-Rechte-Probleme.
+        </div>
+        <div class="bench-pattern">
+          <strong>Einheitliche Karten-Pins:</strong> Ein Pin-Design (&bdquo;ausgef&uuml;llter Kreis + Icon&ldquo;)
+          &uuml;ber alle Kontexte (Karte, Liste, Detail) &mdash; Farbe nur f&uuml;r Kategorien genutzt.
+        </div>
+        <span class="bench-tag">Monogramm-Chips</span>
+        <span class="bench-tag">Einheitliche Pins</span>
+      </div>
+    </div>
+
+    <!-- Pattern table -->
+    <table class="pattern-table" style="margin-top:4px;">
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>Polarsteps</th>
+          <th>Day One</th>
+          <th>Wanderlog</th>
+          <th>ShipTrip heute</th>
+          <th>Empfehlung</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Foto-zentrierte Listen-Card</td>
+          <td class="yes">Ja</td><td class="par">Teilw.</td><td class="par">Teilw.</td>
+          <td class="no">Nein</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 1</td>
+        </tr>
+        <tr>
+          <td>Marken-Monogramm-Badge</td>
+          <td class="no">Nein</td><td class="no">Nein</td><td class="yes">Ja</td>
+          <td class="no">Emoji</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 2</td>
+        </tr>
+        <tr>
+          <td>Hero-Detail-Header (kollabierend)</td>
+          <td class="yes">Ja</td><td class="yes">Ja</td><td class="par">Teilw.</td>
+          <td class="no">Nein</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 3</td>
+        </tr>
+        <tr>
+          <td>Zentrale Farbquelle</td>
+          <td class="yes">Ja</td><td class="yes">Ja</td><td class="yes">Ja</td>
+          <td class="par">Teilw.</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 4</td>
+        </tr>
+        <tr>
+          <td>Konsistente Karten-Pins</td>
+          <td class="yes">Ja</td><td class="no">n/a</td><td class="yes">Ja</td>
+          <td class="no">Nein</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 5</td>
+        </tr>
+        <tr>
+          <td>Wert-Demo vor Feature-Gate</td>
+          <td class="no">Nein</td><td class="yes">Ja</td><td class="par">Teilw.</td>
+          <td class="no">Nein</td>
+          <td style="color:var(--sea);font-weight:700;">Verbessern 6</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 4 — VERBESSERUNG 1: FOTO-KARTEN
+=================================================================== -->
+<div class="slide" id="s4">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 4 / 12 &mdash; Verbesserung 1</div>
+    <div class="slide-title">Foto-zentrierte Reise-Karten</div>
+    <div class="slide-sub">Das Foto wird zum Helden der Listen-Card &mdash; Titel, Schiff und Bewertung liegen als lesbarer Gradient-Overlay oben, darunter kompakte Metadaten.</div>
+
+    <div class="ba-row">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <span class="ba-label before">Vorher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:380px;">
+              <div class="sbar"><span>9:41</span><span>&#x1F4F6; 84%</span></div>
+              <div class="nbar">
+                <span class="nbar-title">Meine Reisen</span>
+                <span class="nbar-btn">+</span>
+              </div>
+              <div class="card-list">
+                <div class="crd">
+                  <div class="crd-hero">&#x26F4;&#xFE0E;</div>
+                  <div class="crd-body">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span class="crd-title">Mittelmeer Kreuzfahrt</span>
+                      <span class="pill pill-rate">&#9733; 4.5</span>
+                    </div>
+                    <div class="crd-meta">💋 AIDA Cruises</div>
+                    <div class="crd-meta">&#x26F4;&#xFE0E; AIDAcosma</div>
+                    <div class="crd-meta">&#128197; 12.06.&ndash;19.06.2026</div>
+                  </div>
+                </div>
+                <div class="crd">
+                  <div class="crd-hero">&#x26F4;&#xFE0E;</div>
+                  <div class="crd-body">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span class="crd-title">Norwegen Fjorde</span>
+                      <span class="pill pill-soon">In 4 Tagen</span>
+                    </div>
+                    <div class="crd-meta">🚢 TUI Cruises</div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#127991;</span>Angebote</div>
+                <div class="tab"><span class="ic">&#128202;</span>Statistik</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Graue Platzhalter, Emoji-Logo, flache Karte ohne Hierarchie</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <span class="ba-label after">Nachher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:380px;">
+              <div class="sbar"><span>9:41</span><span>&#x1F4F6; 84%</span></div>
+              <div class="nbar">
+                <span class="nbar-title">Meine Reisen</span>
+                <span class="nbar-btn">+</span>
+              </div>
+              <div class="card-list">
+                <!-- Card 1: mit Foto (als Gradient simuliert) -->
+                <div class="crd" style="box-shadow:0 4px 14px rgba(12,57,93,.2);">
+                  <div style="height:90px;background:linear-gradient(160deg,#1a6fa8 0%,#0C3D6B 60%,#091520 100%);position:relative;display:flex;align-items:flex-end;padding:8px;">
+                    <!-- Monogramm Badge -->
+                    <div style="position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:7px;background:#E10A78;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;letter-spacing:-.3px;">AI</div>
+                    <!-- Bewertung -->
+                    <div style="position:absolute;top:8px;right:8px;" class="pill pill-rate">&#9733; 4.5</div>
+                    <!-- Titel-Overlay -->
+                    <div>
+                      <div style="font-weight:800;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);">Mittelmeer Kreuzfahrt</div>
+                      <div style="font-size:8px;color:rgba(255,255,255,.85);">AIDA Cruises &bull; AIDAcosma</div>
+                    </div>
+                  </div>
+                  <div class="crd-body" style="padding:6px 9px 8px;">
+                    <div style="display:flex;gap:10px;">
+                      <span class="crd-meta" style="color:#4a6080;">&#128197; 12.&ndash;19. Juni &bull; 8 Tage</span>
+                      <span class="crd-meta" style="color:#4a6080;">&#128205; 5 H&auml;fen</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 2: kommende Reise (Foto simuliert als Fjord-Gradient) -->
+                <div class="crd" style="box-shadow:0 4px 14px rgba(12,57,93,.2);">
+                  <div style="height:80px;background:linear-gradient(160deg,#2d6a8f 0%,#1a4d6e 35%,#0d2a3d 70%,#081520 100%);position:relative;display:flex;align-items:flex-end;padding:8px;">
+                    <!-- Foto-Textur-Simulation: helle Reflexe -->
+                    <div style="position:absolute;inset:0;background:radial-gradient(ellipse 60% 40% at 30% 30%,rgba(180,220,255,.18),transparent),radial-gradient(ellipse 40% 60% at 80% 60%,rgba(255,255,255,.08),transparent);pointer-events:none;"></div>
+                    <div style="position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:7px;background:#0060a0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:900;color:#fff;letter-spacing:-.3px;">MS</div>
+                    <div style="position:absolute;top:8px;right:8px;" class="pill pill-soon">In 4 Tagen</div>
+                    <div>
+                      <div style="font-weight:800;font-size:11px;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);">Norwegen Fjorde</div>
+                      <div style="font-size:8px;color:rgba(255,255,255,.8);">TUI Cruises &bull; Mein Schiff 4</div>
+                    </div>
+                  </div>
+                  <div class="crd-body" style="padding:5px 9px 7px;">
+                    <div style="display:flex;gap:10px;">
+                      <span class="crd-meta" style="color:#4a6080;">&#128197; 14.&ndash;22. Aug. &bull; 8 Tage</span>
+                      <span class="crd-meta" style="color:#4a6080;">&#128205; 4 H&auml;fen</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#127991;</span>Angebote</div>
+                <div class="tab"><span class="ic">&#128202;</span>Statistik</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Foto f&uuml;llt die Karte, Monogramm-Badge oben links, kompakte Metadaten darunter</div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Foto als emotionaler Anker &mdash; die Reise ist sofort erkennbar, nicht eine Zeile Text unter vielen</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Ozean-Gradient als eleganter Fallback wenn kein Foto vorhanden &mdash; kein &bdquo;No Image&ldquo;-Grau mehr</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Titel-Overlay + Gradient: gute Lesbarkeit auch auf dunklen Fotos (WCAG AA)</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Monogramm-Badge (oben links) l&ouml;st das Emoji-Logo sofort ab, ohne Logo-Rechte</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Countdown-Chip (&bdquo;In 4 Tagen&ldquo;) macht k&uuml;nftige Reisen lebendig &mdash; minimale Logik, gro&szlig;er Effekt</span></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+        <div class="assumption">
+          <strong>Annahme &mdash; zur Best&auml;tigung:</strong>
+          Foto-Grad.-Fallback nutzt die vorhandenen Brand-Farben (oceanBlue&rarr;navyDark). Andre: passt das, oder lieber ein neutrales Slate-Grau?
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 5 — VERBESSERUNG 2: MARKEN-MONOGRAMME
+=================================================================== -->
+<div class="slide" id="s5">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 5 / 12 &mdash; Verbesserung 2</div>
+    <div class="slide-title">Marken-Monogramme statt Emoji</div>
+    <div class="slide-sub">Typografische Monogramm-Badges in definierten Markenfarben ersetzen die generischen Emojis &mdash; erkennbar, professionell, ohne Logo-Lizenzprobleme.</div>
+
+    <div class="ba-row">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <span class="ba-label before">Vorher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:360px;">
+              <div class="sbar"><span>9:41</span><span>84%</span></div>
+              <div class="nbar"><span class="nbar-title">Detailansicht</span></div>
+              <div class="info-grid">
+                <div class="info-card">
+                  <div class="info-label">&#x26F4;&#xFE0E; Schiff</div>
+                  <div class="info-val">AIDAcosma</div>
+                </div>
+                <div class="info-card">
+                  <div class="info-label">💋 Reederei</div>
+                  <div class="info-val">AIDA Cruises</div>
+                </div>
+                <div class="info-card">
+                  <div class="info-label">🚢 Schiff</div>
+                  <div class="info-val">Mein Schiff 4</div>
+                </div>
+                <div class="info-card">
+                  <div class="info-label">🐦 Reederei</div>
+                  <div class="info-val">Phoenix Reisen</div>
+                </div>
+              </div>
+              <!-- Emoji legend -->
+              <div style="padding:8px 10px;font-size:8px;color:#8a8f99;">Reederei-Emojis aus ShippingLine.swift:</div>
+              <div style="padding:0 10px;display:flex;flex-wrap:wrap;gap:5px;">
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">💋 AIDA</div>
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">⚓ MSC</div>
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">👑 Royal Carib.</div>
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">🎩 Cunard</div>
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">🐦 Phoenix</div>
+                <div style="background:#f0f0f3;border-radius:8px;padding:4px 8px;font-size:9px;">🏰 Disney</div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Emoji als &ldquo;Logos&rdquo; &mdash; kein Markenbezug, Hobbyoptik</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <span class="ba-label after">Nachher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:360px;">
+              <div class="sbar"><span>9:41</span><span>84%</span></div>
+              <div class="nbar"><span class="nbar-title">Detailansicht</span></div>
+              <!-- Monogramm Showcase -->
+              <div style="padding:8px 10px 4px;font-size:8px;color:#8a8f99;font-weight:600;">Marken-Monogramme &mdash; NEU</div>
+              <div style="padding:0 10px;display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px;">
+                <!-- AIDA Magenta -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#E10A78;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#fff;">AI</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">AIDA Cruises</span>
+                </div>
+                <!-- MSC Navy -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#003087;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#fff;">MC</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">MSC Cruises</span>
+                </div>
+                <!-- Royal Caribbean Gold -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#0057A8;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#FFD700;">RC</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">Royal Caribbean</span>
+                </div>
+                <!-- Cunard Rot -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#C41230;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#fff;">CU</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">Cunard</span>
+                </div>
+                <!-- TUI Mein Schiff -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#0060a0;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#fff;">MS</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">Mein Schiff</span>
+                </div>
+                <!-- Disney Blau -->
+                <div style="display:flex;align-items:center;gap:6px;background:#fff;border-radius:10px;padding:5px 8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                  <div style="width:22px;height:22px;border-radius:7px;background:#003087;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#FFD700;">DC</div>
+                  <span style="font-size:8.5px;font-weight:700;color:#1c1c1e;">Disney Cruise</span>
+                </div>
+              </div>
+              <div style="padding:6px 10px;font-size:8px;color:#8a8f99;">Monogramm = 2 Buchstaben in Markenfarbe. Kein Logo-Asset n&ouml;tig.</div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Farbige Monogramm-Chips mit echten Markenfarben</div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Sofortige Wiedererkennung: AIDA-Magenta, MSC-Navyblau, Cunard-Rot sind bekannte Markenfarben</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Keine Logo-Lizenz-Probleme &mdash; Monogramme gelten als typografische Darstellung, nicht als Markenlogo</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Konsistent &uuml;ber Listen-Card, Detail-Header und Einstellungen &mdash; ein Objekt, ein Erscheinungsbild</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>In SwiftUI trivial: <code>Text("AI")</code> mit farbigem <code>RoundedRectangle</code>-Hintergrund</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Markenfarbe als neues Feld in ShippingLine.swift &mdash; minimale Modell&auml;nderung</span></div>
+        <div class="effort-row">
+          <span class="badge badge-s">Aufwand S</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+        <div class="assumption">
+          <strong>Annahme &mdash; zur Best&auml;tigung:</strong>
+          Markenfarben basieren auf &ouml;ffentlich bekannten Farbwelten der Reedereien. Kein Rechtsrat eingeholt &mdash; Andre best&auml;tigt Unbedenklichkeit.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 6 — VERBESSERUNG 3: HERO-DETAIL-HEADER
+=================================================================== -->
+<div class="slide" id="s6">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 6 / 12 &mdash; Verbesserung 3</div>
+    <div class="slide-title">Hero-Detail-Header</div>
+    <div class="slide-sub">Das Foto nimmt den oberen Bereich der Detailansicht ein &mdash; Titel und Reederei liegen als Overlay drauf. Darunter: kompakte Zahlen-Zeile statt sechs gleichf&ouml;rmige Info-Kacheln.</div>
+
+    <div class="ba-row">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <span class="ba-label before">Vorher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:400px;">
+              <div class="sbar"><span>9:41</span><span>84%</span></div>
+              <div class="nbar" style="justify-content:center;">
+                <span style="font-size:11px;font-weight:700;color:#1c1c1e;">Mittelmeer Kreuzfahrt</span>
+              </div>
+              <!-- Foto-Bereich: grau -->
+              <div style="margin:0 10px;height:80px;border-radius:12px;background:#dfe1e6;display:flex;align-items:center;justify-content:center;color:#b0b5bf;font-size:22px;">&#128444;&#xFE0F; Keine Fotos</div>
+              <!-- Stern-Rating -->
+              <div style="padding:6px 12px;font-size:12px;color:#f5a623;">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+              <!-- InfoCard Grid 2x3 -->
+              <div class="info-grid">
+                <div class="info-card"><div class="info-label">&#x26F4;&#xFE0E; Schiff</div><div class="info-val">AIDAcosma</div></div>
+                <div class="info-card"><div class="info-label">💋 Reederei</div><div class="info-val">AIDA Cruises</div></div>
+                <div class="info-card"><div class="info-label">&#128197; Zeitraum</div><div class="info-val">12.&ndash;19.06.</div></div>
+                <div class="info-card"><div class="info-label">&#128336; Dauer</div><div class="info-val">8 Tage</div></div>
+                <div class="info-card"><div class="info-label">&#127760; Kabine</div><div class="info-val">Balkon &bull; 6112</div></div>
+                <div class="info-card"><div class="info-label"># Buchung</div><div class="info-val">SHP-00421</div></div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Grauer Platzhalter, 6 gleich gewichtete Kacheln, kein Anker-Punkt</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <span class="ba-label after">Nachher</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:400px;">
+              <!-- Hero: farbiger Gradient als Foto-Ersatz -->
+              <div style="height:130px;background:linear-gradient(165deg,#0C8CE9 0%,#1A365D 70%,#091520 100%);position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:10px 12px 8px;">
+                <!-- Statusbar hell -->
+                <div style="position:absolute;top:0;left:0;right:0;height:22px;padding:6px 14px 0;display:flex;justify-content:space-between;font-size:7.5px;font-weight:700;color:rgba(255,255,255,.9);">
+                  <span>9:41</span><span>84%</span>
+                </div>
+                <!-- Monogramm -->
+                <div style="position:absolute;top:28px;left:12px;width:22px;height:22px;border-radius:7px;background:#E10A78;display:flex;align-items:center;justify-content:center;font-size:7.5px;font-weight:900;color:#fff;">AI</div>
+                <!-- Bewertung -->
+                <div style="position:absolute;top:28px;right:12px;font-size:10px;color:#f5c842;">&#9733;&#9733;&#9733;&#9733;&#9734;</div>
+                <!-- Titel -->
+                <div style="font-weight:800;font-size:14px;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);">Mittelmeer Kreuzfahrt</div>
+                <div style="font-size:8.5px;color:rgba(255,255,255,.85);">AIDA Cruises &bull; AIDAcosma</div>
+              </div>
+              <!-- Stats-Zeile: 4 Zahlen statt 6 Kacheln -->
+              <div style="display:flex;justify-content:space-around;padding:8px 0;border-bottom:.5px solid #e0e2e8;background:#fff;">
+                <div style="text-align:center;">
+                  <div style="font-weight:800;font-size:12px;color:#0C8CE9;">8</div>
+                  <div style="font-size:7px;color:#8a8f99;">Tage</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-weight:800;font-size:12px;color:#0C8CE9;">5</div>
+                  <div style="font-size:7px;color:#8a8f99;">H&auml;fen</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-weight:800;font-size:12px;color:#0C8CE9;">3</div>
+                  <div style="font-size:7px;color:#8a8f99;">L&auml;nder</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-weight:800;font-size:12px;color:#FF6B35;">1.240&nbsp;&euro;</div>
+                  <div style="font-size:7px;color:#8a8f99;">Ausgaben</div>
+                </div>
+              </div>
+              <!-- Sections darunter -->
+              <div style="padding:8px 10px;font-size:8.5px;color:#4a6080;line-height:1.8;">
+                <div style="font-weight:700;color:#1c1c1e;margin-bottom:4px;">Route</div>
+                <div>&#9899; Barcelona &rarr; &#9899; Neapel &rarr; &#9899; Rom&hellip;</div>
+                <div style="margin-top:6px;font-weight:700;color:#1c1c1e;">Kabine &bull; Buchung</div>
+                <div>Balkon 6112 &bull; SHP-00421</div>
+              </div>
+              <div class="tabbar">
+                <div class="tab on"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Farbiger Hero-Header, 4 Kern-Zahlen, Kabine/Buchung als Flie&szlig;text darunter</div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Sofortiger emotionaler Einstieg: das erste, was der Nutzer sieht, ist die Reise selbst &mdash; nicht eine Kachel-Liste</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>4 Kern-Zahlen (Tage, H&auml;fen, L&auml;nder, Ausgaben) sind schneller erfassbar als 6 gleichgewichtige Kacheln</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Bestehende InfoCard-Komponente bleibt im Code &mdash; nur ihre Platzierung &auml;ndert sich</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Monogramm-Badge oben links bindet Verbesserung 2 kohärent ein</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Kollabierender Hero beim Scrollen (iOS-Standard via NavigationStack + offset) ist ein nat&uuml;rlicher n&auml;chster Schritt</span></div>
+        <div class="effort-row">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 7 — VERBESSERUNG 4: ZENTRALE FARBQUELLE
+=================================================================== -->
+<div class="slide" id="s7">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 7 / 12 &mdash; Verbesserung 4</div>
+    <div class="slide-title">Zentrale Farbquelle</div>
+    <div class="slide-sub">Color+Theme.swift als einzige Wahrheit ausbauen &mdash; keine Duplikate, keine Ad-hoc-Farben in Views. Paletten-Erweiterung um Reederei-Markenfarben und semantische Zust&auml;nde.</div>
+
+    <div class="ba-row" style="gap:20px;">
+      <!-- Ist-State / Palette Chaos -->
+      <div class="ba-col" style="flex:1;min-width:0;">
+        <span class="ba-label before">Vorher &mdash; Farb-Wildwuchs</span>
+        <!-- Code-Snippet-artige Box -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;font-family:'SF Mono','Fira Code',monospace;font-size:11px;line-height:1.8;color:#c8d8e8;width:100%;max-width:360px;text-align:left;">
+          <div style="color:var(--muted);font-size:10px;margin-bottom:8px;">Color+Theme.swift:41 &mdash; korrekt</div>
+          <div><span style="color:#6a9fb5;">static let</span> <span style="color:#a8d4f5;">routeColors</span> = [<span style="color:#90c290;">.oceanBlue</span>, ...]</div>
+          <div style="margin-top:12px;color:var(--muted);font-size:10px;">MapView.swift:44 &mdash; Duplikat !</div>
+          <div><span style="color:#6a9fb5;">private let</span> <span style="color:#f0a0a0;">routeColors</span>: [Color] = [</div>
+          <div style="padding-left:16px;color:#f0a0a0;">.blue, .orange, .green, .purple...</div>
+          <div>]</div>
+          <div style="margin-top:12px;color:var(--muted);font-size:10px;">CruiseDetailView.swift:194&ndash;196</div>
+          <div>.foregroundStyle(<span style="color:#f0a0a0;">.cyan</span>) &larr; Seetag</div>
+          <div>.foregroundStyle(<span style="color:#f0a0a0;">.blue</span>) &larr; Hafen-Pin</div>
+          <div style="margin-top:12px;color:var(--red);font-size:10px;">3 verschiedene Wahrheiten f&uuml;r dieselbe Semantik</div>
+        </div>
+      </div>
+
+      <!-- Palette Vorschlag -->
+      <div class="ba-col" style="flex:1.4;min-width:0;">
+        <span class="ba-label after">Nachher &mdash; Erweiterte Palette</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:440px;">
+
+          <!-- Brand -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Brand</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#0C8CE9;"></div>
+                <div style="font-size:12px;"><strong>oceanBlue</strong><br><span style="color:var(--muted);font-size:10px;">#0C8CE9 &mdash; Prim&auml;r</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#1A365D;"></div>
+                <div style="font-size:12px;"><strong>navyDark</strong><br><span style="color:var(--muted);font-size:10px;">#1A365D &mdash; Akzent</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#FF6B35;"></div>
+                <div style="font-size:12px;"><strong>sunsetOrange</strong><br><span style="color:var(--muted);font-size:10px;">#FF6B35 &mdash; Highlight</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#34C759;"></div>
+                <div style="font-size:12px;"><strong>seaGreen</strong><br><span style="color:var(--muted);font-size:10px;">#34C759 &mdash; Positiv</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semantisch -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Semantisch (NEU)</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#0C8CE9;border:2px solid #fff;"></div>
+                <div style="font-size:12px;"><strong>portPin</strong><br><span style="color:var(--muted);font-size:10px;">= oceanBlue &mdash; Hafen</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#36A9F0;border:2px dashed #0C8CE9;"></div>
+                <div style="font-size:12px;"><strong>seaDayPin</strong><br><span style="color:var(--muted);font-size:10px;">= oceanLight &mdash; Seetag</span></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:24px;height:24px;border-radius:6px;background:#FF6B35;"></div>
+                <div style="font-size:12px;"><strong>homePortPin</strong><br><span style="color:var(--muted);font-size:10px;">= sunset &mdash; Heimathafen</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reederei-Chips -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;grid-column:1/-1;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Reederei-Markenfarben (NEU &mdash; in ShippingLine.swift)</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#E10A78;"></div>AIDA</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#003087;"></div>MSC</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#0057A8;"></div>Royal Carib.</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#C41230;"></div>Cunard</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#0060a0;"></div>Mein Schiff</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#003087;"></div>Disney</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#CE1126;"></div>Costa</div>
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;"><div style="width:16px;height:16px;border-radius:5px;background:#D32F2F;"></div>NCL</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box" style="max-width:240px;">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Eine &Auml;nderung an <code>Color+Theme</code> propagiert sofort &uuml;berall &mdash; kein Suchen/Ersetzen in 5 Views</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Semantische Farbtoken (<code>portPin</code>, <code>seaDayPin</code>) machen Dark-Mode und Accessibility trivial</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Reederei-Markenfarbe als <code>brandColor: String</code>-Feld in ShippingLine &mdash; minimale Datenschicht-&Auml;nderung</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>MapView.swift:44 wird zu einem Einzeiler: <code>Color.routeColor(at:)</code></span></div>
+        <div class="effort-row">
+          <span class="badge badge-s">Aufwand S</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+        <!-- Mini In-Action Mockup -->
+        <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;">In Aktion: Route-Liste</div>
+          <div style="background:#f2f2f7;border-radius:10px;padding:8px;font-size:9px;">
+            <div style="display:flex;gap:7px;align-items:center;margin-bottom:5px;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#FF6B35;flex-shrink:0;"></div>
+              <span style="color:#1c1c1e;font-weight:700;">Barcelona</span>
+              <span style="color:#8a8f99;margin-left:auto;font-size:8px;">Heimathafen</span>
+            </div>
+            <div style="display:flex;gap:7px;align-items:center;margin-bottom:5px;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#36A9F0;border:1.5px dashed #0C8CE9;flex-shrink:0;"></div>
+              <span style="color:#1c1c1e;">Seetag</span>
+              <span style="color:#8a8f99;margin-left:auto;font-size:8px;">Adria</span>
+            </div>
+            <div style="display:flex;gap:7px;align-items:center;margin-bottom:5px;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div>
+              <span style="color:#1c1c1e;">Neapel</span>
+              <span style="color:#8a8f99;margin-left:auto;font-size:8px;">09:00&ndash;18:00</span>
+            </div>
+            <div style="display:flex;gap:7px;align-items:center;">
+              <div style="width:14px;height:14px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div>
+              <span style="color:#1c1c1e;">Rom (Civitavecchia)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 8 — VERBESSERUNG 5: HAFEN-PIN VEREINHEITLICHEN
+=================================================================== -->
+<div class="slide" id="s8">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 8 / 12 &mdash; Verbesserung 5 (G4)</div>
+    <div class="slide-title">Einheitliche Hafen-Pins</div>
+    <div class="slide-sub">Ein Pin-Design &uuml;ber alle drei Kontexte &mdash; Karte, Formular und Detailansicht. Farbe als semantisches Signal: Hafen = oceanBlue, Seetag = hellblau, Heimathafen = sunsetOrange.</div>
+
+    <div class="ba-row">
+      <!-- BEFORE: 3 verschiedene Pins -->
+      <div class="ba-col">
+        <span class="ba-label before">Vorher &mdash; 3 verschiedene Wahrheiten</span>
+        <div style="display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;">
+          <!-- MapView -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;">MapView.swift:66&ndash;80</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#007aff;display:flex;align-items:center;justify-content:center;font-size:14px;">&#9875;</div>
+              <div style="font-size:12px;">Start: <code>ferry.fill</code>, routeColor (z.B. .blue)</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#ff9500;display:flex;align-items:center;justify-content:center;font-size:14px;">&#128205;</div>
+              <div style="font-size:12px;">Folge-Hafen: <code>mappin.circle.fill</code>, routeColor (z.B. .orange)</div>
+            </div>
+          </div>
+          <!-- CruiseDetailView -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;">CruiseDetailView.swift:194&ndash;196</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#007aff;display:flex;align-items:center;justify-content:center;font-size:14px;">&#128205;</div>
+              <div style="font-size:12px;">Hafen: <code>mappin.circle.fill</code>, .blue (hart)</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:6px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#32ade6;display:flex;align-items:center;justify-content:center;font-size:14px;">&#127754;</div>
+              <div style="font-size:12px;">Seetag: <code>water.waves</code>, .cyan (hart)</div>
+            </div>
+          </div>
+          <!-- PortFormView -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:8px;">PortFormView &mdash; accentColor</div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--ocean);display:flex;align-items:center;justify-content:center;font-size:14px;">&#128205;</div>
+              <div style="font-size:12px;">accentColor &mdash; je nach System-Tint verschieden</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AFTER: Ein System -->
+      <div class="ba-col">
+        <span class="ba-label after">Nachher &mdash; Ein Pin-System</span>
+        <div style="display:flex;flex-direction:column;gap:14px;width:100%;max-width:280px;">
+          <!-- Pin-Typen -->
+          <div style="background:var(--surface);border:1px solid var(--sea);border-radius:10px;padding:14px;">
+            <div style="font-size:10px;color:var(--sea);font-weight:700;margin-bottom:10px;">Pin-Typ-System</div>
+            <!-- Hafen -->
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#0C8CE9;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(12,140,233,.4);">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="white"><circle cx="7" cy="5" r="3" fill="white"/><line x1="7" y1="8" x2="7" y2="13" stroke="white" stroke-width="1.5"/><line x1="4" y1="11" x2="10" y2="11" stroke="white" stroke-width="1.5"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700;">Hafen-Pin</div>
+                <div style="font-size:10px;color:var(--muted);">Color.portPin (= oceanBlue)</div>
+              </div>
+            </div>
+            <!-- Heimathafen -->
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#FF6B35;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(255,107,53,.4);">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="white"><polygon points="7,1 2,13 7,10 12,13" fill="white"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700;">Heimathafen</div>
+                <div style="font-size:10px;color:var(--muted);">Color.homePortPin (= sunsetOrange)</div>
+              </div>
+            </div>
+            <!-- Seetag -->
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="width:32px;height:32px;border-radius:50%;background:#36A9F0;border:2px dashed #0C8CE9;display:flex;align-items:center;justify-content:center;">
+                <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5 Q4 1 7 5 Q10 9 13 5" stroke="white" stroke-width="1.8" fill="none"/></svg>
+              </div>
+              <div>
+                <div style="font-size:12px;font-weight:700;">Seetag</div>
+                <div style="font-size:10px;color:var(--muted);">Color.seaDayPin (= oceanLight), gestrichelt</div>
+              </div>
+            </div>
+          </div>
+          <!-- Konsistenz-Hinweis -->
+          <div style="background:rgba(12,140,233,.08);border:1px solid rgba(12,140,233,.2);border-radius:10px;padding:12px;font-size:11.5px;line-height:1.6;color:#b0cce8;">
+            <strong style="color:var(--ocean);">Alle drei Views</strong> nutzen dasselbe Token:<br>
+            <code style="font-size:10px;background:rgba(0,0,0,.2);padding:1px 5px;border-radius:4px;">Color.portPin</code> statt hart kodiertem <code style="font-size:10px;">.blue</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Nutzer lernt einen visuellen Code: <span style="color:#0C8CE9;font-weight:700;">blau = Hafen</span>, <span style="color:#FF6B35;font-weight:700;">orange = Start/Heimat</span>, <span style="color:#36A9F0;font-weight:700;">hellblau gestrichelt = Seetag</span></span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Karte, Liste und Formular vermitteln dieselbe Bedeutung &mdash; keine kognitive Dissonanz</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Technisch: <code>Color+Theme</code> bekommt 3 neue Token, alle Views lesen dasselbe Token</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>MapView.swift kann routefarb-abh&auml;ngige Pins f&uuml;r Multi-Reisen-Karte behalten &mdash; das Pin-Icon bleibt trotzdem konsistent</span></div>
+        <div class="effort-row">
+          <span class="badge badge-s">Aufwand S</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+        <div class="assumption">
+          <strong>Annahme:</strong> Auf der Multi-Reisen-Karte bleibt die Routenfarbe als Unterscheidung erhalten; nur das Icon-Design wird vereinheitlicht. Passt das?
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 9 — VERBESSERUNG 6: KI-ONBOARDING (G7)
+=================================================================== -->
+<div class="slide" id="s9">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 9 / 12 &mdash; Verbesserung 6 (G7)</div>
+    <div class="slide-title">KI-Mehrwert zeigen vor der API-Key-Wall</div>
+    <div class="slide-sub">Ein kurzer Wert-Screen direkt im Formular &mdash; Nutzer sieht was die KI leistet, bevor er nach einem API-Schl&uuml;ssel gefragt wird. &bdquo;Sieh zuerst, was du bekommst.&ldquo;</div>
+
+    <div class="ba-row">
+      <!-- BEFORE -->
+      <div class="ba-col">
+        <span class="ba-label before">Vorher &mdash; direkte Key-Abfrage</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:380px;">
+              <div class="sbar"><span>9:41</span><span>84%</span></div>
+              <div class="nbar"><span class="nbar-title">Einstellungen</span></div>
+              <div style="padding:4px 10px;">
+                <div style="font-size:7px;color:#8a8f99;text-transform:uppercase;letter-spacing:.06em;margin:6px 2px 3px;">KI-Funktionen</div>
+                <div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07);">
+                  <div style="padding:8px 10px;display:flex;justify-content:space-between;border-bottom:.5px solid #ececef;">
+                    <span style="font-size:9px;">&#10024; Gemini API</span>
+                    <span style="font-size:8px;color:#c0392b;">Nicht konfiguriert</span>
+                  </div>
+                  <div style="padding:8px 10px;border-bottom:.5px solid #ececef;color:#0C8CE9;font-size:9px;">&#128273; API-Key eingeben</div>
+                  <div style="padding:8px 10px;color:#0C8CE9;font-size:9px;">&#8599; Neuen Key bei Google erstellen</div>
+                </div>
+                <div style="font-size:7px;color:#8a8f99;margin:5px 2px;">Mit einem Gemini API-Key k&ouml;nnen Daten automatisch extrahiert werden.</div>
+              </div>
+              <div style="padding:30px 10px;text-align:center;color:#c0c5d0;font-size:9px;">
+                &#128274; KI-Import ausgeblendet bis Key gesetzt
+              </div>
+              <div class="tabbar">
+                <div class="tab"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Technische Key-Abfrage &mdash; kein Mehrwert erkl&auml;rt, Feature unsichtbar</div>
+      </div>
+
+      <!-- AFTER -->
+      <div class="ba-col">
+        <span class="ba-label after">Nachher &mdash; Wert-Screen zuerst</span>
+        <div class="phone">
+          <div class="phone-inner">
+            <div class="scr" style="min-height:380px;">
+              <!-- Wert-Screen im Formular -->
+              <div style="height:100%;background:#f2f2f7;">
+                <div class="sbar"><span>9:41</span><span>84%</span></div>
+                <div style="padding:0 10px 6px;">
+                  <div style="background:linear-gradient(145deg,#0C8CE9,#1A365D);border-radius:14px;padding:14px 12px;margin-bottom:8px;color:#fff;">
+                    <div style="font-size:7px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.8;margin-bottom:4px;">&#10024; KI-Buchungserfassung</div>
+                    <div style="font-weight:800;font-size:11px;margin-bottom:6px;">Eine Buchungsbest&auml;tigung &rarr; fertige Reise in Sekunden</div>
+                    <!-- Demo Flow -->
+                    <div style="background:rgba(255,255,255,.12);border-radius:9px;padding:8px;font-size:7.5px;line-height:1.7;">
+                      <div style="opacity:.8;">1. Buchungsbest&auml;tigung einf&uuml;gen (PDF oder Text)</div>
+                      <div style="opacity:.8;">2. KI erkennt: Reisedaten, Schiff, H&auml;fen, Kabine</div>
+                      <div>3. Reise ist vollst&auml;ndig bef&uuml;llt &#10003;</div>
+                    </div>
+                  </div>
+                  <!-- Beispiel-Ergebnis -->
+                  <div style="background:#fff;border-radius:12px;padding:9px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.07);">
+                    <div style="font-size:7px;color:#8a8f99;margin-bottom:4px;">Beispiel &mdash; so s&auml;he das Ergebnis aus:</div>
+                    <div style="font-size:9px;font-weight:800;color:#1c1c1e;">Nordsee-Runde</div>
+                    <div style="font-size:7.5px;color:#4a6080;display:flex;gap:8px;margin-top:2px;">
+                      <span>&#x26F4;&#xFE0E; AIDAperla</span>
+                      <span>&#128197; 14.&ndash;21. Aug.</span>
+                      <span>&#128205; 4 H&auml;fen</span>
+                    </div>
+                  </div>
+                  <!-- CTA -->
+                  <div style="background:#0C8CE9;color:#fff;border-radius:10px;padding:8px;text-align:center;font-size:9px;font-weight:800;">KI-Funktion einrichten &rarr;</div>
+                  <div style="text-align:center;font-size:7px;color:#8a8f99;margin-top:5px;">Ben&ouml;tigt einen kostenfreien Google-API-Key</div>
+                </div>
+                <div class="tabbar">
+                  <div class="tab"><span class="ic">&#x26F4;&#xFE0E;</span>Reisen</div>
+                  <div class="tab"><span class="ic">&#128506;</span>Karte</div>
+                  <div class="tab"><span class="ic">&#8943;</span>Mehr</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ba-caption">Wert-Demo mit Beispiel-Ergebnis &mdash; CTA f&uuml;hrt erst dann zum Key-Setup</div>
+      </div>
+
+      <!-- WHY -->
+      <div class="why-box">
+        <div class="why-title">Warum besser?</div>
+        <div class="why-item"><div class="why-dot"></div><span>Nutzer versteht was er bekommt, bevor er Aufwand betreibt &mdash; Conversion von &bdquo;Key-Setup-Starter&ldquo; steigt messbar</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Day One &amp; Craft verwenden exakt dieses Pattern: Feature-Preview mit konkretem Beispiel-Output vor dem Login/Sign-up</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Kein neuer Code-Pfad n&ouml;tig &mdash; nur ein zwischengeschalteter Screen vor dem bestehenden Key-Eingabe-Flow</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Bereitet spätere Monetarisierung vor: derselbe Screen kann auf &bdquo;Premium &mdash; verwaltete KI&ldquo; umgestellt werden, ohne den Flow zu &auml;ndern</span></div>
+        <div class="why-item"><div class="why-dot"></div><span>Audit-Befund H3: KI f&uuml;r 98% unerreichbar &mdash; dieser Screen halbiert die Absprung-Rate zumindest optisch</span></div>
+        <div class="effort-row">
+          <span class="badge badge-s">Aufwand S</span>
+          <span class="badge badge-ok">Risiko: Niedrig</span>
+        </div>
+        <div class="assumption">
+          <strong>Annahme &mdash; zur Best&auml;tigung:</strong>
+          Der Wert-Screen wird im CruiseFormView-Flow eingebaut (vor dem Key-Setup in SettingsView). Andre: soll das direkt im Formular erscheinen oder als eigenes Onboarding beim ersten App-Start?
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 10 — SYSTEM-ZUSAMMENSCHAU (Before/After Overlay)
+=================================================================== -->
+<div class="slide" id="s10">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 10 / 12 &mdash; Gesamtbild</div>
+    <div class="slide-title">Alle 6 Eingriffe zusammen</div>
+    <div class="slide-sub">Wie die App wirkt, wenn alle Verbesserungen aktiv sind &mdash; gleiche Substanz, anderes Niveau.</div>
+
+    <div style="display:flex;gap:32px;align-items:flex-start;flex:1;">
+      <!-- Vorher-Zusammenfassung -->
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--red);letter-spacing:.08em;margin-bottom:14px;">Heute</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;">Gro&szlig;e <strong>graue Platzhalter</strong> in der Liste statt Fotos</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Emoji-Logos</strong> (💋&#128081;🎩) ohne Markenbezug</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--red);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;">Detail: <strong>6 gleichf&ouml;rmige Kacheln</strong>, kein visueller Anker</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>3 verschiedene Hafen-Pin-Designs</strong> je nach View</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Ad-hoc Farben</strong> in Views, Duplikat von routeColors</div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>KI-Feature vollst&auml;ndig versteckt</strong> hinter technischer Key-Abfrage</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pfeil -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding-top:80px;color:var(--ocean);font-size:32px;">&#8594;</div>
+
+      <!-- Nachher-Zusammenfassung -->
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--sea);letter-spacing:.08em;margin-bottom:14px;">Nach Phase 2</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Foto-Held</strong> mit Gradient-Fallback &mdash; jede Reise hat einen Charakter</div>
+          </div>
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Marken-Monogramm-Chips</strong> in echten Reederei-Farben</div>
+          </div>
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Hero-Header</strong> mit Foto + 4 Kern-Zahlen als schnelle Orientierung</div>
+          </div>
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Ein Pin-System</strong> &uuml;ber alle Views &mdash; Nutzer lernt einen Code</div>
+          </div>
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>Color+Theme als einzige Wahrheit</strong> &mdash; kein Farb-Drift mehr</div>
+          </div>
+          <div style="background:rgba(52,199,89,.07);border:1px solid rgba(52,199,89,.2);border-radius:10px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--sea);margin-top:4px;flex-shrink:0;"></div>
+            <div style="font-size:13px;"><strong>KI-Wert-Screen</strong> zuerst &mdash; Feature-Conversion steigt deutlich</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 11 — ROADMAP / REIHENFOLGE
+=================================================================== -->
+<div class="slide" id="s11">
+  <div class="slide-inner">
+    <div class="slide-label">Slide 11 / 12 &mdash; Roadmap</div>
+    <div class="slide-title">Empfohlene Reihenfolge</div>
+    <div class="slide-sub">Drei Sprints von je 1&ndash;2 Wochen &mdash; sofortige Wirkung zuerst, systemische Sauberkeit danach.</div>
+
+    <div class="roadmap-grid">
+      <!-- Sprint 1 -->
+      <div class="roadmap-phase" style="border-top:3px solid var(--sea);">
+        <div class="phase-num">Sprint 1 &mdash; 1 Woche</div>
+        <div class="phase-title">Quick Wins</div>
+        <div class="phase-sub">Sofortige visuelle Verbesserung, minimales Risiko</div>
+
+        <div class="phase-item">
+          <div class="phase-dot dot-sea"></div>
+          <div>
+            <strong>V2: Marken-Monogramme</strong> &mdash; ShippingLine.swift um brandColor erweitern, CruiseCardView + InfoCard umbauen. Aufwand S, sofort sichtbar.
+          </div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-dot dot-sea"></div>
+          <div>
+            <strong>V4: Color+Theme s&auml;ubern</strong> &mdash; MapView-Duplikat entfernen, semantische Token (portPin, seaDayPin) hinzuf&uuml;gen. Aufwand S, systemische Basis.
+          </div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-dot dot-sea"></div>
+          <div>
+            <strong>V5: Pin-System</strong> &mdash; alle Views auf Color.portPin / seaDayPin umstellen. Aufwand S, h&auml;ngt von V4 ab.
+          </div>
+        </div>
+        <div class="effort-row" style="margin-top:auto;">
+          <span class="badge badge-s">Aufwand S&ndash;M</span>
+          <span class="badge badge-ok">Abh&auml;ngigkeit: keine</span>
+        </div>
+      </div>
+
+      <!-- Sprint 2 -->
+      <div class="roadmap-phase" style="border-top:3px solid var(--ocean);">
+        <div class="phase-num">Sprint 2 &mdash; 1&ndash;2 Wochen</div>
+        <div class="phase-title">Visuelle Kernpolitur</div>
+        <div class="phase-sub">Gr&ouml;&szlig;te Wirkung, mittlerer Aufwand</div>
+
+        <div class="phase-item">
+          <div class="phase-dot dot-ocean"></div>
+          <div>
+            <strong>V1: Foto-Karten</strong> &mdash; CruiseCardView komplett neu mit Foto-Hero + Gradient-Fallback. Thumbnail-Logik aus v1.5.0 nutzen.
+          </div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-dot dot-ocean"></div>
+          <div>
+            <strong>V3: Hero-Detail-Header</strong> &mdash; CruiseDetailView heroImageSection ausbauen, Stats-Zeile unter Hero, InfoCard-Grid nach unten.
+          </div>
+        </div>
+        <div class="effort-row" style="margin-top:auto;">
+          <span class="badge badge-m">Aufwand M</span>
+          <span class="badge badge-ok">Abh&auml;ngigkeit: V2 (Monogramm)</span>
+        </div>
+      </div>
+
+      <!-- Sprint 3 -->
+      <div class="roadmap-phase" style="border-top:3px solid var(--sunset);">
+        <div class="phase-num">Sprint 3 &mdash; 3&ndash;5 Tage</div>
+        <div class="phase-title">KI-Onboarding</div>
+        <div class="phase-sub">Conversion-Hebel, bereitet Monetarisierung vor</div>
+
+        <div class="phase-item">
+          <div class="phase-dot dot-amber"></div>
+          <div>
+            <strong>V6: KI-Wert-Screen</strong> &mdash; Neuer View (KIOnboardingView) mit Feature-Demo + Beispiel-Output, CTA f&uuml;hrt zum bestehenden Key-Setup-Flow.
+          </div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-dot dot-amber"></div>
+          <div>
+            <strong>Testen</strong> &mdash; A/B-Beobachtung: Hat sich die Rate der Nutzer mit konfiguriertem Key ge&auml;ndert? (manuell, keine Analytics).
+          </div>
+        </div>
+        <div class="phase-item">
+          <div class="phase-dot dot-amber"></div>
+          <div>
+            <strong>Foundation Phase 3</strong> &mdash; V6-Screen ist der gleiche Screen der sp&auml;ter &bdquo;Premium &mdash; verwaltete KI&ldquo; bewirbt.
+          </div>
+        </div>
+        <div class="effort-row" style="margin-top:auto;">
+          <span class="badge badge-s">Aufwand S</span>
+          <span class="badge badge-ok">Abh&auml;ngigkeit: keine</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;background:rgba(12,140,233,.08);border:1px solid rgba(12,140,233,.2);border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.6;">
+      <strong style="color:var(--ocean);">Gesamt-Einsch&auml;tzung:</strong>
+      Alle 6 Verbesserungen k&ouml;nnen in 3&ndash;4 Wochen Kalenderzeit umgesetzt werden (kein Vollzeit-Entwickler vorausgesetzt).
+      Der visuelle Qualit&auml;tssprung ist nach Sprint 1+2 bereits f&uuml;r alle Nutzer sichtbar.
+      Phase 2 ist damit der beste &bdquo;Bang for the Buck&ldquo; vor einer gr&ouml;&szlig;eren Monetarisierungs-Phase.
+    </div>
+  </div>
+</div>
+
+<!-- ===================================================================
+     SLIDE 12 — CLOSING / N&Auml;CHSTE SCHRITTE
+=================================================================== -->
+<div class="slide" id="s12">
+  <div class="cover-inner" style="max-width:680px;">
+    <div class="cover-badge">Freigabe-Entscheidung</div>
+    <div class="cover-title" style="font-size:clamp(2rem,4vw,3rem);margin-bottom:20px;">Was du jetzt entscheidest</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;text-align:left;margin-bottom:32px;">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;">
+        <div style="font-size:11px;font-weight:700;color:var(--sea);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Freigeben</div>
+        <div style="font-size:14px;line-height:1.6;color:#c8d8e8;">
+          Deck ist OK &rarr; Winston delegiert an Developer.
+          Sprint 1 (V2+V4+V5) kann sofort starten.
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px;">
+        <div style="font-size:11px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Anpassen</div>
+        <div style="font-size:14px;line-height:1.6;color:#c8d8e8;">
+          Einzelne Verbesserungen rausnehmen / priorisieren. Annahmen unten beantworten &rarr; Deck-Update.
+        </div>
+      </div>
+    </div>
+
+    <div style="background:rgba(255,169,64,.07);border:1px solid rgba(255,169,64,.25);border-radius:14px;padding:20px 24px;text-align:left;margin-bottom:24px;">
+      <div style="font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px;">Offene Annahmen &mdash; deine R&uuml;ckmeldung erbeten</div>
+      <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5;color:#e0c080;">
+        <div>A1 &bull; <strong>Foto-Gradient-Fallback:</strong> oceanBlue&rarr;navyDark OK, oder lieber neutrales Slate-Grau?</div>
+        <div>A2 &bull; <strong>Markenfarben der Reedereien:</strong> Unbedenklichkeit aus deiner Sicht best&auml;tigen?</div>
+        <div>A3 &bull; <strong>Hafen-Pins auf Karte:</strong> Routenfarbe als Unterscheidungsmerkmal behalten (bei &gt;1 Reise auf der Karte)?</div>
+        <div>A4 &bull; <strong>KI-Wert-Screen:</strong> Im CruiseFormView beim ersten KI-Tap, oder beim ersten App-Start als Onboarding?</div>
+      </div>
+    </div>
+
+    <div style="font-size:13px;color:var(--muted);">
+      Pitch-Deck: <code style="color:var(--ocean);">docs/ux-pitch-decks/phase-2-visuelle-politur.html</code> &mdash; offline und self-contained.
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<script>
+/* ===== NAVIGATION ENGINE ===== */
+const TOTAL = 12;
+let cur = 1;
+
+function show(n) {
+  n = Math.max(1, Math.min(TOTAL, n));
+  document.querySelectorAll('.slide').forEach((s, i) => {
+    s.classList.toggle('active', i + 1 === n);
+  });
+  cur = n;
+  // progress
+  document.getElementById('progress').style.width = ((n / TOTAL) * 100) + '%';
+  // counter
+  document.getElementById('counter').textContent = n + ' / ' + TOTAL;
+  // hash
+  history.replaceState(null, '', '#' + n);
+}
+
+function go(delta) { show(cur + delta); }
+
+// keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(+1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  else if (e.key === 'Home') { e.preventDefault(); show(1); }
+  else if (e.key === 'End') { e.preventDefault(); show(TOTAL); }
+});
+
+// deep-link via hash
+(function() {
+  const h = parseInt(location.hash.slice(1));
+  show(isNaN(h) ? 1 : h);
+})();
+</script>
+</body>
+</html>

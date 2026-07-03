@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projekt-Audit — ShipTrip — 2026-07-03</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #181b24; --surface-2: #1f2330; --border: #2a2f3e;
+    --text: #e8eaf0; --muted: #9aa1b5; --accent: #6c8cff;
+    --critical: #ff5a6a; --high: #ff9f43; --medium: #ffd166; --low: #7bd88f;
+    --ist: #ff5a6a; --soll: #4cd97b; --radius: 12px;
+    /* ShipTrip-Brandfarben (aus Color+Theme.swift) */
+    --st-ocean: #0C8CE9; --st-oceanlight: #36A9F0; --st-navy: #1A365D;
+    --st-orange: #FF6B35; --st-green: #34C759;
+    --ios-bg: #F2F2F7; --ios-card: #FFFFFF; --ios-gray: #8E8E93;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 0 0 80px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.4rem; margin: 56px 0 16px; padding-top: 24px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 24px 0 10px; }
+  p { margin: 0 0 12px; color: var(--text); }
+  .muted { color: var(--muted); }
+  code { background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 0.85em; }
+  header { padding: 48px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .meta-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: 0.82rem; color: var(--muted); }
+  .meta-chip strong { color: var(--text); font-weight: 600; }
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 20px 0; }
+  .score-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .score-tile .domain { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .score-tile .score { font-size: 1.6rem; font-weight: 700; margin: 4px 0 2px; }
+  .score-tile .note { font-size: 0.84rem; color: var(--muted); }
+  .score-5, .score-4 { color: var(--low); } .score-3 { color: var(--medium); } .score-2 { color: var(--high); } .score-1 { color: var(--critical); }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+  .badge.critical { background: rgba(255,90,106,.15); color: var(--critical); }
+  .badge.high { background: rgba(255,159,67,.15); color: var(--high); }
+  .badge.medium { background: rgba(255,209,102,.15); color: var(--medium); }
+  .badge.low { background: rgba(123,216,143,.15); color: var(--low); }
+  details.finding { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 10px 0; overflow: hidden; }
+  details.finding summary { cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-weight: 600; list-style: none; }
+  details.finding summary::-webkit-details-marker { display: none; }
+  details.finding[open] summary { border-bottom: 1px solid var(--border); }
+  details.finding .body { padding: 14px 18px; font-size: 0.92rem; }
+  .finding .body dt { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 10px; }
+  .finding .body dd { margin: 2px 0 0; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0 30px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; position: relative; }
+  .card.ist  { border-top: 3px solid var(--ist); }
+  .card.soll { border-top: 3px solid var(--soll); }
+  .card .tag { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card.ist .tag  { color: var(--ist); } .card.soll .tag { color: var(--soll); }
+  .card h4 { margin: 6px 0 8px; font-size: 1.02rem; }
+  .card .evidence { font-size: 0.83rem; color: var(--muted); border-left: 2px solid var(--border); padding-left: 10px; margin-top: 10px; }
+  .pair-title { font-size: 1.1rem; font-weight: 700; margin: 28px 0 0; }
+  .factrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .fact { background: var(--surface-2); border-radius: 7px; padding: 3px 10px; font-size: 0.78rem; color: var(--muted); }
+  .fact strong { color: var(--text); }
+  .proto { margin-top: 14px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .proto .stage { position: relative; overflow: hidden; background: #0a0a0f; display: flex; justify-content: center; padding: 14px 0; }
+  .proto.diagram .stage { min-height: 150px; background: var(--surface-2); padding: 12px; display: block; }
+  .proto .caption { font-size: 0.72rem; color: var(--muted); padding: 6px 10px; border-top: 1px solid var(--border); }
+  /* iPhone-Mini-Mockup */
+  .phone { width: 210px; background: #000; border-radius: 26px; padding: 7px; box-shadow: 0 8px 26px rgba(0,0,0,.5); }
+  .screen { background: var(--ios-bg); border-radius: 20px; overflow: hidden; font-size: 8.5px; line-height: 1.35; color: #111; position: relative; height: 372px; }
+  .screen.dark { background: #000; color: #fff; }
+  .sbar { display:flex; justify-content:space-between; padding: 5px 12px 2px; font-weight:700; font-size:8px; }
+  .navtitle { font-size: 15px; font-weight: 800; padding: 6px 12px 2px; letter-spacing: -0.02em; }
+  .search { background: #E4E4E9; border-radius: 8px; margin: 4px 10px; padding: 4px 8px; color: #8E8E93; }
+  .stcard { background: var(--ios-card); border-radius: 9px; margin: 5px 10px; padding: 7px 9px; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .hero { margin: 5px 10px; border-radius: 12px; height: 96px; background: linear-gradient(120deg, #1A365D 0%, #0C8CE9 55%, #1b6e6e 100%); color:#fff; position: relative; padding: 8px 9px; display:flex; flex-direction:column; justify-content:flex-end; }
+  .hero .kicker { position:absolute; top:7px; left:0; background:var(--st-orange); color:#fff; font-weight:700; padding:1px 7px; border-radius:0 7px 7px 0; font-size:7px; }
+  .hero b { font-size: 12px; }
+  .strip { display:flex; gap:4px; margin: 5px 10px; background:var(--ios-card); border-radius:10px; padding:5px; }
+  .strip div { flex:1; text-align:center; border-radius:7px; padding:3px 0; }
+  .strip b { display:block; font-size:10px; }
+  .tabbar { position:absolute; bottom:0; left:0; right:0; background:rgba(255,255,255,.94); display:flex; border-top: .5px solid #ddd; padding: 4px 0 7px; }
+  .screen.dark .tabbar { background: rgba(20,20,22,.94); border-top-color:#333; }
+  .tabbar div { flex:1; text-align:center; color:#8E8E93; font-size:6.5px; }
+  .tabbar div.on { color: var(--st-ocean); }
+  .tabbar span { display:block; font-size:11px; }
+  .btnrow { display:flex; justify-content:space-between; padding: 4px 10px; }
+  .cbtn { width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.15); display:flex; align-items:center; justify-content:center; color:var(--st-ocean); font-weight:700; font-size:11px; }
+  .anno { position:absolute; background: rgba(255,90,106,.92); color:#fff; font-size:7px; font-weight:700; padding:2px 6px; border-radius:6px; z-index:5; }
+  .anno.ok { background: rgba(52,199,89,.92); }
+  .paywall { margin: 8px 10px; background:linear-gradient(160deg,#1A365D,#0C8CE9); border-radius:12px; color:#fff; padding:10px 9px; }
+  .paywall .price { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.4); border-radius:8px; padding:4px 6px; margin-top:4px; display:flex; justify-content:space-between; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.07em; }
+  tr.recommended td { background: rgba(76,217,123,.07); }
+  .tabs { display: flex; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
+  .tabs button { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 8px 18px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .direction { display: none; padding-top: 8px; }
+  .direction.active { display: block; }
+  .leitidee { background: linear-gradient(135deg, rgba(108,140,255,.12), transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 16px 0; font-size: 1.02rem; }
+  .gate-ok { color: var(--soll); font-weight: 700; } .gate-skip { color: var(--medium); font-weight: 700; } .gate-fail { color: var(--critical); font-weight: 700; }
+  ul.good { list-style: none; }
+  ul.good li { padding: 8px 0 8px 28px; position: relative; }
+  ul.good li::before { content: "✓"; position: absolute; left: 0; color: var(--soll); font-weight: 800; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; margin: 24px 0; font-size: 0.9rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; margin-right: 18px; }
+  svg text { font-family: -apple-system, sans-serif; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 1 · HEADER -->
+  <header>
+    <p class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;">Projekt-Audit · Nachtlauf</p>
+    <h1>ShipTrip 🚢 v1.5.1 (Build 8)</h1>
+    <div class="meta-row">
+      <span class="meta-chip">Datum <strong>03.07.2026, 02:00</strong></span>
+      <span class="meta-chip">Modus <strong>Final-Gate (Codex + Gemini am Schluss)</strong></span>
+      <span class="meta-chip">Tiefe <strong>Voll-Audit, 5 Spezialisten-Pässe</strong></span>
+      <span class="meta-chip">Richtungen <strong>3</strong></span>
+    </div>
+    <p class="muted" style="margin-top:14px;"><strong style="color:var(--text)">Briefing (Andre):</strong> Zusätzlich zum Standard-Scope ausdrücklich prüfen: UX/UI, User Story / User Journey, USP (Alleinstellung im Markt), Architektur &amp; Code-Qualität. Kein Agent-Team, Codex prüft nur am Schluss, genau 3 Verbesserungs-Richtungen.</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#summary">Summary</a><a href="#scorecard">Scorecard</a><a href="#story">User Story &amp; USP</a><a href="#good">Was gut läuft</a><a href="#findings">Befunde</a><a href="#improvements">Verbesserungen</a><a href="#roadmap">Roadmap</a><a href="#gates">Gate-Log</a><a href="#appendix">Anhang</a>
+  </nav>
+
+  <!-- 2 · EXECUTIVE SUMMARY -->
+  <h2 id="summary">Executive Summary</h2>
+  <p><strong>Gesamturteil: solide gebaut, aber das Produktversprechen ist noch nicht eingelöst.</strong> Technisch ist ShipTrip in bemerkenswert gutem Zustand für ein Ein-Personen-Projekt: saubere Architektur ohne Fremd-Abhängigkeiten, 48 grüne Unit-Tests (heute Nacht real ausgeführt), durchdachte Foto-Pipeline, ehrlich CloudKit-vorbereitetes Datenmodell, keine Datensammelei. Die Hauptansicht sieht nach dem Redesign bereits „premium" aus.</p>
+  <p>Aber: Die App <em>heißt</em> intern „Premium-Reisetagebuch" — und ist heute ein <strong>Reise-Archiv</strong>. Es gibt kein Tagebuch im eigentlichen Sinn (keine Tageseinträge, keine Foto-Beschriftungen), kein Teilen einer Reise, kein Onboarding für neue Nutzer, und das stärkste Feature (KI-Erfassung) ist hinter einer technischen Hürde versteckt, die normale Nutzer nie nehmen werden (eigener Google-API-Key). Die Markt-Recherche dieser Nacht bestätigt: die Nische „Kreuzfahrt-Tagebuch" ist real und unbesetzt — aber sie gehört ShipTrip nur, wenn die Tagebuch-Story auch im Produkt steckt.</p>
+  <p><strong>Top-3-Risiken:</strong> ① Beim <em>Bearbeiten</em> einer Reise werden alle Häfen gelöscht und neu angelegt — importierte Hafen-Ausflüge/-Bilder verschwinden dabei endgültig, und alle Häfen bekommen neue interne IDs (bricht die Export-/Sync-Stabilität aus ADR-002). ② Der ZIP-Import vertraut fremden Dateien blind (Pfad-Manipulation und Speicher-Bomben möglich). ③ „Alle Daten löschen" löscht weder den API-Key noch geplante Erinnerungen — ein Privacy-Versprechen, das nicht ganz gehalten wird. <strong>Außerdem wichtig:</strong> Deine Mac-Festplatte war heute Nacht zu 100 % voll (694 MB frei) — der erste Test-Build schlug deshalb fehl. Bitte zeitnah Platz schaffen.</p>
+  <p><strong>Was du entscheiden solltest:</strong> Welche der 3 Richtungen (unten) den Kurs bestimmt — Empfehlung: Richtung 1 (Festigen) sofort als Pflichtprogramm, Richtung 2 (Echtes Reisetagebuch) als Produkt-Kurs, Richtung 3 (Managed-KI &amp; Abo) danach schrittweise.</p>
+
+  <!-- 3 · SCORECARD -->
+  <h2 id="scorecard">Scorecard</h2>
+  <div class="scorecard">
+    <div class="score-tile"><div class="domain">Architektur</div><div class="score score-4">4 / 5</div><div class="note">Sauber geschichtet, CloudKit-ready; aber Swift-5/6-Drift &amp; God-File.</div></div>
+    <div class="score-tile"><div class="domain">Code-Qualität</div><div class="score score-4">4 / 5</div><div class="note">Diszipliniert &amp; gut kommentiert; toter Code, ein Datenverlust-Pfad.</div></div>
+    <div class="score-tile"><div class="domain">Tests</div><div class="score score-3">3 / 5</div><div class="note">48/48 grün (verifiziert), Export stark getestet — Services (KI, Keychain, Notifications) bei 0.</div></div>
+    <div class="score-tile"><div class="domain">Doku</div><div class="score score-2">2 / 5</div><div class="note">MODELS.md &amp; API.md substanziell falsch; größter Service fehlt komplett.</div></div>
+    <div class="score-tile"><div class="domain">UI/UX</div><div class="score score-3">3 / 5</div><div class="note">Hauptansicht poliert; kein Onboarding, Journal-Kern &amp; Teilen fehlen.</div></div>
+    <div class="score-tile"><div class="domain">Security &amp; Privacy</div><div class="score score-3">3 / 5</div><div class="note">Kein Tracking, Keychain, HTTPS; Import ungehärtet, Lösch-Lücken.</div></div>
+    <div class="score-tile"><div class="domain">Performance</div><div class="score score-4">4 / 5</div><div class="note">Thumbnails/Downsampling durchdacht; Foto-Grid &amp; Hafen-Suche mit Luft.</div></div>
+    <div class="score-tile"><div class="domain">DX / Umgebung</div><div class="score score-3">3 / 5</div><div class="note">Build simpel; SETUP stale, 43 Dateien + 200 Assets uncommittet, Platte voll.</div></div>
+    <div class="score-tile"><div class="domain">Produkt / USP</div><div class="score score-3">3 / 5</div><div class="note">Nische real &amp; unbesetzt; stärkstes Feature unerreichbar, Story-Lücke.</div></div>
+  </div>
+
+  <!-- USER STORY & USP -->
+  <h2 id="story">User Story &amp; USP</h2>
+  <h3>Die vier Journeys — wo die Geschichte trägt und wo sie reißt</h3>
+  <table>
+    <tr><th>Journey</th><th>Zustand heute</th><th>Urteil</th></tr>
+    <tr><td><strong>Erststart</strong></td><td>Leere Liste mit „Tippe auf +". Kein Onboarding, kein Wertversprechen, Demo-Daten nur in Debug-Builds.</td><td>❌ Größte Reibung der App</td></tr>
+    <tr><td><strong>Reise anlegen</strong></td><td>Langes 7-Sektionen-Formular; Häfen einzeln über Sub-Dialoge. Die KI-Auto-Erfassung wäre der Gamechanger — ist aber ohne eigenen Google-API-Key unsichtbar.</td><td>⚠️ Funktioniert, aber mühsam</td></tr>
+    <tr><td><strong>Während der Reise</strong></td><td>Nur ein einziges Notiz-Feld pro <em>Reise</em>. Keine Tageseinträge, keine Foto-Beschriftungen, kein „Heute"-Einstieg.</td><td>❌ Hier reißt die Tagebuch-Story</td></tr>
+    <tr><td><strong>Nach der Reise</strong></td><td>Schöne Detailansicht (Foto-Hero, Route, Statistik) — aber kein Teilen, kein Rückblick, nur technisches ZIP-Voll-Backup.</td><td>⚠️ Erinnern ja, Zeigen nein</td></tr>
+  </table>
+  <h3>USP-These (aus der Markt-Recherche dieser Nacht)</h3>
+  <p>ShipTrip ist heute die <strong>einzige gefundene App</strong>, die echtes Kreuzfahrt-Vokabular (Reederei, Kabine, Seetage, ~1.800-Häfen-Datenbank offline) mit Premium-Journal-Anspruch und Privacy-first-Architektur (kein Account, alles lokal) verbindet. Generische Reise-Tagebücher (Journi, Polarsteps, Journo, Day One) kennen keine Kreuzfahrt; Kreuzfahrt-Apps (Shipmate 2M+ Downloads, The Cruise Globe) sind Planungs-/Tracking-Tools, kein Erinnerungs-Tagebuch. Der direkteste Klon (My Cruises) ist mit 1★ praktisch tot. <strong>Aber:</strong> Das <em>bewiesen zahlungsrelevante</em> Argument der Zielgruppe — „funktioniert 100 % offline auf See" (ein Journi-Nutzer nennt genau das als Upgrade-Grund) — wird im Marketing nicht ausgespielt, und der Deals-Tab verwässert die Positionierung eher, als dass er sie stärkt. Preis-Anker der Kategorie für ein späteres Abo: <strong>≈ 4,99 €/Monat bzw. ≈ 35 €/Jahr</strong> (unter Journi ~54 €/Jahr, deutlich unter Day One ~50 $/Jahr, weit unter dem als überteuert kritisierten Journo ~190 $/Jahr).</p>
+
+  <!-- 4 · WAS GUT LÄUFT -->
+  <h2 id="good">Was gut läuft</h2>
+  <ul class="good">
+    <li><strong>48/48 Unit-Tests grün</strong> — heute Nacht real auf dem iPhone-17-Pro-Simulator ausgeführt; Export/Import-Roundtrip, ID-Migrationsreparatur und Demo-Seeding sind stark getestet.</li>
+    <li><strong>CloudKit-Vertrag real erfüllt</strong> — alle 5 Modelle mit Defaults, optionalen Relationships, ohne Unique-Constraints, stabile <code>id</code> + <code>updatedAt</code> überall (ADR-002 §3/§4 im Code nachgeprüft).</li>
+    <li><strong>Keine Datensammelei</strong> — kein Tracking-SDK, keine Werbung, kein eigener Server; einziger Datenabfluss ist der vom Nutzer angestoßene KI-Call (Secret-/Netzwerk-Grep bestätigt).</li>
+    <li><strong>Foto-Pipeline durchdacht</strong> — ImageIO-Downsampling ohne Full-Decode, Thumbnail-Backfill in 20er-Batches off-main mit Abbruchprüfung.</li>
+    <li><strong>Robuster Store-Bootstrap</strong> — Container-Fehler → In-Memory-Fallback → Nutzer-Warnung statt Crash (<code>ShipTripApp.swift:34-57</code>).</li>
+    <li><strong>Handgeschriebener ZIP-Writer</strong> mit korrekter CRC-32, Überlauf-Guards und Abwärtskompatibilität zum alten Base64-Format — ohne jede Fremd-Dependency.</li>
+    <li><strong>Konsequente System-Farben &amp; zentrale Brand-Token</strong> — Dark Mode „gratis", keine hartkodierten Hex-Farben in Views; rollenbasierte Hafen-Pins einheitlich über 3 Kontexte.</li>
+    <li><strong>Lokalisierung real zweisprachig</strong> — String Catalog DE→EN mit 182 Keys, interpolierte Strings korrekt via <code>String(localized:)</code>.</li>
+    <li><strong>Visuelle Politur der Hauptansicht bestätigt</strong> — der Screenshot-Stand (Hero-Karte, Stats-Strip, Logbuch) sieht bereits nach Premium aus.</li>
+  </ul>
+
+  <!-- 5 · BEFUNDE -->
+  <h2 id="findings">Befunde</h2>
+  <p class="muted">28 konsolidierte Befunde aus 5 Spezialisten-Pässen (dedupliziert; Einzelbefunde der Pässe im Anhang). Aufklappen für Evidenz.</p>
+
+  <h3>Hoch</h3>
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> Reise-Bearbeiten löscht Hafen-Zusatzdaten und vergibt neue Port-IDs (Datenverlust + ADR-002-Bruch)</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseFormView.swift:13-22</code> (TempPort), <code>:552-596</code> (Edit-Pfad)</dd>
+      <dt>Evidenz</dt><dd>Der Edit-Pfad löscht <em>alle</em> Häfen (<code>for port in existingCruise.route { modelContext.delete(port) }</code>) und legt sie aus <code>TempPort</code> neu an. <code>TempPort</code> transportiert weder <code>excursionsRaw</code> noch <code>imageData</code> noch die stabile <code>id</code> — exakt diese drei Port-Felder gehen verloren (Codex-verifiziert an <code>Port.swift:44-49</code>). Verifiziert am Code durch den Orchestrator: <code>Port.excursions</code>/<code>Port.imageData</code> sind ausschließlich per Import (Alt-Daten aus der Web-App) befüllbar — genau diese Alt-Daten werden beim ersten Bearbeiten still gelöscht.</dd>
+      <dt>Auswirkung</dt><dd>Jede Bearbeitung (auch nur ein Titel-Tippfehler) vernichtet importierte Ausflüge/Hafenbilder endgültig — und <em>alle</em> Häfen bekommen neue UUIDs. Das bricht die ID-Stabilität aus ADR-002, auf der Export-Deduplizierung und der kommende CloudKit-Sync aufbauen: Für dich als Nutzer mit Alt-Daten aus der Web-App real, für Neu-Nutzer latent aber sync-kritisch.</dd>
+      <dt>Empfehlung</dt><dd>Ports in-place per stabiler <code>id</code> aktualisieren statt delete-and-recreate; <code>TempPort</code> um <code>id/excursions/imageData</code> erweitern. Vor CloudKit-Aktivierung zwingend.</dd>
+      <dt>Konfidenz</dt><dd>High (Code-Pfad vom Orchestrator nachverifiziert)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Hafenbilder überleben kein Backup — Export lässt sie immer aus</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift:171</code> (JSON), <code>:117-149</code> (ZIP)</dd>
+      <dt>Evidenz</dt><dd><code>ExportPort.imageUrl</code> wird fest auf <code>nil</code> gesetzt; das ZIP schreibt nur Reise-Fotos, nie <code>port.imageData</code>. Der Import-Pfad könnte Hafenbilder lesen — es gibt aber nie welche im Export.</dd>
+      <dt>Auswirkung</dt><dd>Der als Voll-Backup vermarktete Export ist für Hafenbilder (Alt-Daten) lautlos verlustbehaftet. Zusammen mit dem Edit-Befund existieren zwei unabhängige Wege, auf denen dieselben Daten verschwinden.</dd>
+      <dt>Empfehlung</dt><dd>Port-Bilder analog zu Fotos ins ZIP aufnehmen — oder das Feld offiziell stilllegen und dokumentieren. Ein Roundtrip-Test mit Port-Bild würde beides absichern.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Kein Onboarding / kein First-Run-Erlebnis — die Premium-App startet leer</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseListView.swift:229-242</code>, <code>ShipTripApp.swift:81-104</code>, <code>SettingsView.swift:108</code></dd>
+      <dt>Evidenz</dt><dd>Erststart zeigt nur <code>ContentUnavailableView</code> („Tippe auf +"). Kein Welcome-Flow, kein Wertversprechen; der fertige Demo-Datensatz (DemoDataService) ist <code>#if DEBUG</code> und für echte Nutzer unsichtbar. Alle 5 Tabs starten leer.</dd>
+      <dt>Auswirkung</dt><dd>Schwächster Moment des Funnels: Neue Nutzer sehen ein leeres Formular-Tool statt eines Premium-Tagebuchs — hohe Erst-Abbruchrate, kein Wow-Moment, keine Basis für ein späteres Abo.</dd>
+      <dt>Empfehlung</dt><dd>2–3-seitiger Onboarding-Flow (Wert → „Erste Reise anlegen" / „Beispielreise ansehen"); die vorhandene Demo-Infrastruktur im Release nutzbar machen (sauber entfernbar, ist sie schon).</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Der Tagebuch-Kern fehlt — Datenmodell kennt keine Einträge, Fotos keine Beschriftung</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>Cruise.swift:44</code> (einziges <code>notes</code>-Feld), <code>Photo.swift</code> (nur Bilddaten + Sortierung), <code>Port.swift</code> (kein Erlebnis-Feld)</dd>
+      <dt>Evidenz</dt><dd>Pro Reise existiert genau ein Freitext. Fotos haben weder Caption noch Datum noch Notiz; Häfen/Seetage kein Erlebnis-Feld; kein „Heute"-Einstieg, kein Schnell-Erfassen unterwegs.</dd>
+      <dt>Auswirkung</dt><dd>Die gewählte Produktrichtung „Premium-Reisetagebuch" ist im Produkt nicht abgebildet — ShipTrip ist strukturell ein Katalog. Das untergräbt Positionierung <em>und</em> Zahlungsbereitschaft (wofür zahlt man bei einem Archiv?).</dd>
+      <dt>Empfehlung</dt><dd>Journal-Entität (Eintrag pro Tag/Hafen: Text + Fotos + optional Stimmung/Wetter) + Foto-Captions; chronologischer Tagebuch-Strang in der Detailansicht. Größter Produkt-Hebel — Kern von Richtung 2.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Keine Reise lässt sich teilen — der emotionale Abschluss fehlt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseDetailView.swift:60-78</code> (Menü: nur Bearbeiten/Löschen), <code>SettingsView.swift:396-410</code> (Share nur fürs ZIP-Backup)</dd>
+      <dt>Evidenz</dt><dd>Einzige Teilen-Funktion der App ist das technische Voll-Backup. Kein „Reise teilen", kein Bild-/PDF-Rückblick, kein Jahresrückblick.</dd>
+      <dt>Auswirkung</dt><dd>Der Höhepunkt jeder Reise-App — die Erinnerung herzeigen — existiert nicht. Verschenkt außerdem den einzigen organischen Wachstumskanal (geteilte Reise = Werbung) und einen natürlichen Premium-Anlass.</dd>
+      <dt>Empfehlung</dt><dd>„Reise teilen" im Detail-Menü: gerenderte Story-Karte (Route + Kennzahlen + Cover) als Bild/PDF. Passt zur Privacy-Linie (kein Account nötig — es wird ein Bild geteilt, keine Daten).</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> KI-Erfassung faktisch unerreichbar: Bring-your-own-API-Key</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>SettingsView.swift:44-76</code>, <code>CruiseFormView.swift:69</code></dd>
+      <dt>Evidenz</dt><dd>Der „Mit KI ausfüllen"-Button erscheint nur bei <code>GeminiService.shared.isConfigured</code> — also nachdem der Nutzer selbst in Google AI Studio einen API-Key erzeugt und eingetragen hat. Kein Wettbewerber der Recherche verlangt das; die Kreuzfahrt-Zielgruppe ist eher wenig technikaffin.</dd>
+      <dt>Auswirkung</dt><dd>Das differenzierendste Feature (Buchungsbestätigung einfügen → Reise komplett befüllt) ist für die große Mehrheit unsichtbar. Gleichzeitig wäre „KI inklusive" der stärkste Abo-Kaufgrund.</dd>
+      <dt>Empfehlung</dt><dd>Mittelfristig Managed-KI über schlanken Proxy (Roadmap Phase 3, Kern von Richtung 3); kurzfristig KI-Wert-Screen vor der Key-Wand (geplante Phase-2-Welle 4) + Feature im Onboarding erklären.</dd>
+      <dt>Konfidenz</dt><dd>High (Erreichbarkeit) / Mittel (Lösungsweg = Produktentscheidung)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Stack-Drift: Projekt kompiliert als Swift 5 — nicht „Swift 6 strict concurrency" wie deklariert</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>project.pbxproj</code> (alle Konfigurationen <code>SWIFT_VERSION = 5.0</code>) vs. CLAUDE.md/ARCHITECTURE.md</dd>
+      <dt>Evidenz</dt><dd>Kein <code>SWIFT_STRICT_CONCURRENCY</code>-Flag. Die vielen „kein @Model über Aktorgrenzen"-Kommentare sind Disziplin, nicht Compiler-verifiziert. Real existiert mind. ein latenter Race (<code>MapView.swift:14-31</code>: LocationManager-Status wird im Delegate-Callback off-main gesetzt).</dd>
+      <dt>Auswirkung</dt><dd>Die als Kernstärke geführte Concurrency-Sicherheit ist unbewiesen; beim späteren Swift-6-Flip (spätestens mit CloudKit sinnvoll) schlagen alle latenten Fehler gleichzeitig auf.</dd>
+      <dt>Empfehlung</dt><dd>Jetzt flippen, solange die Basis ~9.700 Zeilen klein ist: <code>SWIFT_VERSION = 6.0</code> setzen, Fehler abarbeiten (LocationManager <code>@MainActor</code>, Singletons Sendable) — oder ehrlich Swift 5 dokumentieren.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge high">High</span> Umgebung: Festplatte zu 100 % voll — Test-Build schlug deshalb fehl</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd>Andres Mac, <code>/System/Volumes/Data</code>: 228 GB, <strong>694 MB frei</strong> (02:02 Uhr)</dd>
+      <dt>Evidenz</dt><dd>Erster Testlauf brach mit „Failed to write to CAR" beim Asset-Katalog ab. Nach Löschen des regenerierbaren Xcode-ModuleCache (~600 MB) lief der zweite Lauf durch (48/48 grün). XCTestDevices/DerivedData waren diesmal <em>nicht</em> die Ursache (32 KB / &lt;1 GB) — es ist die Platte insgesamt.</dd>
+      <dt>Auswirkung</dt><dd>Builds schlagen sporadisch fehl, macOS wird bei &lt;1 GB frei instabil, SwiftData-Schreibvorgänge können scheitern. Blockiert verlässliche Release-Arbeit.</dd>
+      <dt>Empfehlung</dt><dd>Zeitnah aufräumen (größte gefundene Kandidaten: ~7,2 GB CoreSimulator-Devices, 1,6 GB Playwright-Cache, 4,2 GB ~/Library/Caches gesamt — plus Nicht-Entwickler-Daten). Ich habe nachts bewusst nur den ModuleCache gelöscht.</dd>
+      <dt>Konfidenz</dt><dd>High (gemessen)</dd>
+    </dl></div>
+  </details>
+
+  <h3>Mittel</h3>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> ZIP-Import ungehärtet: Pfad-Manipulation (Zip-Slip) + Dekompressions-Bombe möglich</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift:727-733</code> (Eintragsname ungeprüft verkettet), <code>:763-765</code> (Allokation aus untrusted <code>uncompressedSize</code>, bis ~4 GB)</dd>
+      <dt>Evidenz</dt><dd><code>destURL.appendingPathComponent(name)</code> normalisiert <code>../</code> nicht; die Zielgröße kommt ungeprüft aus dem ZIP-Header und wird direkt allokiert. Import ist ein designter Sharing-Pfad („Web-App-kompatibel").</dd>
+      <dt>Auswirkung</dt><dd>Eine präparierte ZIP kann Dateien im App-Container überschreiben (inkl. SwiftData-Store; Sandbox-begrenzt) oder die App per Speicher-Bombe crashen.</dd>
+      <dt>Empfehlung</dt><dd>Eintragsnamen validieren (kein <code>..</code>, Prefix-Check nach Normalisierung) + Größen-Limits pro Eintrag und gesamt (z. B. 200 MB). Beides zusammen ~1 Datei Arbeit + 2 Tests.</dd>
+      <dt>Konfidenz</dt><dd>High (Code eindeutig; Ausnutzung erfordert präparierte Datei)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> „Alle Daten löschen" lässt API-Key und geplante Erinnerungen zurück</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>SettingsView.swift:547-554</code> (<code>deleteAllData</code>)</dd>
+      <dt>Evidenz</dt><dd>Löscht nur Cruises + Deals (Cascade räumt Ports/Fotos/Ausgaben). Kein <code>KeychainService.delete</code>, kein <code>removeAllPendingNotifications()</code>, kein explizites <code>save()</code>. Vom Orchestrator am Code bestätigt.</dd>
+      <dt>Auswirkung</dt><dd>Nach „Alle Daten löschen" feuern Erinnerungen gelöschter Reisen weiter (Titel + Datum auf dem Sperrbildschirm) und der Gemini-Key bleibt in der Keychain — widerspricht der Privacy-Policy-Zusage vollständiger Löschbarkeit.</dd>
+      <dt>Empfehlung</dt><dd>Notifications + (nach Rückfrage-Dialog) Keychain-Key mitlöschen, dann speichern. Kleiner Fix, großes Vertrauensthema.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Reise-Erinnerungen laufen ins Leere, solange die Berechtigung nie erteilt wurde</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>NotificationService.swift:42,85</code>, <code>CruiseFormView.swift:623-631</code>, <code>SettingsView.swift:352-355</code></dd>
+      <dt>Evidenz</dt><dd>Der Speichern-Pfad plant Erinnerungen korrekt ein (Codex-verifiziert) — aber ohne erteilte Berechtigung verwirft das System sie still. Die einzige Stelle, die die Berechtigung anfragt, ist ein Button tief in den Einstellungen; der Anlege-Flow fragt nie.</dd>
+      <dt>Auswirkung</dt><dd>Für jeden Nutzer, der die Einstellungen nicht zufällig besucht, existiert das Feature „Countdown-Erinnerungen" de facto nicht — ohne jedes Feedback über die verworfenen Reminder.</dd>
+      <dt>Empfehlung</dt><dd>Permission kontextuell beim ersten Speichern einer zukünftigen Reise anfragen („Wir erinnern dich 30 Tage vorher").</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> VoiceOver: Die Hero-Karte (Hauptaktion) ist kein Button</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseListView.swift:131-143</code> (<code>.onTapGesture</code> statt <code>Button</code>)</dd>
+      <dt>Evidenz</dt><dd>Die Logbuch-Zeilen darunter sind korrekt Buttons; die visuell wichtigste Fläche der App nicht — kein Button-Trait, kein Label.</dd>
+      <dt>Auswirkung</dt><dd>VoiceOver-Nutzer können die Fokus-Reise nicht öffnen. Dazu passend: fixe Höhen + <code>minimumScaleFactor(0.6)</code> (Stats-Strip 58 pt, Hero 286 pt, StatCells) schrumpfen Text bei großen Schriftgrößen statt umzubrechen.</dd>
+      <dt>Empfehlung</dt><dd>Hero in <code>Button</code> wickeln + Label; Höhen auf <code>minHeight</code>/<code>@ScaledMetric</code> umstellen; einmal mit AX-Schriftgrößen durchklicken.</dd>
+      <dt>Konfidenz</dt><dd>High (Button) / Mittel (Clipping nur am Gerät final)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Einzelne Häfen/Ausgaben lassen sich in der Detailansicht nicht löschen</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseDetailView.swift:412-422</code> (<code>deletePort</code>/<code>deleteExpense</code> definiert, nie aufgerufen)</dd>
+      <dt>Evidenz</dt><dd>Route- und Ausgaben-Listen haben nur Tap-to-Edit, kein <code>.onDelete</code>/Swipe. Die Lösch-Funktionen existieren als toter Code.</dd>
+      <dt>Auswirkung</dt><dd>Ein falsch angelegter Hafen ist nur über den kompletten Bearbeiten-Flow entfernbar (der wiederum den High-Befund oben triggert).</dd>
+      <dt>Empfehlung</dt><dd>Swipe-to-Delete anbinden — die Funktionen sind ja schon da.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Doku-Drift: MODELS.md und API.md beschreiben eine App, die es nicht gibt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>docs/MODELS.md</code>, <code>docs/API.md:22,88-94,146-195</code>, <code>docs/ARCHITECTURE.md:54,90-96,161</code></dd>
+      <dt>Evidenz</dt><dd>MODELS.md: falsche Expense-Felder/-Kategorien, fehlende CloudKit-Trägerfelder (<code>id</code>/<code>updatedAt</code>), <code>rating</code>-Typ falsch. API.md: komplette NotificationService-API erfunden (Methoden, Identifier, Trigger-Zeiten — nichts stimmt), Gemini-Signaturen falsch. ARCHITECTURE.md: „SwiftData ist thread-safe" (falsch und dem eigenen Code widersprechend), nicht existente <code>App/</code>-Ordner, veraltete Tab-Namen. Der größte Service (ExportImport, 812 Z.) fehlt überall komplett. Auch der CHANGELOG driftet: „52 Unit-Tests" — real sind es 48 Unit- + 12 UI-Tests (heute Nacht nachgezählt und ausgeführt).</dd>
+      <dt>Auswirkung</dt><dd>Wer gegen die Doku entwickelt (auch KI-Agenten!), produziert nicht kompilierenden Code; die falsche Thread-Safety-Aussage ist ein Bug-Generator.</dd>
+      <dt>Empfehlung</dt><dd>MODELS.md aus dem Schema neu generieren; API.md-Abschnitte an reale Signaturen angleichen; ExportImportService dokumentieren; Threading-Absatz korrigieren.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Repo-Hygiene: 43 geänderte Dateien + ~200 Cover-Imagesets uncommittet auf main</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>git status</code> (gemessen heute Nacht 02:05): 43 geänderte + 218 unversionierte Einträge; u. a. <code>ShippingLine.swift</code> (+66 Zeilen Cover-Pool-Logik), <code>Assets.xcassets/cover_line_*</code> (~200 Imagesets, Assets gesamt 75 MB)</dd>
+      <dt>Evidenz</dt><dd>Ein komplettes „Reederei-Cover-Fotos"-Feature (stabile schiffsgebundene Cover-Auswahl aus 5er-Pools) liegt unversioniert im Arbeitsverzeichnis; zusätzlich wurde der Datei-Modus <em>aller</em> Dateien auf 755 geflippt (Diff-Rauschen).</dd>
+      <dt>Auswirkung</dt><dd>Wochen Arbeit ohne Commit-Sicherung; der Mode-Flip macht das nächste Diff unlesbar und landet sonst versehentlich im Feature-Commit.</dd>
+      <dt>Empfehlung</dt><dd>Mode-Flip separat zurücksetzen/committen, dann das Cover-Feature als sauberen Feature-Commit sichern (oder Branch).</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Foto-Galerie der Detailansicht dekodiert Full-Res statt vorhandener Thumbnails</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseDetailView.swift:142-156</code> (<code>UIImage(data: photo.imageData)</code> synchron im Body)</dd>
+      <dt>Evidenz</dt><dd>Hero-Karte und Listen nutzen korrekt <code>thumbnailData ?? imageData</code>; die Galerie dekodiert immer volle Auflösung, ohne Loading-/Fehler-Zustand (defekte Bilder verschwinden kommentarlos).</dd>
+      <dt>Auswirkung</dt><dd>Speicherspitzen + Ruckler beim Öffnen fotoreicher Reisen — genau der Moment, der „premium" wirken soll.</dd>
+      <dt>Empfehlung</dt><dd>Thumbnails im Pager, Full-Res nur im Zoom; async decodieren, Platzhalter-State ergänzen.</dd>
+      <dt>Konfidenz</dt><dd>Medium (Impact fotoabhängig)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Ausgaben-Eingabe parst hartkodiert deutsches Komma</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExpenseFormView.swift:44,83,92-94</code></dd>
+      <dt>Evidenz</dt><dd>Platzhalter „0,00", festes <code>,</code>→<code>.</code>-Replacement statt Locale-Formatter — Anzeige ist locale-korrekt, Eingabe nicht (Konventionsbruch zu CLAUDE.md „Währung an Geräte-Locale").</dd>
+      <dt>Auswirkung</dt><dd>In EN-Locales wird „1,000.50" falsch geparst; inkonsistentes Verhalten der zweisprachigen App.</dd>
+      <dt>Empfehlung</dt><dd><code>TextField(value:format:.currency)</code> bzw. Locale-basierten Formatter verwenden. Dazu: Ausgaben nach Datum sortieren (heute Roh-Reihenfolge, Datum default-aus).</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> ExportImportService ist ein 812-Zeilen-God-File mit Inline-ZIP-Stack</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift</code> (DTOs + JSON/ZIP-Export + Import + ZIP-Writer/-Parser + CRC-32 in einer Klasse)</dd>
+      <dt>Evidenz</dt><dd>Der ZIP-Code selbst ist exzellent (siehe Positiv-Liste) — aber als un-extrahierter Teil eines Backup-Features schwer isoliert testbar und riskant zu ändern.</dd>
+      <dt>Auswirkung</dt><dd>Breite Fehler-Risikofläche genau dort, wo Datenverlust am teuersten ist; die anstehenden Fixes (Zip-Slip, Port-Bilder) vergrößern die Datei weiter.</dd>
+      <dt>Empfehlung</dt><dd>ZipArchiveWriter/-Reader/CRC32 als eigene Dateien extrahieren — reine Struktur-OP, gleiche Tests laufen weiter.</dd>
+      <dt>Konfidenz</dt><dd>Medium</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Karte: kein Empty-State, Standort-Anfrage ohne echten Nutzen</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>MapView.swift:24-31,84-92</code></dd>
+      <dt>Evidenz</dt><dd>Ohne Reisen zeigt die Karte kommentarlos die leere Welt; auf verweigerten Standort reagiert nichts. Die Kern-Funktion (Routen zeigen) braucht den Standort gar nicht.</dd>
+      <dt>Auswirkung</dt><dd>Kontextlose Leere für Neu-Nutzer; eine Berechtigungs-Anfrage ohne sichtbaren Mehrwert kostet Vertrauen.</dd>
+      <dt>Empfehlung</dt><dd>Empty-Overlay („Füge Häfen hinzu…"); Standort-Anfrage entfernen oder an ein echtes Feature binden — wäre zudem ein Privacy-Plus.</dd>
+      <dt>Konfidenz</dt><dd>High (Empty-State) / Mittel (Standort)</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Produkt: Offline-USP unbeworben, Deals-Tab verwässert die Positionierung</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd>APP_STORE_LISTING.md, README.md; Tab „Wunschreisen" (DealsView)</dd>
+      <dt>Evidenz</dt><dd>„100 % offline auf See" — laut Konkurrenz-Review ein realer Upgrade-Auslöser — taucht im Marketing nicht auf. Der Deals-/Merkliste-Tab konkurriert mit Shipmates Kernkompetenz (2M+ Downloads, Live-Preisdaten) und passt nicht zur Journal-Story.</dd>
+      <dt>Auswirkung</dt><dd>Das kaufentscheidende Argument bleibt unsichtbar; ein Fünftel der Tab-Bar erzählt die falsche Geschichte.</dd>
+      <dt>Empfehlung</dt><dd>Offline-Claim prominent in Listing/Onboarding; Merkliste als bewusstes Neben-Feature führen (bereits umbenannt — gut), nicht bewerben; langfristig Richtung 3 klärt die Rolle.</dd>
+      <dt>Konfidenz</dt><dd>Mittel (Positionierungs-Urteil)</dd>
+    </dl></div>
+  </details>
+
+  <h3>Niedrig (Auswahl — vollständige Liste im Anhang)</h3>
+  <details class="finding">
+    <summary><span class="badge low">Low</span> API-Key-Handling: Key in URL-Query statt Header, Keychain ohne ThisDeviceOnly</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>GeminiService.swift:127</code>, <code>KeychainService.swift:30-35</code></dd>
+      <dt>Evidenz</dt><dd>Key als <code>?key=</code> (HTTPS, aber log-anfälliger als der unterstützte <code>x-goog-api-key</code>-Header); Keychain-Item ohne <code>kSecAttrAccessible…ThisDeviceOnly</code> → wandert in Backups mit.</dd>
+      <dt>Empfehlung</dt><dd>Header + Accessible-Attribut setzen — zwei Zeilen.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Toter/duplizierter Code: CruiseTimelineRowView (204 Z.), EmptyStateView, Expense-Farb-Duplikat</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseTimelineRowView.swift</code> (nur Preview-Referenz), <code>Components/EmptyStateView.swift</code>, <code>Expense.colorName</code> + <code>Color.expenseColor</code></dd>
+      <dt>Evidenz</dt><dd>Die Logbuch-Liste nutzt (im uncommitteten Stand) durchgängig CruiseHeroCardView — die im letzten Commit polierte Timeline-Zeile hat keinen Laufzeitpfad mehr. <em>Vorsicht:</em> Das ist Folge der uncommitteten WIP; vor Löschen klären, ob gewollt.</dd>
+      <dt>Empfehlung</dt><dd>Bewusste Entscheidung treffen (Feature-Commit vs. Aufräumen) — nicht einfach löschen.</dd>
+      <dt>Konfidenz</dt><dd>Medium</dd>
+    </dl></div>
+  </details>
+  <details class="finding">
+    <summary><span class="badge low">Low</span> Kleinkram-Sammlung: Zähl-Inkonsistenz, Status-String-Sniffing, print()-Logging, Hafen-Suche, Temp-Dateien, IdBackfill-Flag, Radius-Wildwuchs, „52 Tests"</summary>
+    <div class="body"><dl>
+      <dt>Evidenz</dt><dd>① Detail zeigt zwei verschiedene „Häfen"-Zahlen (<code>route.count</code> vs. ohne Seetage, <code>CruiseDetailView:199</code> vs. <code>:129</code>). ② Erfolg/Fehler wird per <code>error.contains("✓")</code> erkannt. ③ NotificationService <code>print()</code>-loggt Reisetitel in Release (<code>:55,77,79</code>). ④ Hafen-Autocomplete: bis zu 4 Linearscans über ~1.800 Einträge pro Tastenanschlag auf dem Main-Thread. ⑤ Export-Temp-Dateien mit festem Namen, kein Cleanup nach Share. ⑥ IdBackfill fetcht bei jedem Start alle Objekte (kein Erledigt-Flag). ⑦ 8 verschiedene Corner-Radien statt Token; zentraler <code>cardStyle()</code> ungenutzt. ⑧ CHANGELOG behauptet „52 Unit-Tests" — real 48 Unit + 12 UI. ⑨ README/SETUP: iOS 17 statt 18.5, Export als „offen", APNs-Capability unnötig, Xcode 15 als Minimum.</dd>
+      <dt>Empfehlung</dt><dd>Als Politur-Sammel-PR in Richtung 1 abarbeiten — nichts davon ist einzeln dringend.</dd>
+      <dt>Konfidenz</dt><dd>High</dd>
+    </dl></div>
+  </details>
+
+  <!-- 6 · VERBESSERUNGEN -->
+  <h2 id="improvements">Verbesserungen — 3 Richtungen</h2>
+  <p>Alle drei Richtungen bauen auf denselben Befunden auf, setzen aber unterschiedliche Schwerpunkte: <strong>Richtung 1</strong> bleibt vollständig beim heutigen Produkt und macht es wasserdicht. <strong>Richtung 2</strong> löst die gewählte Produktrichtung „Reisetagebuch" endlich ein. <strong>Richtung 3</strong> denkt Erlösmodell und KI-Zugang neu. Sie schließen sich nicht aus — die Empfehlung unten schlägt eine Reihenfolge vor.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="active" onclick="showDir(0,this)">Richtung 1 · Festigen</button>
+    <button onclick="showDir(1,this)">Richtung 2 · Echtes Reisetagebuch</button>
+    <button onclick="showDir(2,this)">Richtung 3 · Companion &amp; Managed Premium</button>
+  </div>
+
+  <!-- ============ RICHTUNG 1 ============ -->
+  <section class="direction active">
+    <div class="leitidee"><strong>Leitidee:</strong> Kein neues Feature, kein Redesign — die bestehende App wird wasserdicht: Datenintegrität, Import-Härtung, Accessibility, Doku-Wahrheit, Swift-6-Fundament. Alles hier ist Voraussetzung für CloudKit und jede spätere Richtung. CI-Treue: 100 %.</div>
+
+    <p class="pair-title">1.1 · Bearbeiten ohne Datenverlust — Ports in-place statt delete-and-recreate</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Jeder Edit vernichtet Hafen-Zusatzdaten und alle Port-IDs</h4>
+        <p>Der Speichern-Pfad löscht sämtliche Häfen und legt sie neu an. Importierte Ausflüge/Hafenbilder sind danach weg; jede Port-UUID ist neu.</p>
+        <div class="proto diagram">
+          <div class="stage">
+            <svg viewBox="0 0 420 150" width="100%">
+              <rect x="10" y="55" width="105" height="40" rx="8" fill="#1f2330" stroke="#2a2f3e"/><text x="62" y="73" fill="#e8eaf0" font-size="11" text-anchor="middle">Reise</text><text x="62" y="87" fill="#9aa1b5" font-size="9" text-anchor="middle">bearbeiten</text>
+              <path d="M120 75 h40" stroke="#ff5a6a" stroke-width="2" marker-end="url(#ar1)"/>
+              <rect x="165" y="55" width="115" height="40" rx="8" fill="rgba(255,90,106,.12)" stroke="#ff5a6a"/><text x="222" y="73" fill="#ff5a6a" font-size="10" text-anchor="middle">delete ALLE Ports</text><text x="222" y="87" fill="#ff5a6a" font-size="9" text-anchor="middle">route → 🗑</text>
+              <path d="M285 75 h40" stroke="#ff5a6a" stroke-width="2" marker-end="url(#ar1)"/>
+              <rect x="330" y="55" width="80" height="40" rx="8" fill="#1f2330" stroke="#ff9f43"/><text x="370" y="73" fill="#ff9f43" font-size="10" text-anchor="middle">neu anlegen</text><text x="370" y="87" fill="#ff9f43" font-size="9" text-anchor="middle">neue UUIDs!</text>
+              <text x="222" y="120" fill="#ff5a6a" font-size="10" text-anchor="middle">✝ excursions · ✝ imageData · ✝ stabile id (ADR-002)</text>
+              <defs><marker id="ar1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#ff5a6a"/></marker></defs>
+            </svg>
+          </div>
+          <div class="caption">Heutiger Edit-Pfad: destruktiv, ID-instabil</div>
+        </div>
+        <div class="evidence">CruiseFormView.swift:552-596; TempPort (Z. 13-22) ohne id/excursions/imageData — vom Orchestrator nachverifiziert</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Update per stabiler ID — nichts geht verloren</h4>
+        <p>Bestehende Ports werden per <code>id</code> gematcht und in-place aktualisiert; nur wirklich entfernte werden gelöscht, neue eingefügt. Ausflüge, Bilder und IDs überleben jeden Edit.</p>
+        <div class="proto diagram">
+          <div class="stage">
+            <svg viewBox="0 0 420 150" width="100%">
+              <rect x="10" y="55" width="105" height="40" rx="8" fill="#1f2330" stroke="#2a2f3e"/><text x="62" y="73" fill="#e8eaf0" font-size="11" text-anchor="middle">Reise</text><text x="62" y="87" fill="#9aa1b5" font-size="9" text-anchor="middle">bearbeiten</text>
+              <path d="M120 75 h40" stroke="#4cd97b" stroke-width="2" marker-end="url(#ar2)"/>
+              <rect x="165" y="55" width="115" height="40" rx="8" fill="rgba(76,217,123,.12)" stroke="#4cd97b"/><text x="222" y="73" fill="#4cd97b" font-size="10" text-anchor="middle">Match per id</text><text x="222" y="87" fill="#4cd97b" font-size="9" text-anchor="middle">update in-place</text>
+              <path d="M285 75 h40" stroke="#4cd97b" stroke-width="2" marker-end="url(#ar2)"/>
+              <rect x="330" y="55" width="80" height="40" rx="8" fill="#1f2330" stroke="#4cd97b"/><text x="370" y="73" fill="#4cd97b" font-size="10" text-anchor="middle">id stabil ✓</text><text x="370" y="87" fill="#9aa1b5" font-size="9" text-anchor="middle">CloudKit-ready</text>
+              <text x="222" y="120" fill="#4cd97b" font-size="10" text-anchor="middle">✓ excursions · ✓ imageData · ✓ ADR-002-konform + Roundtrip-Test</text>
+              <defs><marker id="ar2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4cd97b"/></marker></defs>
+            </svg>
+          </div>
+          <div class="caption">Ziel-Pfad: nicht-destruktiv, ID-stabil</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S–M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Kein Datenverlust; Pflicht vor CloudKit</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">1.2 · Daten-Sicherheit: Import härten + „Alle Daten löschen" ehrlich machen</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Import vertraut fremden ZIPs blind; Löschen lässt Reste zurück</h4>
+        <p>Eintragsnamen und Größen aus dem ZIP-Header werden ungeprüft verwendet; „Alle Daten löschen" vergisst API-Key, Erinnerungen und Port-Bilder im Export.</p>
+        <div class="proto diagram">
+          <div class="stage">
+            <svg viewBox="0 0 420 150" width="100%">
+              <rect x="10" y="20" width="120" height="36" rx="8" fill="#1f2330" stroke="#ff5a6a"/><text x="70" y="36" fill="#ff5a6a" font-size="9" text-anchor="middle">fremde.zip</text><text x="70" y="48" fill="#ff9f43" font-size="8" text-anchor="middle">"../../store.sqlite"</text>
+              <path d="M135 38 h45" stroke="#ff5a6a" stroke-width="2" marker-end="url(#ar3)"/>
+              <rect x="185" y="20" width="110" height="36" rx="8" fill="rgba(255,90,106,.12)" stroke="#ff5a6a"/><text x="240" y="36" fill="#e8eaf0" font-size="9" text-anchor="middle">schreibt außerhalb</text><text x="240" y="48" fill="#ff5a6a" font-size="8" text-anchor="middle">+ 4-GB-Allokation</text>
+              <rect x="10" y="90" width="120" height="36" rx="8" fill="#1f2330" stroke="#2a2f3e"/><text x="70" y="106" fill="#e8eaf0" font-size="9" text-anchor="middle">„Alle Daten löschen"</text><text x="70" y="118" fill="#9aa1b5" font-size="8" text-anchor="middle">nur Cruises + Deals</text>
+              <path d="M135 108 h45" stroke="#ff9f43" stroke-width="2" marker-end="url(#ar3)"/>
+              <rect x="185" y="90" width="225" height="36" rx="8" fill="rgba(255,159,67,.1)" stroke="#ff9f43"/><text x="297" y="106" fill="#ff9f43" font-size="9" text-anchor="middle">bleibt: API-Key 🔑 · geplante Reminder 🔔</text><text x="297" y="118" fill="#9aa1b5" font-size="8" text-anchor="middle">Privacy-Policy verspricht vollständige Löschung</text>
+              <defs><marker id="ar3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#ff9f43"/></marker></defs>
+            </svg>
+          </div>
+          <div class="caption">Zwei Vertrauenslücken im Daten-Lebenszyklus</div>
+        </div>
+        <div class="evidence">ExportImportService.swift:727-765; SettingsView.swift:547-554 — beide verifiziert</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Validierter Import, vollständiges Löschen, vollständiges Backup</h4>
+        <p>Pfad-Check + Größen-Limits beim Entpacken; Löschen räumt Key + Reminder mit; Export nimmt Port-Bilder mit. Drei kleine PRs mit je einem Test.</p>
+        <div class="proto diagram">
+          <div class="stage">
+            <svg viewBox="0 0 420 150" width="100%">
+              <rect x="10" y="20" width="120" height="36" rx="8" fill="#1f2330" stroke="#4cd97b"/><text x="70" y="36" fill="#e8eaf0" font-size="9" text-anchor="middle">fremde.zip</text><text x="70" y="48" fill="#9aa1b5" font-size="8" text-anchor="middle">Eintrag „../…"</text>
+              <path d="M135 38 h45" stroke="#4cd97b" stroke-width="2" marker-end="url(#ar4)"/>
+              <rect x="185" y="20" width="110" height="36" rx="8" fill="rgba(76,217,123,.12)" stroke="#4cd97b"/><text x="240" y="36" fill="#4cd97b" font-size="9" text-anchor="middle">Prefix-Check ✓</text><text x="240" y="48" fill="#4cd97b" font-size="8" text-anchor="middle">Limit 200 MB ✓ → abgelehnt</text>
+              <rect x="10" y="90" width="120" height="36" rx="8" fill="#1f2330" stroke="#4cd97b"/><text x="70" y="106" fill="#e8eaf0" font-size="9" text-anchor="middle">„Alle Daten löschen"</text><text x="70" y="118" fill="#9aa1b5" font-size="8" text-anchor="middle">+ Dialog: „auch API-Key?"</text>
+              <path d="M135 108 h45" stroke="#4cd97b" stroke-width="2" marker-end="url(#ar4)"/>
+              <rect x="185" y="90" width="225" height="36" rx="8" fill="rgba(76,217,123,.1)" stroke="#4cd97b"/><text x="297" y="106" fill="#4cd97b" font-size="9" text-anchor="middle">Daten ✓ Reminder ✓ Key ✓ — wirklich alles weg</text><text x="297" y="118" fill="#9aa1b5" font-size="8" text-anchor="middle">Export: Port-Bilder inklusive (Roundtrip-Test)</text>
+              <defs><marker id="ar4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#4cd97b"/></marker></defs>
+            </svg>
+          </div>
+          <div class="caption">Daten-Lebenszyklus ohne Überraschungen</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Privacy-Versprechen hält; Import angstfrei</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">1.3 · Accessibility &amp; Politur: Hero bedienbar, Schrift skaliert, eine Karten-Sprache</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Hauptaktion für VoiceOver unsichtbar, Text schrumpft statt umzubrechen</h4>
+        <p>Die Hero-Karte ist ein reines <code>onTapGesture</code>; fixe Höhen + <code>minimumScaleFactor(0.6)</code> quetschen große Schriftgrößen; 8 verschiedene Ecken-Radien.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="sbar"><span>22:40</span><span>􀙇 􀋂</span></div>
+              <div class="navtitle">Meine Reisen</div>
+              <div class="search">🔍 Suchen…</div>
+              <div class="hero"><span class="kicker">In 6 Tagen</span><b>Norwegische Fjorde</b><span style="font-size:7.5px;opacity:.85">AIDA Cruises · AIDAnova · 9.–17. Juli</span></div>
+              <div class="anno" style="top:118px; right:8px;">onTapGesture — kein Button-Trait ✗</div>
+              <div class="strip"><div style="background:#E3F0FF"><b style="font-size:7px;">3</b>Rei…</div><div style="background:#EDE9FF"><b style="font-size:7px;">11</b>Län…</div><div style="background:#E6F7EC"><b style="font-size:7px;">5</b>Seet…</div><div style="background:#FDECEA"><b style="font-size:7px;">16</b>Häf…</div></div>
+              <div class="anno" style="top:238px; left:12px;">AX-Schrift: skaliert auf 60 % ✗</div>
+              <div class="stcard" style="border-radius:9px;">Westliches Mittelmeer… <span style="color:#8E8E93">radius 10</span></div>
+              <div class="stcard" style="border-radius:16px;">Karibik Highlights <span style="color:#8E8E93">radius 22 · 30 · 12 …</span></div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Heutige Hauptansicht (originalgetreue Farben) mit den drei Politur-Lücken</div>
+        </div>
+        <div class="evidence">CruiseListView.swift:131-143; CruiseStatsStripView.swift:69; Radien 8–30 quer durch Views; zentraler cardStyle() ungenutzt</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Button-Semantik, skalierende Layouts, Radius-Token</h4>
+        <p>Hero wird echter Button mit sprechendem <code>accessibilityLabel</code> („Reise Norwegische Fjorde öffnen"); Höhen via <code>@ScaledMetric</code>/<code>minHeight</code>; drei Radius-Token (sm 10 / md 16 / lg 28) app-weit.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="sbar"><span>22:40</span><span>􀙇 􀋂</span></div>
+              <div class="navtitle">Meine Reisen</div>
+              <div class="search">🔍 Suchen…</div>
+              <div class="hero" style="border-radius:16px;"><span class="kicker">In 6 Tagen</span><b>Norwegische Fjorde</b><span style="font-size:7.5px;opacity:.85">AIDA Cruises · AIDAnova · 9.–17. Juli</span></div>
+              <div class="anno ok" style="top:118px; right:8px;">Button · „Reise öffnen" ✓</div>
+              <div class="strip"><div style="background:#E3F0FF"><b style="font-size:9px;">3</b>Reisen</div><div style="background:#EDE9FF"><b style="font-size:9px;">11</b>Länder</div><div style="background:#E6F7EC"><b style="font-size:9px;">5</b>Seetage</div><div style="background:#FDECEA"><b style="font-size:9px;">16</b>Häfen</div></div>
+              <div class="anno ok" style="top:242px; left:12px;">minHeight + @ScaledMetric ✓</div>
+              <div class="stcard" style="border-radius:16px;">Westliches Mittelmeer 2025 <span style="color:#34C759">radius-md ✓</span></div>
+              <div class="stcard" style="border-radius:16px;">Karibik Highlights 2025 <span style="color:#34C759">radius-md ✓</span></div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Gleiches Design — aber bedienbar für alle und konsistent</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>A11y-Grundpflicht + App-Store-Review-Sicherheit</strong></span></div>
+      </div>
+    </div>
+
+    <h3>Mini-Roadmap Richtung 1</h3>
+    <table>
+      <tr><th>Schritt</th><th>Inhalt</th><th>Aufwand</th></tr>
+      <tr><td>1a</td><td>Edit-Fix (1.1) + Port-Bild-Export + Roundtrip-Tests</td><td>S–M</td></tr>
+      <tr><td>1b</td><td>Import-Härtung + Delete-All-Fix (1.2), Notification-Permission-Prompt beim Speichern</td><td>S</td></tr>
+      <tr><td>1c</td><td>A11y/Politur-PR (1.3) + Kleinkram-Sammel-PR (Komma-Parsing, Zählung, print→Logger, Temp-Cleanup, IdBackfill-Flag)</td><td>S</td></tr>
+      <tr><td>1d</td><td>Swift-6-Flip + LocationManager/@MainActor + ZIP-Stack-Extraktion; Doku-Sync (MODELS/API/ARCHITECTURE/README); WIP committen, Mode-Flip bereinigen</td><td>M</td></tr>
+    </table>
+    <p class="muted">Kosten/Risiko ehrlich: ~1–2 fokussierte Wochen, kein sichtbares neues Feature — dafür verschwinden alle High-Befunde außer den Produkt-Lücken, und CloudKit wird gefahrlos aktivierbar.</p>
+  </section>
+
+  <!-- ============ RICHTUNG 2 ============ -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Die gewählte Produktrichtung endlich einlösen: Aus dem Reise-<em>Katalog</em> wird ein Reise-<em>Tagebuch</em>. Tageseinträge und Foto-Geschichten während der Reise, eine teilbare Erinnerung danach, ein einladender Erststart davor. Kleine Kurskorrektur, Kern-Idee bleibt exakt erhalten — es ist die Roadmap-Phase 3, konkret gemacht.</div>
+
+    <p class="pair-title">2.1 · Journal-Strang: Tageseinträge &amp; Foto-Captions in der Detailansicht</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Ein Notiz-Feld für die ganze Reise, stumme Fotos</h4>
+        <p>Die Detailansicht zeigt Eckdaten, Route und ein Foto-Raster — aber nirgends „was haben wir am Dienstag in Marseille erlebt".</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div style="height:84px; background:linear-gradient(120deg,#1A365D,#0C8CE9 60%,#1b6e6e); color:#fff; padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-end;"><b style="font-size:12px;">Westliches Mittelmeer</b><span style="font-size:7.5px; opacity:.85;">TUI Cruises · Mein Schiff 2 · 10.–17. Juni</span></div>
+              <div class="strip"><div><b>8</b>Tage</div><div><b>5</b>Häfen</div><div><b>3</b>Länder</div><div><b>2.538 €</b>Kosten</div></div>
+              <div class="stcard"><b>Route</b><br>🟠 Barcelona &nbsp;→&nbsp; 🔵 Marseille &nbsp;→&nbsp; 🌊 Seetag &nbsp;→&nbsp; 🟢 Palma</div>
+              <div class="stcard"><b>Fotos</b><div style="display:flex; gap:3px; margin-top:3px;"><div style="width:34px;height:34px;border-radius:5px;background:linear-gradient(140deg,#0C8CE9,#1A365D)"></div><div style="width:34px;height:34px;border-radius:5px;background:linear-gradient(40deg,#36A9F0,#1b6e6e)"></div><div style="width:34px;height:34px;border-radius:5px;background:linear-gradient(220deg,#FF6B35,#1A365D)"></div></div><span style="color:#8E8E93; font-size:7px;">ohne Caption · ohne Datum · ohne Kontext</span></div>
+              <div class="stcard"><b>Notizen</b><br><span style="color:#8E8E93">Ein einziges Freitext-Feld für 8 Tage Reise …</span></div>
+              <div class="anno" style="top:196px; right:10px;">Kein Tagebuch — ein Archiv ✗</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Detailansicht heute: schön, aber erlebnislos</div>
+        </div>
+        <div class="evidence">Cruise.swift:44 (ein notes-Feld); Photo.swift ohne caption/date; kein Tages-Konzept im Modell</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Chronologischer Tagebuch-Strang: „Tag 3 · Marseille"</h4>
+        <p>Neue <code>JournalEntry</code>-Entität (Tag/Hafen, Text, Fotos, Stimmung). Die Detailansicht erzählt die Reise Tag für Tag; Fotos bekommen Captions. CloudKit-konform (Defaults, optionale Relationship).</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div style="height:64px; background:linear-gradient(120deg,#1A365D,#0C8CE9 60%,#1b6e6e); color:#fff; padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-end;"><b style="font-size:11px;">Westliches Mittelmeer</b><span style="font-size:7px;opacity:.85">Tagebuch · 8 Tage</span></div>
+              <div class="stcard" style="border-left:3px solid #FF6B35;"><b>Tag 1 · Barcelona</b> <span style="color:#8E8E93">🟠 Auslaufen 18:00</span><br>„Sagrada Família am Morgen, Sailaway bei Sonnenuntergang — Gänsehaut."<div style="display:flex; gap:3px; margin-top:3px;"><div style="width:30px;height:30px;border-radius:5px;background:linear-gradient(140deg,#FF6B35,#1A365D)"></div><div style="width:30px;height:30px;border-radius:5px;background:linear-gradient(40deg,#0C8CE9,#1b6e6e)"></div></div><span style="font-size:6.5px;color:#8E8E93">📷 „Sailaway vom Sonnendeck"</span></div>
+              <div class="stcard" style="border-left:3px solid #0C8CE9;"><b>Tag 2 · Marseille</b> <span style="color:#8E8E93">🔵 08:00–17:00</span><br>„Calanques-Ausflug — türkises Wasser wie in der Karibik." <span style="font-size:7px;">😊</span></div>
+              <div class="stcard" style="border-left:3px solid #36A9F0;"><b>Tag 3 · Seetag</b> <span style="color:#8E8E93">🌊</span><br><span style="color:#0C8CE9;">+ Eintrag schreiben …</span></div>
+              <div class="anno ok" style="top:198px; right:10px;">Erlebnis pro Tag ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Der Tagebuch-Strang — Kern des Produktversprechens</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>L</strong></span><span class="fact">Risiko <strong>Medium (Schema-Migration)</strong></span><span class="fact">Nutzen <strong>Produktversprechen eingelöst; Abo-Grundlage</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">2.2 · „Reise teilen": die Erinnerung als Story-Karte</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Teilen = ZIP-Datei für Techniker</h4>
+        <p>Das Kontext-Menü einer Reise kennt nur Bearbeiten/Löschen; die einzige Share-Funktion der App verschickt ein Backup-Archiv.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div style="height:74px; background:linear-gradient(120deg,#1A365D,#0C8CE9 60%,#1b6e6e); color:#fff; padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-end;"><b style="font-size:11px;">Norwegische Fjorde</b></div>
+              <div class="stcard" style="width:120px; margin-left:auto; box-shadow:0 4px 12px rgba(0,0,0,.18);"><b>⋯ Menü</b><br>✏️ Bearbeiten<br>🗑 Löschen<br><span style="color:#C7C7CC">— kein Teilen —</span></div>
+              <div class="stcard"><b>Einstellungen → Export</b><br>📦 kreuzfahrten-export.zip<br><span style="color:#8E8E93">„Voll-Backup zum Re-Import" — für Familie unbrauchbar</span></div>
+              <div class="anno" style="top:98px; left:10px;">Kein „Reise teilen" ✗</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Der emotionale Abschluss fehlt</div>
+        </div>
+        <div class="evidence">CruiseDetailView.swift:60-78; SettingsView.swift:396-410</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Gerenderte Erinnerungs-Karte — ein Tipp, ein Bild</h4>
+        <p>„Reise teilen" rendert Cover, Route und Kennzahlen als hochwertiges Bild (ImageRenderer, komplett offline). Kein Account, keine Daten — nur ein Bild. Organisches Marketing inklusive.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div style="margin:10px; border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,.2);">
+                <div style="height:110px; background:linear-gradient(120deg,#1A365D 0%,#0C8CE9 55%,#1b6e6e 100%); color:#fff; padding:9px; position:relative;">
+                  <b style="font-size:12px;">Norwegische Fjorde</b><br><span style="font-size:7.5px;opacity:.9">AIDA Cruises · AIDAnova · Juli 2026</span>
+                  <svg viewBox="0 0 160 40" style="position:absolute; bottom:6px; left:9px; width:150px;"><path d="M8 32 C40 10, 90 34, 150 12" stroke="#fff" stroke-width="1.6" fill="none" stroke-dasharray="3 2"/><circle cx="8" cy="32" r="3.4" fill="#FF6B35" stroke="#fff"/><circle cx="70" cy="24" r="2.4" fill="#fff"/><circle cx="112" cy="25" r="2.4" fill="#fff"/><circle cx="150" cy="12" r="3.4" fill="#34C759" stroke="#fff"/></svg>
+                </div>
+                <div style="background:#fff; padding:6px 9px; display:flex; justify-content:space-between; font-size:7.5px;"><span><b>9</b> Tage</span><span><b>5</b> Häfen</span><span><b>2</b> Länder</span><span><b>★ 4,8</b></span><span style="color:#0C8CE9;">⚓ ShipTrip</span></div>
+              </div>
+              <div class="stcard" style="text-align:center;"><b style="color:#0C8CE9;">Teilen als Bild · PDF-Rückblick</b></div>
+              <div style="display:flex; gap:6px; justify-content:center; margin-top:2px;"><div class="cbtn">💬</div><div class="cbtn">✈️</div><div class="cbtn">📧</div><div class="cbtn">⬇️</div></div>
+              <div class="anno ok" style="top:150px; right:10px;">Privacy-konform: nur ein Bild ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Story-Karte: Route + Kennzahlen + Cover, offline gerendert</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Emotionaler Abschluss + organisches Wachstum</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">2.3 · Erststart: Onboarding + erlebbare Beispielreise</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Leerer Bildschirm, fünf leere Tabs</h4>
+        <p>Die erste Begegnung mit dem „Premium-Tagebuch" ist ein grauer Empty-State. Der fertige Demo-Datensatz existiert — aber nur in Debug-Builds.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="sbar"><span>09:41</span><span>􀙇 􀋂</span></div>
+              <div class="navtitle">Meine Reisen</div>
+              <div class="search">🔍 Suchen…</div>
+              <div style="text-align:center; padding:56px 20px; color:#8E8E93;">
+                <div style="font-size:26px;">⛴</div>
+                <b style="color:#111; font-size:10px;">Keine Kreuzfahrten</b><br>
+                <span style="font-size:8px;">Tippe auf +, um deine erste<br>Kreuzfahrt hinzuzufügen</span>
+              </div>
+              <div class="anno" style="top:150px; right:14px;">Kein Wert sichtbar ✗</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Erststart heute: funktional, aber kalt</div>
+        </div>
+        <div class="evidence">CruiseListView.swift:229-242; DemoDataService nur #if DEBUG (SettingsView.swift:108)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Drei Karten Wert, dann sofort etwas zum Anfassen</h4>
+        <p>Kurzes Onboarding (Tagebuch · Weltkarte · 100 % offline auf See) mit zwei Ausgängen: „Erste Reise anlegen" oder „Beispielreise ansehen" — die vorhandene Demo-Infrastruktur, im Release freigeschaltet und mit einem Tipp entfernbar.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div style="margin:14px 12px 6px; border-radius:14px; background:linear-gradient(150deg,#1A365D,#0C8CE9); color:#fff; padding:12px 10px; text-align:center;">
+                <div style="font-size:22px;">⚓</div>
+                <b style="font-size:11px;">Dein Kreuzfahrt-Tagebuch</b><br>
+                <span style="font-size:7.5px; opacity:.9;">Erlebnisse, Häfen &amp; Fotos —<br><b>funktioniert zu 100 % offline auf See</b></span>
+              </div>
+              <div style="display:flex; gap:4px; justify-content:center; margin:4px 0;"><i style="width:5px;height:5px;border-radius:50%;background:#0C8CE9;"></i><i style="width:5px;height:5px;border-radius:50%;background:#C7C7CC;"></i><i style="width:5px;height:5px;border-radius:50%;background:#C7C7CC;"></i></div>
+              <div class="stcard" style="background:#0C8CE9; color:#fff; text-align:center; font-weight:700;">Erste Reise anlegen</div>
+              <div class="stcard" style="text-align:center; color:#0C8CE9;">Beispielreise ansehen</div>
+              <div class="anno ok" style="top:180px; right:10px;">Demo im Release, entfernbar ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Wertversprechen zuerst — Offline-USP prominent</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Aktivierung; Offline-USP endlich ausgespielt</strong></span></div>
+      </div>
+    </div>
+
+    <h3>Mini-Roadmap Richtung 2</h3>
+    <table>
+      <tr><th>Schritt</th><th>Inhalt</th><th>Abhängigkeit</th><th>Aufwand</th></tr>
+      <tr><td>2a</td><td>Onboarding + Demo-im-Release (2.3) + Notification-Prompt kontextuell</td><td>—</td><td>M</td></tr>
+      <tr><td>2b</td><td>JournalEntry-Modell + Migration + Tagebuch-Strang (2.1), Foto-Captions</td><td>Richtung-1-Fixes (ID-Stabilität!)</td><td>L</td></tr>
+      <tr><td>2c</td><td>Share-Karte + PDF-Rückblick (2.2)</td><td>2b (nutzt Einträge)</td><td>M</td></tr>
+    </table>
+    <p class="muted">Kosten/Risiko ehrlich: ~3–5 Wochen; die Schema-Migration ist nach der id-Backfill-Erfahrung mit Respekt zu behandeln (Migrations-Test auf echtem Gerät, siehe ADR-002). Kein Backend, keine laufenden Kosten.</p>
+  </section>
+
+  <!-- ============ RICHTUNG 3 ============ -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Der Rethink: ShipTrip verdient Geld und die KI gehört allen. Ein schlanker Server-Proxy macht die KI-Erfassung ohne API-Key nutzbar (Free-Kontingent, Premium unbegrenzt), StoreKit 2 bringt das Abo (≈ 4,99 €/Monat / 34,99 €/Jahr — marktvalidierte Anker), und ein „Heute"-Dashboard macht die App zur täglichen Begleiterin statt zum Nach-der-Reise-Archiv. Größter Umbau, größte Chance — und der einzige mit laufenden Kosten. <strong>Wichtig:</strong> Die vier Bausteine (Heute-Dashboard · Paywall · KI-Proxy · iCloud-Premium) sind getrennt entscheidbar und tragen sehr unterschiedliche Risiken — das Dashboard ist risikoarm und lokal, der Proxy ist ein Betriebs-Commitment. Die Preis- und Marktaussagen stammen aus der Wettbewerbs-Recherche dieser Nacht und sind <em>Produkt-Annahmen</em>, keine Code-Evidenz.</div>
+
+    <p class="pair-title">3.1 · KI für alle: Managed-Proxy statt Bring-your-own-Key</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Der beste Trick der App ist unsichtbar</h4>
+        <p>Ohne selbst besorgten Google-API-Key erscheint der „Mit KI ausfüllen"-Button nie. Die Einrichtung (AI Studio → Key → Einstellungen) schafft kaum ein Zielgruppen-Nutzer.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="navtitle" style="font-size:12px;">Einstellungen</div>
+              <div class="stcard"><b>✨ Gemini API-Key</b><br><span style="background:#E4E4E9; border-radius:5px; padding:2px 6px; color:#8E8E93; display:inline-block; margin-top:2px;">AIza••••••••••••</span><br><span style="font-size:7px; color:#8E8E93;">1. Google AI Studio öffnen · 2. Key erstellen · 3. Hier einfügen</span></div>
+              <div class="stcard" style="opacity:.55;"><b>Neue Reise</b><br><span style="color:#8E8E93">Titel · Schiff · Reederei · Route …</span><br><span style="font-size:7px; color:#C7C7CC;">[Kein KI-Button — isConfigured == false]</span></div>
+              <div class="anno" style="top:64px; right:10px;">Hürde für ~99 % ✗</div>
+              <div class="tabbar"><div><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div class="on"><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Heute: KI nur nach technischem Setup</div>
+        </div>
+        <div class="evidence">SettingsView.swift:44-76; CruiseFormView.swift:69; USP-Recherche: kein Wettbewerber verlangt BYO-Key</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>„Buchung einfügen → Reise fertig" — ab Sekunde 1</h4>
+        <p>Schlanker Proxy (Cloudflare Worker o. ä.) hält den Key serverseitig; Free = 3 KI-Erfassungen/Monat, Premium = unbegrenzt. BYO-Key bleibt als Power-User-Option erhalten (Phase 2.5: + Mistral). <strong>Privacy-first bleibt gewahrt:</strong> Der Proxy ist ein reiner Durchreicher — Zero-Data-Retention, keine Prompt-Speicherung, kein Account; gespeichert wird nur ein anonymer Monats-Zähler fürs Kontingent.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="navtitle" style="font-size:12px;">Neue Reise</div>
+              <div class="stcard" style="background:linear-gradient(120deg,#EAF4FF,#F2ECFF); border:1px solid #0C8CE9;"><b style="color:#0C8CE9;">✨ Mit KI ausfüllen</b><br><span style="font-size:7.5px;">Buchungsbestätigung einfügen — Titel, Schiff, Route &amp; Häfen werden erkannt</span><br><span style="font-size:7px; color:#8E8E93;">Noch 3 kostenlose Erfassungen diesen Monat</span></div>
+              <div class="stcard"><b>Erkannt:</b> Norwegische Fjorde · AIDAnova<br><span style="color:#34C759; font-size:7.5px;">✓ 5 Häfen · ✓ Termine · ✓ Reederei</span></div>
+              <div class="anno ok" style="top:60px; right:10px;">Kein Setup ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">KI sofort erlebbar, Kontingent statt Key-Wand</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>L (inkl. Mini-Backend)</strong></span><span class="fact">Risiko <strong>High (Betrieb, Kosten, Missbrauchsschutz)</strong></span><span class="fact">Nutzen <strong>Stärkster USP wird massentauglich</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">3.2 · Freemium mit StoreKit 2: Premium erlebbar machen</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>„Premium-Funktionen" als Text — ohne Produkt dahinter</h4>
+        <p>Die Einstellungen versprechen Premium, aber es gibt keine Paywall, kein Entitlement, keine StoreKit-Anbindung. Preise 3,99/19,99 € in alten Notizen sind Platzhalter ohne Markt-Basis.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="navtitle" style="font-size:12px;">Einstellungen</div>
+              <div class="stcard"><b>Premium-Funktionen an einem Ort</b><br><span style="color:#8E8E93; font-size:7.5px;">… es folgt: nichts. Kein Kauf, keine Feature-Liste, kein Preis.</span></div>
+              <div class="stcard"><b>☁️ iCloud Sync</b> <span style="color:#FF9F43;">Geplant</span></div>
+              <div class="stcard"><b>✨ KI-Erfassung</b> <span style="color:#8E8E93;">nur mit eigenem Key</span></div>
+              <div class="anno" style="top:60px; right:10px;">Kein Erlösmodell ✗</div>
+              <div class="tabbar"><div><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div class="on"><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Freemium angekündigt, nicht gebaut</div>
+        </div>
+        <div class="evidence">SettingsView.swift:173-177; keine StoreKit-Referenz im Code; Preise laut Roadmap „Platzhalter"</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>Eine klare Paywall mit marktvalidierten Preisen</h4>
+        <p>StoreKit 2, ein Abo: <strong>4,99 €/Monat oder 34,99 €/Jahr</strong> (Anker: Journi ~54 €, Day One ~50 $, Journo ~190 $ als Abschreckung). Free bleibt großzügig: Kern-Erfassung unbegrenzt lokal; Premium = KI-Flat, iCloud-Sync, PDF-Rückblick, unbegrenzte Fotos.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="paywall">
+                <b style="font-size:11px;">⚓ ShipTrip Premium</b><br>
+                <span style="font-size:7.5px; opacity:.92;">✓ KI-Erfassung unbegrenzt &nbsp;✓ iCloud-Sync<br>✓ PDF-Rückblick &nbsp;✓ Unbegrenzte Fotos</span>
+                <div class="price"><span><b>Jährlich</b> · 34,99 €</span><span style="background:#34C759; border:none; border-radius:5px; padding:0 5px; font-size:6.5px; display:flex; align-items:center;">–42 %</span></div>
+                <div class="price" style="opacity:.75;"><span>Monatlich · 4,99 €</span></div>
+                <div style="background:#fff; color:#0C8CE9; border-radius:8px; text-align:center; font-weight:800; padding:4px; margin-top:5px; font-size:8.5px;">7 Tage kostenlos testen</div>
+              </div>
+              <div class="stcard" style="text-align:center; color:#8E8E93; font-size:7px;">Free bleibt: Reisen, Häfen, Karte, Statistik — für immer</div>
+              <div class="anno ok" style="top:172px; right:10px;">Marktanker validiert ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Paywall-Sheet: ein Abo, klare Leistung, fairer Free-Kern</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M–L</strong></span><span class="fact">Risiko <strong>Medium</strong></span><span class="fact">Nutzen <strong>Erstes Erlösmodell; finanziert den KI-Proxy</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">3.3 · „Heute"-Dashboard: von der Archiv-App zur Reisebegleiterin</p>
+    <div class="pair">
+      <div class="card ist">
+        <span class="tag">IST · heute</span>
+        <h4>Die App weiß, dass du auf See bist — und zeigt es nicht</h4>
+        <p><code>Cruise.isOngoing</code> existiert und priorisiert nur die Hero-Karte. Während der Reise bietet die App keinen „Heute"-Einstieg: kein Countdown-Detail, kein „nächster Hafen", kein Schnell-Eintrag.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="sbar"><span>08:12</span><span>􀙇 􀋂</span></div>
+              <div class="navtitle">Meine Reisen</div>
+              <div class="hero"><span class="kicker">Läuft</span><b>Norwegische Fjorde</b><span style="font-size:7.5px;opacity:.85">Tag 4 von 9 — aber das sagt dir niemand</span></div>
+              <div class="strip"><div><b>3</b>Reisen</div><div><b>11</b>Länder</div><div><b>5</b>Seetage</div><div><b>16</b>Häfen</div></div>
+              <div class="stcard">Westliches Mittelmeer… <span style="color:#8E8E93">2025</span></div>
+              <div class="anno" style="top:120px; right:10px;">Gleiche Ansicht wie immer ✗</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Während der Reise: Business as usual</div>
+        </div>
+        <div class="evidence">Cruise.isOngoing nur für heroCruise-Priorität genutzt; kein Tages-Kontext im UI (Roadmap-Phase-4-Kandidat G8)</div>
+      </div>
+      <div class="card soll">
+        <span class="tag">SOLL · Ziel</span>
+        <h4>„Tag 4 · Geirangerfjord" — die App lebt mit der Reise</h4>
+        <p>Läuft eine Reise, verwandelt sich der Listenkopf in ein Heute-Panel: Tag X von Y, heutiger Hafen mit Liegezeiten, Ein-Tipp-Eintrag („Wie war Geiranger?"), Countdown vor der Reise. Rein lokal aus vorhandenen Daten — kein Backend nötig.</p>
+        <div class="proto">
+          <div class="stage">
+            <div class="phone"><div class="screen">
+              <div class="sbar"><span>08:12</span><span>􀙇 􀋂</span></div>
+              <div style="margin:6px 10px; border-radius:14px; background:linear-gradient(140deg,#1A365D,#0C8CE9); color:#fff; padding:9px;">
+                <span style="font-size:7px; opacity:.85; text-transform:uppercase; letter-spacing:.08em;">Heute · Tag 4 von 9</span><br>
+                <b style="font-size:12px;">⚓ Geirangerfjord</b><br>
+                <span style="font-size:7.5px; opacity:.92;">Liegezeit 08:00–18:00 · Norwegen 🇳🇴</span>
+                <div style="display:flex; gap:4px; margin-top:6px;">
+                  <div style="flex:1; background:rgba(255,255,255,.15); border-radius:7px; text-align:center; padding:3px; font-size:7px;">📓 Eintrag<br>schreiben</div>
+                  <div style="flex:1; background:rgba(255,255,255,.15); border-radius:7px; text-align:center; padding:3px; font-size:7px;">📷 Fotos<br>hinzufügen</div>
+                  <div style="flex:1; background:rgba(255,255,255,.15); border-radius:7px; text-align:center; padding:3px; font-size:7px;">💶 Ausgabe<br>erfassen</div>
+                </div>
+              </div>
+              <div class="strip"><div><b>3</b>Reisen</div><div><b>11</b>Länder</div><div><b>5</b>Seetage</div><div><b>16</b>Häfen</div></div>
+              <div class="stcard">Westliches Mittelmeer… <span style="color:#8E8E93">2025</span></div>
+              <div class="anno ok" style="top:118px; right:10px;">Kontext statt Katalog ✓</div>
+              <div class="tabbar"><div class="on"><span>⛴</span>Reisen</div><div><span>🗺</span>Karte</div><div><span>🔖</span>Wunschr.</div><div><span>📊</span>Bilanz</div><div><span>⋯</span>Mehr</div></div>
+            </div></div>
+          </div>
+          <div class="caption">Heute-Panel: aus vorhandenen Route-Daten, 100 % offline</div>
+        </div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Tägliche Nutzung während der Reise; füttert das Journal</strong></span></div>
+      </div>
+    </div>
+
+    <h3>Mini-Roadmap Richtung 3</h3>
+    <table>
+      <tr><th>Schritt</th><th>Inhalt</th><th>Abhängigkeit</th><th>Aufwand</th></tr>
+      <tr><td>3a</td><td>Heute-Dashboard (3.3) — lokal, kein Backend</td><td>—</td><td>M</td></tr>
+      <tr><td>3b</td><td>StoreKit-2-Paywall + Entitlement-Gerüst (3.2)</td><td>Premium-Leistungen aus R2 (Journal/PDF) sinnvoll</td><td>M–L</td></tr>
+      <tr><td>3c</td><td>KI-Proxy + Kontingente (3.1); BYO-Key bleibt Power-Option</td><td>3b (Abo finanziert Betrieb)</td><td>L</td></tr>
+      <tr><td>3d</td><td>iCloud-Sync als Premium aktivieren (CloudKit-Capability + Geräte-Migrationstest)</td><td>Richtung-1-Fixes zwingend</td><td>M</td></tr>
+    </table>
+    <p class="muted">Kosten/Risiko ehrlich: erstmals laufende Kosten (Proxy + KI-Tokens, gedeckelt via Kontingente), App-Review-Risiko (Abo-Richtlinien), Missbrauchsschutz nötig. Dafür: einziges Modell, in dem ShipTrip Geld verdient und der USP skaliert.</p>
+  </section>
+
+  <!-- Vergleich -->
+  <h3>Richtungs-Vergleich &amp; Empfehlung</h3>
+  <table>
+    <tr><th>Richtung</th><th>Impact</th><th>Aufwand</th><th>Risiko</th><th>CI-/Story-Treue</th><th>Laufende Kosten</th></tr>
+    <tr class="recommended"><td><strong>1 · Festigen</strong> ★ sofort</td><td>Mittel (unsichtbar, aber fundamental)</td><td>S–M (~1–2 Wo.)</td><td>Low</td><td>100 %</td><td>keine</td></tr>
+    <tr class="recommended"><td><strong>2 · Echtes Reisetagebuch</strong> ★ Produkt-Kurs</td><td>Hoch (löst das Produktversprechen ein)</td><td>L (~3–5 Wo.)</td><td>Medium (Migration)</td><td>95 % — Kern-Idee, endlich gebaut</td><td>keine</td></tr>
+    <tr><td><strong>3 · Companion &amp; Managed Premium</strong> · danach</td><td>Sehr hoch (Erlös + Massentauglichkeit)</td><td>XL (~6–8 Wo.)</td><td>High (Backend, Review, Kosten)</td><td>70 % — Rethink von Zugang &amp; Erlös</td><td>Proxy + KI-Tokens</td></tr>
+  </table>
+  <p><strong>Empfehlung:</strong> <strong>1 → 2 → 3 als Sequenz, nicht als Wahl.</strong> Richtung 1 ist alternativlos (Datenverlust-Fix und ID-Stabilität sind Voraussetzung für CloudKit und damit für alles Weitere) und in ein bis zwei Wochen erledigt. Richtung 2 ist der eigentliche Kurs — sie baut genau das, wofür du dich mit „Travel Journal" bereits entschieden hast, und schafft die Premium-Leistungen (Journal, PDF-Rückblick), die Richtung 3 überhaupt erst verkaufen kann. Richtung 3 dann schrittweise: erst das kostenlose Heute-Dashboard (3a, kein Backend), dann Paywall, dann KI-Proxy. Wenn du abkürzen willst: Das Onboarding mit Offline-Claim (2.3) ist der billigste Einzelhebel mit dem größten Funnel-Effekt.</p>
+
+  <!-- 7 · ROADMAP -->
+  <h2 id="roadmap">Roadmap (konsolidiert, abhängigkeitssortiert)</h2>
+  <table>
+    <tr><th>Phase</th><th>Inhalt</th><th>Abhängigkeit</th><th>Aufwand</th></tr>
+    <tr><td><strong>0 · Sofort</strong></td><td>🚨 <strong>Platte freiräumen (Mac!)</strong> — unter 700 MB frei drohen korrupte SwiftData-Schreibvorgänge und fehlschlagende Builds (heute Nacht real passiert); danach WIP committen (Cover-Feature + Mode-Flip getrennt)</td><td>—</td><td>Stunden</td></tr>
+    <tr><td><strong>A · Festigen</strong></td><td>Richtung 1 komplett (Edit-Fix, Import-Härtung, Delete-All, A11y, Doku-Sync, Swift 6, Kleinkram-PR)</td><td>0</td><td>1–2 Wochen</td></tr>
+    <tr><td><strong>B · Tagebuch</strong></td><td>Richtung 2 (Onboarding+Demo → Journal-Modell → Share-Karte); parallel: Offline-Claim ins App-Store-Listing</td><td>A (ID-Stabilität)</td><td>3–5 Wochen</td></tr>
+    <tr><td><strong>C · Companion</strong></td><td>Heute-Dashboard (lokal); danach Paywall (StoreKit 2, 4,99/34,99 €)</td><td>B (Premium-Inhalte)</td><td>3–4 Wochen</td></tr>
+    <tr><td><strong>D · Managed-KI &amp; Sync</strong></td><td>KI-Proxy mit Kontingenten; iCloud/CloudKit-Aktivierung (Capability + Migrationstest, ADR-002)</td><td>C (Abo finanziert Proxy), A (IDs)</td><td>4+ Wochen</td></tr>
+  </table>
+  <p class="muted">Einordnung zur bestehenden Roadmap: Phase A ≈ „Phase 2 fertig + Neues", Phase B/C/D decken Phase 3 („Premium &amp; Journal") und Teile von Phase 4 („Companion") — Phase 2.5 (Mistral-BYO-Key) bleibt als kleiner Einschub vor D sinnvoll.</p>
+
+  <!-- 8 · GATE-LOG -->
+  <h2 id="gates">Gate-Log</h2>
+  <table>
+    <tr><th>Gate</th><th>Status</th><th>Modell</th><th>Verdict / Änderung</th></tr>
+    <tr><td>A · Plan</td><td class="gate-skip">übersprungen (modusbedingt)</td><td>—</td><td>Final-Gate-Modus: keine Live-Gates während der Analyse (Andres Vorgabe)</td></tr>
+    <tr><td>B · Findings-Verifikation</td><td class="gate-skip">übersprungen (modusbedingt)</td><td>—</td><td>Ersatz: Orchestrator hat die Top-Befunde selbst am Code nachverifiziert (Edit-Datenverlust, Delete-All, Port-Bild-Export)</td></tr>
+    <tr><td>C · Proposals</td><td class="gate-skip">übersprungen (modusbedingt)</td><td>—</td><td>—</td></tr>
+    <tr><td>D · Final (Findings + Proposals)</td><td class="gate-ok">gelaufen · GO-WITH-CHANGES</td><td>Codex gpt-5.5 (read-only Sandbox)</td><td>Alle 6 geprüften High/Medium-Befunde CONFIRMED (mit Fundstellen); keine übersehenen Critical/High-Befunde; 4 Auflagen (Befund-Präzisierung Edit-Datenverlust &amp; Notifications, Messzeitpunkt Repo-Hygiene, Richtung 3 in getrennt entscheidbare Bausteine + Preis-Aussagen als Annahmen markieren) — alle eingearbeitet</td></tr>
+    <tr><td>D · Final (Report-Review)</td><td class="gate-ok">gelaufen · GO-WITH-CHANGES</td><td>Gemini 3.5 Flash (REST-API-Fallback; CLI-OAuth-Pfad defekt)</td><td>5 Auflagen (Gate-Log-Platzhalter, Privacy-Zusicherung KI-Proxy, accessibilityLabel-Spezifikation, Dringlichkeit Platten-Befund, 48-vs-52-Tests in Doku-Drift-Befund) — alle eingearbeitet; Stärken: visuelle Didaktik, unterscheidbare Richtungen, passende Tonalität</td></tr>
+  </table>
+
+  <!-- 9 · ANHANG -->
+  <h2 id="appendix">Anhang</h2>
+  <details class="finding"><summary>Projekt-Map</summary><div class="body">
+    <p><strong>Stack:</strong> Swift (deklariert 6, kompiliert als 5.0) · SwiftUI · SwiftData (+CloudKit-ready, Sync aus) · MapKit · Swift Charts · keine Fremd-Dependencies. iOS 18.5+, Bundle com.andre.ShipTrip, v1.5.1 (Build 8).<br>
+    <strong>Umfang:</strong> 35 Swift-Dateien, ~9.700 Zeilen + PortSuggestion-Referenzdaten (2.233 Z., ~1.800 Häfen) + ShippingLine-Katalog.<br>
+    <strong>Struktur:</strong> Models (5 @Model + 2 Referenzdaten) · Services (ExportImport 812 Z., Gemini 249, Notification 151, Keychain 86, DemoData 287 #if DEBUG) · Views nach Feature (Cruises/Map/Stats/Deals/Settings) · Utilities (Theme, Downsampler, Backfills) · Components.<br>
+    <strong>Einstieg:</strong> ShipTripApp → MainTabView (5 Tabs: Reisen, Karte, Wunschreisen, Bilanz, Mehr).<br>
+    <strong>Tests:</strong> 48 Unit (Swift Testing) + 12 UI (XCTest, primär Screenshots).<br>
+    <strong>Delivery:</strong> TestFlight via Fastlane (zuletzt 1.5.1 Build 8); CI: keine.</p>
+  </div></details>
+  <details class="finding"><summary>Checks gelaufen / nicht gelaufen</summary><div class="body">
+    <p><strong>Gelaufen:</strong> ✓ Unit-Tests real auf iPhone-17-Pro-Simulator: 48/48 passed (xcresult verifiziert; 1. Lauf scheiterte an voller Platte, 2. Lauf nach ModuleCache-Cleanup grün). ✓ Build kompiliert (implizit). ✓ Secret-/Netzwerk-Greps. ✓ git-Status/Diff-Forensik. ✓ Screenshot-Sichtung. ✓ Markt-Recherche (WebSearch, 8 Wettbewerber). ✓ Cleanup danach: Simulator-Klone + ShipTrip-DerivedData gelöscht.<br>
+    <strong>Nicht gelaufen:</strong> ✗ UI-Tests (Zeit/Platten-Risiko nachts). ✗ Instruments/Profiling (Foto-Speicherverhalten ist Code-Einschätzung). ✗ Gerätelauf/VoiceOver/Dynamic-Type real. ✗ Release-Build.</p>
+  </div></details>
+  <details class="finding"><summary>Unsicherheiten &amp; offene Fragen</summary><div class="body">
+    <p>① Ob Port-Bilder/Ausflüge als Feature weiterleben oder offiziell sterben sollen (betrifft zwei High-Befunde — Andres Produktentscheidung). ② CruiseTimelineRowView: toter Code oder Teil der uncommitteten Cover-WIP? ③ Dynamic-Type-Clipping und Foto-Ruckler nur am Gerät final bewertbar. ④ Marktgröße der Nische unbewiesen (My-Cruises-Scheitern ist ambivalentes Signal). ⑤ „52 Tests" im Changelog vs. real 48+12. ⑥ Persistenz von persistentModelID als Notification-Schlüssel über Neustarts nicht laufzeitgeprüft.</p>
+  </div></details>
+  <details class="finding"><summary>Roh-Befund-Index (5 Spezialisten-Pässe)</summary><div class="body">
+    <p><strong>Architektur/Code (13):</strong> Edit-Datenverlust [H], Swift-5-Drift [H], Non-Sendable Singletons [M], MODELS.md-Drift [M], TimelineRow tot [M], deletePort/Expense unaufgerufen + EmptyStateView + Expense-Farb-Duplikat [M], Key-in-URL [M], ExportImport-God-File [M], Häfen-Zählung [L], print() [L], PortSuggestion-Scans [L], ARCHITECTURE-Drift [L], Int:Identifiable [L].<br>
+    <strong>UX/Journey (15):</strong> Kein Onboarding [H], Journal-Kern fehlt [H], kein Teilen [H], BYO-Key [H], Hero-VoiceOver [H→M konsolidiert], Dynamic Type [M], Foto-Loading-States [M], Karte Empty/Location [M], Komma-Parsing [M], Ausgaben-Sortierung [M], Radius-Wildwuchs [M], EmptyStateView [L], Status-Sniffing [L], Tab-Benennung [L], Freemium-UI fehlt [L].<br>
+    <strong>Funktion/Tests/Doku (13):</strong> Port-Bilder nicht exportiert [H], Delete-All-Notifications [M], Notifications feuern nie [M], Zip-Slip [M], API.md-Notification-API erfunden [M], ExportImport undokumentiert [M], Gemini-Signaturen [L], „thread-safe" [L], 52-Tests [L], README-Roadmap [L], App/-Ordner+Tabs [L], SETUP-APNs [L], Import-Dateiduplikate [L].<br>
+    <strong>Security/Privacy/Perf (11):</strong> Zip-Slip [M], Dekompressions-Bombe [M], Delete-All-Lücken [M], Full-Res-Grid [M], kSecAttrAccessible [L-M], Key-in-URL [L-M], Export-Temp [L], Prompt-Injection/PII [L], IdBackfill-Startkosten [L], print-PII [L], MapView-Entwarnung [Info].<br>
+    <strong>USP/Markt (7):</strong> Nische real aber schmal [H], Offline-Argument unbeworben [H], Deals-Tab ambivalent [M], BYO-Key-Bremse [M], Hafen-DB kein Moat [M], Social/Sharing fehlt [L], Fotobuch-Chance [L].<br>
+    <strong>Umgebung/Repo (2, Orchestrator):</strong> Platte 100 % voll [H], 43+218 uncommittete Dateien/Mode-Flip [M].</p>
+  </div></details>
+
+</div>
+<script>
+  function showDir(i, btn) {
+    document.querySelectorAll('.direction').forEach((d, j) => d.classList.toggle('active', i === j));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+  }
+</script>
+</body>
+</html>

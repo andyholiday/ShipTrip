@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Daten-Story Redesign</title>
+<style>
+  :root {
+    --ocean: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy: #1A365D;
+    --sunset: #FF6B35;
+    --sea-green: #34C759;
+    --card-bg: #F2F2F7;
+    --card-bg-dark: #1C1C1E;
+    --text: #0A0A0A;
+    --text-sec: #6B6B6B;
+    --white: #FFFFFF;
+    --slide-bg: #0D1B2A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; font-family: -apple-system, system-ui, sans-serif; background: var(--slide-bg); color: var(--white); overflow: hidden; }
+
+  /* SLIDES */
+  .deck { width: 100%; height: 100vh; position: relative; }
+  .slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 60px; opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+  .slide.active { opacity: 1; pointer-events: all; }
+
+  /* PROGRESS */
+  #progress-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--ocean); transition: width .3s ease; z-index: 100; }
+  #slide-counter { position: fixed; bottom: 20px; right: 28px; font-size: 12px; color: rgba(255,255,255,.4); z-index: 100; letter-spacing: .05em; }
+  .nav-hint { position: fixed; bottom: 20px; left: 28px; font-size: 12px; color: rgba(255,255,255,.25); z-index: 100; }
+
+  /* TYPOGRAPHY */
+  .label-chip { display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ocean-light); margin-bottom: 16px; }
+  h1 { font-size: 52px; font-weight: 800; line-height: 1.05; letter-spacing: -.02em; }
+  h2 { font-size: 36px; font-weight: 700; line-height: 1.1; letter-spacing: -.015em; }
+  h3 { font-size: 22px; font-weight: 600; line-height: 1.2; }
+  .subtitle { font-size: 18px; color: rgba(255,255,255,.6); line-height: 1.5; margin-top: 16px; }
+  .body-text { font-size: 15px; color: rgba(255,255,255,.7); line-height: 1.6; }
+
+  /* ACCENT COLORS */
+  .ocean { color: var(--ocean-light); }
+  .sunset { color: var(--sunset); }
+  .green { color: var(--sea-green); }
+
+  /* SLIDE BACKGROUNDS */
+  .bg-cover { background: radial-gradient(ellipse at 60% 30%, #1a3a5c 0%, #0D1B2A 70%); }
+  .bg-dark { background: #0D1B2A; }
+  .bg-navy { background: linear-gradient(135deg, #0f2337 0%, #1A365D 100%); }
+  .bg-stat { background: linear-gradient(160deg, #0a1628 0%, #0D1B2A 100%); }
+
+  /* GRID HELPERS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; width: 100%; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; width: 100%; }
+  .col { display: flex; flex-direction: column; }
+
+  /* CARDS */
+  .card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 24px; }
+  .card-sm { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 16px; }
+
+  /* PAIN POINT GRID */
+  .pain-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+  .pain-item { background: rgba(255,255,255,.06); border-left: 3px solid var(--sunset); border-radius: 10px; padding: 14px 16px; }
+  .pain-item.med { border-left-color: var(--ocean-light); }
+  .pain-item.low { border-left-color: rgba(255,255,255,.2); }
+  .pain-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--sunset); margin-bottom: 6px; }
+  .pain-item.med .pain-label { color: var(--ocean-light); }
+  .pain-item.low .pain-label { color: rgba(255,255,255,.4); }
+  .pain-title { font-size: 13px; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+  .pain-ref { font-size: 11px; color: rgba(255,255,255,.35); font-family: 'Menlo', monospace; }
+
+  /* IPHONE MOCKUP */
+  .iphone-wrap { display: flex; gap: 40px; align-items: flex-start; justify-content: center; width: 100%; }
+  .iphone { width: 200px; flex-shrink: 0; }
+  .iphone-label { text-align: center; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.4); margin-bottom: 10px; letter-spacing: .06em; text-transform: uppercase; }
+  .iphone-frame { background: #1a1a1a; border-radius: 38px; border: 2px solid #444; padding: 10px; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,.6); }
+  .iphone-notch { width: 70px; height: 22px; background: #1a1a1a; border-radius: 0 0 14px 14px; margin: 0 auto 6px; position: relative; z-index: 2; }
+  .iphone-screen { background: #fff; border-radius: 28px; overflow: hidden; min-height: 400px; position: relative; }
+  .iphone-screen.dark { background: #000; }
+
+  /* STATUS BAR */
+  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 14px 0; }
+  .status-bar .time { font-size: 11px; font-weight: 700; }
+  .status-icons { display: flex; gap: 4px; align-items: center; }
+  .status-icons span { font-size: 9px; }
+
+  /* SCREEN COMPONENTS — LIGHT */
+  .screen-light .status-bar { color: #000; }
+  .screen-dark-content .status-bar { color: #fff; }
+
+  /* TAB BAR */
+  .tab-bar { display: flex; justify-content: space-around; padding: 6px 4px 8px; border-top: 0.5px solid rgba(0,0,0,.12); background: rgba(242,242,247,.95); }
+  .tab-bar.dark-tab { border-top: 0.5px solid rgba(255,255,255,.1); background: rgba(28,28,30,.95); }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; flex: 1; }
+  .tab-icon { font-size: 18px; line-height: 1; }
+  .tab-label { font-size: 8px; font-weight: 500; color: #8E8E93; }
+  .tab-item.active .tab-label { color: #0C8CE9; }
+  .tab-item.active .tab-icon { filter: none; }
+
+  /* NAV TITLE */
+  .nav-title { font-size: 17px; font-weight: 700; color: #000; padding: 8px 14px 4px; }
+  .nav-title.dark { color: #fff; }
+  .nav-title-large { font-size: 28px; font-weight: 800; color: #000; padding: 4px 14px 8px; letter-spacing: -.02em; }
+  .nav-title-large.dark { color: #fff; }
+
+  /* STATS STRIP */
+  .stats-strip { display: flex; gap: 0; padding: 10px 10px; background: #F2F2F7; }
+  .stats-strip.dark { background: #1C1C1E; }
+  .stat-token { flex: 1; text-align: center; padding: 8px 4px; background: #fff; border-radius: 10px; margin: 0 3px; }
+  .stat-token.dark { background: #2C2C2E; }
+  .stat-val { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; display: block; line-height: 1.1; }
+  .stat-lbl { font-size: 8px; font-weight: 600; color: #8E8E93; display: block; margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* HERO CARD */
+  .hero-card { margin: 4px 10px; border-radius: 16px; overflow: hidden; }
+  .hero-media { height: 110px; position: relative; display: flex; align-items: flex-end; padding: 8px; }
+  .hero-geo { width: 100%; height: 100%; position: absolute; inset: 0; }
+  .hero-scrim { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.1) 60%); }
+  .hero-badge-left { position: absolute; top: 8px; left: 8px; background: var(--sunset); color: #fff; font-size: 8px; font-weight: 700; padding: 3px 7px; border-radius: 20px; z-index: 2; }
+  .hero-badge-right { position: absolute; top: 8px; right: 8px; background: rgba(255,200,0,.9); color: #000; font-size: 8px; font-weight: 700; padding: 3px 7px; border-radius: 20px; z-index: 2; }
+  .hero-text { position: relative; z-index: 2; }
+  .hero-title-text { font-size: 13px; font-weight: 800; color: #fff; line-height: 1.2; display: block; }
+  .hero-sub { font-size: 8px; color: rgba(255,255,255,.8); display: block; margin-top: 2px; }
+  .hero-meta { background: #F2F2F7; display: flex; justify-content: space-between; padding: 6px 10px; }
+  .hero-meta.dark { background: #2C2C2E; }
+  .meta-left { font-size: 8px; color: #8E8E93; }
+  .meta-right { font-size: 8px; color: #0C8CE9; font-weight: 600; }
+
+  /* TIMELINE ROW */
+  .timeline-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 3px 10px; background: #F2F2F7; border-radius: 10px; }
+  .timeline-row.dark { background: #1C1C1E; }
+  .spine-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .row-text { flex: 1; }
+  .row-title { font-size: 11px; font-weight: 700; color: #000; display: block; line-height: 1.2; }
+  .row-title.dark { color: #fff; }
+  .row-sub { font-size: 9px; color: #8E8E93; display: block; }
+  .row-ports { font-size: 9px; color: #34C759; display: block; }
+  .row-thumb { width: 30px; height: 30px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+  /* SECTION YEAR */
+  .year-section { padding: 6px 10px 2px; display: flex; align-items: center; gap: 8px; }
+  .year-line { flex: 1; height: 0.5px; background: rgba(0,0,0,.12); }
+  .year-line.dark { background: rgba(255,255,255,.1); }
+  .year-text { font-size: 10px; font-weight: 700; color: #8E8E93; letter-spacing: .04em; }
+
+  /* BEFORE/AFTER label */
+  .ba-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 8px; }
+  .ba-before { background: rgba(255,107,53,.15); color: var(--sunset); }
+  .ba-after { background: rgba(12,140,233,.15); color: var(--ocean-light); }
+
+  /* BULLET LIST */
+  .why-list { list-style: none; margin-top: 16px; }
+  .why-list li { padding: 6px 0 6px 22px; font-size: 14px; color: rgba(255,255,255,.8); position: relative; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .why-list li::before { content: "→"; position: absolute; left: 0; color: var(--ocean-light); font-weight: 700; }
+
+  /* STATS SCREEN COMPONENTS */
+  .stats-hero-strip { background: linear-gradient(135deg, #0C8CE9 0%, #1A365D 100%); padding: 12px 10px; }
+  .stats-hero-row { display: flex; gap: 4px; }
+  .stats-hero-item { flex: 1; text-align: center; }
+  .stats-hero-val { font-size: 18px; font-weight: 800; color: #fff; display: block; font-variant-numeric: tabular-nums; line-height: 1; }
+  .stats-hero-lbl { font-size: 7px; color: rgba(255,255,255,.7); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; display: block; margin-top: 2px; }
+  .stat-card-2 { background: #F2F2F7; border-radius: 12px; padding: 10px; margin: 4px 10px; }
+  .stat-card-2.dark { background: #1C1C1E; }
+  .chart-title { font-size: 11px; font-weight: 700; color: #000; margin-bottom: 8px; }
+  .chart-title.dark { color: #fff; }
+  .bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .bar-country { font-size: 9px; color: #8E8E93; width: 50px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: rgba(0,0,0,.06); border-radius: 4px; height: 10px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-val { font-size: 9px; font-weight: 700; color: #000; width: 16px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .bar-val.dark { color: #fff; }
+
+  /* DEAL CARD */
+  .deal-hero { margin: 4px 10px; border-radius: 16px; overflow: hidden; }
+  .deal-hero-media { height: 80px; position: relative; }
+  .deal-hero-info { background: #F2F2F7; padding: 8px 10px; }
+  .deal-hero-info.dark { background: #1C1C1E; }
+  .deal-hero-title { font-size: 12px; font-weight: 800; color: #000; }
+  .deal-hero-title.dark { color: #fff; }
+  .deal-hero-sub { font-size: 9px; color: #8E8E93; margin-top: 2px; }
+  .deal-hero-price { font-size: 16px; font-weight: 800; color: #0C8CE9; margin-top: 4px; }
+  .deal-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin: 3px 10px; background: #F2F2F7; border-radius: 12px; }
+  .deal-row.dark { background: #1C1C1E; }
+  .deal-logo { width: 32px; height: 32px; border-radius: 8px; background: #E5E5EA; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .deal-logo.dark { background: #2C2C2E; }
+  .deal-info { flex: 1; }
+  .deal-title-sm { font-size: 11px; font-weight: 700; color: #000; display: block; }
+  .deal-title-sm.dark { color: #fff; }
+  .deal-sub-sm { font-size: 9px; color: #8E8E93; display: block; margin-top: 1px; }
+  .deal-price-col { text-align: right; }
+  .deal-price-val { font-size: 13px; font-weight: 700; color: #000; display: block; }
+  .deal-price-val.dark { color: #fff; }
+  .discount-badge { display: inline-block; background: var(--sunset); color: #fff; font-size: 8px; font-weight: 700; padding: 2px 5px; border-radius: 10px; margin-top: 2px; }
+
+  /* SETTINGS */
+  .settings-profile { background: linear-gradient(135deg, #1A365D 0%, #0C8CE9 100%); padding: 16px 12px 14px; display: flex; align-items: center; gap: 10px; }
+  .avatar-circle { width: 44px; height: 44px; border-radius: 22px; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .profile-name { font-size: 14px; font-weight: 700; color: #fff; display: block; }
+  .profile-chips { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .profile-chip { background: rgba(255,255,255,.2); color: #fff; font-size: 8px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+  .settings-section { margin: 6px 10px; }
+  .settings-section-title { font-size: 9px; font-weight: 700; color: #8E8E93; text-transform: uppercase; letter-spacing: .06em; padding: 4px 0 4px 2px; }
+  .settings-group { background: #F2F2F7; border-radius: 12px; overflow: hidden; }
+  .settings-group.dark { background: #1C1C1E; }
+  .settings-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 0.5px solid rgba(0,0,0,.08); }
+  .settings-row.dark { border-bottom: 0.5px solid rgba(255,255,255,.06); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-icon { width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .settings-row-label { font-size: 11px; font-weight: 500; color: #000; flex: 1; }
+  .settings-row-label.dark { color: #fff; }
+  .settings-row-val { font-size: 10px; color: #8E8E93; }
+  .settings-chevron { font-size: 9px; color: #C7C7CC; }
+
+  /* ROADMAP */
+  .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; width: 100%; }
+  .roadmap-card { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 24px 20px; }
+  .roadmap-phase { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; }
+  .roadmap-title { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
+  .roadmap-item { font-size: 13px; color: rgba(255,255,255,.7); padding: 5px 0 5px 18px; position: relative; border-bottom: 1px solid rgba(255,255,255,.05); }
+  .roadmap-item::before { content: "·"; position: absolute; left: 4px; color: rgba(255,255,255,.4); font-size: 16px; line-height: 1.2; }
+  .effort-tag { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 8px; margin-top: 14px; }
+  .effort-s { background: rgba(52,199,89,.15); color: var(--sea-green); }
+  .effort-m { background: rgba(12,140,233,.15); color: var(--ocean-light); }
+  .effort-l { background: rgba(255,107,53,.15); color: var(--sunset); }
+
+  /* MAP SCREEN */
+  .map-bg { background: #2a3a4a; position: absolute; inset: 0; overflow: hidden; }
+  .map-chip-bar { position: absolute; top: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px; z-index: 2; padding: 0 10px; }
+  .map-chip { font-size: 9px; font-weight: 600; padding: 4px 10px; border-radius: 20px; border: none; cursor: pointer; }
+  .map-chip.active-chip { background: #0C8CE9; color: #fff; }
+  .map-chip.inactive-chip { background: rgba(0,0,0,.5); color: rgba(255,255,255,.7); }
+  .map-legend { position: absolute; bottom: 50px; right: 8px; background: rgba(28,28,30,.92); border-radius: 12px; padding: 8px 10px; z-index: 2; }
+  .legend-item { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+  .legend-item:last-child { margin-bottom: 0; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { font-size: 8px; color: rgba(255,255,255,.7); }
+  .map-bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(28,28,30,.96); border-radius: 16px 16px 0 0; padding: 8px 12px 52px; z-index: 3; }
+  .sheet-handle { width: 32px; height: 4px; background: rgba(255,255,255,.2); border-radius: 2px; margin: 0 auto 8px; }
+  .sheet-port-name { font-size: 13px; font-weight: 700; color: #fff; }
+  .sheet-port-sub { font-size: 10px; color: rgba(255,255,255,.5); margin-top: 2px; }
+  .sheet-chips { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+  .sheet-chip { font-size: 8px; font-weight: 600; padding: 2px 7px; border-radius: 10px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); }
+
+  /* DONUT CHART */
+  .donut-container { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .donut-legend { flex: 1; }
+  .donut-legend-item { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; }
+  .donut-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .donut-legend-label { font-size: 9px; color: #8E8E93; flex: 1; }
+  .donut-legend-val { font-size: 9px; font-weight: 600; color: #000; }
+  .donut-legend-val.dark { color: #fff; }
+
+  /* ACHIEVEMENT BADGES */
+  .badge-row { display: flex; gap: 5px; padding: 6px 10px; overflow-x: auto; }
+  .badge { width: 44px; height: 44px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .badge-icon { font-size: 18px; line-height: 1; }
+  .badge-label { font-size: 7px; font-weight: 600; margin-top: 2px; }
+
+  /* MINI SPARKLINE */
+  .sparkline-row { display: flex; align-items: flex-end; gap: 3px; height: 24px; padding: 0 2px; }
+  .spark-bar { flex: 1; border-radius: 2px 2px 0 0; }
+
+  /* BENCHMARK TABLE */
+  .bench-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .bench-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,.4); border-bottom: 1px solid rgba(255,255,255,.1); }
+  .bench-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,.06); vertical-align: middle; }
+  .bench-table tr:last-child td { border-bottom: none; }
+  .check { color: var(--sea-green); font-weight: 700; }
+  .partial { color: var(--sunset); font-weight: 700; }
+  .no { color: rgba(255,255,255,.2); }
+  .app-name { font-weight: 700; color: rgba(255,255,255,.9); }
+  .pattern-name { color: rgba(255,255,255,.6); }
+  .applicable { background: rgba(52,199,89,.15); color: var(--sea-green); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; }
+  .not-applicable { background: rgba(255,255,255,.06); color: rgba(255,255,255,.3); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; }
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<span id="slide-counter"></span>
+<div class="nav-hint">← → Pfeiltasten · Space · Home/End</div>
+
+<div class="deck">
+
+<!-- ============================================================ SLIDE 1: COVER -->
+<div class="slide bg-cover active" id="slide-1">
+  <div style="text-align:center; max-width:680px;">
+    <div class="label-chip">ShipTrip · UX-Redesign 2026</div>
+    <h1 style="font-size:62px;">Daten-Story<br><span class="ocean">Dashboard</span></h1>
+    <p class="subtitle">Eine Designsprache für alle 5 Tabs — Zahlen als Erzählung,<br>Sammler-Gefühl, spielerische Stats.</p>
+    <div style="display:flex; justify-content:center; gap:32px; margin-top:40px;">
+      <div style="text-align:center;">
+        <div style="font-size:32px; font-weight:800; color:var(--ocean-light);">5</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.4); margin-top:4px;">Tabs redesigned</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,.1);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:32px; font-weight:800; color:var(--sunset);">12.400 sm</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.4); margin-top:4px;">Daten-Szene</div>
+      </div>
+      <div style="width:1px; background:rgba(255,255,255,.1);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:32px; font-weight:800; color:var(--sea-green);">100%</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.4); margin-top:4px;">SwiftUI-nativ</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 2: PROBLEM -->
+<div class="slide bg-dark" id="slide-2">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">IST-Analyse · Pain Points</div>
+    <h2 style="margin-bottom:28px;">Die App trägt Daten — sie <span class="sunset">erzählt keine Geschichte</span></h2>
+    <div class="pain-grid">
+      <div class="pain-item">
+        <div class="pain-label">HIGH</div>
+        <div class="pain-title">Stats-Grid ohne Kontext</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">6 isolierte Kacheln, keine Kurven, kein Trend, kein Vergleich.</div>
+        <div class="pain-ref">StatsView.swift:48–91</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-label">HIGH</div>
+        <div class="pain-title">Hardcodierte iOS-Farben statt Tokens</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">.blue/.cyan/.orange überall — Brand-Farben nur im Haupt-Tab.</div>
+        <div class="pain-ref">StatsView.swift:53–89</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-label">HIGH</div>
+        <div class="pain-title">Merkliste ohne Hierarchie</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">Alle Deals gleichwertig in einer Flat-List, kein Highlight.</div>
+        <div class="pain-ref">DealsView.swift:69–77</div>
+      </div>
+      <div class="pain-item med">
+        <div class="pain-label">MED</div>
+        <div class="pain-title">Mehr-Tab ist eine Form</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">Kein Profil, keine Zusammenfassung, kein Kontext für den Nutzer.</div>
+        <div class="pain-ref">SettingsView.swift:26–159</div>
+      </div>
+      <div class="pain-item med">
+        <div class="pain-label">MED</div>
+        <div class="pain-title">Karte ohne Fokus-Modus</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">Legende 200px hart, kein Chip-Switcher, kein Port-Bottom-Sheet.</div>
+        <div class="pain-ref">MapView.swift</div>
+      </div>
+      <div class="pain-item med">
+        <div class="pain-label">MED</div>
+        <div class="pain-title">Kein Sammler-Gefühl</div>
+        <div class="body-text" style="font-size:12px; margin:4px 0;">Achievements, Meilensteine, Länder-Ranking fehlen komplett.</div>
+        <div class="pain-ref">StatsView.swift (fehlt)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 3: BENCHMARK -->
+<div class="slide bg-dark" id="slide-3">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Design-Benchmark · 2026</div>
+    <h2 style="margin-bottom:24px;">Was Best-in-Class-Apps <span class="ocean">richtig machen</span></h2>
+    <table class="bench-table">
+      <thead>
+        <tr>
+          <th>App</th>
+          <th>Pattern</th>
+          <th>Gyroscope</th>
+          <th>Strava</th>
+          <th>Polarsteps</th>
+          <th>Triplt</th>
+          <th>Anwendbar?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="app-name">Daten-Hero-Strip</td>
+          <td class="pattern-name">Gradient-Banner mit 4 Kernzahlen oben</td>
+          <td class="check">✓</td><td class="check">✓</td><td class="partial">~</td><td class="no">–</td>
+          <td><span class="applicable">Ja → Statistik</span></td>
+        </tr>
+        <tr>
+          <td class="app-name">Horizontale Bar-Charts</td>
+          <td class="pattern-name">Länder/Häfen als Ranking, nicht nur Torte</td>
+          <td class="check">✓</td><td class="no">–</td><td class="check">✓</td><td class="no">–</td>
+          <td><span class="applicable">Ja → Statistik</span></td>
+        </tr>
+        <tr>
+          <td class="app-name">Achievement-Badges</td>
+          <td class="pattern-name">Scroll-Row mit freigeschalteten Meilensteinen</td>
+          <td class="check">✓</td><td class="check">✓</td><td class="no">–</td><td class="no">–</td>
+          <td><span class="applicable">Ja → Statistik/Mehr</span></td>
+        </tr>
+        <tr>
+          <td class="app-name">Best-Deal Hero-Card</td>
+          <td class="pattern-name">Prominentes Top-Angebot als r16-Karte</td>
+          <td class="no">–</td><td class="no">–</td><td class="no">–</td><td class="check">✓</td>
+          <td><span class="applicable">Ja → Merkliste</span></td>
+        </tr>
+        <tr>
+          <td class="app-name">Pin-Tap Bottom-Sheet</td>
+          <td class="pattern-name">Hafen-Details als modales Sheet beim Karten-Tap</td>
+          <td class="no">–</td><td class="no">–</td><td class="check">✓</td><td class="check">✓</td>
+          <td><span class="applicable">Ja → Karte</span></td>
+        </tr>
+        <tr>
+          <td class="app-name">Profil-Header</td>
+          <td class="pattern-name">Gradient-Header + Stat-Chips in Mehr</td>
+          <td class="check">✓</td><td class="check">✓</td><td class="no">–</td><td class="no">–</td>
+          <td><span class="applicable">Ja → Mehr</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 4: TAB 1 — MEINE REISEN (Anker) -->
+<div class="slide bg-stat" id="slide-4">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Tab 1 · Meine Reisen (Anker)</div>
+    <h2 style="margin-bottom:8px;">Stats-Strip bleibt — <span class="ocean">Hero-Card erhält Seemeilen-Kontext</span></h2>
+    <p class="body-text" style="margin-bottom:24px;">Gleicher Anker-Layout. Neu: Hero-Card Medienzonen-Gradient als Daten-Map, Stats-Strip mit sm-Token.</p>
+    <div class="iphone-wrap">
+      <!-- BEFORE -->
+      <div class="iphone">
+        <div class="ba-label ba-before">VORHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar screen-light"><span class="time">9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div></div>
+            <div class="nav-title-large">Meine Reisen</div>
+            <!-- Stats strip — basic -->
+            <div class="stats-strip">
+              <div class="stat-token"><span class="stat-val" style="color:#0C8CE9;">4</span><span class="stat-lbl">Reisen</span></div>
+              <div class="stat-token"><span class="stat-val" style="color:#36A9F0;">6</span><span class="stat-lbl">Länder</span></div>
+              <div class="stat-token"><span class="stat-val" style="color:#34C759;">34</span><span class="stat-lbl">Hafentage</span></div>
+              <div class="stat-token"><span class="stat-val" style="color:#FF6B35;">29</span><span class="stat-lbl">Hf. ges.</span></div>
+            </div>
+            <!-- Hero card basic -->
+            <div class="hero-card" style="margin-top:6px;">
+              <div class="hero-media" style="background:linear-gradient(135deg,#1A365D,#0C8CE9);">
+                <div class="hero-scrim"></div>
+                <div class="hero-text">
+                  <span class="hero-title-text">Westl. Mittelmeer</span>
+                  <span class="hero-sub">🚢 Costa · Costa Toscana · Jul–Aug</span>
+                </div>
+              </div>
+              <div class="hero-meta">
+                <span class="meta-left">ES · FR · IT · Ø ★4.8</span>
+                <span class="meta-right">Details →</span>
+              </div>
+            </div>
+            <!-- Year label -->
+            <div class="year-section">
+              <div class="year-line"></div>
+              <span class="year-text">2024</span>
+              <div class="year-line"></div>
+            </div>
+            <!-- Row -->
+            <div class="timeline-row">
+              <div class="spine-dot" style="background:#0C8CE9;"></div>
+              <div class="row-text">
+                <span class="row-title">Ostsee-Runde</span>
+                <span class="row-sub">AIDA 🚢 · 7 Tage · 3 Länder</span>
+                <span class="row-ports">Kiel · Kopenhagen</span>
+              </div>
+              <div class="row-thumb" style="background:#E5E5EA;">🚢</div>
+            </div>
+            <div class="timeline-row" style="margin-top:0;">
+              <div class="spine-dot" style="background:#0C8CE9;"></div>
+              <div class="row-text">
+                <span class="row-title">Kanaren-Kreuzfahrt</span>
+                <span class="row-sub">MSC 🚢 · 10 Tage · 2 Länder</span>
+                <span class="row-ports">Las Palmas · Teneriffa</span>
+              </div>
+              <div class="row-thumb" style="background:#E5E5EA;">🚢</div>
+            </div>
+            <!-- Tab bar -->
+            <div style="height:20px;"></div>
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon">⛴</div><div class="tab-label" style="color:#0C8CE9;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="iphone">
+        <div class="ba-label ba-after">NACHHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="status-bar screen-dark-content"><span class="time" style="color:#fff;">9:41</span><div class="status-icons" style="color:#fff;"><span>●●●</span></div></div>
+            <div class="nav-title-large dark" style="color:#fff; font-size:24px;">Meine Reisen</div>
+            <!-- Stats strip dark — mit sm-Token -->
+            <div class="stats-strip dark">
+              <div class="stat-token dark"><span class="stat-val" style="color:#0C8CE9;">4</span><span class="stat-lbl">Reisen</span></div>
+              <div class="stat-token dark"><span class="stat-val" style="color:#36A9F0;">6</span><span class="stat-lbl">Länder</span></div>
+              <div class="stat-token dark"><span class="stat-val" style="color:#34C759; font-size:13px;">12.4k</span><span class="stat-lbl">Seemeilen</span></div>
+              <div class="stat-token dark"><span class="stat-val" style="color:#FF6B35;">34</span><span class="stat-lbl">Haftage</span></div>
+            </div>
+            <!-- Hero card — geo gradient with port dots -->
+            <div class="hero-card" style="margin-top:6px;">
+              <div class="hero-media" style="background:linear-gradient(135deg, #0a1628 0%, #1a365d 40%, #0c5a8e 100%);">
+                <!-- Route polyline SVG -->
+                <svg style="position:absolute;inset:0;width:100%;height:100%;" viewBox="0 0 200 110" preserveAspectRatio="none">
+                  <polyline points="28,85 58,60 90,55 128,70 158,55 172,75 188,80" fill="none" stroke="#36A9F0" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.7"/>
+                  <circle cx="28" cy="85" r="4" fill="#FF6B35"/>
+                  <circle cx="58" cy="60" r="3" fill="#0C8CE9"/>
+                  <circle cx="90" cy="55" r="3" fill="#0C8CE9"/>
+                  <circle cx="128" cy="70" r="3" fill="#0C8CE9"/>
+                  <circle cx="172" cy="75" r="3" fill="#0C8CE9"/>
+                  <circle cx="188" cy="80" r="4" fill="#34C759"/>
+                  <text x="26" y="97" font-size="5" fill="rgba(255,255,255,.6)" text-anchor="middle">BCN</text>
+                  <text x="188" y="92" font-size="5" fill="rgba(255,255,255,.6)" text-anchor="middle">BCN</text>
+                </svg>
+                <div class="hero-scrim"></div>
+                <div class="hero-badge-left">Abgeschlossen</div>
+                <div class="hero-badge-right">★ 4.8</div>
+                <div class="hero-text">
+                  <span class="hero-title-text">Westl. Mittelmeer</span>
+                  <span class="hero-sub">🚢 Costa · Costa Toscana · 8 Tage</span>
+                </div>
+              </div>
+              <div class="hero-meta dark">
+                <span class="meta-left" style="color:rgba(255,255,255,.5);">5 Häfen · 3 Länder · 2.180 sm</span>
+                <span class="meta-right">Details →</span>
+              </div>
+            </div>
+            <!-- Year label dark -->
+            <div class="year-section">
+              <div class="year-line dark"></div>
+              <span class="year-text">2024</span>
+              <div class="year-line dark"></div>
+            </div>
+            <!-- Rows dark -->
+            <div class="timeline-row dark">
+              <div class="spine-dot" style="background:#0C8CE9;"></div>
+              <div class="row-text">
+                <span class="row-title dark" style="color:#fff;">Ostsee-Runde</span>
+                <span class="row-sub">AIDA 🚢 · 7 Tage · 3 Länder</span>
+                <span class="row-ports">Kiel · Kopenhagen</span>
+              </div>
+              <div class="row-thumb" style="background:#2C2C2E;">🚢</div>
+            </div>
+            <div class="timeline-row dark" style="margin-top:0;">
+              <div class="spine-dot" style="background:#FF6B35;"></div>
+              <div class="row-text">
+                <span class="row-title dark" style="color:#fff;">Norwegen-Fjorde</span>
+                <span class="row-sub">AIDA 🚢 · Geplant · 2025</span>
+                <span class="row-ports">Bergen · Flam</span>
+              </div>
+              <div class="row-thumb" style="background:#2C2C2E;">⚓</div>
+            </div>
+            <div style="height:8px;"></div>
+            <div class="tab-bar dark-tab">
+              <div class="tab-item active"><div class="tab-icon">⛴</div><div class="tab-label" style="color:#0C8CE9;">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- EXPLANATION -->
+      <div class="col" style="max-width:280px;">
+        <h3 style="color:var(--ocean-light); margin-bottom:16px;">Warum besser?</h3>
+        <ul class="why-list">
+          <li>Seemeilen als vierter Token ersetzt "Häfen gesamt" — emotionaler, einzigartiger Wert</li>
+          <li>Hero-Card Geo-Fallback zeigt echte Route-Polyline aus Port-Koordinaten (SVG-Overlay, kein Bild)</li>
+          <li>Start/End-Pins farbig nach Rolle (sunset = Start, green = End) — konsistent mit Karte + Detail</li>
+          <li>Seemeilen in Meta-Leiste: "2.180 sm" gibt der Reise Gewicht</li>
+          <li>Anker-Layout (Strip + Hero + Timeline) bleibt unverändert</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 5: TAB 2 — KARTE -->
+<div class="slide bg-dark" id="slide-5">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Tab 2 · Karte</div>
+    <h2 style="margin-bottom:8px;">Chip-Switcher + <span class="ocean">Hafen-Bottom-Sheet</span></h2>
+    <p class="body-text" style="margin-bottom:24px;">Legende als kompakte Card, Pin-Tap öffnet Hafen-Sheet mit Fotos und Ausflügen.</p>
+    <div class="iphone-wrap">
+      <!-- BEFORE -->
+      <div class="iphone">
+        <div class="ba-label ba-before">VORHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div style="position:relative; height:100%;">
+              <div class="map-bg" style="height:420px;">
+                <!-- simple map grid -->
+                <svg width="100%" height="100%" viewBox="0 0 196 420" preserveAspectRatio="xMidYMid slice">
+                  <rect width="196" height="420" fill="#2a3a4a"/>
+                  <!-- coast lines rough -->
+                  <path d="M0,200 Q50,180 80,160 Q120,140 160,155 Q180,158 196,150" fill="none" stroke="#3a5060" stroke-width="1"/>
+                  <path d="M0,240 Q40,220 70,215 Q110,210 140,225 Q170,232 196,220" fill="none" stroke="#3a5060" stroke-width="1"/>
+                  <!-- route -->
+                  <polyline points="30,260 65,230 100,220 135,240 165,225 182,250" fill="none" stroke="#0C8CE9" stroke-width="2"/>
+                  <!-- pins basic same color -->
+                  <circle cx="30" cy="260" r="5" fill="#0C8CE9"/>
+                  <circle cx="65" cy="230" r="5" fill="#0C8CE9"/>
+                  <circle cx="100" cy="220" r="5" fill="#0C8CE9"/>
+                  <circle cx="135" cy="240" r="5" fill="#0C8CE9"/>
+                  <circle cx="165" cy="225" r="5" fill="#0C8CE9"/>
+                  <circle cx="182" cy="250" r="5" fill="#0C8CE9"/>
+                </svg>
+                <!-- Legende hart oben rechts 200px wide — das Problem -->
+                <div style="position:absolute;top:40px;right:4px;width:90px;background:rgba(0,0,0,.7);border-radius:8px;padding:6px 8px;">
+                  <div style="font-size:8px;color:rgba(255,255,255,.5);margin-bottom:4px;font-weight:700;">LEGENDE</div>
+                  <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;"><div style="width:8px;height:8px;border-radius:50%;background:#0C8CE9;flex-shrink:0;"></div><span style="font-size:8px;color:rgba(255,255,255,.6);">Hafen</span></div>
+                  <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;"><div style="width:8px;height:8px;border-radius:50%;background:#FF6B35;flex-shrink:0;"></div><span style="font-size:8px;color:rgba(255,255,255,.6);">Start</span></div>
+                  <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:50%;background:#34C759;flex-shrink:0;"></div><span style="font-size:8px;color:rgba(255,255,255,.6);">Ende</span></div>
+                </div>
+              </div>
+              <div class="tab-bar dark-tab" style="position:absolute;bottom:0;left:0;right:0;">
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item active"><div class="tab-icon">🗺</div><div class="tab-label" style="color:#0C8CE9;">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="iphone">
+        <div class="ba-label ba-after">NACHHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div style="position:relative; height:100%;">
+              <div class="map-bg" style="height:420px;">
+                <svg width="100%" height="100%" viewBox="0 0 196 420" preserveAspectRatio="xMidYMid slice">
+                  <rect width="196" height="420" fill="#1e2f3c"/>
+                  <path d="M0,200 Q50,180 80,160 Q120,140 160,155 Q180,158 196,150" fill="none" stroke="#2a4255" stroke-width="1.5"/>
+                  <path d="M0,240 Q40,220 70,215 Q110,210 140,225 Q170,232 196,220" fill="none" stroke="#2a4255" stroke-width="1.5"/>
+                  <polyline points="30,260 65,230 100,220 135,240 165,225 182,250" fill="none" stroke="#36A9F0" stroke-width="2" stroke-dasharray="none"/>
+                  <!-- Pins by role -->
+                  <circle cx="30" cy="260" r="6" fill="#FF6B35"/>
+                  <circle cx="65" cy="230" r="5" fill="#0C8CE9"/>
+                  <circle cx="100" cy="220" r="5" fill="#0C8CE9"/>
+                  <circle cx="135" cy="240" r="5" fill="#0C8CE9"/>
+                  <circle cx="165" cy="225" r="5" fill="#0C8CE9"/>
+                  <circle cx="182" cy="250" r="6" fill="#34C759"/>
+                  <!-- port labels -->
+                  <text x="30" y="272" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">BCN</text>
+                  <text x="65" y="242" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">MRS</text>
+                  <text x="100" y="232" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">GEN</text>
+                  <text x="135" y="252" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">NAP</text>
+                  <text x="165" y="237" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">PMI</text>
+                  <text x="182" y="262" font-size="5.5" fill="rgba(255,255,255,.7)" text-anchor="middle">BCN</text>
+                </svg>
+                <!-- Chip Switcher -->
+                <div class="map-chip-bar" style="top:44px;">
+                  <button class="map-chip active-chip">Alle Reisen</button>
+                  <button class="map-chip inactive-chip">Westl. Mittelmeer</button>
+                  <button class="map-chip inactive-chip">Ostsee</button>
+                </div>
+                <!-- Compact legend card -->
+                <div class="map-legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#FF6B35;"></div><span class="legend-label">Start</span></div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#0C8CE9;"></div><span class="legend-label">Hafen</span></div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#34C759;"></div><span class="legend-label">Ende</span></div>
+                </div>
+                <!-- Bottom sheet -->
+                <div class="map-bottom-sheet">
+                  <div class="sheet-handle"></div>
+                  <div class="sheet-port-name">Marseille · Frankreich 🇫🇷</div>
+                  <div class="sheet-port-sub">Westl. Mittelmeer · Tag 2 · 8h Aufenthalt</div>
+                  <div class="sheet-chips">
+                    <span class="sheet-chip">🏛 Notre-Dame de la Garde</span>
+                    <span class="sheet-chip">🚌 Stadtführung</span>
+                    <span class="sheet-chip">🐟 Bouillabaisse</span>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-bar dark-tab" style="position:absolute;bottom:0;left:0;right:0;">
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+                <div class="tab-item active"><div class="tab-icon">🗺</div><div class="tab-label" style="color:#0C8CE9;">Karte</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+                <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="max-width:280px;">
+        <h3 style="color:var(--ocean-light); margin-bottom:16px;">Warum besser?</h3>
+        <ul class="why-list">
+          <li>Chip-Switcher filtert auf einzelne Reise — Fokus-Modus aus dem @State selectedCruise Pattern</li>
+          <li>Legende als kompakte Card (nicht 200px hardcoded) — toggle-fähig via eye-Button</li>
+          <li>Rollenbasierte Pin-Farben auch auf der Weltkarte (Start=sunset, Ende=green, Hafen=oceanBlue) — konsistent zu CruiseDetailView</li>
+          <li>Bottom-Sheet bei Pin-Tap: Port.name, country, excursions[] — alles aus vorhandenem Port-Modell</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 6: TAB 3 — MERKLISTE -->
+<div class="slide bg-dark" id="slide-6">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Tab 3 · Merkliste</div>
+    <h2 style="margin-bottom:8px;">Bestes Angebot als <span class="sunset">Hero-Card</span> — Rabatt sichtbar</h2>
+    <p class="body-text" style="margin-bottom:24px;">Top-Deal (niedrigster Preis) wird als r16-Karte mit Geo-Fallback hervorgehoben. Discount-Badge in sunsetOrange statt Rot.</p>
+    <div class="iphone-wrap">
+      <!-- BEFORE -->
+      <div class="iphone">
+        <div class="ba-label ba-before">VORHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar screen-light"><span class="time">9:41</span><div class="status-icons"><span>●●●</span></div></div>
+            <div class="nav-title-large">Merkliste</div>
+            <!-- Flat list no hierarchy -->
+            <div class="deal-row" style="margin-top:8px;">
+              <div class="deal-logo">🏔</div>
+              <div class="deal-info">
+                <span class="deal-title-sm">AIDA Norw. Fjorde</span>
+                <span class="deal-sub-sm">Norwegen · 12 Tage</span>
+              </div>
+              <div class="deal-price-col">
+                <span class="deal-price-val">899 €</span>
+                <span class="discount-badge" style="background:#ff3b30;">-28%</span>
+              </div>
+            </div>
+            <div class="deal-row">
+              <div class="deal-logo">🌴</div>
+              <div class="deal-info">
+                <span class="deal-title-sm">MSC Östl. Karibik</span>
+                <span class="deal-sub-sm">Karibik · 14 Tage</span>
+              </div>
+              <div class="deal-price-col">
+                <span class="deal-price-val">1.249 €</span>
+              </div>
+            </div>
+            <div class="tab-bar" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item active"><div class="tab-icon">🔖</div><div class="tab-label" style="color:#0C8CE9;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="iphone">
+        <div class="ba-label ba-after">NACHHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="status-bar screen-dark-content"><span class="time" style="color:#fff;">9:41</span><div class="status-icons" style="color:#fff;"><span>●●●</span></div></div>
+            <div class="nav-title-large dark" style="color:#fff; font-size:22px;">Merkliste</div>
+            <!-- Best deal hero -->
+            <div class="deal-hero" style="margin-top:4px;">
+              <div class="deal-hero-media">
+                <svg width="100%" height="80" viewBox="0 0 176 80" style="display:block;">
+                  <defs><linearGradient id="fjordGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a365d"/><stop offset="100%" stop-color="#0c5a8e"/></linearGradient></defs>
+                  <rect width="176" height="80" fill="url(#fjordGrad)"/>
+                  <!-- fjord silhouette -->
+                  <path d="M0,60 Q20,30 40,45 Q60,55 80,35 Q100,20 120,40 Q140,55 160,38 L176,42 L176,80 L0,80 Z" fill="#0a1628" opacity="0.6"/>
+                  <rect x="0" y="0" width="176" height="80" fill="url(#heroScrimGrad)" opacity="0.4"/>
+                  <!-- best deal badge -->
+                  <rect x="6" y="6" width="50" height="14" rx="7" fill="#FF6B35"/>
+                  <text x="31" y="16" font-size="7" fill="white" text-anchor="middle" font-weight="700">Bestes Angebot</text>
+                  <!-- discount badge -->
+                  <rect x="126" y="6" width="44" height="14" rx="7" fill="rgba(0,0,0,.5)"/>
+                  <text x="148" y="16" font-size="7" fill="#FF6B35" text-anchor="middle" font-weight="800">-28% OFF</text>
+                </svg>
+              </div>
+              <div class="deal-hero-info dark">
+                <div class="deal-hero-title dark">AIDA Norwegische Fjorde</div>
+                <div class="deal-hero-sub">AIDA Cruises · 12 Tage · Bergen · Flam · Geiranger</div>
+                <div style="display:flex; align-items:baseline; gap:8px; margin-top:4px;">
+                  <div class="deal-hero-price">899 €</div>
+                  <span style="font-size:10px; color:#8E8E93; text-decoration:line-through;">1.249 €</span>
+                  <span style="font-size:9px; color:var(--sea-green); font-weight:700;">Du sparst 350 €</span>
+                </div>
+              </div>
+            </div>
+            <!-- Sub label -->
+            <div style="padding:8px 10px 4px; font-size:10px; font-weight:700; color:#8E8E93; text-transform:uppercase; letter-spacing:.06em;">Alle Einträge</div>
+            <!-- normal row -->
+            <div class="deal-row dark">
+              <div class="deal-logo dark">🌴</div>
+              <div class="deal-info">
+                <span class="deal-title-sm dark">MSC Östl. Karibik</span>
+                <span class="deal-sub-sm">Karibik · 14 Tage · MSC</span>
+              </div>
+              <div class="deal-price-col">
+                <span class="deal-price-val dark">1.249 €</span>
+              </div>
+            </div>
+            <div style="height:60px;"></div>
+            <div class="tab-bar dark-tab" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item active"><div class="tab-icon">🔖</div><div class="tab-label" style="color:#0C8CE9;">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="max-width:280px;">
+        <h3 style="color:var(--ocean-light); margin-bottom:16px;">Warum besser?</h3>
+        <ul class="why-list">
+          <li>Bestes Angebot (niedrigster Preis) = Hero-Karte r16 mit Geo-Fallback-Gradient aus destination-Feld</li>
+          <li>Spar-Betrag als Green-Text: "Du sparst 350 €" — klarer als Prozent allein</li>
+          <li>Discount-Badge sunsetOrange statt systemRed — Brand-konform</li>
+          <li>Zwei-Ebenen-Hierarchie: Hero + Liste — kein flaches Gleichgewicht mehr</li>
+          <li>Alle Daten aus Deal-Modell: price, originalPrice, destination, duration, shippingLine</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 7: TAB 4 — STATISTIK -->
+<div class="slide bg-dark" id="slide-7">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Tab 4 · Statistik</div>
+    <h2 style="margin-bottom:8px;">Hero-Strip + Länder-Ranking + <span class="sea-green">Achievements</span></h2>
+    <p class="body-text" style="margin-bottom:24px;">Brand-Gradient ersetzt iOS-Systemfarben. Horizontale Balken statt Torte. Sammler-Badges aus berechneten Schwellen.</p>
+    <div class="iphone-wrap">
+      <!-- BEFORE -->
+      <div class="iphone">
+        <div class="ba-label ba-before">VORHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar screen-light"><span class="time">9:41</span><div class="status-icons"><span>●●●</span></div></div>
+            <div class="nav-title-large">Statistik</div>
+            <!-- 2x3 grid boring -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 10px;">
+              <div style="background:#F2F2F7;border-radius:12px;padding:10px;">
+                <div style="font-size:16px;color:#007aff;">⛴</div>
+                <div style="font-size:18px;font-weight:800;margin-top:4px;">4</div>
+                <div style="font-size:9px;color:#8E8E93;">Kreuzfahrten</div>
+              </div>
+              <div style="background:#F2F2F7;border-radius:12px;padding:10px;">
+                <div style="font-size:16px;color:#30b0c7;">📅</div>
+                <div style="font-size:18px;font-weight:800;margin-top:4px;">39</div>
+                <div style="font-size:9px;color:#8E8E93;">Reisetage</div>
+              </div>
+              <div style="background:#F2F2F7;border-radius:12px;padding:10px;">
+                <div style="font-size:16px;color:#ff9500;">📍</div>
+                <div style="font-size:18px;font-weight:800;margin-top:4px;">22</div>
+                <div style="font-size:9px;color:#8E8E93;">Häfen</div>
+              </div>
+              <div style="background:#F2F2F7;border-radius:12px;padding:10px;">
+                <div style="font-size:16px;color:#34c759;">🌍</div>
+                <div style="font-size:18px;font-weight:800;margin-top:4px;">6</div>
+                <div style="font-size:9px;color:#8E8E93;">Länder</div>
+              </div>
+            </div>
+            <!-- Bar chart -->
+            <div style="background:#F2F2F7;border-radius:12px;margin:4px 10px;padding:10px;">
+              <div style="font-size:10px;font-weight:700;margin-bottom:6px;">Kreuzfahrten pro Jahr</div>
+              <div style="display:flex;align-items:flex-end;gap:6px;height:50px;padding:0 2px;">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <div style="width:100%;border-radius:2px;background:#007aff;height:20px;"></div>
+                  <span style="font-size:7px;color:#8E8E93;">2023</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <div style="width:100%;border-radius:2px;background:#007aff;height:36px;"></div>
+                  <span style="font-size:7px;color:#8E8E93;">2024</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <div style="width:100%;border-radius:2px;background:#007aff;height:10px;"></div>
+                  <span style="font-size:7px;color:#8E8E93;">2025</span>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-label" style="color:#0C8CE9;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="iphone">
+        <div class="ba-label ba-after">NACHHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="status-bar screen-dark-content"><span class="time" style="color:#fff;">9:41</span><div class="status-icons" style="color:#fff;"><span>●●●</span></div></div>
+            <div class="nav-title-large dark" style="color:#fff; font-size:22px;">Statistik</div>
+            <!-- Hero gradient strip -->
+            <div class="stats-hero-strip">
+              <div class="stats-hero-row">
+                <div class="stats-hero-item"><span class="stats-hero-val">4</span><span class="stats-hero-lbl">Reisen</span></div>
+                <div class="stats-hero-item"><span class="stats-hero-val">6</span><span class="stats-hero-lbl">Länder</span></div>
+                <div class="stats-hero-item"><span class="stats-hero-val">34</span><span class="stats-hero-lbl">Hafentage</span></div>
+                <div class="stats-hero-item"><span class="stats-hero-val" style="font-size:14px;">12.4k</span><span class="stats-hero-lbl">Seemeilen</span></div>
+              </div>
+            </div>
+            <!-- Badges scroll row -->
+            <div style="padding:6px 10px 2px; font-size:9px; font-weight:700; color:#8E8E93; text-transform:uppercase; letter-spacing:.05em;">Meilensteine</div>
+            <div class="badge-row">
+              <div class="badge" style="background:rgba(255,107,53,.15);">
+                <span class="badge-icon">⚓</span>
+                <span class="badge-label" style="color:#FF6B35; font-size:6px;">1. Reise</span>
+              </div>
+              <div class="badge" style="background:rgba(12,140,233,.15);">
+                <span class="badge-icon">🌍</span>
+                <span class="badge-label" style="color:#0C8CE9; font-size:6px;">5 Länder</span>
+              </div>
+              <div class="badge" style="background:rgba(52,199,89,.15);">
+                <span class="badge-icon">🗺</span>
+                <span class="badge-label" style="color:#34C759; font-size:6px;">Weltumsegler</span>
+              </div>
+              <div class="badge" style="background:rgba(255,255,255,.06);">
+                <span class="badge-icon" style="opacity:.3;">🏆</span>
+                <span class="badge-label" style="color:#8E8E93; font-size:6px;">10 Reisen</span>
+              </div>
+              <div class="badge" style="background:rgba(255,255,255,.06);">
+                <span class="badge-icon" style="opacity:.3;">⭐</span>
+                <span class="badge-label" style="color:#8E8E93; font-size:6px;">Ø 5.0</span>
+              </div>
+            </div>
+            <!-- Länder-Ranking horizontal bars -->
+            <div class="stat-card-2 dark" style="margin-top:4px;">
+              <div class="chart-title dark">Top-Länder · Hafentage</div>
+              <div class="bar-row">
+                <span class="bar-country">Spanien</span>
+                <div class="bar-track"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);"></div></div>
+                <span class="bar-val dark">12</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-country">Italien</span>
+                <div class="bar-track"><div class="bar-fill" style="width:75%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);"></div></div>
+                <span class="bar-val dark">9</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-country">Frankreich</span>
+                <div class="bar-track"><div class="bar-fill" style="width:50%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);"></div></div>
+                <span class="bar-val dark">6</span>
+              </div>
+              <div class="bar-row">
+                <span class="bar-country">Dänemark</span>
+                <div class="bar-track"><div class="bar-fill" style="width:33%;background:linear-gradient(90deg,#0C8CE9,#36A9F0);"></div></div>
+                <span class="bar-val dark">4</span>
+              </div>
+            </div>
+            <!-- Ausgaben donut hint -->
+            <div class="stat-card-2 dark" style="margin-top:4px;">
+              <div class="chart-title dark">Ausgaben · Kategorien</div>
+              <div class="donut-container">
+                <svg viewBox="0 0 60 60" width="55" height="55" style="flex-shrink:0;">
+                  <circle cx="30" cy="30" r="22" fill="none" stroke="#FF6B35" stroke-width="10" stroke-dasharray="55 84" stroke-dashoffset="-5" transform="rotate(-90 30 30)"/>
+                  <circle cx="30" cy="30" r="22" fill="none" stroke="#0C8CE9" stroke-width="10" stroke-dasharray="30 109" stroke-dashoffset="-60" transform="rotate(-90 30 30)"/>
+                  <circle cx="30" cy="30" r="22" fill="none" stroke="#34C759" stroke-width="10" stroke-dasharray="25 114" stroke-dashoffset="-90" transform="rotate(-90 30 30)"/>
+                  <circle cx="30" cy="30" r="22" fill="none" stroke="#36A9F0" stroke-width="10" stroke-dasharray="29 110" stroke-dashoffset="-115" transform="rotate(-90 30 30)"/>
+                  <text x="30" y="33" font-size="8" text-anchor="middle" fill="white" font-weight="700">5.290€</text>
+                </svg>
+                <div class="donut-legend">
+                  <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#FF6B35;"></div><span class="donut-legend-label">Kreuzfahrt</span><span class="donut-legend-val dark">2.100€</span></div>
+                  <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#0C8CE9;"></div><span class="donut-legend-label">Flug</span><span class="donut-legend-val dark">1.200€</span></div>
+                  <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#34C759;"></div><span class="donut-legend-label">Ausflüge</span><span class="donut-legend-val dark">990€</span></div>
+                  <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#36A9F0;"></div><span class="donut-legend-label">Bord</span><span class="donut-legend-val dark">1.000€</span></div>
+                </div>
+              </div>
+            </div>
+            <div style="height:4px;"></div>
+            <div class="tab-bar dark-tab" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item active"><div class="tab-icon">📊</div><div class="tab-label" style="color:#0C8CE9;">Statistik</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">•••</div><div class="tab-label">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="max-width:280px;">
+        <h3 style="color:var(--ocean-light); margin-bottom:16px;">Warum besser?</h3>
+        <ul class="why-list">
+          <li>Hero-Strip: oceanBlue-Gradient mit 4 Kernzahlen — ersetzt iso lierte StatCard-Kacheln ohne Kontext</li>
+          <li>Achievements-Row: Badges aus Schwellwert-Logik (cruises.count ≥ N, uniqueCountries ≥ N) — Sammler-Gefühl, rein berechnet</li>
+          <li>Horizontale Balken für Länder-Ranking: aus Port.country gruppiert — lesbarer als Torte</li>
+          <li>Donut mit Brand-Tokens statt automatischer SwiftCharts-Palette</li>
+          <li>Tausender-Formatierung: "12.4k sm" und "5.290€" statt rohen Zahlen</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 8: TAB 5 — MEHR -->
+<div class="slide bg-dark" id="slide-8">
+  <div style="width:100%; max-width:920px;">
+    <div class="label-chip">Tab 5 · Mehr</div>
+    <h2 style="margin-bottom:8px;">Profil-Header mit <span class="ocean">Lifetime-Stat-Chips</span></h2>
+    <p class="body-text" style="margin-bottom:24px;">Einstellungen bleiben vollständig — aber die Seite beginnt mit einem persönlichen Kontext, nicht einer leeren Form.</p>
+    <div class="iphone-wrap">
+      <!-- BEFORE -->
+      <div class="iphone">
+        <div class="ba-label ba-before">VORHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen">
+            <div class="status-bar screen-light"><span class="time">9:41</span><div class="status-icons"><span>●●●</span></div></div>
+            <div class="nav-title-large">Einstellungen</div>
+            <!-- Settings as plain form -->
+            <div style="padding:0 10px;">
+              <div style="font-size:9px;color:#8E8E93;text-transform:uppercase;letter-spacing:.06em;padding:8px 2px 4px;">Erscheinungsbild</div>
+              <div style="background:#F2F2F7;border-radius:10px;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:.5px solid rgba(0,0,0,.08);">
+                  <span style="font-size:12px;">Farbschema</span>
+                  <span style="font-size:12px;color:#8E8E93;">System ›</span>
+                </div>
+              </div>
+              <div style="font-size:9px;color:#8E8E93;text-transform:uppercase;letter-spacing:.06em;padding:8px 2px 4px;">KI-Funktionen</div>
+              <div style="background:#F2F2F7;border-radius:10px;overflow:hidden;">
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:.5px solid rgba(0,0,0,.08);">
+                  <span style="font-size:14px;">✨</span><span style="font-size:12px;flex:1;">Gemini API</span><span style="font-size:12px;color:#8E8E93;">Nicht konfiguriert</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;">
+                  <span style="font-size:14px;">🔑</span><span style="font-size:12px;">API-Key eingeben</span>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item active"><div class="tab-icon">•••</div><div class="tab-label" style="color:#0C8CE9;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- AFTER -->
+      <div class="iphone">
+        <div class="ba-label ba-after">NACHHER</div>
+        <div class="iphone-frame">
+          <div class="iphone-notch"></div>
+          <div class="iphone-screen dark">
+            <div class="status-bar screen-dark-content" style="padding-bottom:0;"><span class="time" style="color:#fff;">9:41</span><div class="status-icons" style="color:#fff;"><span>●●●</span></div></div>
+            <!-- Profil-Header -->
+            <div class="settings-profile">
+              <div class="avatar-circle">⚓</div>
+              <div>
+                <span class="profile-name">Mein Profil</span>
+                <div class="profile-chips">
+                  <span class="profile-chip">4 Reisen</span>
+                  <span class="profile-chip">6 Länder</span>
+                  <span class="profile-chip">12.4k sm</span>
+                  <span class="profile-chip">★ 4.8 Ø</span>
+                </div>
+              </div>
+            </div>
+            <!-- Settings sections with icon tiles -->
+            <div class="settings-section">
+              <div class="settings-section-title">Darstellung</div>
+              <div class="settings-group dark">
+                <div class="settings-row dark">
+                  <div class="settings-icon" style="background:#5E5CE6;">🎨</div>
+                  <span class="settings-row-label dark">Farbschema</span>
+                  <span class="settings-row-val">System</span>
+                  <span class="settings-chevron">›</span>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">KI &amp; Daten</div>
+              <div class="settings-group dark">
+                <div class="settings-row dark">
+                  <div class="settings-icon" style="background:#FF6B35;">✨</div>
+                  <span class="settings-row-label dark">Gemini API</span>
+                  <span class="settings-row-val" style="color:#34C759;">Aktiv</span>
+                  <span class="settings-chevron">›</span>
+                </div>
+                <div class="settings-row dark">
+                  <div class="settings-icon" style="background:#0C8CE9;">💾</div>
+                  <span class="settings-row-label dark">Daten verwalten</span>
+                  <span class="settings-chevron">›</span>
+                </div>
+              </div>
+            </div>
+            <div class="settings-section">
+              <div class="settings-section-title">Sonstiges</div>
+              <div class="settings-group dark">
+                <div class="settings-row dark">
+                  <div class="settings-icon" style="background:#34C759;">🔔</div>
+                  <span class="settings-row-label dark">Erinnerungen</span>
+                  <span class="settings-chevron">›</span>
+                </div>
+                <div class="settings-row dark">
+                  <div class="settings-icon" style="background:#1A365D;">ℹ</div>
+                  <span class="settings-row-label dark">Version 1.5.1</span>
+                  <span class="settings-row-val">Build 8</span>
+                </div>
+              </div>
+            </div>
+            <div class="tab-bar dark-tab" style="position:absolute;bottom:0;left:0;right:0;">
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">⛴</div><div class="tab-label">Reisen</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🗺</div><div class="tab-label">Karte</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">🔖</div><div class="tab-label">Merkliste</div></div>
+              <div class="tab-item"><div class="tab-icon" style="filter:grayscale(1) opacity(.5);">📊</div><div class="tab-label">Statistik</div></div>
+              <div class="tab-item active"><div class="tab-icon">•••</div><div class="tab-label" style="color:#0C8CE9;">Mehr</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col" style="max-width:280px;">
+        <h3 style="color:var(--ocean-light); margin-bottom:16px;">Warum besser?</h3>
+        <ul class="why-list">
+          <li>Profil-Header: navy→oceanBlue-Gradient mit 4 Lifetime-Chips — Page startet mit Kontext, nicht einer Form</li>
+          <li>Farbige Icon-Kacheln r6 pro Settings-Row — visuell schnell scanbar, iOS 18 Settings-Muster</li>
+          <li>Settings-Groups als Cards — klare Gruppierung statt Flat-Form</li>
+          <li>Alle Chips aus vorhandenen Computed Properties: cruises.count, uniqueCountries, totalNauticalMiles (neu berechenbar aus Port-Koordinaten)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 9: DESIGNSPRACHE-OVERVIEW -->
+<div class="slide bg-navy" id="slide-9">
+  <div style="width:100%; max-width:880px;">
+    <div class="label-chip">Designsprache · Durchgehende Tokens</div>
+    <h2 style="margin-bottom:28px;">Eine Sprache — <span class="ocean">alle 5 Tabs</span></h2>
+    <div class="grid-3" style="gap:20px;">
+      <div class="card">
+        <div style="font-size:13px; font-weight:700; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px;">Farbpalette</div>
+        <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#0C8CE9;margin:0 auto;"></div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:3px;">oceanBlue</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#36A9F0;margin:0 auto;"></div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:3px;">oceanLight</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#1A365D;margin:0 auto;"></div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:3px;">navyDark</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#FF6B35;margin:0 auto;"></div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:3px;">sunset</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="width:32px;height:32px;border-radius:8px;background:#34C759;margin:0 auto;"></div>
+            <div style="font-size:8px;color:rgba(255,255,255,.4);margin-top:3px;">seaGreen</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;">Keine neuen Farben. Nur konsequente Token-Verwendung in Nebentabs (keine .blue/.red mehr).</div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px; font-weight:700; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px;">Card-Hierarchie</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:rgba(255,255,255,.1);border-radius:16px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;">Hero-Card</span><span style="font-size:10px;color:rgba(255,255,255,.4);">r16 · kein Rand</span>
+          </div>
+          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;">cardStyle</span><span style="font-size:10px;color:rgba(255,255,255,.4);">r12 · 5%-Schatten</span>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;">Row / Strip</span><span style="font-size:10px;color:rgba(255,255,255,.4);">r10 · kein Rand</span>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border-radius:6px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;">Thumbnail</span><span style="font-size:10px;color:rgba(255,255,255,.4);">r6 · 34×34</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:13px; font-weight:700; color:rgba(255,255,255,.5); text-transform:uppercase; letter-spacing:.08em; margin-bottom:12px;">Neue Elemente</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ocean-light);margin-bottom:3px;">Seemeilen-Token</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);">Lifetime-sm aus Port-Koordinaten (Haversine) — neuer 4. Stats-Strip-Wert</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--sunset);margin-bottom:3px;">Achievement-Badges</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);">Schwellwert-Logik (≥1, ≥5, ≥10 Reisen/Länder) — keine neuen Datenfelder nötig</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--sea-green);margin-bottom:3px;">Geo-Polyline in Hero</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);">SVG aus Port.latitude/longitude — ersetzt leeren Gradient-Fallback</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:3px;">Bottom-Sheet Karte</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);">Port.name + excursions[] bei Pin-Tap — half-modal, keine Navigation</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 10: ROADMAP -->
+<div class="slide bg-dark" id="slide-10">
+  <div style="width:100%; max-width:880px;">
+    <div class="label-chip">Implementierung · Phasenplan</div>
+    <h2 style="margin-bottom:28px;">3 Phasen — <span class="ocean">umsetzbar ohne neue Datenfelder</span></h2>
+    <div class="roadmap-grid">
+      <div class="roadmap-card">
+        <div class="roadmap-phase" style="color:var(--sea-green);">Phase 1 · Sprint 1–2</div>
+        <div class="roadmap-title">Token-Konsolidierung</div>
+        <div class="roadmap-item">StatsView: .blue/.cyan/.orange durch oceanBlue/sunset/seaGreen ersetzen</div>
+        <div class="roadmap-item">DealsView: Discount-Badge .red → sunsetOrange</div>
+        <div class="roadmap-item">Mehr: Profil-Header + Icon-Kacheln</div>
+        <div class="roadmap-item">Stats-Strip: Seemeilen statt "Häfen gesamt"</div>
+        <span class="effort-tag effort-s">S · ~1 Tag</span>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-phase" style="color:var(--ocean-light);">Phase 2 · Sprint 3–4</div>
+        <div class="roadmap-title">Story-Elemente</div>
+        <div class="roadmap-item">Statistik Hero-Strip (Gradient-Banner)</div>
+        <div class="roadmap-item">Achievement-Badges (Schwellwert-Array)</div>
+        <div class="roadmap-item">Länder-Ranking horizontale Bars (Swift Charts BarMark horizontal)</div>
+        <div class="roadmap-item">Merkliste: Best-Deal Hero-Card</div>
+        <div class="roadmap-item">Donut mit expenseColor-Tokens</div>
+        <span class="effort-tag effort-m">M · ~3–4 Tage</span>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-phase" style="color:var(--sunset);">Phase 3 · Sprint 5–6</div>
+        <div class="roadmap-title">Interaktion</div>
+        <div class="roadmap-item">Karte: Chip-Switcher (Reise-Filter per @State)</div>
+        <div class="roadmap-item">Karte: Bottom-Sheet bei Pin-Tap (MapKit onTapGesture)</div>
+        <div class="roadmap-item">Hero-Card: SVG-Polyline aus Port-Koordinaten</div>
+        <div class="roadmap-item">Tausender-Formatierung (Locale.current.groupingSeparator)</div>
+        <span class="effort-tag effort-l">L · ~5–7 Tage</span>
+      </div>
+    </div>
+    <div style="margin-top:24px; padding:16px 20px; background:rgba(12,140,233,.1); border:1px solid rgba(12,140,233,.2); border-radius:12px; display:flex; gap:16px; align-items:center;">
+      <div style="font-size:28px;">💡</div>
+      <div>
+        <div style="font-size:14px; font-weight:700; color:var(--ocean-light); margin-bottom:4px;">Kein neues Datenmodell nötig</div>
+        <div style="font-size:13px; color:rgba(255,255,255,.6);">Alle Verbesserungen nutzen vorhandene Felder: Port.latitude/longitude für Seemeilen + Polyline, Port.country für Länder-Ranking, Deal.price/originalPrice für Hero-Deal, Cruise.rating + counts für Badges.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SLIDE 11: CLOSING -->
+<div class="slide bg-cover" id="slide-11">
+  <div style="text-align:center; max-width:680px;">
+    <div class="label-chip">Nächste Schritte</div>
+    <h2 style="font-size:44px; margin-bottom:20px;">Gleiche Daten — <span class="ocean">andere Geschichte</span></h2>
+    <p class="subtitle" style="font-size:16px; margin-bottom:36px;">ShipTrip hat alle Daten. Die Redesign-Richtung "Daten-Story" macht sie sichtbar:<br>Seemeilen, Achievements, Länder-Ranking — aus vorhandenen Feldern berechnet.</p>
+    <div class="grid-3" style="gap:16px; margin-bottom:36px;">
+      <div class="card-sm" style="text-align:center;">
+        <div style="font-size:24px; margin-bottom:8px;">🎯</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Phase 1 starten</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.5);">Token-Konsolidierung — 1 Tag, sofort sichtbar</div>
+      </div>
+      <div class="card-sm" style="text-align:center;">
+        <div style="font-size:24px; margin-bottom:8px;">📐</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Seemeilen-Util</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.5);">Haversine-Berechnung als Date+Extensions ergänzen</div>
+      </div>
+      <div class="card-sm" style="text-align:center;">
+        <div style="font-size:24px; margin-bottom:8px;">🏆</div>
+        <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Achievement-Array</div>
+        <div style="font-size:12px; color:rgba(255,255,255,.5);">Statisches Array mit Schwellwert-Checks in StatsView</div>
+      </div>
+    </div>
+    <div style="font-size:13px; color:rgba(255,255,255,.3);">ShipTrip · Daten-Story Redesign · 2026 · Andre</div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(total - 1, n));
+    slides[current].classList.add('active');
+    document.getElementById('slide-counter').textContent = (current + 1) + ' / ' + total;
+    document.getElementById('progress-bar').style.width = ((current + 1) / total * 100) + '%';
+    window.location.hash = current + 1;
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+    if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+  });
+
+  // Deep-link via hash
+  const hashSlide = parseInt(window.location.hash.replace('#','')) - 1;
+  goTo(isNaN(hashSlide) ? 0 : hashSlide);
+</script>
+</body>
+</html>
