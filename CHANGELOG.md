@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.6.0] - 2026-07-03
+
 ### Hinzugefuegt
 
 - **Hafenbilder im ZIP-Export**: `ExportImportService` schreibt Hafenbilder
@@ -451,7 +455,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/andyholiday/ShipTrip/compare/v1.5.1...v1.6.0
 [1.5.0]: https://github.com/andyholiday/ShipTrip/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/andyholiday/ShipTrip/compare/v1.0.4...v1.4.1
 [1.0.0]: https://github.com/andyholiday/ShipTrip/releases/tag/v1.0.0
