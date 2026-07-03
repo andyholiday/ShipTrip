@@ -12,7 +12,7 @@ import OSLog
 private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "notifications")
 
 /// Service für lokale Push-Benachrichtigungen
-class NotificationService {
+final class NotificationService: Sendable {
     
     static let shared = NotificationService()
     

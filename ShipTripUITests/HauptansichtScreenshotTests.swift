@@ -280,6 +280,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
 
     // MARK: - Hilfsfunktion
 
+    @MainActor
     private func write(screenshot: XCUIScreenshot, name: String) throws {
         let url = outputDir.appending(component: "\(name).png")
         try screenshot.pngRepresentation.write(to: url)
@@ -288,6 +289,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
 
     /// Hero-Card unabhängig vom XCUIElement-Typ (Button vs. otherElement) anhand
     /// des accessibilityIdentifier "heroCard" finden.
+    @MainActor
     private func heroCard(_ app: XCUIApplication) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "heroCard").firstMatch
     }

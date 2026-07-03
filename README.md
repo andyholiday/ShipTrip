@@ -2,11 +2,11 @@
 
 Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
 
-![Swift](https://img.shields.io/badge/Swift-5.9-orange)
-![iOS](https://img.shields.io/badge/iOS-17.0+-blue)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-5.0-green)
-![SwiftData](https://img.shields.io/badge/SwiftData-1.0-purple)
-![Version](https://img.shields.io/badge/Version-1.4.1-brightgreen)
+![Swift](https://img.shields.io/badge/Swift-6.0-orange)
+![iOS](https://img.shields.io/badge/iOS-18.5+-blue)
+![SwiftUI](https://img.shields.io/badge/SwiftUI-native-green)
+![SwiftData](https://img.shields.io/badge/SwiftData-native-purple)
+![Version](https://img.shields.io/badge/Version-1.5.1-brightgreen)
 
 📋 **[Changelog](CHANGELOG.md)** | 📖 **[Dokumentation](docs/)**
 
@@ -26,7 +26,7 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
   - Häfen mit Ankunfts-/Abfahrtszeiten
   - Seetage
 
-### 🛳️ **~1.800 Häfen weltweit**
+### 🛳️ **~1.900 Häfen weltweit**
 - 🌍 Europa, Karibik, Asien, Ozeanien, Afrika, VAE/Oman
 - Autocomplete bei der Hafen-Suche
 - Automatische Koordinaten-Zuordnung
@@ -38,56 +38,56 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
 - Besuchte Länder & Häfen
 
 ### Weitere Features
-- 💸 Ausgaben-Tracking
-- 🔔 Push-Benachrichtigungen vor Reisestart
+- 💸 Ausgaben-Tracking (Geräte-Locale-Währung, kein hartkodiertes EUR)
+- 💾 Export/Import als ZIP (verlustfrei, inkl. Reise- und Hafenbilder)
+- 🔔 Lokale Erinnerungen vor Reisestart (keine Push-Notifications/APNs)
 - 🎨 Dark Mode Support
-- 📱 Native iOS 17 Design
+- 📱 Natives iOS-Design
 
 ## 🛠️ Technologie-Stack
 
 | Komponente | Technologie |
 |------------|-------------|
-| UI Framework | SwiftUI 5.0 |
+| Sprache | Swift 6 |
+| UI Framework | SwiftUI |
 | Datenbank | SwiftData |
 | Karten | MapKit |
 | Charts | Swift Charts |
 | AI | Google Gemini 2.5 Flash |
-| Sicherheit | Keychain Services |
-| Notifications | UserNotifications |
+| Sicherheit | Keychain Services (Generic Password, geräte-gebunden) |
+| Notifications | UserNotifications (lokal) |
 
 ## 📁 Projektstruktur
 
 ```
 ShipTrip/
-├── App/
-│   └── ShipTripApp.swift          # App Entry Point
+├── ShipTripApp.swift              # App Entry Point (kein separater App/-Ordner)
 ├── Models/
-│   ├── Cruise.swift               # Kreuzfahrt-Model
-│   ├── Port.swift                 # Hafen-Model
-│   ├── Expense.swift              # Ausgaben-Model
-│   ├── Deal.swift                 # Angebote-Model
-│   ├── Photo.swift                # Foto-Model
-│   ├── ShippingLine.swift         # Reederei-Daten
-│   └── PortSuggestion.swift       # ~1.800 Hafen-Datenbank
+│   ├── Cruise.swift                # Kreuzfahrt-Model
+│   ├── Port.swift                  # Hafen-Model
+│   ├── Expense.swift               # Ausgaben-Model
+│   ├── Deal.swift                  # Angebote-Model
+│   ├── Photo.swift                 # Foto-Model
+│   ├── ShippingLine.swift          # Reederei-Daten
+│   └── PortSuggestion.swift        # ~1.900 Hafen-Datenbank (Wikidata-Import)
 ├── Views/
-│   ├── Cruises/
-│   │   ├── CruiseListView.swift   # Übersicht
-│   │   ├── CruiseDetailView.swift # Details
-│   │   └── CruiseFormView.swift   # Erstellen/Bearbeiten
-│   ├── Map/
-│   │   └── MapView.swift          # Weltkarte mit Routen
-│   ├── Deals/
-│   │   └── DealsView.swift        # Angebote
-│   ├── Stats/
-│   │   └── StatsView.swift        # Statistiken
-│   └── Settings/
-│       └── SettingsView.swift     # Einstellungen
+│   ├── Cruises/                    # Liste, Detail, Formulare, Hero-Card, Timeline
+│   ├── Map/                        # MapView.swift — Weltkarte mit Routen
+│   ├── Deals/                      # DealsView.swift — Wunschreisen
+│   ├── Stats/                      # StatsView.swift — Statistiken
+│   └── Settings/                   # SettingsView.swift — Einstellungen, Export/Import
 ├── Services/
-│   ├── GeminiService.swift        # AI Integration
-│   ├── KeychainService.swift      # Sichere Speicherung
-│   └── NotificationService.swift  # Push-Benachrichtigungen
-└── Assets.xcassets/               # App Icon & Assets
+│   ├── GeminiService.swift         # KI-Integration
+│   ├── KeychainService.swift       # Sichere Speicherung des API-Keys
+│   ├── NotificationService.swift   # Lokale Erinnerungen (kein APNs)
+│   ├── ExportImportService.swift   # ZIP-/JSON-Export/-Import
+│   ├── ZipArchiveWriter.swift      # ZIP-Erstellung (STORED)
+│   ├── ZipArchiveReader.swift      # ZIP-Extraktion (Zip-Slip-/Bomben-Schutz)
+│   └── CRC32.swift                 # CRC-32 für den ZIP-Stack
+└── Assets.xcassets/                # App Icon & Assets
 ```
+
+Vollständige Architektur- und API-Doku: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/API.md](docs/API.md).
 
 ## 📚 Dokumentation
 
@@ -103,8 +103,8 @@ ShipTrip/
 ## 🚀 Installation
 
 ### Voraussetzungen
-- Xcode 15.0+
-- iOS 17.0+ Simulator oder Gerät
+- Xcode 26.5+
+- iOS 18.5+ Simulator oder Gerät
 - Apple Developer Account (für Gerät-Tests)
 
 ### Schritte
@@ -135,16 +135,17 @@ ShipTrip/
 
 ## 🔮 Roadmap
 
-### v1.0 ✅
+### Umgesetzt ✅
 - [x] Kreuzfahrten verwalten
 - [x] Karten-Integration
 - [x] KI-Import
 - [x] Statistiken
-- [x] ~1.800 Häfen (Wikidata Import)
+- [x] ~1.900 Häfen (Wikidata Import)
+- [x] Export/Import als ZIP (verlustfrei, inkl. Bilder)
 
-### v2.0 (geplant)
-- [ ] Export/Import (JSON)
-- [ ] CloudKit Sync
+### Geplant
+- [ ] CloudKit Sync (Datenmodell teilweise vorbereitet, aber noch nicht
+      konform/aktiv — siehe [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
 - [ ] Hafen-Bilder + KI-Generierung
 - [ ] Wetter-API Integration
 - [ ] Auto-Import von Reederei-Angeboten

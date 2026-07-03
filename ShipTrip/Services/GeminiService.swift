@@ -9,12 +9,19 @@ import Foundation
 
 /// Service für Gemini AI Integration
 @Observable
+@MainActor
 class GeminiService {
     
     static let shared = GeminiService()
-    
+
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
-    
+    private let urlSession: URLSession
+
+    /// `urlSession` ist injizierbar, damit Tests einen gemockten Session (via `URLProtocol`) verwenden können.
+    init(urlSession: URLSession = .shared) {
+        self.urlSession = urlSession
+    }
+
     var isConfigured: Bool {
         KeychainService.exists(.geminiApiKey)
     }
@@ -145,7 +152,7 @@ class GeminiService {
         
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await urlSession.data(for: request)
         
         guard let httpResponse = response as? HTTPURLResponse else {
             throw GeminiError.networkError

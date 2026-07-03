@@ -38,7 +38,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   (`isOngoing`) > naechste bevorstehende > zuletzt vergangene.
 - **Lifetime-Aggregatwerte**: Neue Array-Extension auf `Cruise` liefert
   `uniqueCountryCount`, `totalSeaDays` und `totalPortStops` fuer den Stats-Strip.
-- **Neue Unit-Tests (52 gesamt)**: `CruiseAggregateTests` und
+- **Neue Unit-Tests (84 gesamt)**: `CruiseAggregateTests` und
   `HeroSelectionTests` testen alle drei Aggregat-Properties und die Hero-
   Auswahl-Prioritaet; `DemoDataServiceTests` sichert Demo-Seeding-Idempotenz.
 - **Screenshot-Tests**: `HauptansichtScreenshotTests` verifizieren Photo-Hero-

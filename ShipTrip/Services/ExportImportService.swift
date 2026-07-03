@@ -61,6 +61,7 @@ struct ImportResult {
 
 // MARK: - Export/Import Service
 
+@MainActor
 class ExportImportService {
     static let shared = ExportImportService()
 

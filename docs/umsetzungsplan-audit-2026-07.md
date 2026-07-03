@@ -102,16 +102,17 @@
   `CRC32.swift` — reine Verschiebung, Tests bleiben grün.
 
 ### Welle A4 · Fundament & Wahrheit (Findings: Swift-5-Drift [H], Non-Sendable [M], Doku-Drift [M], README/SETUP stale [L], Test-Lücken)
-- [ ] **A4.1** `SWIFT_VERSION = 6.0` + strict concurrency; Fehler abarbeiten
+- [x] **A4.1** ✅ 2026-07-03 (alle 6 Configs auf 6.0/complete; @MainActor GeminiService+ExportImportService, Sendable NotificationService, kein @unchecked; build-for-testing aller Targets grün) — `SWIFT_VERSION = 6.0` + strict concurrency; Fehler abarbeiten
   (LocationManager `@MainActor`, GeminiService-Singleton Sendable/@MainActor).
-  ✓ Build grün unter Swift 6, 48+ Tests grün.
-- [ ] **A4.2** Doku-Sync: MODELS.md aus Schema neu schreiben; API.md
+  ✓ Build grün unter Swift 6, 84 Unit-Tests grün (ursprünglicher Zielwert: 48+).
+- [x] **A4.2** ✅ 2026-07-03 (MODELS/API/ARCHITECTURE/README/SETUP/CHANGELOG am realen Code verifiziert; erfundene NotificationService-API + Secure-Enclave-/CloudKit-Behauptungen korrigiert) — Doku-Sync: MODELS.md aus Schema neu schreiben; API.md
   (NotificationService real, Gemini-Signaturen, ExportImportService neu);
   ARCHITECTURE.md (Threading-Absatz, Service-Tabelle, Ordner, Tab-Namen);
   README (iOS 18.5, Export erledigt); SETUP (Xcode 26.5, keine APNs-Capability
   — Stand heute; Push/Background Modes kommen erst mit CloudKit, s. D2.1;
-  Fastlane/ASC-Secrets dokumentieren); CHANGELOG „48 Unit + 12 UI".
-- [ ] **A4.3** Test-Lücken minimal schließen: GeminiService (URLProtocol-Mock:
+  Fastlane/ASC-Secrets dokumentieren); CHANGELOG „84 Unit + 12 UI"
+  (ursprünglicher Zielwert: „48 Unit + 12 UI").
+- [x] **A4.3** ✅ 2026-07-03 (GeminiServiceTests neu: Erfolg/401/429/kaputtes JSON via URLSession-Injection + Keychain-Roundtrip; Import-Härtungs-Tests existierten aus A1.3; final 84 Unit + 12 UI grün) — Test-Lücken minimal schließen: GeminiService (URLProtocol-Mock:
   Erfolg, 401, 429, kaputtes JSON), KeychainService-Roundtrip,
   Import-Härtungs-Tests aus A1.3.
 - [ ] **A4.4 Release:** Version 1.6.0, CHANGELOG, TestFlight via Fastlane.
