@@ -98,16 +98,25 @@ struct ShippingLine: Identifiable, Hashable {
         all.first { $0.id == id }
     }
 
+    /// Normalisiert einen Schiffsnamen für den Vergleich: kleingeschrieben, getrimmt,
+    /// Leerzeichen entfernt. Aus `findByShipName` extrahiert (kein Verhaltenswechsel), damit
+    /// derselbe Hidden-Key auch von `HiddenCatalogItem`/`ShippingLineCatalogService` genutzt
+    /// werden kann (ADR-006, Abschnitt 2) — bewusst NICHT diakritik-insensitiv, damit Hidden-Keys
+    /// 1:1 kompatibel mit diesem bestehenden Katalog-Matching bleiben.
+    static func normalizedShipKey(_ name: String) -> String {
+        name.lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: " ", with: "")
+    }
+
     /// Findet eine Reederei anhand des Schiffsnamens (aktive und historische Flotte).
     /// Whitespace wird beim Vergleich ignoriert, damit z. B. eine KI-Erfassung mit
     /// "AIDA Stella" weiterhin auf "AIDAstella" matcht.
     static func findByShipName(_ ship: String) -> ShippingLine? {
-        let normalizedShip = ship.lowercased()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: " ", with: "")
+        let normalizedShip = normalizedShipKey(ship)
         return all.first { line in
             (line.ships + line.historicalShips).contains {
-                $0.lowercased().replacingOccurrences(of: " ", with: "") == normalizedShip
+                normalizedShipKey($0) == normalizedShip
             }
         }
     }
@@ -177,5 +186,19 @@ private extension Array where Element == String {
     init(dictOrderedKeys keys: [String]) {
         var seen = Set<String>()
         self = keys.filter { seen.insert($0).inserted }
+    }
+}
+
+/// Kollisions-/Sortier-Normalisierung für eigene Reedereien/Schiffe (ADR-006, Abschnitt 2).
+/// Getrennt von `ShippingLine.normalizedShipKey(_:)`, weil hier zusätzlich diakritik-insensitiv
+/// verglichen wird (z. B. "Königsklasse" vs. "Konigsklasse" gelten als Namenskollision), während
+/// der Hidden-Key exakt mit dem bestehenden Katalog-Matching kompatibel bleiben muss.
+enum ShippingLineNameMatching {
+    /// Kollisions-/Sortier-Key: getrimmt, diakritik- und case-insensitiv gefaltet. Verwendet für
+    /// Namenskollisionsprüfung (Anlegen eigener Reedereien/Schiffe), die Sortierung in
+    /// `ShippingLineCatalogService` und die Gewinner-/Duplikat-Erkennung im Post-Sync-Dedup.
+    static func collisionKey(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
     }
 }

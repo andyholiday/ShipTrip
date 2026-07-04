@@ -165,20 +165,20 @@
 - [ ] **B3.3 Release 1.7.0** + Feature-MDs + CHANGELOG.
 
 ### Welle B4 · Karten-Überarbeitung (Feedback: Route-Stops nicht erkennbar [M], Hafennamen fehlen teils [M], Start-/Endhafen nicht unterscheidbar [M] — Quelle: TestFlight-Feedback 2026-07-03; Design-Welle, Benchmark vor Umsetzung)
-- [ ] **B4.1** Design-Benchmark: State-of-the-Art-Recherche vergleichbarer Reise-/Tracking-Apps
-  (Kartendarstellung, Routen-Visualisierung) — `design-benchmark`-Skill.
-- [ ] **B4.2** Designer-Mockups: Route-Stops klar erkennbar, Hafennamen durchgängig sichtbar,
-  Start-/Endhafen visuell unterscheidbar (auch bei identischem Start=Ende).
+- [x] **B4.1** ✅ Design-Benchmark geliefert — `docs/ux-pitch-decks/b4-karten-redesign.html`.
+- [x] **B4.2** ✅ Designer-Mockups geliefert — `docs/ux-pitch-decks/b4-karten-redesign.html`; wartet auf Andres Wahl.
 - [ ] **B4.3** Umsetzung nach Mockup-Freigabe (Andre) — `MapView`, ggf.
   Routendarstellung in `CruiseDetailView`.
 
-### Welle B5 · Eigene Reedereien & Schiffe verwalten (Feedback: Custom-Reederei/Schiff fehlt [M], Referenz-Vorschläge nicht ausblendbar [M] — Quelle: TestFlight-Feedback 2026-07-03 + App-Store-Review ★3 28.05.) — **ADR-006 + Gate #4**
-- [ ] **B5.1** Datenmodell-Entscheidung: Custom-Reedereien/Schiffe neben Referenzdaten
-  (`ShippingLine`) — Speicherort, Verhalten bei Referenz-Updates, CloudKit-Konformität. → ADR-006.
-- [ ] **B5.2** Einstellungen-UI: eigene Reederei/eigenes Schiff anlegen; einzelne
-  Referenz-Vorschläge ausblenden.
-- [ ] **B5.3** Tests: Custom-Einträge in Auswahl-Listen, Ausblenden persistiert, kein Konflikt
-  mit Referenzdaten-Updates.
+### Welle B5 · Eigene Reedereien & Schiffe verwalten ✅ Erledigt (ADR-006 ✓) (Feedback: Custom-Reederei/Schiff fehlt [M], Referenz-Vorschläge nicht ausblendbar [M] — Quelle: TestFlight-Feedback 2026-07-03 + App-Store-Review ★3 28.05.) — **ADR-006 + Gate #4**
+- [x] **B5.1** ✅ Datenmodell-Entscheidung: Custom-Reedereien/Schiffe neben Referenzdaten
+  (`ShippingLine`) — Speicherort, Verhalten bei Referenz-Updates, CloudKit-Konformität. → [ADR-006](adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md).
+- [x] **B5.2** ✅ Einstellungen-UI: eigene Reederei/eigenes Schiff anlegen; einzelne
+  Referenz-Vorschläge ausblenden. `ShippingLineManagementView.swift`.
+  ([Feature-Doku](features/eigene-reedereien-b5.md))
+- [x] **B5.3** ✅ Tests: Custom-Einträge in Auswahl-Listen, Ausblenden persistiert, kein Konflikt
+  mit Referenzdaten-Updates. 143/143 Unit-Tests grün.
+  ([Feature-Doku](features/eigene-reedereien-b5.md))
 
 ## Phase C — Richtung 3a „Companion & Abo" (3–4 Wochen) → TestFlight 2.0.0
 

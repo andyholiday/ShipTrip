@@ -273,11 +273,19 @@ struct DealRowView: View {
 struct DealFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
+    // Eigene Reedereien + ausgeblendete Katalog-Einträge (ADR-006, Welle B5) – Picker-Optionen
+    // kommen ausschließlich aus ShippingLineCatalogService, keine eigene Merge-Logik hier.
+    @Query private var customLines: [CustomShippingLine]
+    @Query private var hidden: [HiddenCatalogItem]
+
     let deal: Deal?
-    
+
     @State private var title = ""
-    @State private var shippingLine: ShippingLine?
+    @State private var selectedLineOption: ShippingLineOption?
+    // "unberührt" vs. "aktiv geleert" (Fix B3): nur ein expliziter "Wählen..."-Reset darf
+    // beim Speichern auf leer zurücksetzen, siehe resolvedShippingLineName.
+    @State private var userClearedLine = false
     @State private var price = ""
     @State private var originalPrice = ""
     @State private var destination = ""
@@ -289,20 +297,39 @@ struct DealFormView: View {
     @State private var hasDateRange = false
     
     private var isEditing: Bool { deal != nil }
-    
+
+    /// Katalog- und eigene Reedereien gemischt, inkl. Ausgeblendeter-Filter und ggf. der
+    /// bestehenden `deal.shippingLine` als `.unlisted`-Option (ADR-006, Abschnitt 5).
+    private var lineOptions: [ShippingLineOption] {
+        ShippingLineCatalogService.shippingLineOptions(
+            customLines: customLines, hidden: hidden, currentSelection: deal?.shippingLine
+        )
+    }
+
+    /// Preserve-on-save-Auflösung (Fix B3, ADR-006 Abschnitt 5): explizit gewählte Option
+    /// gewinnt, ein expliziter "Wählen..."-Reset leert, sonst bleibt der bestehende Wert erhalten.
+    static func resolvedShippingLineName(selected: ShippingLineOption?, userCleared: Bool, existing: String?) -> String? {
+        if let selected { return selected.name }
+        if userCleared { return nil }
+        return existing
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 Section("Allgemein") {
                     TextField("Titel", text: $title)
-                    
-                    Picker("Reederei", selection: $shippingLine) {
-                        Text("Wählen...").tag(nil as ShippingLine?)
-                        ForEach(ShippingLine.all) { line in
-                            Text("\(line.logo) \(line.name)").tag(line as ShippingLine?)
+
+                    Picker("Reederei", selection: $selectedLineOption) {
+                        Text("Wählen...").tag(nil as ShippingLineOption?)
+                        ForEach(lineOptions) { option in
+                            Text("\(option.logo) \(option.name)").tag(option as ShippingLineOption?)
                         }
                     }
-                    
+                    .onChange(of: selectedLineOption) { _, newValue in
+                        userClearedLine = (newValue == nil)
+                    }
+
                     TextField("Schiff", text: $ship)
                     TextField("Zielregion", text: $destination)
                 }
@@ -355,7 +382,9 @@ struct DealFormView: View {
         guard let deal = deal else { return }
         
         title = deal.title
-        shippingLine = ShippingLine.all.first { $0.name == deal.shippingLine }
+        // Preserve-on-save (ADR-006, Abschnitt 5): currentSelection sorgt dafür, dass ein
+        // gelöschter/ausgeblendeter Name als `.unlisted`-Option gefunden wird statt nil zu bleiben.
+        selectedLineOption = lineOptions.first { $0.name == deal.shippingLine }
         price = deal.price.map { String(format: "%.2f", $0) } ?? ""
         originalPrice = deal.originalPrice.map { String(format: "%.2f", $0) } ?? ""
         destination = deal.destination ?? ""
@@ -378,7 +407,11 @@ struct DealFormView: View {
         }
         
         targetDeal.title = title
-        targetDeal.shippingLine = shippingLine?.name
+        // Preserve-on-save (ADR-006, Abschnitt 5): nie einen zuvor nicht-leeren Namen mit
+        // nil überschreiben, wenn die Auswahl nicht aktiv geändert wurde.
+        targetDeal.shippingLine = Self.resolvedShippingLineName(
+            selected: selectedLineOption, userCleared: userClearedLine, existing: targetDeal.shippingLine
+        )
         targetDeal.price = Double(price.replacingOccurrences(of: ",", with: "."))
         targetDeal.originalPrice = Double(originalPrice.replacingOccurrences(of: ",", with: "."))
         targetDeal.destination = destination.isEmpty ? nil : destination

@@ -15,6 +15,28 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefuegt
+
+- **Eigene Reedereien & Schiffe verwalten**: Neben dem hartkodierten Katalog
+  (`ShippingLine.all`) können jetzt eigene Reedereien und Schiffe angelegt
+  werden (kleine Anbieter, Flusskreuzfahrten, Neubauten). Einzelne
+  Katalog-Vorschläge lassen sich pro Reederei oder Schiff ausblenden. Picker
+  in `CruiseFormView` und `DealsView` zeigen Katalog- und eigene Einträge
+  gemischt und alphabetisch sortiert an.
+  ([Feature-Doku](docs/features/eigene-reedereien-b5.md),
+  [ADR-006](docs/adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md))
+
+### Behoben
+
+- **Edit-Datenverlust bei Reederei-/Schiffsauswahl**: Bearbeiten einer Reise
+  mit zwischenzeitlich gelöschter oder ausgeblendeter Reederei/Schiff konnte
+  den gespeicherten Namen beim bloßen Öffnen und Speichern stillschweigend
+  auf leer zurücksetzen. `CruiseFormView` und `DealsView` erhalten die
+  ursprüngliche Auswahl jetzt beim Speichern, solange der Nutzer sie nicht
+  aktiv ändert.
+  ([Feature-Doku](docs/features/eigene-reedereien-b5.md),
+  [ADR-006](docs/adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md))
+
 ---
 
 ## [1.6.1] - 2026-07-03

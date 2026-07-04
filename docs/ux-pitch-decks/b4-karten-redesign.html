@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — B4 Karten-Ueberarbeitung</title>
+<style>
+  /* ===== DESIGN TOKENS (aus ShipTrip Color+Theme.swift) ===== */
+  :root {
+    --ocean-blue: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy-dark: #1A365D;
+    --sunset-orange: #FF6B35;
+    --sea-green: #34C759;
+    --secondary-bg: #F2F2F7;
+    --secondary-bg-dark: #1C1C1E;
+    --separator: rgba(60,60,67,0.29);
+
+    --deck-bg: #0A1628;
+    --slide-bg: #111827;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deck-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ===== SLIDE ENGINE ===== */
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 46px 40px 56px;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ocean-blue), var(--ocean-light));
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+  #counter {
+    position: fixed;
+    bottom: 18px; right: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+  }
+  .nav-btn {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px; color: var(--text-secondary);
+    z-index: 100;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); }
+  #nav-prev { left: 12px; }
+  #nav-next { right: 12px; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .slide-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ocean-light); margin-bottom: 12px;
+  }
+  h1 { font-size: 40px; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  h3 { font-size: 17px; font-weight: 600; }
+  .subtitle { font-size: 15px; color: var(--text-secondary); margin-top: 12px; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-high { background: rgba(255,59,48,0.18); color: #FF6B6B; }
+  .tag-med  { background: rgba(255,149,0,0.18); color: #FFAA44; }
+  .tag-low  { background: rgba(52,199,89,0.18); color: #34C759; }
+  .tag-crit { background: rgba(255,59,48,0.28); color: #FF3B30; }
+
+  .row { display: flex; gap: 24px; align-items: flex-start; width: 100%; }
+  .col { flex: 1; }
+  .card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card-sm { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+
+  /* ===== COVER ===== */
+  .cover-gradient {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 40%, rgba(12,140,233,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(255,107,53,0.12) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background: linear-gradient(135deg, var(--navy-dark), #0C3B6E);
+    border: 1px solid rgba(12,140,233,0.4);
+    border-radius: 40px; padding: 6px 18px; font-size: 12px; font-weight: 600;
+    color: var(--ocean-light); letter-spacing: 0.06em; margin-bottom: 32px;
+  }
+
+  /* ===== IPHONE MOCKUP ===== */
+  .iphone {
+    width: 176px; height: 362px;
+    background: #1A1A1A; border-radius: 36px; border: 2px solid #3A3A3C;
+    position: relative; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .iphone-small { width: 150px; height: 308px; border-radius: 30px; }
+  .iphone-inner { position: absolute; inset: 8px; border-radius: 28px; overflow: hidden; background: var(--secondary-bg); }
+  .iphone-inner.dark { background: var(--secondary-bg-dark); }
+
+  .dynamic-island { width: 78px; height: 25px; background: #1A1A1A; border-radius: 20px; margin: 7px auto 0; z-index: 10; position: relative; }
+  .status-bar { height: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 8px; font-weight: 600; flex-shrink: 0; }
+  .status-bar.light { color: #1C1C1E; }
+  .status-bar.dark { color: #F2F2F7; }
+  .tab-bar { height: 46px; display: flex; align-items: center; justify-content: space-around; padding: 0 4px; flex-shrink: 0; border-top: 0.5px solid rgba(60,60,67,0.29); }
+  .tab-bar.light { background: rgba(249,249,249,0.94); }
+  .tab-bar.dark { background: rgba(28,28,30,0.94); border-top-color: rgba(255,255,255,0.1); }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tab-icon { font-size: 16px; }
+  .tab-label { font-size: 6.5px; font-weight: 500; }
+  .tab-item.active .tab-icon, .tab-item.active .tab-label { color: var(--ocean-blue); }
+  .tab-item:not(.active) .tab-icon, .tab-item:not(.active) .tab-label { color: #8E8E93; }
+
+  .map-area { flex: 1; position: relative; overflow: hidden; }
+  .map-bg { width: 100%; height: 100%; position: absolute; inset: 0; }
+
+  /* Custom map header overlay (matches MapView.swift mapHeader) */
+  .map-header-overlay { position: absolute; top: 6px; left: 10px; right: 10px; z-index: 5; }
+  .map-header-top { display: flex; justify-content: space-between; align-items: center; }
+  .map-circle-btn { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+  .map-circle-btn.light { background: rgba(255,255,255,0.85); color: #1C1C1E; }
+  .map-circle-btn.dark { background: rgba(44,44,46,0.85); color: #F2F2F7; }
+  .map-title { font-size: 19px; font-weight: 800; margin-top: 8px; }
+  .map-subtitle { font-size: 7.5px; margin-top: 1px; }
+
+  /* Route info bottom card (matches routeSelectionCard) */
+  .route-info-card { position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 11px; padding: 7px 9px; z-index: 5; }
+  .route-info-card.light { background: rgba(242,242,247,0.92); }
+  .route-info-card.dark { background: rgba(28,28,30,0.92); }
+  .route-info-title { font-size: 10px; font-weight: 700; }
+  .route-info-sub { font-size: 6.5px; color: #8E8E93; margin-top: 1px; }
+  .route-info-stats { font-size: 6.5px; font-weight: 600; color: #8E8E93; margin-top: 4px; }
+  .route-info-btn { font-size: 6.5px; font-weight: 700; color: #fff; background: var(--ocean-blue); border-radius: 10px; padding: 2px 7px; float: right; margin-top: -14px; }
+
+  /* Bottom sheet (Richtung 2) */
+  .bottom-sheet { position: absolute; bottom: 6px; left: 6px; right: 6px; border-radius: 12px; padding: 8px 10px 6px; z-index: 6; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  .bottom-sheet.light { background: var(--secondary-bg); }
+  .bottom-sheet.dark { background: #2C2C2E; }
+  .sheet-handle { width: 32px; height: 3.5px; background: rgba(60,60,67,0.3); border-radius: 2px; margin: 0 auto 7px; }
+  .sheet-stop-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+  .sheet-badge { width: 14px; height: 14px; border-radius: 50%; font-size: 7px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sheet-stop-name { font-size: 8px; font-weight: 600; }
+  .sheet-stop-sub { font-size: 6.5px; color: #8E8E93; }
+  .sheet-photo { width: 20px; height: 20px; border-radius: 4px; margin-left: auto; flex-shrink: 0; }
+
+  /* Legend */
+  .legend-overlay { position: absolute; top: 46px; right: 8px; border-radius: 9px; padding: 6px 8px; z-index: 5; }
+  .legend-overlay.light { background: rgba(242,242,247,0.9); }
+  .legend-overlay.dark { background: rgba(28,28,30,0.9); }
+  .legend-row { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; font-size: 6.5px; }
+  .legend-row:last-child { margin-bottom: 0; }
+  .legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ===== PROBLEM GRID ===== */
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 18px; }
+  .problem-item { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .problem-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+  .problem-num { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; margin-top: 1px; }
+  .problem-title { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .problem-body { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .code-ref { font-size: 9.5px; color: var(--text-muted); font-family: 'SF Mono', monospace; margin-top: 4px; }
+
+  /* ===== BENCHMARK TABLE ===== */
+  .bench-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 14px; }
+  .bench-table th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 7px; border-bottom: 1px solid var(--border); }
+  .bench-table td { padding: 6px 7px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-secondary); vertical-align: top; }
+  .bench-table td:first-child { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+  .bench-table tr.ref-row td:first-child { color: var(--ocean-light); }
+
+  /* ===== BEFORE/AFTER ===== */
+  .ba-container { display: flex; gap: 22px; align-items: flex-start; justify-content: center; width: 100%; }
+  .ba-phone-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ba-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .ba-label.before { color: #FF6B6B; }
+  .ba-label.after  { color: var(--sea-green); }
+  .ba-bullets { flex: 1; display: flex; flex-direction: column; gap: 9px; justify-content: center; }
+  .ba-bullet { display: flex; gap: 9px; align-items: flex-start; }
+  .ba-bullet-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; }
+  .ba-bullet-icon.plus { background: rgba(52,199,89,0.2); color: var(--sea-green); }
+  .ba-bullet-text { font-size: 11.5px; line-height: 1.5; color: var(--text-secondary); }
+  .ba-bullet-text strong { color: var(--text-primary); }
+
+  /* ===== ROADMAP ===== */
+  .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; margin-top: 16px; }
+  .roadmap-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 16px 15px; }
+  .roadmap-phase { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ocean-light); margin-bottom: 6px; }
+  .roadmap-title { font-size: 13px; font-weight: 700; margin-bottom: 9px; }
+  .roadmap-items { display: flex; flex-direction: column; gap: 5px; }
+  .roadmap-item { font-size: 10.5px; color: var(--text-secondary); display: flex; gap: 6px; }
+  .roadmap-item::before { content: "—"; color: var(--text-muted); flex-shrink: 0; }
+  .effort-tag { display: inline-block; margin-top: 9px; padding: 3px 9px; border-radius: 20px; font-size: 9.5px; font-weight: 600; background: rgba(12,140,233,0.15); color: var(--ocean-light); }
+
+  .acceptance-list { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 640px; }
+  .acceptance-list li { font-size: 12px; color: var(--text-secondary); display: flex; gap: 8px; }
+  .acceptance-list li::before { content: "\2713"; color: var(--sea-green); font-weight: 700; flex-shrink: 0; }
+
+  .slide-full-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+  .proposal-header { display: flex; align-items: center; gap: 16px; width: 100%; margin-bottom: 18px; }
+  .proposal-num { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; flex-shrink: 0; }
+  .p1-num { background: linear-gradient(135deg, #0C8CE9, #36A9F0); }
+  .p2-num { background: linear-gradient(135deg, #FF6B35, #FF9F75); }
+  .p3-num { background: linear-gradient(135deg, #34C759, #30D158); }
+  .proposal-meta h2 { font-size: 19px; }
+  .proposal-meta p { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+
+  /* Tech dilemma table (Slide 10) */
+  .dilemma-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; width: 100%; margin-top: 14px; }
+  .dilemma-col { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .dilemma-col h3 { font-size: 14px; margin-bottom: 4px; }
+  .dilemma-sub { font-size: 10.5px; color: var(--text-muted); margin-bottom: 10px; }
+  .dilemma-item { font-size: 11px; color: var(--text-secondary); display: flex; gap: 7px; margin-bottom: 6px; line-height: 1.4; }
+  .dilemma-item.pro::before { content: "+"; color: var(--sea-green); font-weight: 800; }
+  .dilemma-item.con::before { content: "\2212"; color: #FF6B6B; font-weight: 800; }
+
+  /* Zoom-state labels */
+  .zoom-caption { font-size: 10.5px; font-weight: 700; text-align: center; margin-top: 8px; }
+  .zoom-sub { font-size: 9px; color: var(--text-muted); text-align: center; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div class="nav-btn" id="nav-prev">&#8592;</div>
+<div class="nav-btn" id="nav-next">&#8594;</div>
+<div id="counter">1 / 11</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — COVER -->
+<!-- ============================================================ -->
+<div class="slide slide-full-center active" id="s1">
+  <div class="cover-gradient"></div>
+  <div style="position:relative; z-index:1; text-align:center; max-width:620px;">
+    <div class="cover-badge">WELLE B4 &bull; TESTFLIGHT-FEEDBACK 2026-07-03</div>
+    <h1>Karten-&Uuml;berarbeitung</h1>
+    <p class="subtitle" style="font-size:16px; max-width:480px; margin:14px auto 0;">
+      Jeder Hafen-Pin sofort lesbar: Rolle, Name, Rundreise-Fall — nativ in MapKit + SwiftUI,
+      ohne Fremd-SDKs.
+    </p>
+    <div style="display:flex; gap:14px; justify-content:center; margin-top:36px; flex-wrap:wrap;">
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#128205;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">3 gemeldete Bugs</div>
+      </div>
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#128269;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">6 Benchmark-Apps</div>
+      </div>
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#127919;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">3 Richtungen</div>
+      </div>
+    </div>
+    <div style="margin-top:36px; font-size:11px; color:var(--text-muted);">
+      ShipTrip &bull; Karte-Tab &bull; Designer B4 &bull; 2026-07-04
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — PROBLEM -->
+<!-- ============================================================ -->
+<div class="slide" id="s2">
+  <div class="slide-label">Problem — TestFlight-Feedback</div>
+  <h2>Drei gemeldete Karten-Bugs</h2>
+
+  <div class="row" style="margin-top:22px; align-items:center;">
+    <div class="col" style="max-width:320px;">
+      <div class="problem-grid" style="grid-template-columns:1fr;">
+        <div class="problem-item">
+          <div class="problem-header"><span class="problem-num">a</span><span class="problem-title">Route-Stops nicht klar erkennbar</span></div>
+          <div class="problem-body">Bei mehreren gleichzeitig angezeigten Reisen werden alle Zwischenh&auml;fen komplett ausgeblendet — nur Start und Ende bleiben sichtbar.</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-header"><span class="problem-num">b</span><span class="problem-title">Hafennamen fehlen teils</span></div>
+          <div class="problem-body">Namen werden am Bildschirmrand abgeschnitten (siehe Screenshot rechts, "Nassau"), da SwiftUI-MapKit keine native Label-Kollisionssteuerung hat.</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-header"><span class="problem-num">c</span><span class="problem-title">Start/Ende nicht unterscheidbar</span></div>
+          <div class="problem-body">Besonders bei Rundreisen (Start = Ende): zwei Pins auf identischen Koordinaten &uuml;berlagern sich unlesbar.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col" style="display:flex; justify-content:center;">
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+              <rect width="180" height="260" fill="#0B2A4A"/>
+              <ellipse cx="140" cy="60" rx="34" ry="60" fill="#2E5A3D" opacity="0.55"/>
+              <ellipse cx="10" cy="150" rx="22" ry="40" fill="#2E5A3D" opacity="0.55"/>
+              <!-- thin line off right edge, ports beyond visible frame -->
+              <polyline points="30,155 50,148 70,140 95,135 130,90" fill="none" stroke="#34C759" stroke-width="1" opacity="0.5" stroke-dasharray="2,2"/>
+              <!-- Nassau: overlapping orange+green pins, name cut at left edge -->
+              <circle cx="30" cy="155" r="7" fill="#34C759"/>
+              <circle cx="26" cy="153" r="7" fill="#FF6B35"/>
+              <circle cx="30" cy="155" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+              <text x="4" y="172" font-size="7" fill="#fff" opacity="0.85">Nassa...</text>
+              <!-- Palma: overlapping pins -->
+              <circle cx="132" cy="88" r="7" fill="#34C759"/>
+              <circle cx="128" cy="86" r="7" fill="#FF6B35"/>
+              <circle cx="132" cy="88" r="9" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.6"/>
+              <text x="118" y="105" font-size="7" fill="#fff" opacity="0.85">Palma</text>
+            </svg>
+            <div class="map-header-overlay">
+              <div class="map-header-top">
+                <div class="map-circle-btn dark">&#8801;</div>
+                <div class="map-circle-btn dark">&#10530;</div>
+              </div>
+              <div class="map-title" style="color:#fff;">Karte</div>
+              <div class="map-subtitle" style="color:#9CA3AF;">Alle Reisen</div>
+            </div>
+            <div class="route-info-card dark">
+              <div class="route-info-title" style="color:#F2F2F7;">Alle Reisen</div>
+              <div class="route-info-sub">Mehrere Routen gleichzeitig</div>
+              <div class="route-info-stats">28 Tage &middot; 16 H&auml;fen &middot; 11 L&auml;nder</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — IST-ANALYSE (Code) -->
+<!-- ============================================================ -->
+<div class="slide" id="s3">
+  <div class="slide-label">IST-Analyse — Code-Befund</div>
+  <h2>Drei Pin-Sprachen im Code, keine gemeinsame Quelle</h2>
+  <div class="problem-grid" style="margin-top:22px;">
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">1</span><span class="problem-title">Eigene Pin-Logik statt bestehender Komponente</span></div>
+      <div class="problem-body"><code class="code-ref">MapView.swift:routeMarker()</code> zeichnet hartkodierte Kreise (orange/gr&uuml;n) statt das bereits vorhandene <code class="code-ref">PortPinView</code> (4 Rollen: Hafen/Heimathafen/Endhafen/Seetag) zu nutzen — obwohl <code class="code-ref">CruiseDetailView.swift</code> genau das schon sauber tut.</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">2</span><span class="problem-title">Zwischenstopps werden gedroppt</span></div>
+      <div class="problem-body"><code class="code-ref">markerPorts()</code> gibt bei &gt;1 aktiver Route nur <code class="code-ref">[first, last]</code> zur&uuml;ck — alle mittleren H&auml;fen verschwinden komplett von der Karte, nur die d&uuml;nne Polyline bleibt.</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">3</span><span class="problem-title">Rundreise-Fall nirgends behandelt</span></div>
+      <div class="problem-body">Start- und End-Port sind zwei separate <code class="code-ref">Port</code>-Eintr&auml;ge mit identischen Koordinaten. Kein Code-Pfad pr&uuml;ft <code class="code-ref">start == end</code> — Ergebnis: zwei exakt &uuml;berlagerte Kreise.</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">4</span><span class="problem-title">Plattformgrenze: kein Label-Collision-Avoidance</span></div>
+      <div class="problem-body">SwiftUI <code class="code-ref">Map</code> + <code class="code-ref">Annotation(port.name, ...)</code> hat keine native Kollisionssteuerung (nur UIKit-<code class="code-ref">MKMapView</code> mit <code class="code-ref">MKMarkerAnnotationView</code>/Clustering hat das). Abgeschnittene Namen sind teils eine Plattform-L&uuml;cke, nicht nur ein Marker-Bug.</div>
+    </div>
+  </div>
+  <div class="card-sm" style="margin-top:14px; width:100%;">
+    <span style="color:var(--sea-green); font-weight:700;">Positiv vorhanden:</span>
+    <span style="color:var(--text-secondary); font-size:11.5px;"> <code class="code-ref">PortPinView</code> mit sauberen 4 Rollen + Accessibility-Labels, Farbtoken in <code class="code-ref">Color+Theme</code>, <code class="code-ref">Port.imageData</code>/<code class="code-ref">excursions</code> bereits vorhanden (in Detailliste genutzt, auf Karte bisher ungenutzt).</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — BENCHMARK TABLE -->
+<!-- ============================================================ -->
+<div class="slide" id="s4">
+  <div class="slide-label">Benchmark — State-of-the-Art 2026</div>
+  <h2>6 Reise-/Routen-Apps + maritime Referenz</h2>
+  <table class="bench-table">
+    <tr><th>App</th><th>Routen-Viz</th><th>Stop-Marker</th><th>Labels bei Zoom</th><th>Start/Ende</th><th>MapKit-Machbarkeit</th></tr>
+    <tr><td>Polarsteps</td><td>Reale Reiseroute statt Luftlinie, Foto-Steps</td><td>Tippbare Steps mit Foto-Callout</td><td>Nur bei Tap, nicht permanent</td><td>Kein hartes Konzept</td><td class="yes" style="color:var(--sea-green);">Direkt &uuml;bertragbar</td></tr>
+    <tr><td>Wanderlog</td><td>Farbcodiert nach Tag/Kategorie</td><td>Pins in Sektionsfarbe, Liste synchron</td><td>Kollaps in Liste statt Karte</td><td>Nur Tages-Gruppierung</td><td class="yes" style="color:var(--sea-green);">Trivial</td></tr>
+    <tr><td>Flighty <span style="font-size:9px;color:var(--text-muted);">(Apple Design Award)</span></td><td>Minimalistischer Bogen, klare Typo</td><td>Icon-Form je Richtung (nicht nur Farbe)</td><td>Kompakte Kacheln statt Karten-Text</td><td class="yes" style="color:var(--sea-green);">Sehr klar (Form+Position)</td><td class="yes" style="color:var(--sea-green);">Direkt &uuml;bertragbar</td></tr>
+    <tr><td>AllTrails</td><td>Progressive Detailtiefe je Zoom</td><td>Wei&szlig;er Halo f&uuml;r Icon-Lesbarkeit</td><td>Erst ab Zoomstufe sichtbar</td><td>n/a</td><td class="yes" style="color:var(--sea-green);">Halo schon vorhanden, Schwelle simpel</td></tr>
+    <tr><td>Apple Maps <span style="font-size:9px;color:var(--text-muted);">(iOS-Konvention)</span></td><td>Blaue Systemroute</td><td>System-Pins</td><td>On-Tap Callout, Standard</td><td class="yes" style="color:var(--sea-green);">Form+Farbe+Position, jedem Nutzer vertraut</td><td class="yes" style="color:var(--sea-green);">100% nativ, kein Aufwand</td></tr>
+    <tr><td>Roadtrippers</td><td>Multi-Stop mit Wegpunkten</td><td>Nummerierte Badges (1,2,3&hellip;)</td><td>Namen in Liste, nicht auf Pin</td><td>Reihenfolge immer lesbar</td><td class="yes" style="color:var(--sea-green);">Trivial (Text im Label)</td></tr>
+    <tr class="ref-row"><td>VesselFinder / MarineTraffic <span class="tag-low" style="font-size:8.5px; padding:1px 6px;">Referenz</span></td><td>Live-Schiffsrouten, Dichte-Reduktion</td><td>Cluster-Zahl statt Einzelpins bei Zoom-out</td><td>Nur Cluster-Count bis Zoom-in</td><td>n/a</td><td class="partial" style="color:#FFAA44;">Maritime Authentizit&auml;t, Cluster-Idee nur konzeptionell &uuml;bertragbar</td></tr>
+  </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — PATTERN: ROLLEN-DIFFERENZIERUNG + RUNDREISE -->
+<!-- ============================================================ -->
+<div class="slide" id="s5">
+  <div class="slide-label">Pattern Deep-Dive — Start/Ende-Differenzierung</div>
+  <h2>Form + Farbe, nicht nur Farbe — und ein Fix f&uuml;r die Rundreise</h2>
+  <p class="subtitle" style="max-width:600px;">AllTrails-Lehre: reine Farbcodierung f&uuml;hrte zu Camp/Peak-Verwechslung. Apple-Systemkonvention nutzt Form <strong style="color:var(--text-primary);">und</strong> Farbe f&uuml;r Start/Ziel — <code class="code-ref" style="color:var(--text-muted);">PortPinView</code> hat die passenden SF-Symbols bereits, nur nicht auf der Karte im Einsatz.</p>
+
+  <div class="row" style="margin-top:20px; justify-content:center;">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher — Rundreise (Start = Ende)</div>
+      <div class="iphone iphone-small">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 150 220" xmlns="http://www.w3.org/2000/svg">
+              <rect width="150" height="220" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="80" rx="45" ry="35" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="75,110 90,95 100,80 95,60 80,50 70,60 75,80 75,110" fill="none" stroke="#0C8CE9" stroke-width="2" stroke-dasharray="3,2"/>
+              <circle cx="75" cy="110" r="8" fill="#34C759"/>
+              <circle cx="71" cy="106" r="8" fill="#FF6B35"/>
+              <circle cx="75" cy="110" r="10" fill="none" stroke="#fff" stroke-width="1.5"/>
+              <text x="75" y="132" font-size="7" text-anchor="middle" fill="#1C1C1E" font-weight="700">Barcelona (?)</text>
+            </svg>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets" style="max-width:220px;">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Ein <strong>kombinierter Marker</strong> bei Start-Koordinate = Ende-Koordinate — Zyklus-Icon statt zwei Kreisen.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Zwischenh&auml;fen: <strong>mappin.circle.fill</strong>, Heimathafen &amp; Rundreise-Punkt: eigene Form, nicht nur Farbwechsel.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Tap auf den Kombi-Marker</strong> &ouml;ffnet ein Callout mit beiden Rollen — "Tag 1: Start Barcelona" &amp; "Tag 14: Ende Barcelona" untereinander, statt nur einem Namen.</div></div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher — ein Marker, Zyklus-Icon</div>
+      <div class="iphone iphone-small">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 150 220" xmlns="http://www.w3.org/2000/svg">
+              <rect width="150" height="220" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="80" rx="45" ry="35" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="75,110 90,95 100,80 95,60 80,50 70,60 75,80 75,110" fill="none" stroke="#0C8CE9" stroke-width="2" stroke-dasharray="3,2"/>
+              <!-- Tap-Callout: kombinierter Marker zeigt beide Rollen -->
+              <rect x="30" y="58" width="90" height="26" rx="7" fill="rgba(28,28,30,0.94)"/>
+              <polygon points="70,84 78,84 74,92" fill="rgba(28,28,30,0.94)"/>
+              <text x="75" y="70" font-size="6" text-anchor="middle" fill="#FF6B35" font-weight="700">Tag 1 &bull; Start Barcelona</text>
+              <text x="75" y="79" font-size="6" text-anchor="middle" fill="#34C759" font-weight="700">Tag 14 &bull; Ende Barcelona</text>
+              <circle cx="75" cy="110" r="9" fill="#FF6B35"/>
+              <circle cx="75" cy="110" r="12" fill="none" stroke="#FF6B35" stroke-width="1.5" opacity="0.4"/>
+              <text x="75" y="114" font-size="9" text-anchor="middle" fill="#fff" font-weight="700">&#8635;</text>
+              <rect x="52" y="122" width="46" height="10" rx="5" fill="rgba(255,107,53,0.15)" stroke="#FF6B35" stroke-width="0.5"/>
+              <text x="75" y="129" font-size="6" text-anchor="middle" fill="#FF6B35" font-weight="700">Rundreise &bull; Barcelona</text>
+            </svg>
+          </div>
+          <div class="tab-bar light">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-sub">Tap zeigt beide Rollen im Callout (Gate-Finding #2)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — PATTERN: ZOOM-SCHWELLEN + LABEL-REDUKTION (KRITISCH) -->
+<!-- ============================================================ -->
+<div class="slide" id="s6">
+  <div class="slide-label">Pattern Deep-Dive — Zoom-Schwellen &amp; Label-Reduktion <span class="tag-crit">KRITISCH — Gate #5a</span></div>
+  <h2>Nur Start, Ziel &amp; Auswahl tragen Text — der Rest sind stumme Pins</h2>
+  <p class="subtitle" style="max-width:640px;">SwiftUI-<code class="code-ref" style="color:var(--text-muted);">Map</code> clustert Custom-Annotations nicht automatisch. Statt echtem Clustering: zwei feste Zoom-Zust&auml;nde &uuml;ber <code class="code-ref" style="color:var(--text-muted);">MKCoordinateRegion.span</code>-Schwellenwert. Polarsteps-Prinzip: Namen nur bei Tap oder f&uuml;r Start/Ziel/Selektion.</p>
+  <div class="card-sm" style="margin-top:12px; max-width:640px;">
+    <span style="color:var(--text-secondary); font-size:11.5px;">In Alltagssprache: <strong style="color:var(--text-primary);">Apple-Standard-Pins</strong> r&auml;umen Labels automatisch auf, sehen aber generisch aus. <strong style="color:var(--text-primary);">Eigene Pins</strong> (wie unsere) sehen markenkonform aus, brauchen daf&uuml;r unsere eigene Zoom-Logik von Hand — das ist der Preis f&uuml;r das eigene Aussehen.</span>
+  </div>
+
+  <div class="row" style="margin-top:18px; justify-content:center; gap:34px;">
+    <div class="ba-phone-col">
+      <div class="iphone iphone-small">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 150 220" xmlns="http://www.w3.org/2000/svg">
+              <rect width="150" height="220" fill="#0B2A4A"/>
+              <ellipse cx="30" cy="60" rx="26" ry="40" fill="#2E5A3D" opacity="0.5"/>
+              <ellipse cx="120" cy="150" rx="22" ry="34" fill="#2E5A3D" opacity="0.5"/>
+              <polyline points="35,120 55,100 75,90 95,80 115,60" fill="none" stroke="#36A9F0" stroke-width="1" stroke-dasharray="1.5,2" opacity="0.7"/>
+              <!-- Winzige Dots, keine Labels -->
+              <circle cx="35" cy="120" r="3" fill="#FF6B35"/>
+              <circle cx="55" cy="100" r="2" fill="#0C8CE9"/>
+              <circle cx="75" cy="90" r="2" fill="#0C8CE9"/>
+              <circle cx="95" cy="80" r="2" fill="#0C8CE9"/>
+              <circle cx="115" cy="60" r="3" fill="#34C759"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-caption" style="color:#fff;">Weltweiter Zoom (Span &gt; 20&deg;)</div>
+      <div class="zoom-sub">Nur Polyline + winzige Dots, keine Labels</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="iphone iphone-small">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 150 220" xmlns="http://www.w3.org/2000/svg">
+              <rect width="150" height="220" fill="#B8D4E8"/>
+              <ellipse cx="60" cy="70" rx="42" ry="28" fill="#C8D8A0" opacity="0.7"/>
+              <polyline points="30,150 55,120 80,105 105,90 128,60" fill="none" stroke="#0C8CE9" stroke-width="2" stroke-dasharray="3,2"/>
+              <circle cx="30" cy="150" r="8" fill="#FF6B35"/>
+              <circle cx="30" cy="150" r="10" fill="none" stroke="#FF6B35" stroke-width="1.2" opacity="0.4"/>
+              <rect x="8" y="160" width="44" height="9" rx="4" fill="rgba(255,107,53,0.15)" stroke="#FF6B35" stroke-width="0.5"/>
+              <text x="30" y="167" font-size="6" text-anchor="middle" fill="#FF6B35" font-weight="700">Barcelona</text>
+
+              <circle cx="55" cy="120" r="4" fill="#0C8CE9"/>
+              <circle cx="80" cy="105" r="6" fill="#0C8CE9"/>
+              <rect x="60" y="94" width="42" height="9" rx="4" fill="rgba(12,140,233,0.15)" stroke="#0C8CE9" stroke-width="0.5"/>
+              <text x="81" y="101" font-size="6" text-anchor="middle" fill="#0C8CE9" font-weight="700">Genua (aktiv)</text>
+              <circle cx="105" cy="90" r="4" fill="#0C8CE9"/>
+
+              <circle cx="128" cy="60" r="8" fill="#34C759"/>
+              <circle cx="128" cy="60" r="10" fill="none" stroke="#34C759" stroke-width="1.2" opacity="0.4"/>
+              <rect x="104" y="42" width="48" height="9" rx="4" fill="rgba(52,199,89,0.15)" stroke="#34C759" stroke-width="0.5"/>
+              <text x="128" y="49" font-size="6" text-anchor="middle" fill="#34C759" font-weight="700">Civitavecchia</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-caption">Reise-Zoom (Span &lt; 5&deg;)</div>
+      <div class="zoom-sub">Volle Pins; Label nur Start, Ende, selektierter Hafen — Rest stumm, tippbar</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — PATTERN: NUMMERIERTE STOPS + MARITIME ROUTENLINIEN -->
+<!-- ============================================================ -->
+<div class="slide" id="s7">
+  <div class="slide-label">Pattern Deep-Dive — Stop-Marker &amp; maritime Routenlinien</div>
+  <h2>Nummerierte Reihenfolge statt Namensrauschen</h2>
+
+  <div class="row" style="margin-top:20px; justify-content:center; align-items:center;">
+    <div class="col" style="max-width:280px;">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Roadtrippers-Prinzip: <strong>Badge mit Reihenfolge-Nummer</strong> (1, 2, 3&hellip;) statt Vollname auf jedem Pin — Namen stehen in der synchronisierten Liste (Slide 9).</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Gepunktete, dezente Routenlinie</strong> statt dicker Fluglinien-B&ouml;gen &uuml;ber Landmassen — wirkt maritim glaubw&uuml;rdig, nicht wie eine Flugroute.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">VesselFinder/MarineTraffic-Referenz: bei Zoom-out wird Dichte reduziert (Cluster-Zahl statt Einzelpins) — konzeptionelle Inspiration f&uuml;r die Zoom-Schwelle aus Slide 6, kein 1:1-Clustering-Framework n&ouml;tig.</div></div>
+      <div class="card-sm" style="margin-top:6px;"><span style="font-size:10.5px; color:var(--text-muted);"><strong style="color:var(--text-primary);">Ehrlich bleiben:</strong> Das sind gekr&uuml;mmte Luftlinien (Bezier-Kurven &uuml;bers Meer, visuell um Landmassen herumgef&uuml;hrt) — <strong style="color:var(--text-primary);">kein echtes maritimes Routing</strong>. Das br&auml;uchte kostenpflichtige Dritt-APIs und ist nicht Teil dieses Vorschlags.</span></div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="iphone iphone-small">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 150 220" xmlns="http://www.w3.org/2000/svg">
+              <rect width="150" height="220" fill="#0B2A4A"/>
+              <ellipse cx="115" cy="60" rx="24" ry="42" fill="#2E5A3D" opacity="0.55"/>
+              <ellipse cx="20" cy="160" rx="18" ry="30" fill="#2E5A3D" opacity="0.55"/>
+              <!-- route hugs coastline, avoids landmass -->
+              <polyline points="30,150 45,135 60,128 75,120 88,105 95,85" fill="none" stroke="#36A9F0" stroke-width="1.6" stroke-dasharray="3,2.5"/>
+              <circle cx="30" cy="150" r="7" fill="#FF6B35"/>
+              <text x="30" y="153" font-size="6.5" text-anchor="middle" fill="#fff" font-weight="700">1</text>
+              <circle cx="60" cy="128" r="6" fill="#0C8CE9"/>
+              <text x="60" y="131" font-size="6" text-anchor="middle" fill="#fff" font-weight="700">2</text>
+              <circle cx="75" cy="120" r="6" fill="#0C8CE9"/>
+              <text x="75" y="123" font-size="6" text-anchor="middle" fill="#fff" font-weight="700">3</text>
+              <circle cx="95" cy="85" r="7" fill="#34C759"/>
+              <text x="95" y="88" font-size="6.5" text-anchor="middle" fill="#fff" font-weight="700">4</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-sub" style="margin-top:6px;">Nummerierte Badges, Luftlinie um die K&uuml;ste herum (kein echtes Schiffsrouting)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — RICHTUNG 1: KONSERVATIV -->
+<!-- ============================================================ -->
+<div class="slide" id="s8">
+  <div class="proposal-header">
+    <div class="proposal-num p1-num">1</div>
+    <div class="proposal-meta">
+      <h2>Konservativ — Konsistenz-Fix</h2>
+      <p>L&ouml;st alle 3 gemeldeten Bugs, wiederverwendet bestehende Komponenten, geringes Risiko.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+              <rect width="180" height="260" fill="#0B2A4A"/>
+              <ellipse cx="140" cy="70" rx="32" ry="55" fill="#2E5A3D" opacity="0.5"/>
+              <ellipse cx="15" cy="160" rx="20" ry="36" fill="#2E5A3D" opacity="0.5"/>
+              <polyline points="35,160 55,150 75,140 100,120 130,95" fill="none" stroke="#34C759" stroke-width="1" opacity="0.5"/>
+              <circle cx="35" cy="160" r="7" fill="#34C759"/>
+              <circle cx="31" cy="158" r="7" fill="#FF6B35"/>
+              <circle cx="130" cy="95" r="7" fill="#34C759"/>
+              <circle cx="126" cy="93" r="7" fill="#FF6B35"/>
+              <!-- no intermediate stops visible at all -->
+            </svg>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>PortPinView</strong> statt <code class="code-ref">routeMarker()</code> auf der Karte — eine Pin-Sprache f&uuml;r Karte und Detailliste.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Rundreise-Fall</strong> abgefangen: Start-Koordinate = Ende-Koordinate &rarr; ein kombinierter Marker mit Zyklus-Icon.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Zwischenstopps</strong> bleiben auch bei Mehrfachrouten als kleine Dots sichtbar, statt komplett gedroppt zu werden.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Reiner Bugfix-Charakter — kein neues Interaktionsmodell, schnell umsetzbar.</div></div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+              <rect width="180" height="260" fill="#0B2A4A"/>
+              <ellipse cx="140" cy="70" rx="32" ry="55" fill="#2E5A3D" opacity="0.5"/>
+              <ellipse cx="15" cy="160" rx="20" ry="36" fill="#2E5A3D" opacity="0.5"/>
+              <polyline points="35,160 55,150 75,140 100,120 130,95" fill="none" stroke="#36A9F0" stroke-width="1.4" stroke-dasharray="2.5,2"/>
+              <circle cx="35" cy="160" r="8" fill="#FF6B35"/>
+              <circle cx="35" cy="160" r="10" fill="none" stroke="#FF6B35" stroke-width="1.2" opacity="0.4"/>
+              <circle cx="55" cy="150" r="4" fill="#0C8CE9"/>
+              <circle cx="75" cy="140" r="4" fill="#0C8CE9"/>
+              <circle cx="100" cy="120" r="4" fill="#0C8CE9"/>
+              <circle cx="130" cy="95" r="8" fill="#34C759"/>
+              <circle cx="130" cy="95" r="10" fill="none" stroke="#34C759" stroke-width="1.2" opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — RICHTUNG 2: MUTIG -->
+<!-- ============================================================ -->
+<div class="slide" id="s9">
+  <div class="proposal-header">
+    <div class="proposal-num p2-num">2</div>
+    <div class="proposal-meta">
+      <h2>Mutig — Journal-natives Kartenerlebnis</h2>
+      <p>L&ouml;st alle 3 Probleme strukturell: nummerierte Badges, synchronisierte Stopliste, Foto-Callouts.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area">
+            <svg class="map-bg" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg">
+              <rect width="180" height="260" fill="#0B2A4A"/>
+              <ellipse cx="140" cy="70" rx="32" ry="55" fill="#2E5A3D" opacity="0.5"/>
+              <polyline points="35,190 55,170 75,150 100,120 130,95" fill="none" stroke="#34C759" stroke-width="1" opacity="0.5"/>
+              <circle cx="35" cy="190" r="4" fill="#0C8CE9"/>
+              <text x="20" y="192" font-size="6" fill="#fff" opacity="0.8">Barcel...</text>
+              <circle cx="55" cy="170" r="4" fill="#0C8CE9"/>
+              <text x="40" y="172" font-size="6" fill="#fff" opacity="0.8">Marse...</text>
+              <circle cx="75" cy="150" r="4" fill="#0C8CE9"/>
+              <text x="60" y="152" font-size="6" fill="#fff" opacity="0.8">Genua</text>
+              <circle cx="100" cy="120" r="4" fill="#0C8CE9"/>
+              <text x="85" y="122" font-size="6" fill="#fff" opacity="0.8">Civita...</text>
+              <circle cx="130" cy="95" r="4" fill="#0C8CE9"/>
+              <text x="115" y="97" font-size="6" fill="#fff" opacity="0.8">Neapel</text>
+            </svg>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-sub">Alle Namen permanent, &uuml;berlappend, unlesbar</div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Nummerierte Wegpunkt-Badges</strong> auf der Karte (Roadtrippers-Stil) statt Namensrauschen.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text"><strong>Bottom-Sheet-Stopliste</strong>, synchron zur Kartenauswahl, mit Foto-Callouts &uuml;ber vorhandenes <code class="code-ref">port.imageData</code>.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Tap-Callout mit Hafenname + Foto statt Dauerlabel (Polarsteps-Prinzip).</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Aufwand <strong>Hoch</strong> (nicht Mittel): bidirektionale Karte&harr;Liste-Synchronisation (Tap auf Badge scrollt Liste, Scroll in Liste hebt Badge hervor) ist in SwiftUI aufwendig und fehleranf&auml;llig — siehe Roadmap.</div></div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="map-area" style="position:relative;">
+            <svg class="map-bg" viewBox="0 0 180 260" xmlns="http://www.w3.org/2000/svg" style="position:absolute; inset:0;">
+              <rect width="180" height="260" fill="#0B2A4A"/>
+              <ellipse cx="140" cy="70" rx="32" ry="55" fill="#2E5A3D" opacity="0.5"/>
+              <polyline points="35,175 55,160 75,145 100,125 130,100" fill="none" stroke="#36A9F0" stroke-width="1.4" stroke-dasharray="2.5,2"/>
+              <circle cx="35" cy="175" r="7" fill="#FF6B35"/><text x="35" y="178" font-size="6" text-anchor="middle" fill="#fff" font-weight="700">1</text>
+              <circle cx="55" cy="160" r="6" fill="#0C8CE9"/><text x="55" y="163" font-size="5.5" text-anchor="middle" fill="#fff" font-weight="700">2</text>
+              <circle cx="75" cy="145" r="6" fill="#0C8CE9"/><text x="75" y="148" font-size="5.5" text-anchor="middle" fill="#fff" font-weight="700">3</text>
+              <circle cx="100" cy="125" r="6" fill="#0C8CE9"/><text x="100" y="128" font-size="5.5" text-anchor="middle" fill="#fff" font-weight="700">4</text>
+              <circle cx="130" cy="100" r="7" fill="#34C759"/><text x="130" y="103" font-size="6" text-anchor="middle" fill="#fff" font-weight="700">5</text>
+            </svg>
+            <div class="bottom-sheet dark">
+              <div class="sheet-handle"></div>
+              <div class="sheet-stop-row"><div class="sheet-badge" style="background:#FF6B35;">1</div><div><div class="sheet-stop-name" style="color:#F2F2F7;">Barcelona</div><div class="sheet-stop-sub">Start &bull; 10. Juni</div></div><div class="sheet-photo" style="background:#3A5F4A;"></div></div>
+              <div class="sheet-stop-row"><div class="sheet-badge" style="background:#0C8CE9;">2</div><div><div class="sheet-stop-name" style="color:#F2F2F7;">Marseille</div><div class="sheet-stop-sub">11. Juni</div></div><div class="sheet-photo" style="background:#4A5F7A;"></div></div>
+              <div class="sheet-stop-row"><div class="sheet-badge" style="background:#0C8CE9;">3</div><div><div class="sheet-stop-name" style="color:#F2F2F7;">Genua</div><div class="sheet-stop-sub">12. Juni</div></div></div>
+            </div>
+          </div>
+          <div class="tab-bar dark">
+            <div class="tab-item"><span class="tab-icon">&#128674;</span></div>
+            <div class="tab-item active"><span class="tab-icon">&#128506;</span></div>
+            <div class="tab-item"><span class="tab-icon">&#128278;</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="zoom-sub">Badges + Liste <strong style="color:var(--text-primary);">schwebt als Karte oberhalb</strong> der Tab-Bar (Gate-Finding #1) — Tab-Bar bleibt sichtbar, kein <code class="code-ref">.toolbar(.hidden)</code>.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — TECH-DILEMMA + EMPFEHLUNG HYBRID -->
+<!-- ============================================================ -->
+<div class="slide" id="s10">
+  <div class="slide-label">Machbarkeit — Tech-Dilemma &amp; Empfehlung</div>
+  <h2>SwiftUI Map vs. UIKit MKMapView-Wrapper</h2>
+  <p class="subtitle" style="max-width:640px;">Kurz gesagt: <strong style="color:var(--text-primary);">Apple-Standard-Pins</strong> = gute Automatik, aber generischer Look. <strong style="color:var(--text-primary);">Eigene Pins</strong> (unser Weg) = markenkonform, brauchen daf&uuml;r unsere eigene Zoom-Logik von Hand.</p>
+
+  <div class="dilemma-grid">
+    <div class="dilemma-col">
+      <h3>SwiftUI <code class="code-ref" style="color:var(--text-muted);">Map</code></h3>
+      <div class="dilemma-sub">aktueller Ansatz, minimaler Umbau</div>
+      <div class="dilemma-item pro">Wenig Code, deklarativ, passt zum restlichen SwiftUI-Stack.</div>
+      <div class="dilemma-item pro">Zoom-Schwellen (Slide 6) und Nummer-Badges (Slide 7/9) sind mit einfachen View-Modifiern umsetzbar.</div>
+      <div class="dilemma-item con">Kein echtes Label-Collision-Avoidance — Richtung 2 braucht eine <strong style="color:var(--text-primary);">manuelle Span-Schwelle</strong> (zwei feste Zust&auml;nde) statt kontinuierlichem Clustering.</div>
+      <div class="dilemma-item con">Kein <code class="code-ref" style="color:var(--text-muted);">MKClusterAnnotation</code> — bei sehr vielen H&auml;fen auf engem Raum m&uuml;sste die Dot-Gr&ouml;&szlig;e/-Dichte manuell gepflegt werden.</div>
+    </div>
+    <div class="dilemma-col">
+      <h3>UIKit <code class="code-ref" style="color:var(--text-muted);">MKMapView</code>-Wrapper</h3>
+      <div class="dilemma-sub"><code class="code-ref" style="color:var(--text-muted);">UIViewRepresentable</code>, gr&ouml;&szlig;erer Umbau</div>
+      <div class="dilemma-item pro">Natives Clustering (<code class="code-ref" style="color:var(--text-muted);">MKMarkerAnnotationView</code>) und echtes Label-Collision-Avoidance out of the box.</div>
+      <div class="dilemma-item pro">Skaliert sauber, falls sp&auml;ter sehr dichte Routen (viele Reisen gleichzeitig) dazukommen.</div>
+      <div class="dilemma-item con">Deutlich mehr Code (Delegate-Pattern, Koordinator), Bruch mit dem sonst reinen SwiftUI-Stack.</div>
+      <div class="dilemma-item con">Gr&ouml;&szlig;erer Umbau, h&ouml;heres Regressionsrisiko — f&uuml;r 3 gemeldete Bugs unverh&auml;ltnism&auml;&szlig;ig.</div>
+    </div>
+  </div>
+
+  <div class="card-sm" style="margin-top:16px; width:100%;">
+    <span style="color:var(--ocean-light); font-weight:700;">Empfehlung — Richtung 3 Hybrid/Phasiert:</span>
+    <span style="color:var(--text-secondary); font-size:11.5px;"> Richtung 1 (Konservativ) sofort in reinem SwiftUI umsetzen — behebt alle 3 gemeldeten Bugs ohne Architekturwechsel. Richtung 2 (Badges + Bottom-Sheet) als Folge-Welle, ebenfalls in SwiftUI mit der manuellen Zoom-Schwelle aus Slide 6 — der UIKit-Wrapper wird erst relevant, falls sich zeigt, dass die feste Zwei-Stufen-Schwelle bei sehr vielen parallelen Routen nicht mehr reicht.</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — ROADMAP + ACCEPTANCE + CLOSING -->
+<!-- ============================================================ -->
+<div class="slide slide-full-center" id="s11">
+  <div class="slide-label" style="align-self:flex-start;">Roadmap &amp; Acceptance</div>
+  <h2 style="align-self:flex-start;">Von 3 Bugs zu einem konsistenten Kartenerlebnis</h2>
+
+  <div class="roadmap-grid">
+    <div class="roadmap-card">
+      <div class="roadmap-phase">Sprint 1</div>
+      <div class="roadmap-title">Richtung 1 — Konsistenz-Fix</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">PortPinView auf der Karte wiederverwenden</div>
+        <div class="roadmap-item">Rundreise-Sonderfall abfangen</div>
+        <div class="roadmap-item">Zwischenstopps bei Mehrfachrouten zur&uuml;ckbringen</div>
+      </div>
+      <div class="effort-tag">Klein &bull; behebt alle 3 Bugs</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-phase">Sprint 2</div>
+      <div class="roadmap-title">Richtung 2 — Badges + Sheet</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Zoom-Schwelle (Span-basiert) einf&uuml;hren</div>
+        <div class="roadmap-item">Nummerierte Badges statt Namen</div>
+        <div class="roadmap-item">Synchronisierte Bottom-Sheet-Liste mit Fotos</div>
+      </div>
+      <div class="effort-tag" style="background:rgba(255,149,0,0.18); color:#FFAA44;">Hoch &bull; bidirektionale Karte&harr;Liste-Sync</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-phase">Optional, sp&auml;ter</div>
+      <div class="roadmap-title">UIKit-Wrapper</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Nur falls Zwei-Stufen-Schwelle bei sehr vielen Routen nicht reicht</div>
+        <div class="roadmap-item">Natives Clustering + Label-Collision</div>
+      </div>
+      <div class="effort-tag">Gro&szlig; &bull; nur bei Bedarf</div>
+    </div>
+  </div>
+
+  <h3 style="align-self:flex-start; margin-top:26px;">Acceptance-Kriterien</h3>
+  <ul class="acceptance-list">
+    <li>Jeder Marker ist per Form <strong style="color:var(--text-primary);">und</strong> Farbe eindeutig als Start/Zwischenstopp/Endpunkt/Seetag erkennbar.</li>
+    <li>Rundreise (Start = Ende) zeigt genau einen Marker mit Zyklus-Icon, keine zwei &uuml;berlappenden Kreise.</li>
+    <li>Hafenname ist f&uuml;r Start, Ziel und selektierten Hafen lesbar sichtbar — nicht am Bildschirmrand abgeschnitten.</li>
+    <li>Bei Mehrfach-Routen-Ansicht bleiben alle Zwischenstopps als Dots sichtbar.</li>
+    <li>Ausschlie&szlig;lich natives MapKit + SwiftUI, keine Fremd-SDKs/Custom-Tiles.</li>
+    <li>Light/Dark Mode konsistent &uuml;ber bestehende <code class="code-ref">Color+Theme</code>-Token.</li>
+    <li>Jeder Pin hat ein beschreibendes Accessibility-Label (z. B. "Starthafen, Barcelona, Tag 1").</li>
+  </ul>
+
+  <div style="margin-top:30px; font-size:11px; color:var(--text-muted);">
+    ShipTrip &bull; Welle B4 Karten-&Uuml;berarbeitung &bull; Designer &bull; 2026-07-04
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- NAVIGATION SCRIPT -->
+<!-- ============================================================ -->
+<script>
+  const TOTAL = 11;
+  let current = 1;
+
+  function goTo(n) {
+    n = Math.max(1, Math.min(TOTAL, n));
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    document.getElementById('counter').textContent = n + ' / ' + TOTAL;
+    document.getElementById('progress-bar').style.width = (n / TOTAL * 100) + '%';
+    current = n;
+    history.replaceState(null, '', '#' + n);
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(1); }
+    if (e.key === 'End') { e.preventDefault(); goTo(TOTAL); }
+  });
+
+  document.getElementById('nav-prev').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('nav-next').addEventListener('click', () => goTo(current + 1));
+
+  const hash = parseInt(window.location.hash.replace('#', ''));
+  goTo(isNaN(hash) ? 1 : hash);
+</script>
+</body>
+</html>

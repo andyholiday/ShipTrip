@@ -25,7 +25,10 @@ struct ShipTripApp: App {
             Port.self,
             Expense.self,
             Deal.self,
-            Photo.self
+            Photo.self,
+            CustomShippingLine.self,
+            CustomShip.self,
+            HiddenCatalogItem.self
         ])
 
         // CloudKit folgt in einem separaten Build nach verifizierter Schema-Migration (siehe ADR-002, Zwei-Schritt-Migration).

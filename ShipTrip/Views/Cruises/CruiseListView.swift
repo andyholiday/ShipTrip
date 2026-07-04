@@ -94,9 +94,12 @@ struct CruiseListView: View {
             // Einmalige Start-Reparaturen (Altdaten-Migration):
             // 1. IdBackfill: korrigiert UUID-Kollisionen aus Lightweight-Migration v1.5.0
             // 2. ThumbnailBackfill: setzt thumbnailData für Fotos ohne Vorschaubild
+            // 3. ShippingLineCatalogDedup: räumt Cross-Device-Duplikate eigener Reedereien/Schiffe
+            //    und Hidden-Einträge auf (ADR-006)
             .task {
                 IdBackfill.run(context: modelContext)
                 await ThumbnailBackfill.run(context: modelContext)
+                ShippingLineCatalogDedup.run(context: modelContext)
             }
         }
     }

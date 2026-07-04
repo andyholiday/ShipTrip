@@ -129,14 +129,27 @@ func reconcileRoute(
 struct CruiseFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
+    // Eigene Reedereien/Schiffe + ausgeblendete Katalog-Einträge (ADR-006, Welle B5) –
+    // Picker-Optionen kommen ausschließlich aus ShippingLineCatalogService, keine eigene
+    // Merge-Logik hier.
+    @Query private var customLines: [CustomShippingLine]
+    @Query private var customShips: [CustomShip]
+    @Query private var hidden: [HiddenCatalogItem]
+
     let cruise: Cruise?
-    
+
     // Form State
     @State private var title = ""
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(7 * 24 * 60 * 60)
-    @State private var selectedShippingLine: ShippingLine?
+    @State private var selectedLineOption: ShippingLineOption?
+    @State private var selectedShipOption: ShipOption?
+    // Getrennter State für "unberührt" vs. "aktiv geleert" (Fix B3): nur ein expliziter
+    // "Wählen..."-Reset darf beim Speichern auf leer zurücksetzen, siehe resolvedShippingLineName/
+    // resolvedShipName.
+    @State private var userClearedLine = false
+    @State private var userClearedShip = false
     @State private var ship = ""
     @State private var cabinType = ""
     @State private var cabinNumber = ""
@@ -176,7 +189,49 @@ struct CruiseFormView: View {
     @State private var pendingReminderStartDate: Date?
 
     private var isEditing: Bool { cruise != nil }
-    
+
+    /// Katalog- und eigene Reedereien gemischt, inkl. Ausgeblendeter-Filter und ggf. der
+    /// bestehenden `cruise.shippingLine` als `.unlisted`-Option, damit ein gelöschter/
+    /// ausgeblendeter Name beim Bearbeiten nicht verloren geht (ADR-006, Abschnitt 5).
+    private var lineOptions: [ShippingLineOption] {
+        ShippingLineCatalogService.shippingLineOptions(
+            customLines: customLines, hidden: hidden, currentSelection: cruise?.shippingLine
+        )
+    }
+
+    /// Die Reederei-Options-ID, unter der `cruise.ship` ursprünglich geladen wurde. Fix B2:
+    /// `currentSelection` wird `shipOptions(for:)` NUR für genau diese Reederei mitgegeben,
+    /// sonst würde ein Reederei-Wechsel (z. B. AIDA → MSC) das alte Schiff als `.unlisted`-
+    /// Option unter der neuen Reederei wiederbeleben und der Schiff-Reset griffe nicht.
+    private var originalLineOptionID: String? {
+        lineOptions.first { $0.name == cruise?.shippingLine }?.id
+    }
+
+    /// Schiffsoptionen für eine gewählte Reederei, analog `lineOptions` mit `cruise.ship`
+    /// als preserve-fähiger `.unlisted`-Fallback – aber nur für die ursprünglich geladene
+    /// Reederei (siehe `originalLineOptionID`).
+    private func shipOptions(for lineOptionID: String) -> [ShipOption] {
+        let currentSelection = lineOptionID == originalLineOptionID ? cruise?.ship : nil
+        return ShippingLineCatalogService.shipOptions(
+            for: lineOptionID, customShips: customShips, hidden: hidden, currentSelection: currentSelection
+        )
+    }
+
+    /// Preserve-on-save-Auflösung (Fix B3, ADR-006 Abschnitt 5): explizit gewählte Option
+    /// gewinnt, ein expliziter "Wählen..."-Reset leert, sonst bleibt der bestehende Wert erhalten.
+    static func resolvedShippingLineName(selected: ShippingLineOption?, userCleared: Bool, existing: String) -> String {
+        if let selected { return selected.name }
+        if userCleared { return "" }
+        return existing
+    }
+
+    /// Analog `resolvedShippingLineName` für das Schiff.
+    static func resolvedShipName(selected: ShipOption?, userCleared: Bool, existing: String) -> String {
+        if let selected { return selected.name }
+        if userCleared { return "" }
+        return existing
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -203,30 +258,44 @@ struct CruiseFormView: View {
                 }
                 // Schiff & Reederei
                 Section("Schiff & Reederei") {
-                    Picker("Reederei", selection: $selectedShippingLine) {
-                        Text("Wählen...").tag(nil as ShippingLine?)
-                        ForEach(ShippingLine.all) { line in
-                            Text("\(line.logo) \(line.name)").tag(line as ShippingLine?)
+                    Picker("Reederei", selection: $selectedLineOption) {
+                        Text("Wählen...").tag(nil as ShippingLineOption?)
+                        ForEach(lineOptions) { option in
+                            Text("\(option.logo) \(option.name)").tag(option as ShippingLineOption?)
                         }
                     }
-                    .onChange(of: selectedShippingLine) { _, newValue in
+                    .onChange(of: selectedLineOption) { _, newValue in
+                        userClearedLine = (newValue == nil)
+                        guard let newValue else {
+                            // Reederei explizit auf "Wählen..." zurückgesetzt: kein Schiff-
+                            // Picker mehr sichtbar, eine vorherige Auswahl wäre nur noch Altlast.
+                            selectedShipOption = nil
+                            return
+                        }
                         // Schiff zurücksetzen wenn Reederei gewechselt wird
-                        if let line = newValue, !line.ships.contains(ship) {
+                        if !shipOptions(for: newValue.id).contains(where: { $0.name == ship }) {
                             ship = ""
+                            selectedShipOption = nil
+                            userClearedShip = false
                         }
                     }
-                    
-                    // Schiff Picker wenn Reederei gewählt, sonst TextField.
-                    // Beim Bearbeiten: historisches Schiff (nicht in ships) als Extra-Option ergänzen.
-                    if let shippingLine = selectedShippingLine, !shippingLine.ships.isEmpty {
-                        let pickerOptions: [String] = shippingLine.ships.contains(ship) || ship.isEmpty
-                            ? shippingLine.ships
-                            : shippingLine.ships + [ship]
-                        Picker("Schiff", selection: $ship) {
-                            Text("Wählen...").tag("")
-                            ForEach(pickerOptions, id: \.self) { shipName in
-                                Text(shipName).tag(shipName)
+
+                    // Schiff Picker wenn Reederei gewählt und Optionen vorhanden, sonst TextField.
+                    if let selectedLineOption {
+                        let options = shipOptions(for: selectedLineOption.id)
+                        if !options.isEmpty {
+                            Picker("Schiff", selection: $selectedShipOption) {
+                                Text("Wählen...").tag(nil as ShipOption?)
+                                ForEach(options) { option in
+                                    Text(option.name).tag(option as ShipOption?)
+                                }
                             }
+                            .onChange(of: selectedShipOption) { _, newValue in
+                                userClearedShip = (newValue == nil)
+                                ship = newValue?.name ?? ""
+                            }
+                        } else {
+                            TextField("Schiffsname", text: $ship)
                         }
                     } else {
                         TextField("Schiffsname", text: $ship)
@@ -440,8 +509,13 @@ struct CruiseFormView: View {
         title = cruise.title
         startDate = cruise.startDate
         endDate = cruise.endDate
-        selectedShippingLine = ShippingLine.all.first { $0.name == cruise.shippingLine }
+        // Preserve-on-save (ADR-006, Abschnitt 5): currentSelection sorgt dafür, dass ein
+        // gelöschter/ausgeblendeter Name als `.unlisted`-Option gefunden wird statt nil zu bleiben.
+        selectedLineOption = lineOptions.first { $0.name == cruise.shippingLine }
         ship = cruise.ship
+        selectedShipOption = selectedLineOption.flatMap { line in
+            shipOptions(for: line.id).first { $0.name == cruise.ship }
+        }
         cabinType = cruise.cabinType
         cabinNumber = cruise.cabinNumber
         bookingNumber = cruise.bookingNumber
@@ -517,25 +591,33 @@ struct CruiseFormView: View {
                     }
                     
                     if let extractedShippingLine = extracted.shippingLine {
-                        selectedShippingLine = ShippingLine.all.first {
+                        // Non-Goal (ADR-006, Abschnitt 8): KI-Fuzzy-Match bleibt katalog-only,
+                        // eigene Reedereien werden hier nicht durchsucht.
+                        if let matchedLine = ShippingLine.all.first(where: {
                             $0.name.localizedCaseInsensitiveContains(extractedShippingLine) ||
                             extractedShippingLine.localizedCaseInsensitiveContains($0.name)
+                        }) {
+                            selectedLineOption = lineOptions.first { $0.id == matchedLine.id }
                         }
-                        if selectedShippingLine != nil {
+                        if selectedLineOption != nil {
                             filledCount += 1
                         }
                     }
-                    
+
                     if let extractedShip = extracted.ship {
                         ship = extractedShip
                         filledCount += 1
-                        
+
                         // Bug #6 Fix: If no shipping line was detected, try to find it by ship name
-                        if selectedShippingLine == nil {
+                        if selectedLineOption == nil {
                             if let detectedLine = ShippingLine.findByShipName(extractedShip) {
-                                selectedShippingLine = detectedLine
+                                selectedLineOption = lineOptions.first { $0.id == detectedLine.id }
                                 filledCount += 1
                             }
+                        }
+
+                        if let selectedLineOption {
+                            selectedShipOption = shipOptions(for: selectedLineOption.id).first { $0.name == ship }
                         }
                     }
                     
@@ -684,8 +766,13 @@ struct CruiseFormView: View {
             existingCruise.title = title
             existingCruise.startDate = startDate
             existingCruise.endDate = endDate
-            existingCruise.shippingLine = selectedShippingLine?.name ?? ""
-            existingCruise.ship = ship
+            // Preserve-on-save (ADR-006, Abschnitt 5, HIGH-Finding): nie einen zuvor
+            // nicht-leeren Namen mit "" überschreiben, wenn die Auswahl nicht aktiv
+            // geändert wurde – nur ein expliziter "Wählen..."-Reset darf leeren.
+            existingCruise.shippingLine = Self.resolvedShippingLineName(
+                selected: selectedLineOption, userCleared: userClearedLine, existing: existingCruise.shippingLine
+            )
+            existingCruise.ship = Self.resolvedShipName(selected: selectedShipOption, userCleared: userClearedShip, existing: ship)
             existingCruise.cabinType = cabinType
             existingCruise.cabinNumber = cabinNumber
             existingCruise.bookingNumber = bookingNumber
@@ -706,8 +793,8 @@ struct CruiseFormView: View {
                 title: title,
                 startDate: startDate,
                 endDate: endDate,
-                shippingLine: selectedShippingLine?.name ?? "",
-                ship: ship
+                shippingLine: Self.resolvedShippingLineName(selected: selectedLineOption, userCleared: userClearedLine, existing: ""),
+                ship: Self.resolvedShipName(selected: selectedShipOption, userCleared: userClearedShip, existing: ship)
             )
             newCruise.cabinType = cabinType
             newCruise.cabinNumber = cabinNumber

@@ -103,6 +103,15 @@ struct SettingsView: View {
                         Label("Daten verwalten", systemImage: "externaldrive")
                     }
                 }
+
+                // Reedereien & Schiffe (Welle B5)
+                Section("Reedereien & Schiffe") {
+                    NavigationLink {
+                        ShippingLineManagementView()
+                    } label: {
+                        Label("Eigene Reedereien & Schiffe", systemImage: "ferry")
+                    }
+                }
                 
                 // Demo (nur Debug)
                 #if DEBUG
@@ -385,7 +394,10 @@ struct DataManagementView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var cruises: [Cruise]
     @Query private var deals: [Deal]
-    
+    @Query private var customShippingLines: [CustomShippingLine]
+    @Query private var customShips: [CustomShip]
+    @Query private var hiddenCatalogItems: [HiddenCatalogItem]
+
     @State private var showingDeleteAlert = false
     @State private var showingApiKeyDeleteConfirm = false
     @State private var showingExportSheet = false
@@ -585,7 +597,8 @@ struct DataManagementView: View {
         }
     }
     
-    /// Löscht alle Kreuzfahrten und Wunschreisen. Erst nach erfolgreichem Speichern werden
+    /// Löscht alle Kreuzfahrten, Wunschreisen sowie eigene Reedereien/Schiffe und ausgeblendete
+    /// Katalog-Einträge (ADR-006). Erst nach erfolgreichem Speichern werden
     /// geplante Erinnerungen entfernt und optional der KI-API-Key gelöscht, damit bei einem
     /// fehlgeschlagenen Save keine Seiteneffekte ausgeführt werden.
     private func deleteAllData(alsoDeleteApiKey: Bool) {
@@ -594,6 +607,15 @@ struct DataManagementView: View {
         }
         for deal in deals {
             modelContext.delete(deal)
+        }
+        for customLine in customShippingLines {
+            modelContext.delete(customLine)
+        }
+        for customShip in customShips {
+            modelContext.delete(customShip)
+        }
+        for hiddenItem in hiddenCatalogItems {
+            modelContext.delete(hiddenItem)
         }
 
         do {
