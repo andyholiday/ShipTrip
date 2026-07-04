@@ -121,9 +121,10 @@ final class Cruise {
         expenses.reduce(0) { $0 + $1.amount }
     }
     
-    /// Anzahl der besuchten Länder
+    /// Anzahl der besuchten Länder (leeres Land – z. B. Seetage oder Häfen ohne erfasstes
+    /// Land – zählt nicht mit, siehe CruiseHeroCardView.metaLine)
     var countriesVisited: Set<String> {
-        Set(route.map { $0.country })
+        Set(route.map { $0.country }).filter { !$0.isEmpty }
     }
     
     /// Emoji-Logo der Reederei

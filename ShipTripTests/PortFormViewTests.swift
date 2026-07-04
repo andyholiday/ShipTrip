@@ -219,3 +219,152 @@ struct PortImageExcursionsRoundtripTests {
         #expect(fetched.excursionsRaw == "")
     }
 }
+
+// MARK: - Ausflug entfernen (B6.1): Index-basiertes Löschen, auch bei Duplikaten
+
+/// Prüft dieselbe Lösch-Logik, die PortFormView/TempPortFormSheet jetzt über die
+/// sichtbare Papierkorb-Schaltfläche auslösen (`excursions.remove(at: index)`), statt
+/// per String-Match – wichtig bei doppelt gleichnamigen Ausflügen.
+@Suite("Ausflug entfernen (B6.1)")
+struct RemoveExcursionTests {
+
+    @Test("Entfernt per Index, nicht per String-Match – doppelte Namen bleiben unterscheidbar")
+    func removesByIndexNotByValue() {
+        var excursions = ["Stadtrundfahrt", "Stadtrundfahrt", "Hafenrundfahrt"]
+        excursions.remove(at: 0)
+        #expect(excursions == ["Stadtrundfahrt", "Hafenrundfahrt"])
+    }
+
+    @Test("onDelete-Pfad (Swipe) entfernt weiterhin korrekt per IndexSet")
+    func onDeleteIndexSetStillWorks() {
+        var excursions = ["A", "B", "C"]
+        excursions.remove(atOffsets: IndexSet(integer: 1))
+        #expect(excursions == ["A", "C"])
+    }
+
+    @Test("SwiftData-Roundtrip (PortFormView-Pfad): Ausflug anlegen, Reise erneut öffnen, Ausflug löschen, speichern")
+    @MainActor
+    func portFormViewPathRoundtrip() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+
+        // Anlegen: Ausflug eintragen und speichern (PortFormView.savePort(), Create-Pfad).
+        let port = CruisePort(name: "Hamburg", country: "Deutschland", latitude: 53.5, longitude: 9.9)
+        port.excursions = ["Stadtrundfahrt", "Hafenrundfahrt"]
+        port.cruise = cruise
+        context.insert(port)
+        try context.save()
+
+        // Reise erneut öffnen: PortFormView.loadExistingData() liest `port.excursions` in den Form-State.
+        var loadedExcursions = port.excursions
+        #expect(loadedExcursions == ["Stadtrundfahrt", "Hafenrundfahrt"])
+
+        // Ausflug per Index löschen (neue Papierkorb-Schaltfläche) und speichern (Edit-Pfad).
+        loadedExcursions.remove(at: 0)
+        port.excursions = loadedExcursions
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Hafenrundfahrt"])
+    }
+
+    @Test("SwiftData-Roundtrip (PortFormView-Pfad): letzten Ausflug löschen ergibt leere Liste")
+    @MainActor
+    func portFormViewPathLastExcursionRemovedYieldsEmptyList() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+
+        // Anlegen mit genau einem Ausflug (Land bewusst leer – siehe PortFormView.swift:
+        // TempPortFormSheet erzwingt kein Land, ein bestehender Port kann also mit leerem
+        // Land in die Bearbeitung gehen).
+        let port = CruisePort(name: "Hamburg", country: "", latitude: 53.5, longitude: 9.9)
+        port.excursions = ["Stadtrundfahrt"]
+        port.cruise = cruise
+        context.insert(port)
+        try context.save()
+
+        var loadedExcursions = port.excursions
+        loadedExcursions.remove(at: 0)
+        port.excursions = loadedExcursions
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions.isEmpty)
+        #expect(fetched.excursionsRaw == "")
+    }
+
+    @Test("SwiftData-Roundtrip (TempPortFormSheet/reconcileRoute-Pfad): Ausflug anlegen, erneut öffnen, löschen, speichern")
+    @MainActor
+    func reconcileRoutePathRoundtrip() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+        try context.save()
+
+        // Anlegen über den Route-Editor (CruiseFormView.saveCruise() → reconcileRoute).
+        var tempPort = TempPort(name: "Hamburg", country: "Deutschland", arrival: makeDate("2026-03-02"), departure: makeDate("2026-03-02"))
+        tempPort.excursions = ["Stadtrundfahrt", "Hafenrundfahrt"]
+        reconcileRoute(existingPorts: cruise.route, tempPorts: [tempPort], cruise: cruise, modelContext: context)
+        try context.save()
+
+        // Reise erneut öffnen: CruiseFormView.loadExistingData() baut tempPorts aus cruise.route.
+        var reloadedTempPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { port in
+            TempPort(
+                id: port.id, name: port.name, country: port.country,
+                arrival: port.arrival, departure: port.departure,
+                latitude: port.latitude, longitude: port.longitude,
+                isSeaDay: port.isSeaDay, excursionsRaw: port.excursionsRaw, imageData: port.imageData
+            )
+        }
+        #expect(reloadedTempPorts.count == 1)
+        #expect(reloadedTempPorts[0].excursions == ["Stadtrundfahrt", "Hafenrundfahrt"])
+
+        // Ausflug per Index löschen (TempPortFormSheet-Papierkorb-Schaltfläche) und erneut speichern.
+        reloadedTempPorts[0].excursions.remove(at: 0)
+        reconcileRoute(existingPorts: cruise.route, tempPorts: reloadedTempPorts, cruise: cruise, modelContext: context)
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Hafenrundfahrt"])
+    }
+
+    @Test("SwiftData-Roundtrip (reconcileRoute-Pfad): letzten Ausflug löschen ergibt leere Liste")
+    @MainActor
+    func reconcileRoutePathLastExcursionRemovedYieldsEmptyList() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+        try context.save()
+
+        var tempPort = TempPort(name: "Hamburg", country: "Deutschland", arrival: makeDate("2026-03-02"), departure: makeDate("2026-03-02"))
+        tempPort.excursions = ["Stadtrundfahrt"]
+        reconcileRoute(existingPorts: cruise.route, tempPorts: [tempPort], cruise: cruise, modelContext: context)
+        try context.save()
+
+        var reloadedTempPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { port in
+            TempPort(
+                id: port.id, name: port.name, country: port.country,
+                arrival: port.arrival, departure: port.departure,
+                latitude: port.latitude, longitude: port.longitude,
+                isSeaDay: port.isSeaDay, excursionsRaw: port.excursionsRaw, imageData: port.imageData
+            )
+        }
+        reloadedTempPorts[0].excursions.remove(at: 0)
+        reconcileRoute(existingPorts: cruise.route, tempPorts: reloadedTempPorts, cruise: cruise, modelContext: context)
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions.isEmpty)
+        #expect(fetched.excursionsRaw == "")
+    }
+}

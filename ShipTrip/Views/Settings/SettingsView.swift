@@ -105,7 +105,8 @@ struct SettingsView: View {
                 }
 
                 // Reedereien & Schiffe (Welle B5)
-                Section("Reedereien & Schiffe") {
+                Section(header: Text("Reedereien & Schiffe"),
+                        footer: Text(String(localized: "Fehlt eine Reederei oder ein Schiff im Katalog? Hier kannst du eigene Einträge anlegen."))) {
                     NavigationLink {
                         ShippingLineManagementView()
                     } label: {

@@ -1089,8 +1089,25 @@ struct TempPortFormSheet: View {
 
                 // Ausflüge
                 Section(String(localized: "Ausflüge")) {
-                    ForEach(Array(excursions.enumerated()), id: \.offset) { _, excursion in
-                        Text(excursion)
+                    ForEach(Array(excursions.enumerated()), id: \.offset) { index, excursion in
+                        HStack {
+                            Text(excursion)
+                            Spacer()
+                            Button {
+                                excursions.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
+                            // .plain entfernt die Standard-Polsterung des Buttons; ohne festen
+                            // Frame + contentShape bliebe die tatsächlich tappbare Fläche auf die
+                            // reinen Glyphen-Pixel beschränkt (unzuverlässig, ~44pt-Mindestgröße
+                            // laut HIG unterschritten).
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                            .accessibilityLabel(String(localized: "Ausflug entfernen"))
+                        }
                     }
                     .onDelete { excursions.remove(atOffsets: $0) }
 

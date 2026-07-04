@@ -14,6 +14,43 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
+- Karten-Überarbeitung B4.3b: nummerierte Wegpunkt-Badges, Zwei-Stufen-Zoom,
+  synchronisierte Bottom-Sheet-Stopliste ([Feature-Doku](docs/features/karten-redesign-b4.md))
+- Umsetzung des gewählten Vorschlags aus dem Design-Deck „Hafen-Momente"
+  (Erfassung/Darstellung von Hafenfoto & Ausflügen, B6.2 — Wahl durch Andre/Tester
+  offen; [Feature-Doku](docs/features/feedback-fixes-b6.md#b62--design-deck-hafen-momente))
+
+### Hinzugefuegt
+
+- **Erklärtexte zur Reederei-/Schiff-Verwaltung**: Die Einstellungen sowie die
+  Verwaltungsansicht selbst erklären jetzt an drei Stellen, wozu eigene
+  Reedereien/Schiffe angelegt werden können und dass Katalog-Einträge sich
+  ausblenden statt löschen lassen.
+  ([Feature-Doku](docs/features/feedback-fixes-b6.md#b63--einstellungen-hinweis-zur-reederei-schiff-verwaltung))
+
+### Geaendert
+
+- **Kartenmarker konsistent zur Detailansicht**: `MapView` nutzt jetzt dasselbe
+  Rollensystem (Start/Hafen/Endpunkt/Seetag) wie die Reise-Detailansicht statt
+  einer eigenen Marker-Darstellung; eine Rundreise mit identischem Start- und
+  Endhafen zeigt jetzt einen kombinierten Marker statt zweier überlagerter Pins;
+  Zwischenstopps werden bei mehreren gleichzeitig angezeigten Routen nicht mehr
+  auf Start/Ende gekappt.
+  ([Feature-Doku](docs/features/karten-redesign-b4.md#b43a--konsistenz-fix))
+
+### Behoben
+
+- **Ausflug ließ sich nicht sichtbar entfernen**: Die Lösch-Funktion existierte
+  nur als versteckte Wisch-Geste. Ein sichtbarer Lösch-Button pro Ausflugs-Zeile
+  ersetzt bzw. ergänzt sie jetzt in `PortFormView` und `TempPortFormSheet`.
+  ([Feature-Doku](docs/features/feedback-fixes-b6.md#b61--ausflug-entfernen--edit-datenverlust-fix))
+- **Edit-Datenverlust bei Häfen mit leerem Land**: Der Speichern-Button in
+  `PortFormView` war für Häfen mit leerem Land dauerhaft deaktiviert, obwohl das
+  „Land"-Feld nur bei leerem Namen überhaupt sichtbar war — jede Bearbeitung
+  eines solchen (regulär über `TempPortFormSheet` anlegbaren) Hafens wurde beim
+  Speichern stillschweigend verworfen. Der Button ist jetzt nur noch bei leerem
+  Namen deaktiviert.
+  ([Feature-Doku](docs/features/feedback-fixes-b6.md#b61--ausflug-entfernen--edit-datenverlust-fix))
 
 ---
 

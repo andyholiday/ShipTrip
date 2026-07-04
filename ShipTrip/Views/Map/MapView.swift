@@ -10,6 +10,74 @@ import SwiftData
 import MapKit
 import CoreLocation
 
+// MARK: - Marker Role Planning
+
+/// Ein Port samt der ihm zugewiesenen Kartenmarker-Rolle (siehe `PortPinType`).
+struct MapPortRole: Identifiable {
+    let id: UUID
+    let port: Port
+    let type: PortPinType
+}
+
+/// Leitet aus einer Portliste die Kartenmarker-Rollen ab (Heimathafen/Zwischenstopp/Endhafen)
+/// und erkennt den Rundreise-Sonderfall (Start- und Endkoordinate identisch). Rein und ohne
+/// SwiftUI-Abhängigkeit, damit die Zuordnung isoliert testbar ist.
+enum MapMarkerPlanner {
+    /// Toleranz für den Rundreise-Koordinatenvergleich in Grad (~11 m bei diesem Delta) —
+    /// deckt Rundungsdrift zwischen zwei unabhängig erfassten Einträgen desselben Hafens ab,
+    /// liegt aber weit unter dem Abstand zweier unterschiedlicher Häfen auf einer Route.
+    /// Vergleich ist inklusive (`<=`); der exakte Grenzwert selbst ist wegen binärer
+    /// Fließkomma-Rundung (z. B. `53.55 + 0.0001 != 53.5501`) nicht sinnvoll exakt testbar —
+    /// die Tests prüfen daher knapp unter/über der Grenze statt exakt auf ihr.
+    static let roundTripEpsilon: Double = 0.0001
+
+    /// Seetage und Ports mit fehlenden/ungültigen Koordinaten ausfiltern, nach `sortOrder` sortieren.
+    /// `hasValidCoordinates` schließt nur Seetage und exakt (0,0) aus — zusätzlich werden hier
+    /// Out-of-Range- (Import, manuelle Eingabe) und nicht-endliche Werte (NaN/Infinity) verworfen,
+    /// damit sie nicht als Geister-Pins in Annotation/MapPolyline landen.
+    static func validPorts(in ports: [Port]) -> [Port] {
+        ports
+            .filter { $0.hasValidCoordinates && isFinitePlausible($0.coordinate) }
+            .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    private static func isFinitePlausible(_ coordinate: CLLocationCoordinate2D) -> Bool {
+        coordinate.latitude.isFinite && coordinate.longitude.isFinite
+            && CLLocationCoordinate2DIsValid(coordinate)
+    }
+
+    /// Weist bereits gefilterten/sortierten Ports ihre Marker-Rolle zu. Bei einer Rundreise
+    /// (Start == Ende innerhalb der Toleranz) entsteht ein einziger kombinierter Marker
+    /// (Rolle `.homePort`) statt zweier überlappender Pins.
+    static func markerRoles(for ports: [Port]) -> [MapPortRole] {
+        guard let first = ports.first else { return [] }
+        guard let last = ports.last, last.id != first.id else {
+            return [MapPortRole(id: first.id, port: first, type: .homePort)]
+        }
+
+        let isRoundTrip = coordinatesMatch(first.coordinate, last.coordinate)
+
+        return ports.compactMap { port in
+            if isRoundTrip, port.id == last.id {
+                return nil
+            }
+            let type: PortPinType
+            if port.id == first.id {
+                type = .homePort
+            } else if port.id == last.id {
+                type = .endPort
+            } else {
+                type = .port
+            }
+            return MapPortRole(id: port.id, port: port, type: type)
+        }
+    }
+
+    private static func coordinatesMatch(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Bool {
+        abs(a.latitude - b.latitude) <= roundTripEpsilon && abs(a.longitude - b.longitude) <= roundTripEpsilon
+    }
+}
+
 /// Interaktive Weltkarte mit allen Kreuzfahrt-Routen
 struct MapView: View {
     @Query(sort: \Cruise.startDate, order: .reverse) private var cruises: [Cruise]
@@ -28,23 +96,19 @@ struct MapView: View {
                         let index = route.index
                         let cruise = route.cruise
                         let validPorts = validPorts(for: cruise)
-                        let portsToMark = markerPorts(for: validPorts)
+                        let portsToMark = MapMarkerPlanner.markerRoles(for: validPorts)
 
                         if validPorts.count > 1 {
                             MapPolyline(coordinates: validPorts.map { $0.coordinate })
                                 .stroke(Color.routeColor(at: index).opacity(displayedRoutes.count == 1 ? 0.78 : 0.52), lineWidth: displayedRoutes.count == 1 ? 3 : 2)
                         }
 
-                        ForEach(Array(portsToMark.enumerated()), id: \.element.id) { portIndex, port in
-                            Annotation(port.name, coordinate: port.coordinate) {
+                        ForEach(portsToMark) { role in
+                            Annotation(role.port.name, coordinate: role.port.coordinate) {
                                 Button {
                                     primaryCruiseID = cruise.id
                                 } label: {
-                                    routeMarker(
-                                        color: Color.routeColor(at: index),
-                                        isFirst: portIndex == 0,
-                                        isLast: port.id == portsToMark.last?.id
-                                    )
+                                    markerView(for: role)
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -107,28 +171,14 @@ struct MapView: View {
     }
 
     private func validPorts(for cruise: Cruise) -> [Port] {
-        cruise.route
-            .filter { $0.hasValidCoordinates }
-            .sorted(by: { $0.sortOrder < $1.sortOrder })
+        MapMarkerPlanner.validPorts(in: cruise.route)
     }
 
-    private func markerPorts(for ports: [Port]) -> [Port] {
-        if displayedRoutes.count == 1 {
-            return ports
-        }
-        guard let first = ports.first else { return [] }
-        guard let last = ports.last, last.id != first.id else { return [first] }
-        return [first, last]
-    }
-
-    private func routeMarker(color: Color, isFirst: Bool, isLast: Bool) -> some View {
-        Circle()
-            .fill(isFirst ? Color.sunsetOrange : isLast ? Color.seaGreen : color)
-            .frame(width: isFirst || isLast ? 18 : 11, height: isFirst || isLast ? 18 : 11)
-            .overlay {
-                Circle()
-                    .stroke(.white, lineWidth: isFirst || isLast ? 3 : 2)
-            }
+    /// Einheitliche Pin-Darstellung (siehe `PortPinView`) mit weißem Halo für Lesbarkeit auf der Karte.
+    private func markerView(for role: MapPortRole) -> some View {
+        PortPinView(type: role.type)
+            .padding(6)
+            .background(Circle().fill(.white))
             .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
     }
 

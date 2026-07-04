@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — B6.2 Hafen-Momente</title>
+<style>
+  /* ===== DESIGN TOKENS (aus ShipTrip Color+Theme.swift) ===== */
+  :root {
+    --ocean-blue: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy-dark: #1A365D;
+    --sunset-orange: #FF6B35;
+    --sea-green: #34C759;
+    --secondary-bg: #F2F2F7;
+    --secondary-bg-dark: #1C1C1E;
+    --separator: rgba(60,60,67,0.29);
+
+    --deck-bg: #0A1628;
+    --slide-bg: #111827;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deck-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ===== SLIDE ENGINE ===== */
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 46px 40px 56px;
+    overflow: hidden;
+  }
+  .slide.active { display: flex; }
+
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ocean-blue), var(--ocean-light));
+    transition: width 0.3s ease;
+    z-index: 100;
+  }
+  #counter {
+    position: fixed;
+    bottom: 18px; right: 24px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+  }
+  .nav-btn {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px; color: var(--text-secondary);
+    z-index: 100;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); }
+  #nav-prev { left: 12px; }
+  #nav-next { right: 12px; }
+
+  /* ===== TYPOGRAPHY ===== */
+  .slide-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--ocean-light); margin-bottom: 12px;
+  }
+  h1 { font-size: 40px; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 26px; font-weight: 700; line-height: 1.2; }
+  h3 { font-size: 17px; font-weight: 600; }
+  .subtitle { font-size: 15px; color: var(--text-secondary); margin-top: 12px; }
+  .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .tag-high { background: rgba(255,59,48,0.18); color: #FF6B6B; }
+  .tag-med  { background: rgba(255,149,0,0.18); color: #FFAA44; }
+  .tag-low  { background: rgba(52,199,89,0.18); color: #34C759; }
+  .tag-crit { background: rgba(255,59,48,0.28); color: #FF3B30; }
+  .tag-star { background: rgba(12,140,233,0.22); color: var(--ocean-light); }
+
+  .row { display: flex; gap: 24px; align-items: flex-start; width: 100%; }
+  .col { flex: 1; }
+  .card { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .card-sm { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+
+  /* ===== COVER ===== */
+  .cover-gradient {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 30% 40%, rgba(12,140,233,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 70%, rgba(255,107,53,0.12) 0%, transparent 50%);
+  }
+  .cover-badge {
+    background: linear-gradient(135deg, var(--navy-dark), #0C3B6E);
+    border: 1px solid rgba(12,140,233,0.4);
+    border-radius: 40px; padding: 6px 18px; font-size: 12px; font-weight: 600;
+    color: var(--ocean-light); letter-spacing: 0.06em; margin-bottom: 32px;
+  }
+
+  /* ===== IPHONE MOCKUP ===== */
+  .iphone {
+    width: 176px; height: 362px;
+    background: #1A1A1A; border-radius: 36px; border: 2px solid #3A3A3C;
+    position: relative; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .iphone-small { width: 150px; height: 308px; border-radius: 30px; }
+  .iphone-inner { position: absolute; inset: 8px; border-radius: 28px; overflow: hidden; background: var(--secondary-bg); }
+  .iphone-inner.dark { background: var(--secondary-bg-dark); }
+
+  .dynamic-island { width: 78px; height: 25px; background: #1A1A1A; border-radius: 20px; margin: 7px auto 0; z-index: 10; position: relative; }
+  .status-bar { height: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 8px; font-weight: 600; flex-shrink: 0; }
+  .status-bar.light { color: #1C1C1E; }
+  .status-bar.dark { color: #F2F2F7; }
+  .tab-bar { height: 40px; display: flex; align-items: center; justify-content: space-around; padding: 0 4px; flex-shrink: 0; border-top: 0.5px solid rgba(60,60,67,0.29); }
+  .tab-bar.light { background: rgba(249,249,249,0.94); }
+  .tab-bar.dark { background: rgba(28,28,30,0.94); border-top-color: rgba(255,255,255,0.1); }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .tab-icon { font-size: 15px; }
+  .tab-item.active .tab-icon { color: var(--ocean-blue); }
+  .tab-item:not(.active) .tab-icon { color: #8E8E93; }
+
+  .nav-header { height: 30px; display: flex; align-items: center; justify-content: center; position: relative; flex-shrink: 0; font-size: 9px; font-weight: 700; }
+  .nav-header.light { background: rgba(249,249,249,0.94); color: #1C1C1E; }
+  .nav-header.dark { background: rgba(28,28,30,0.94); color: #F2F2F7; }
+  .nav-back { position: absolute; left: 8px; font-size: 12px; color: var(--ocean-blue); }
+  .nav-action { position: absolute; right: 8px; font-size: 8px; font-weight: 700; color: var(--ocean-blue); }
+
+  .screen-body { flex: 1; overflow: hidden; position: relative; }
+
+  /* ===== iOS FORM MOCKUP ===== */
+  .ios-form { padding: 6px 0; }
+  .ios-form.light { background: var(--secondary-bg); }
+  .ios-form.dark { background: #000; }
+  .form-section-label { font-size: 6.5px; text-transform: uppercase; letter-spacing: 0.04em; color: #8E8E93; padding: 7px 12px 3px; }
+  .form-card { margin: 0 8px 7px; border-radius: 8px; overflow: hidden; }
+  .form-card.light { background: #fff; }
+  .form-card.dark { background: #1C1C1E; }
+  .form-row { display: flex; align-items: center; gap: 6px; padding: 6px 9px; font-size: 7.5px; border-bottom: 0.5px solid rgba(60,60,67,0.16); }
+  .form-row:last-child { border-bottom: none; }
+  .form-row.light { color: #1C1C1E; }
+  .form-row.dark { color: #F2F2F7; }
+  .form-row-label { flex: 1; }
+  .form-row-btn { color: var(--ocean-blue); font-weight: 600; }
+  .form-thumb-sm { width: 22px; height: 22px; border-radius: 4px; background: linear-gradient(135deg, #3A5A78, #23384C); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; }
+  .form-plain-list { display: flex; flex-direction: column; }
+  .form-plain-list .form-row { color: #48484A; }
+  .form-row.dark .form-row-sub { color: #8E8E93; }
+
+  /* ===== MOMENTS SECTION (A1/A2) ===== */
+  .moments-card { margin: 0 8px 7px; border-radius: 10px; overflow: hidden; padding: 8px; }
+  .moments-card.light { background: #fff; }
+  .moments-card.dark { background: #1C1C1E; }
+  .photo-tile { width: 100%; height: 46px; border-radius: 7px; background: linear-gradient(135deg, #2E5A8C, #163654); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; margin-bottom: 7px; }
+  .photo-tile.big { height: 86px; border-radius: 10px; }
+  .photo-tile-icon { font-size: 13px; opacity: 0.9; }
+  .photo-tile.big .photo-tile-icon { font-size: 18px; }
+  .photo-tile-label { font-size: 6.5px; color: rgba(255,255,255,0.85); font-weight: 600; }
+
+  .chip-row { display: flex; gap: 4px; overflow: hidden; }
+  .chip { flex-shrink: 0; padding: 3px 8px; border-radius: 20px; font-size: 6.5px; font-weight: 600; white-space: nowrap; }
+  .chip-filled { background: rgba(12,140,233,0.16); color: var(--ocean-blue); }
+  .chip-filled.dark-txt { color: var(--ocean-light); }
+  .chip-ghost { background: transparent; border: 1px dashed rgba(142,142,147,0.6); color: #8E8E93; }
+  .chip-suggest { background: rgba(142,142,147,0.14); color: #636366; }
+  .chip-suggest.dark-txt { color: #AEAEB2; }
+
+  .drag-list { display: flex; flex-direction: column; gap: 0; margin-top: 6px; }
+  .drag-row { display: flex; align-items: center; gap: 6px; padding: 5px 2px; font-size: 7px; border-bottom: 0.5px solid rgba(142,142,147,0.18); }
+  .drag-row:last-child { border-bottom: none; }
+  .drag-handle { color: #8E8E93; font-size: 8px; }
+  .drag-row-thumb { width: 18px; height: 18px; border-radius: 4px; background: linear-gradient(135deg, #3A5A78, #23384C); flex-shrink: 0; }
+  .drag-row-text { flex: 1; }
+  .drag-row-note { font-size: 6px; color: #8E8E93; }
+
+  /* ===== ROUTE LIST (Darstellung, Scope B) ===== */
+  .route-list { padding: 8px 9px; display: flex; flex-direction: column; gap: 0; }
+  .route-row { display: flex; align-items: center; gap: 7px; padding: 7px 0; }
+  .port-pin { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; flex-shrink: 0; color: #fff; font-weight: 700; }
+  .route-row-name { font-size: 8.5px; font-weight: 600; }
+  .route-row-sub { font-size: 6.5px; opacity: 0.6; }
+  .route-row-time { font-size: 6.5px; opacity: 0.6; text-align: right; }
+  .route-sep { height: 0.5px; background: rgba(142,142,147,0.2); margin-left: 23px; }
+
+  .moment-inline { display: flex; gap: 6px; padding: 0 0 8px 23px; align-items: flex-start; }
+  .moment-inline-thumb { border-radius: 6px; background: linear-gradient(135deg, #3A5A78, #23384C); flex-shrink: 0; }
+  .moment-inline-text { font-size: 6.5px; opacity: 0.65; line-height: 1.4; }
+
+  .memory-card { margin: 0 0 8px 0; border-radius: 12px; overflow: hidden; position: relative; }
+  .memory-card.light { background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+  .memory-card.dark { background: #1C1C1E; box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+  .memory-hero { width: 100%; height: 58px; background: linear-gradient(135deg, #2E5A8C 0%, #163654 100%); position: relative; }
+  .memory-hero-zero { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 3px; background: rgba(142,142,147,0.08); border: 1px dashed rgba(255,255,255,0.15); border-radius: inherit; }
+  .memory-hero-zero-icon { font-size: 13px; opacity: 0.55; }
+  .memory-hero-zero-label { font-size: 6px; opacity: 0.55; font-weight: 600; }
+  .liege-badge { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.55); color: #fff; font-size: 6px; font-weight: 700; padding: 2px 6px; border-radius: 20px; }
+  .memory-body { padding: 6px 8px 7px; }
+  .memory-body .chip-row { flex-wrap: nowrap; }
+
+  .gallery-row { display: flex; gap: 4px; padding: 0 0 8px 23px; }
+  .gallery-tile { width: 34px; height: 34px; border-radius: 6px; background: linear-gradient(135deg, #3A5A78, #23384C); flex-shrink: 0; }
+  .gallery-tile.more { display: flex; align-items: center; justify-content: center; background: rgba(142,142,147,0.25); font-size: 7px; font-weight: 700; color: #fff; }
+
+  /* ===== QUOTE CARDS ===== */
+  .quote-card { background: rgba(255,255,255,0.05); border-left: 3px solid var(--sunset-orange); border-radius: 8px; padding: 14px 16px; font-size: 13px; line-height: 1.6; color: var(--text-secondary); font-style: italic; }
+  .quote-card strong { color: var(--text-primary); font-style: normal; }
+
+  /* ===== PROBLEM GRID ===== */
+  .problem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 18px; }
+  .problem-item { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .problem-header { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+  .problem-num { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; margin-top: 1px; }
+  .problem-title { font-size: 12px; font-weight: 600; line-height: 1.3; }
+  .problem-body { font-size: 11px; color: var(--text-secondary); line-height: 1.5; }
+  .code-ref { font-size: 9.5px; color: var(--text-muted); font-family: 'SF Mono', monospace; margin-top: 4px; }
+
+  /* ===== BENCHMARK TABLE ===== */
+  .bench-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin-top: 14px; }
+  .bench-table th { text-align: left; font-weight: 600; color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 7px; border-bottom: 1px solid var(--border); }
+  .bench-table td { padding: 7px 7px; border-bottom: 1px solid rgba(255,255,255,0.04); color: var(--text-secondary); vertical-align: top; }
+  .bench-table td:first-child { color: var(--text-primary); font-weight: 600; white-space: nowrap; }
+
+  /* ===== BEFORE/AFTER ===== */
+  .ba-container { display: flex; gap: 22px; align-items: flex-start; justify-content: center; width: 100%; }
+  .ba-phone-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ba-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  .ba-label.before { color: #FF6B6B; }
+  .ba-label.after  { color: var(--sea-green); }
+  .ba-bullets { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; max-width: 260px; }
+  .ba-bullet { display: flex; gap: 9px; align-items: flex-start; }
+  .ba-bullet-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; }
+  .ba-bullet-icon.plus { background: rgba(52,199,89,0.2); color: var(--sea-green); }
+  .ba-bullet-icon.warn { background: rgba(255,149,0,0.2); color: #FFAA44; }
+  .ba-bullet-text { font-size: 11px; line-height: 1.5; color: var(--text-secondary); }
+  .ba-bullet-text strong { color: var(--text-primary); }
+  .swift-note { margin-top: 8px; font-size: 10px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 8px; }
+  .swift-note strong { color: var(--ocean-light); }
+
+  /* ===== ROADMAP ===== */
+  .roadmap-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; width: 100%; margin-top: 16px; }
+  .roadmap-card { background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 12px; padding: 16px 15px; }
+  .roadmap-card.starred { border-color: rgba(12,140,233,0.5); background: rgba(12,140,233,0.06); }
+  .roadmap-phase { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ocean-light); margin-bottom: 6px; }
+  .roadmap-title { font-size: 13px; font-weight: 700; margin-bottom: 9px; }
+  .roadmap-items { display: flex; flex-direction: column; gap: 5px; }
+  .roadmap-item { font-size: 10.5px; color: var(--text-secondary); display: flex; gap: 6px; }
+  .roadmap-item::before { content: "—"; color: var(--text-muted); flex-shrink: 0; }
+  .effort-tag { display: inline-block; margin-top: 9px; padding: 3px 9px; border-radius: 20px; font-size: 9.5px; font-weight: 600; background: rgba(12,140,233,0.15); color: var(--ocean-light); }
+
+  .acceptance-list { list-style: none; margin-top: 14px; display: flex; flex-direction: column; gap: 6px; width: 100%; max-width: 640px; }
+  .acceptance-list li { font-size: 12px; color: var(--text-secondary); display: flex; gap: 8px; }
+  .acceptance-list li::before { content: "\2713"; color: var(--sea-green); font-weight: 700; flex-shrink: 0; }
+
+  .slide-full-center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+
+  .proposal-header { display: flex; align-items: center; gap: 16px; width: 100%; margin-bottom: 16px; }
+  .proposal-num { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; flex-shrink: 0; }
+  .a-num { background: linear-gradient(135deg, #0C8CE9, #36A9F0); }
+  .b-num { background: linear-gradient(135deg, #FF6B35, #FF9F75); }
+  .proposal-meta h2 { font-size: 19px; }
+  .proposal-meta p { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div class="nav-btn" id="nav-prev">&#8592;</div>
+<div class="nav-btn" id="nav-next">&#8594;</div>
+<div id="counter">1 / 11</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — COVER -->
+<!-- ============================================================ -->
+<div class="slide slide-full-center active" id="s1">
+  <div class="cover-gradient"></div>
+  <div style="position:relative; z-index:1; text-align:center; max-width:640px;">
+    <div class="cover-badge">WELLE B6.2 &bull; TESTFLIGHT-FEEDBACK 2026-07-04</div>
+    <h1>Hafen-Momente</h1>
+    <p class="subtitle" style="font-size:16px; max-width:520px; margin:14px auto 0;">
+      Vom Formular-Anhängsel zum Erinnerungsstück: Erfassung und Darstellung von Hafenbild
+      und Ausflügen — nativ in SwiftUI, ohne Fremd-Frameworks.
+    </p>
+    <div style="display:flex; gap:14px; justify-content:center; margin-top:36px; flex-wrap:wrap;">
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#128172;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">2 Feedback-Zitate</div>
+      </div>
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#127919;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">6 Vorschläge · 2 Bereiche</div>
+      </div>
+      <div class="card-sm" style="text-align:center; min-width:140px;">
+        <div style="font-size:18px;">&#9989;</div>
+        <div style="font-size:11px; font-weight:700; margin-top:4px;">Gemini-Gate #5 durchlaufen</div>
+      </div>
+    </div>
+    <div style="margin-top:36px; font-size:11px; color:var(--text-muted);">
+      ShipTrip &bull; Route-Tab &bull; Designer B6.2 &bull; 2026-07-04
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — PROBLEM (Zitate) -->
+<!-- ============================================================ -->
+<div class="slide" id="s2">
+  <div class="slide-label">Problem — TestFlight-Feedback (interner Tester, 2026-07-04)</div>
+  <h2>"Noch nicht so elegant" — zweimal, für Erfassung und Darstellung</h2>
+
+  <div style="display:flex; flex-direction:column; gap:14px; width:100%; max-width:680px; margin-top:22px;">
+    <div class="quote-card">
+      &bdquo;&hellip;die M&ouml;glichkeit einen Ausflug oder ein Bild an einem Hafen hinzuzuf&uuml;gen
+      finde ich noch nicht so elegant. K&ouml;nnen wir das irgendwie anders handeln. Bitte mach mir
+      daf&uuml;r drei Vorschl&auml;ge.&ldquo;
+      <div style="margin-top:8px;"><strong>&rarr; Scope A: Erfassungs-Flow</strong></div>
+    </div>
+    <div class="quote-card">
+      &bdquo;Die Darstellung eines Fotos von einem Hafen oder eines Ausflugs in einem Hafen ist
+      auch noch nicht so elegant gel&ouml;st&hellip; mach mir daf&uuml;r drei Vorschl&auml;ge.&ldquo;
+      <div style="margin-top:8px;"><strong>&rarr; Scope B: Darstellung im Hafen-Kontext</strong></div>
+    </div>
+  </div>
+
+  <div class="card-sm" style="margin-top:22px; max-width:680px;">
+    <span style="color:var(--ocean-light); font-weight:700;">Framing f&uuml;r dieses Deck:</span>
+    <span style="color:var(--text-secondary); font-size:12px;"> heute f&uuml;hlt sich die Erfassung
+    wie <strong style="color:var(--text-primary);">&bdquo;Logbuch-Modus&ldquo;</strong> an — funktional,
+    trocken, Foto und Ausflug sind zwei generische Formularfelder neben Land/Breitengrad. Ziel ist
+    der <strong style="color:var(--text-primary);">&bdquo;Erinnerungs-Modus&ldquo;</strong> — Foto und
+    Ausflug als eigener, emotional lesbarer Moment, sowohl beim Erfassen als auch beim Anschauen.</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — IST-ANALYSE (Code) -->
+<!-- ============================================================ -->
+<div class="slide" id="s3">
+  <div class="slide-label">IST-Analyse — Code-Befund</div>
+  <h2>Datenschicht komplett, aber UI wirkt wie Nebensache</h2>
+  <div class="problem-grid" style="margin-top:20px;">
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">1</span><span class="problem-title">Zwei generische Form-Sections statt ein Moment</span></div>
+      <div class="problem-body">Hafenbild und Ausfl&uuml;ge stehen als zwei separate <code class="code-ref">Section</code>-Bl&ouml;cke neben &bdquo;Land&ldquo;/&bdquo;Breitengrad&ldquo; — optisch nicht von reinen Metadaten unterscheidbar.</div>
+      <div class="code-ref">PortFormView.swift:140&ndash;184 &middot; CruiseFormView.swift (TempPortFormSheet) ~1063&ndash;1109</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">2</span><span class="problem-title">Ausfl&uuml;ge nur Flie&szlig;text, kein Chip/Icon</span></div>
+      <div class="problem-body"><code class="code-ref">Port.excursions: [String]</code>, reine Text-Zeilen mit Swipe-to-Delete. Kein Reorder, keine Kategorie, keine visuelle Struktur.</div>
+      <div class="code-ref">PortFormView.swift:167&ndash;184</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">3</span><span class="problem-title">Hafenfoto in Detailansicht als Anh&auml;ngsel</span></div>
+      <div class="problem-body">44&times;44-Thumbnail + Ausfl&uuml;ge als &bdquo;&middot;&ldquo;-getrennter Caption-Text, eingerückt (<code class="code-ref">padding-left 36</code>) unter der Port-Zeile — konkurriert optisch mit Ankunft/Abfahrt statt als eigenes Erinnerungsst&uuml;ck zu wirken.</div>
+      <div class="code-ref">CruiseDetailView.swift:318&ndash;334</div>
+    </div>
+    <div class="problem-item">
+      <div class="problem-header"><span class="problem-num">4</span><span class="problem-title">Positiv vorhanden</span></div>
+      <div class="problem-body"><code class="code-ref">AsyncPhotoView</code> bereits wiederverwendbar, <code class="code-ref">sanitizedExcursionEntry(_:)</code> sauberer Helper, Datenfelder vollst&auml;ndig (<code class="code-ref">imageData</code>/<code class="code-ref">excursionsRaw</code>) — reines UI-Problem, kein Datenproblem (Muster wie A5.1).</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — BENCHMARK -->
+<!-- ============================================================ -->
+<div class="slide" id="s4">
+  <div class="slide-label">Benchmark — Best-in-Class Reise-/Journal-Apps</div>
+  <h2>Card-Prinzip statt Formularfeld, Zeit-Chips statt Fließtext</h2>
+  <table class="bench-table">
+    <tr><th>App</th><th>Foto-Pattern</th><th>Text/Aktivit&auml;t-Pattern</th><th>&Uuml;bertragbarkeit f&uuml;r ShipTrip</th></tr>
+    <tr><td>Polarsteps</td><td>Gro&szlig;es Foto pro &bdquo;Step&ldquo;, f&uuml;llt die Card-Breite</td><td>Kein separates Foto-Caption-Feature &mdash; Aktivit&auml;t steht als freier Story-Text im Step</td><td style="color:var(--sea-green);">Card-Prinzip direkt &uuml;bertragbar (B2)</td></tr>
+    <tr><td>Day One</td><td>Fotos skalieren automatisch auf volle Breite, Faustregel &bdquo;ein Foto, eine Geschichte&ldquo;</td><td>Long-Press-Kontextmen&uuml; am Foto (Favorite, Text einf&uuml;gen)</td><td style="color:var(--sea-green);">&bdquo;Ein Foto + kurzer Kontext&ldquo;-Prinzip &uuml;bernehmbar, Auto-Grid-Layout zu komplex f&uuml;r unseren Scope</td></tr>
+    <tr><td>Flighty <span style="font-size:9px;color:var(--text-muted);">(Apple Design Award)</span></td><td>n/a</td><td>Kompakte, farbige Zeit-Kacheln statt Flie&szlig;text f&uuml;r Status/Zeitfenster</td><td style="color:var(--sea-green);">Liegezeit (Ankunft&ndash;Abfahrt) als Badge &uuml;bertragbar &mdash; kreuzfahrt-spezifisch</td></tr>
+  </table>
+  <div class="card-sm" style="margin-top:16px; width:100%;">
+    <span style="color:var(--ocean-light); font-weight:700;">Gemini-Gate #5a-Finding:</span>
+    <span style="color:var(--text-secondary); font-size:11.5px;"> Eine Kreuzfahrt ist getaktet &mdash; Liegezeit (z.&nbsp;B. &bdquo;08:00&ndash;18:00&ldquo;) ist ein
+    ShipTrip-spezifisches Detail, das generische Reise-Apps nicht abbilden. Geh&ouml;rt sichtbar in die
+    Momente-Karte (siehe B2), nicht nur in die Metadaten-Zeile daneben.</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — SCOPE A / VORSCHLAG 1 (klein) -->
+<!-- ============================================================ -->
+<div class="slide" id="s5">
+  <div class="proposal-header">
+    <div class="proposal-num a-num">A1</div>
+    <div class="proposal-meta">
+      <h2>Klein &mdash; Eine Momente-Section, vertikal gestapelt</h2>
+      <p>Foto-Kachel und Ausflug-Chips zu einem Block zusammengelegt, weiterhin im bestehenden Formular.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header light"><span class="nav-back">&lsaquo;</span>Hafen bearbeiten<span class="nav-action">Speichern</span></div>
+          <div class="screen-body ios-form light">
+            <div class="form-section-label">Hafenbild</div>
+            <div class="form-card light">
+              <div class="form-row light"><div class="form-thumb-sm">&#128444;</div><span class="form-row-label">Bild ausw&auml;hlen</span></div>
+            </div>
+            <div class="form-section-label">Ausfl&uuml;ge</div>
+            <div class="form-card light">
+              <div class="form-plain-list">
+                <div class="form-row light">Stadtrundgang</div>
+                <div class="form-row light">Schnorcheltour</div>
+                <div class="form-row light"><span class="form-row-label" style="color:#8E8E93;">Ausflug hinzuf&uuml;gen&hellip;</span><span class="form-row-btn">&#10133;</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Foto-Kachel und Ausflug-Chips stehen als <strong>ein Block &bdquo;Hafen-Momente&ldquo;</strong> zusammen, statt zwei Sections, die wie &bdquo;Land&ldquo;/&bdquo;Breitengrad&ldquo; aussehen.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Vertikal gestapelt (Foto oben, Chips darunter) &mdash; kein Side-by-Side-Layout, das auf iPhone SE/Mini umbricht oder clippt.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Ausfl&uuml;ge laufen horizontal scrollend (<code class="code-ref" style="color:var(--text-muted);">ScrollView(.horizontal)+LazyHStack</code>) statt vertikaler Liste &mdash; kein Zeilenumbruch-Risiko.</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> trivial &mdash; reine View-&Auml;nderung in <code class="code-ref" style="color:var(--text-muted);">PortFormView</code>/<code class="code-ref" style="color:var(--text-muted);">TempPortFormSheet</code>, kein neues Datenmodell, bestehender <code class="code-ref" style="color:var(--text-muted);">PhotosPicker</code> bleibt.</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header light"><span class="nav-back">&lsaquo;</span>Hafen bearbeiten<span class="nav-action">Speichern</span></div>
+          <div class="screen-body ios-form light">
+            <div class="form-section-label">Hafen-Momente</div>
+            <div class="moments-card light">
+              <div class="photo-tile"><span class="photo-tile-icon">&#128247;</span><span class="photo-tile-label">Hafenbild ausw&auml;hlen</span></div>
+              <div class="chip-row">
+                <span class="chip chip-filled">Stadtrundgang &times;</span>
+                <span class="chip chip-filled">Schnorcheltour &times;</span>
+                <span class="chip chip-ghost">+ Ausflug</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(52,199,89,0.15); color:var(--sea-green);">Aufwand: Klein</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — SCOPE A / VORSCHLAG 2 (mittel) -->
+<!-- ============================================================ -->
+<div class="slide" id="s6">
+  <div class="proposal-header">
+    <div class="proposal-num a-num">A2</div>
+    <div class="proposal-meta">
+      <h2>Mittel &mdash; Gef&uuml;hrter Hafen-Moment-Schritt <span class="tag-star" style="font-size:9.5px; padding:2px 8px; border-radius:20px; margin-left:6px;">&#9733; Empfehlung</span></h2>
+      <p>Gro&szlig;es Cover-Foto, vordefinierte Schnellauswahl-Chips + Freitext, Drag-Reorder der Liste.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Hafen bearbeiten<span class="nav-action">Speichern</span></div>
+          <div class="screen-body ios-form dark">
+            <div class="form-section-label">Hafenbild</div>
+            <div class="form-card dark">
+              <div class="form-row dark"><div class="form-thumb-sm">&#128444;</div><span class="form-row-label">Bild ausw&auml;hlen</span></div>
+            </div>
+            <div class="form-section-label">Ausfl&uuml;ge</div>
+            <div class="form-card dark">
+              <div class="form-plain-list">
+                <div class="form-row dark">Wandertour Vulkan</div>
+                <div class="form-row dark"><span class="form-row-label" style="color:#8E8E93;">Ausflug hinzuf&uuml;gen&hellip;</span><span class="form-row-btn">&#10133;</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Vordefinierte Ausflug-Chips (Stadtbummel, Strand, Wanderung&hellip;) zum Antippen reduzieren Tipparbeit an Bord &mdash; oft schlechtes Netz, wenig Zeit. Freitext bleibt m&ouml;glich.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Drag-Reorder der Ausflugsliste &uuml;ber natives <code class="code-ref" style="color:var(--text-muted);">.onMove</code> statt nur Anh&auml;ngen am Ende.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Gro&szlig;es Cover-Foto als erster Eindruck des Schritts, nicht als kleine Vorschau neben einem Button.</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> mittel &mdash; neuer Formular-Abschnitt, <code class="code-ref" style="color:var(--text-muted);">List</code> mit <code class="code-ref" style="color:var(--text-muted);">.onMove</code>, Chip-Reihe als <code class="code-ref" style="color:var(--text-muted);">ScrollView(.horizontal)</code>. Keine Fremd-Pakete. Sch&auml;tzung: ca. 2&ndash;3 Tage.<br><strong>UX-Tipp:</strong> <code class="code-ref" style="color:var(--text-muted);">.scrollIndicators(.hidden)</code> + <code class="code-ref" style="color:var(--text-muted);">.contentShape(Rectangle())</code> auf den Chips, damit horizontales Scrollen im vertikalen Formular nicht mit dem Form-Scroll kollidiert (Gate #5b-Finding).</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Hafen-Moment<span class="nav-action">Fertig</span></div>
+          <div class="screen-body ios-form dark">
+            <div class="moments-card dark">
+              <div class="photo-tile big"><span class="photo-tile-icon">&#128247;</span><span class="photo-tile-label">Cover-Foto hinzuf&uuml;gen</span></div>
+              <div class="chip-row">
+                <span class="chip chip-suggest dark-txt">Stadtbummel</span>
+                <span class="chip chip-suggest dark-txt">Strand</span>
+                <span class="chip chip-suggest dark-txt">Wandern</span>
+              </div>
+              <div class="drag-list">
+                <div class="drag-row" style="color:#F2F2F7;"><span class="drag-handle">&#9776;</span><div class="drag-row-thumb"></div><span class="drag-row-text">Wandertour Vulkan</span></div>
+                <div class="drag-row" style="color:#F2F2F7;"><span class="drag-handle">&#9776;</span><span class="drag-row-text" style="color:#8E8E93;">+ Ausflug hinzuf&uuml;gen</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(255,149,0,0.18); color:#FFAA44;">Aufwand: Mittel &bull; ca. 2&ndash;3 Tage</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — SCOPE A / VORSCHLAG 3 (hoch) -->
+<!-- ============================================================ -->
+<div class="slide" id="s7">
+  <div class="proposal-header">
+    <div class="proposal-num a-num">A3</div>
+    <div class="proposal-meta">
+      <h2>Hoch &mdash; Jeder Ausflug bekommt eigenes Foto + Notiz</h2>
+      <p>Datenmodell-Umbau: aus <code class="code-ref" style="color:var(--text-muted);">[String]</code> wird eine strukturierte Liste mit Foto + Kurznotiz je Ausflug.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Hafen bearbeiten<span class="nav-action">Speichern</span></div>
+          <div class="screen-body ios-form dark">
+            <div class="form-section-label">Ausfl&uuml;ge</div>
+            <div class="form-card dark">
+              <div class="form-plain-list">
+                <div class="form-row dark">Bootstour Mangroven</div>
+                <div class="form-row dark">Altstadt-Rundgang</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Jeder Ausflug wird zum eigenen Mini-Eintrag mit optionalem Foto + Kurznotiz statt eines reinen Strings.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Erfassung pro Ausflug &uuml;ber eigenes Bottom-Sheet (Foto + Notiz), statt einem Textfeld f&uuml;r alle.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon warn">!</div><div class="ba-bullet-text">Voraussetzung: <code class="code-ref" style="color:var(--text-muted);">Port.excursions: [String]</code> muss zu strukturierten Eintr&auml;gen werden &mdash; SwiftData-Migration n&ouml;tig (ADR-002: Default-Werte, keine <code class="code-ref" style="color:var(--text-muted);">.unique</code>-Constraints f&uuml;r CloudKit).</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> hoch &mdash; neues <code class="code-ref" style="color:var(--text-muted);">Excursion</code>-Modell (oder Codable-Struct-Array), Migration + Tests, mehrere Call-Sites (<code class="code-ref" style="color:var(--text-muted);">PortFormView</code>, <code class="code-ref" style="color:var(--text-muted);">TempPortFormSheet</code>, <code class="code-ref" style="color:var(--text-muted);">CruiseDetailView</code>) m&uuml;ssen mitziehen. Nur mit eigenem ADR.</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Hafen bearbeiten<span class="nav-action">Speichern</span></div>
+          <div class="screen-body ios-form dark">
+            <div class="form-section-label">Ausfl&uuml;ge</div>
+            <div class="moments-card dark">
+              <div class="drag-list">
+                <div class="drag-row" style="color:#F2F2F7;"><div class="drag-row-thumb"></div><div><div class="drag-row-text">Bootstour Mangroven</div><div class="drag-row-note">&bdquo;Delfine gesehen!&ldquo;</div></div></div>
+                <div class="drag-row" style="color:#F2F2F7;"><div class="drag-row-thumb"></div><div><div class="drag-row-text">Altstadt-Rundgang</div><div class="drag-row-note">Kein Foto &middot; keine Notiz</div></div></div>
+                <div class="drag-row" style="color:#8E8E93;"><span class="drag-row-text">+ Ausflug (Foto + Notiz)</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(255,59,48,0.18); color:#FF6B6B;">Aufwand: Hoch &bull; eigener ADR n&ouml;tig</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — SCOPE B / VORSCHLAG 1 (klein) -->
+<!-- ============================================================ -->
+<div class="slide" id="s8">
+  <div class="proposal-header">
+    <div class="proposal-num b-num">B1</div>
+    <div class="proposal-meta">
+      <h2>Klein &mdash; Gr&ouml;&szlig;eres Thumbnail + Capsule-Chips</h2>
+      <p>Thumbnail w&auml;chst, Ausfl&uuml;ge werden zu Chips statt Flie&szlig;text &mdash; reiner View-Umbau der bestehenden Zeile.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header light"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#1C1C1E;">
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--ocean-blue);">2</div>
+              <div style="flex:1;"><div class="route-row-name">Palma de Mallorca</div><div class="route-row-sub">Spanien</div></div>
+              <div class="route-row-time">12. Juli</div>
+            </div>
+            <div class="moment-inline">
+              <div class="moment-inline-thumb" style="width:22px; height:22px;"></div>
+              <div class="moment-inline-text">Kathedrale &middot; Altstadt-Bummel</div>
+            </div>
+            <div class="route-sep"></div>
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--sea-green);">3</div>
+              <div style="flex:1;"><div class="route-row-name">Barcelona</div><div class="route-row-sub">Spanien</div></div>
+              <div class="route-row-time">14. Juli</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Thumbnail w&auml;chst von 44&times;44 auf 60&times;60 mit eigenem Card-Hintergrund, statt nackt in der Zeile zu schweben.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Ausfl&uuml;ge als farbige Capsule-Chips in <code class="code-ref" style="color:var(--text-muted);">ScrollView(.horizontal)+LazyHStack</code> statt &bdquo;&middot;&ldquo;-getrenntem Flie&szlig;text &mdash; kein Zeilenumbruch-Risiko.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Zero-State unver&auml;ndert: Block bleibt wie heute unsichtbar, wenn nichts erfasst ist (<code class="code-ref" style="color:var(--text-muted);">imageData != nil || !excursions.isEmpty</code>).</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> trivial &mdash; reiner Umbau des bestehenden <code class="code-ref" style="color:var(--text-muted);">HStack</code>-Blocks in <code class="code-ref" style="color:var(--text-muted);">routeSection</code> (<code class="code-ref" style="color:var(--text-muted);">CruiseDetailView.swift:319&ndash;334</code>).</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner light" style="display:flex; flex-direction:column;">
+          <div style="background:#F2F2F7; padding:6px 0 0;"><div class="dynamic-island" style="background:#E5E5EA;"></div></div>
+          <div class="status-bar light"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header light"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#1C1C1E;">
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--ocean-blue);">2</div>
+              <div style="flex:1;"><div class="route-row-name">Palma de Mallorca</div><div class="route-row-sub">Spanien</div></div>
+              <div class="route-row-time">12. Juli</div>
+            </div>
+            <div class="moment-inline">
+              <div class="moment-inline-thumb" style="width:30px; height:30px; border-radius:8px;"></div>
+              <div class="chip-row" style="flex-wrap:wrap; margin-top:2px;">
+                <span class="chip chip-filled" style="font-size:6px;">Kathedrale</span>
+                <span class="chip chip-filled" style="font-size:6px;">Altstadt-Bummel</span>
+              </div>
+            </div>
+            <div class="route-sep"></div>
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--sea-green);">3</div>
+              <div style="flex:1;"><div class="route-row-name">Barcelona</div><div class="route-row-sub">Spanien</div></div>
+              <div class="route-row-time">14. Juli</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(52,199,89,0.15); color:var(--sea-green);">Aufwand: Klein</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — SCOPE B / VORSCHLAG 2 (mittel, Empfehlung) -->
+<!-- ============================================================ -->
+<div class="slide" id="s9">
+  <div class="proposal-header">
+    <div class="proposal-num b-num">B2</div>
+    <div class="proposal-meta">
+      <h2>Mittel &mdash; PortMemoryCard mit Liegezeit-Badge <span class="tag-star" style="font-size:9.5px; padding:2px 8px; border-radius:20px; margin-left:6px;">&#9733; Empfehlung</span></h2>
+      <p>Volle Breite, eigener Card-Rahmen, Liegezeit als Badge, eleganter Zero-State statt leerer grauer Box.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#F2F2F7;">
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--ocean-blue);">2</div>
+              <div style="flex:1;"><div class="route-row-name">Civitavecchia</div><div class="route-row-sub" style="opacity:0.5;">Italien</div></div>
+              <div class="route-row-time" style="opacity:0.5;">08:00&ndash;18:00</div>
+            </div>
+            <div class="moment-inline">
+              <div class="moment-inline-thumb" style="width:22px; height:22px;"></div>
+              <div class="moment-inline-text">Kolosseum &middot; Vatikan-Tour</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Eigene <strong>PortMemoryCard</strong>: volle Breite, Card-Rahmen mit Schatten, klar abgesetzt von den Metadaten dar&uuml;ber statt eingedr&uuml;ckter Zeile.</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Liegezeit (Ankunft&ndash;Abfahrt) als kompakter Badge auf der Karte &mdash; kreuzfahrt-spezifisches Detail, das generische Reise-Apps nicht haben (Gemini-Finding).</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Eleganter Zero-State (Anker-Icon + &bdquo;Noch kein Foto&ldquo;) statt leerer grauer Box, wenn noch nichts erfasst ist &mdash; weitet sich erst bei Upload zur echten Hero-Card.</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> mittel &mdash; neue wiederverwendbare View <code class="code-ref" style="color:var(--text-muted);">PortMemoryCard</code>, ersetzt den bestehenden <code class="code-ref" style="color:var(--text-muted);">HStack</code>-Block, nutzt weiterhin <code class="code-ref" style="color:var(--text-muted);">AsyncPhotoView</code>. Sch&auml;tzung: ca. 1,5 Tage.</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#F2F2F7; padding-top:8px;">
+            <div class="route-row" style="padding-top:0;">
+              <div class="port-pin" style="background:var(--ocean-blue);">2</div>
+              <div style="flex:1;"><div class="route-row-name">Civitavecchia</div><div class="route-row-sub" style="opacity:0.5;">Italien</div></div>
+            </div>
+            <div style="padding-left:23px;">
+              <div class="memory-card dark">
+                <div class="memory-hero">
+                  <div class="liege-badge">08:00&ndash;18:00</div>
+                </div>
+                <div class="memory-body">
+                  <div class="chip-row">
+                    <span class="chip chip-filled dark-txt">Kolosseum</span>
+                    <span class="chip chip-filled dark-txt">Vatikan-Tour</span>
+                  </div>
+                </div>
+              </div>
+              <div style="font-size:6px; opacity:0.4; margin:-4px 0 4px;">Zero-State (kein Foto):</div>
+              <div class="memory-card dark" style="margin-bottom:0;">
+                <div class="memory-hero memory-hero-zero">
+                  <span class="memory-hero-zero-icon">&#9875;</span>
+                  <span class="memory-hero-zero-label">Noch kein Foto</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(255,149,0,0.18); color:#FFAA44;">Aufwand: Mittel &bull; ca. 1,5 Tage</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — SCOPE B / VORSCHLAG 3 (hoch) -->
+<!-- ============================================================ -->
+<div class="slide" id="s10">
+  <div class="proposal-header">
+    <div class="proposal-num b-num">B3</div>
+    <div class="proposal-meta">
+      <h2>Hoch &mdash; Horizontale Foto-Galerie je Hafen</h2>
+      <p>Mehrere Fotos pro Hafen, Tap &ouml;ffnet Vollbild-Story-Viewer &mdash; bewusst entkoppelt von A3.</p>
+    </div>
+  </div>
+
+  <div class="ba-container">
+    <div class="ba-phone-col">
+      <div class="ba-label before">Vorher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#F2F2F7;">
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--sea-green);">4</div>
+              <div style="flex:1;"><div class="route-row-name">Santorini</div><div class="route-row-sub" style="opacity:0.5;">Griechenland</div></div>
+            </div>
+            <div class="moment-inline">
+              <div class="moment-inline-thumb" style="width:22px; height:22px;"></div>
+              <div class="moment-inline-text">Nur ein Foto m&ouml;glich</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-bullets">
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Mehrere Fotos je Hafen in horizontal scrollender Galerie (<code class="code-ref" style="color:var(--text-muted);">ScrollView(.horizontal)+LazyHStack</code>), Tap &ouml;ffnet nativen Vollbild-Viewer (<code class="code-ref" style="color:var(--text-muted);">TabView(.page)</code>).</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon plus">+</div><div class="ba-bullet-text">Bewusst <strong>entkoppelt von A3</strong>: Fotos h&auml;ngen am <code class="code-ref" style="color:var(--text-muted);">Port</code> selbst (<code class="code-ref" style="color:var(--text-muted);">[Data]</code>-Array), nicht an einzelnen Ausfl&uuml;gen &mdash; vermeidet die riskantere Ausflug-Migration aus A3 (Gemini-Finding).</div></div>
+      <div class="ba-bullet"><div class="ba-bullet-icon warn">!</div><div class="ba-bullet-text">Trotzdem migrationspflichtig: <code class="code-ref" style="color:var(--text-muted);">Port.imageData: Data?</code> m&uuml;sste zu <code class="code-ref" style="color:var(--text-muted);">Port.images: [Data]</code> werden &mdash; kleinere Migration als A3, aber real.</div></div>
+      <div class="swift-note"><strong>SwiftUI:</strong> hoch &mdash; Datenmodell-&Auml;nderung (kleiner als A3) + neuer Vollbild-Viewer. Nur mit eigenem ADR.</div>
+    </div>
+
+    <div class="ba-phone-col">
+      <div class="ba-label after">Nachher</div>
+      <div class="iphone">
+        <div class="iphone-inner dark" style="display:flex; flex-direction:column;">
+          <div style="background:#1C1C1E; padding:6px 0 0;"><div class="dynamic-island"></div></div>
+          <div class="status-bar dark"><span>21:42</span><span>&#9679;&#9679;&#9679;</span></div>
+          <div class="nav-header dark"><span class="nav-back">&lsaquo;</span>Route</div>
+          <div class="screen-body route-list" style="color:#F2F2F7;">
+            <div class="route-row">
+              <div class="port-pin" style="background:var(--sea-green);">4</div>
+              <div style="flex:1;"><div class="route-row-name">Santorini</div><div class="route-row-sub" style="opacity:0.5;">Griechenland</div></div>
+            </div>
+            <div class="gallery-row">
+              <div class="gallery-tile"></div>
+              <div class="gallery-tile"></div>
+              <div class="gallery-tile"></div>
+              <div class="gallery-tile more">+2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:14px;"><span class="effort-tag" style="background:rgba(255,59,48,0.18); color:#FF6B6B;">Aufwand: Hoch &bull; eigener ADR n&ouml;tig</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — EMPFEHLUNG + ROADMAP + ACCEPTANCE -->
+<!-- ============================================================ -->
+<div class="slide slide-full-center" id="s11">
+  <div class="slide-label" style="align-self:flex-start;">Empfehlung &amp; Roadmap</div>
+  <h2 style="align-self:flex-start;">Vom Logbuch-Modus zum Erinnerungs-Modus</h2>
+
+  <div class="card-sm" style="margin-top:14px; width:100%;">
+    <span style="color:var(--ocean-light); font-weight:700;">Empfehlung (Gemini-Gate #5a best&auml;tigt):</span>
+    <span style="color:var(--text-secondary); font-size:11.5px;"> <strong style="color:var(--text-primary);">A2 + B2</strong> &mdash; l&ouml;st &bdquo;nicht elegant&ldquo; wirklich (Card-/Moment-Prinzip statt Formular-Anh&auml;ngsel), ohne SwiftData-Migration. A1/B1 nur als Sofort-Fix, falls Zeit f&uuml;r den vollen Schritt fehlt. A3/B3 (Datenmodell-Umbau, entkoppelt) erst mit eigenem ADR, wenn Bedarf f&uuml;r Multi-Foto/Multi-Notiz-Journaling entsteht.</span>
+  </div>
+
+  <div class="roadmap-grid">
+    <div class="roadmap-card">
+      <div class="roadmap-phase">Optional, sofort</div>
+      <div class="roadmap-title">A1 + B1 &mdash; Sofort-Fix</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Eine Momente-Section statt zwei</div>
+        <div class="roadmap-item">Gr&ouml;&szlig;eres Thumbnail + Capsule-Chips</div>
+      </div>
+      <div class="effort-tag" style="background:rgba(52,199,89,0.15); color:var(--sea-green);">Klein &bull; reiner View-Umbau</div>
+    </div>
+    <div class="roadmap-card starred">
+      <div class="roadmap-phase">Sprint 1 &bull; &#9733; Empfehlung</div>
+      <div class="roadmap-title">A2 + B2 &mdash; Erinnerungs-Modus</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Gef&uuml;hrter Moment-Schritt mit Cover-Foto + Chips</div>
+        <div class="roadmap-item">PortMemoryCard mit Liegezeit-Badge + Zero-State</div>
+      </div>
+      <div class="effort-tag">Mittel &bull; ca. 1 Woche gesamt</div>
+    </div>
+    <div class="roadmap-card">
+      <div class="roadmap-phase">Sp&auml;ter, nur mit ADR</div>
+      <div class="roadmap-title">A3 + B3 &mdash; Multi-Foto-Journal</div>
+      <div class="roadmap-items">
+        <div class="roadmap-item">Ausflug bekommt eigenes Foto + Notiz</div>
+        <div class="roadmap-item">Foto-Galerie je Hafen (entkoppelt)</div>
+      </div>
+      <div class="effort-tag" style="background:rgba(255,59,48,0.18); color:#FF6B6B;">Hoch &bull; SwiftData-Migration</div>
+    </div>
+  </div>
+
+  <h3 style="align-self:flex-start; margin-top:22px;">Acceptance-Kriterien</h3>
+  <ul class="acceptance-list">
+    <li>Erfassung von Hafenbild + Ausflug wirkt als zusammenh&auml;ngender &bdquo;Moment&ldquo;, nicht wie zwei generische Form-Felder.</li>
+    <li>Darstellung im Hafen-Kontext hebt sich visuell von den Metadaten (Ankunft/Abfahrt) ab, statt als Anh&auml;ngsel zu wirken.</li>
+    <li>Kein Zeilenumbruch-/Clipping-Risiko auf kleinen Ger&auml;ten (SE/Mini) durch horizontal scrollende Chip-Reihen statt starrem Side-by-Side-Layout.</li>
+    <li>Ausschlie&szlig;lich natives SwiftUI (PhotosPicker, ScrollView/LazyHStack, List.onMove), keine Fremd-Frameworks.</li>
+    <li>Zero-State (kein Foto vorhanden) wirkt einladend, nicht wie eine leere graue Box.</li>
+    <li>Light/Dark Mode konsistent &uuml;ber bestehende <code class="code-ref">Color+Theme</code>-Token.</li>
+  </ul>
+
+  <div style="margin-top:24px; font-size:11px; color:var(--text-muted);">
+    ShipTrip &bull; Welle B6.2 Hafen-Momente &bull; Designer &bull; 2026-07-04
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- NAVIGATION SCRIPT -->
+<!-- ============================================================ -->
+<script>
+  const TOTAL = 11;
+  let current = 1;
+
+  function goTo(n) {
+    n = Math.max(1, Math.min(TOTAL, n));
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    document.getElementById('counter').textContent = n + ' / ' + TOTAL;
+    document.getElementById('progress-bar').style.width = (n / TOTAL * 100) + '%';
+    current = n;
+    history.replaceState(null, '', '#' + n);
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); goTo(1); }
+    if (e.key === 'End') { e.preventDefault(); goTo(TOTAL); }
+  });
+
+  document.getElementById('nav-prev').addEventListener('click', () => goTo(current - 1));
+  document.getElementById('nav-next').addEventListener('click', () => goTo(current + 1));
+
+  const hash = parseInt(window.location.hash.replace('#', ''));
+  goTo(isNaN(hash) ? 1 : hash);
+</script>
+</body>
+</html>

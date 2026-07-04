@@ -29,6 +29,8 @@ struct ShippingLineManagementView: View {
                 } label: {
                     Label("Eigene Reederei anlegen", systemImage: "plus.circle")
                 }
+            } footer: {
+                Text(String(localized: "Fehlt deine Reederei oder dein Schiff im Katalog? Lege sie hier selbst an. Katalog-Einträge kannst du per Wisch-Geste ausblenden, statt sie zu löschen."))
             }
 
             if !customLines.isEmpty {
@@ -246,6 +248,8 @@ struct ShipManagementView: View {
                 } label: {
                     Label("Eigenes Schiff hinzufügen", systemImage: "plus.circle")
                 }
+            } footer: {
+                Text(String(localized: "Fehlt das Schiff dieser Reederei im Katalog? Lege es hier selbst an."))
             }
 
             if !customShips.isEmpty {

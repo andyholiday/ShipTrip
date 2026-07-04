@@ -165,8 +165,25 @@ struct PortFormView: View {
 
                 // Ausflüge
                 Section(String(localized: "Ausflüge")) {
-                    ForEach(Array(excursions.enumerated()), id: \.offset) { _, excursion in
-                        Text(excursion)
+                    ForEach(Array(excursions.enumerated()), id: \.offset) { index, excursion in
+                        HStack {
+                            Text(excursion)
+                            Spacer()
+                            Button {
+                                excursions.remove(at: index)
+                            } label: {
+                                Image(systemName: "minus.circle.fill")
+                                    .foregroundStyle(.red)
+                            }
+                            .buttonStyle(.plain)
+                            // .plain entfernt die Standard-Polsterung des Buttons; ohne festen
+                            // Frame + contentShape bliebe die tatsächlich tappbare Fläche auf die
+                            // reinen Glyphen-Pixel beschränkt (unzuverlässig, ~44pt-Mindestgröße
+                            // laut HIG unterschritten).
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                            .accessibilityLabel(String(localized: "Ausflug entfernen"))
+                        }
                     }
                     .onDelete { excursions.remove(atOffsets: $0) }
 
@@ -192,7 +209,15 @@ struct PortFormView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern") { savePort() }
-                        .disabled(name.isEmpty || country.isEmpty)
+                        // Land bewusst NICHT Pflicht: TempPortFormSheet erlaubt das Speichern
+                        // schon immer ohne Land (nur `name.isEmpty` blockt dort). Ein Port mit
+                        // leerem Land ist im Rest der App längst ein erwarteter Fall (siehe
+                        // MapView/StatsView-Länderzählung, die leere Werte herausfiltern). Vorher
+                        // blockte `country.isEmpty` hier zusätzlich Speichern – und weil das
+                        // "Land"-Feld nur sichtbar ist, solange `name` leer ist, ließ sich ein
+                        // bestehender Port mit leerem Land danach nie wieder speichern (auch keine
+                        // anderen Änderungen wie das Löschen eines Ausflugs).
+                        .disabled(name.isEmpty)
                 }
             }
             .onAppear { loadExistingData() }

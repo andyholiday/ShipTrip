@@ -29,6 +29,40 @@ private func makeInMemoryContainer() throws -> ModelContainer {
     return try ModelContainer(for: schema, configurations: config)
 }
 
+// MARK: - Cruise.countriesVisited
+
+@Suite("Cruise.countriesVisited")
+struct CruiseCountriesVisitedTests {
+
+    @Test("Häfen mit leerem Land (z. B. ohne erfasstes Land oder Seetage) zählen nicht mit")
+    @MainActor
+    func excludesEmptyCountry() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(
+            title: "Test",
+            startDate: makeDate("2025-06-01"),
+            endDate: makeDate("2025-06-10"),
+            shippingLine: "MSC",
+            ship: "Bellissima"
+        )
+        context.insert(cruise)
+
+        let portES = CruisePort(name: "Barcelona", country: "Spanien", latitude: 41.3, longitude: 2.1)
+        portES.cruise = cruise
+        context.insert(portES)
+
+        let portUnknown = CruisePort(name: "Testhafen", country: "", latitude: 0, longitude: 0)
+        portUnknown.cruise = cruise
+        context.insert(portUnknown)
+
+        try context.save()
+
+        #expect(cruise.countriesVisited.count == 1)
+    }
+}
+
 // MARK: - Array<Cruise> Aggregat-Tests
 
 @Suite("Array<Cruise> Aggregate")

@@ -166,9 +166,19 @@
 
 ### Welle B4 · Karten-Überarbeitung (Feedback: Route-Stops nicht erkennbar [M], Hafennamen fehlen teils [M], Start-/Endhafen nicht unterscheidbar [M] — Quelle: TestFlight-Feedback 2026-07-03; Design-Welle, Benchmark vor Umsetzung)
 - [x] **B4.1** ✅ Design-Benchmark geliefert — `docs/ux-pitch-decks/b4-karten-redesign.html`.
-- [x] **B4.2** ✅ Designer-Mockups geliefert — `docs/ux-pitch-decks/b4-karten-redesign.html`; wartet auf Andres Wahl.
-- [ ] **B4.3** Umsetzung nach Mockup-Freigabe (Andre) — `MapView`, ggf.
-  Routendarstellung in `CruiseDetailView`.
+- [x] **B4.2** ✅ Designer-Mockups geliefert — `docs/ux-pitch-decks/b4-karten-redesign.html`; Andres Entscheid 2026-07-04: **mutige Richtung nativ**, keine Fertiglösung (Research-Brief: `.planning/b4-fertigloesungen-research.md`).
+- [x] **B4.3a** ✅ 2026-07-04 (`MapMarkerPlanner` + `PortPinView`-Rollensystem,
+  14 Unit-Tests; Known Limitation: Zwischenstopps auf „Alle Reisen"-Karte
+  einfarbig statt per-Route-Farbe, Follow-up B4.3b) Konsistenz-Fix (Sprint 1, klein): PortPinView-Rollensystem statt
+  `routeMarker()` in `MapView.swift`; Rundreise Start=Ende → ein Kombi-Marker
+  (Koordinatenvergleich); `markerPorts()` bei Mehrfachrouten nicht mehr auf
+  [first,last] kappen. ✓ Test: Rundreise rendert 1 Marker; Pins konsistent zur Detail-Route.
+  ([Feature-Doku](features/karten-redesign-b4.md))
+- [ ] **B4.3b** Mutige Richtung (Sprint 2, hoch): nummerierte Wegpunkt-Badges,
+  Zwei-Stufen-Zoom (Span-Schwelle via `.onMapCameraChange`), Bottom-Sheet-Stopliste
+  bidirektional mit Karte synchronisiert (größter Aufwandstreiber), Tap-Callout
+  mit Foto, Bezier-Kurvenrouten um Landmassen. Rein natives MapKit/SwiftUI.
+  Startet nach B4.3a (gleicher Datei-Scope `MapView.swift`).
 
 ### Welle B5 · Eigene Reedereien & Schiffe verwalten ✅ Erledigt (ADR-006 ✓) (Feedback: Custom-Reederei/Schiff fehlt [M], Referenz-Vorschläge nicht ausblendbar [M] — Quelle: TestFlight-Feedback 2026-07-03 + App-Store-Review ★3 28.05.) — **ADR-006 + Gate #4**
 - [x] **B5.1** ✅ Datenmodell-Entscheidung: Custom-Reedereien/Schiffe neben Referenzdaten
@@ -179,6 +189,22 @@
 - [x] **B5.3** ✅ Tests: Custom-Einträge in Auswahl-Listen, Ausblenden persistiert, kein Konflikt
   mit Referenzdaten-Updates. 143/143 Unit-Tests grün.
   ([Feature-Doku](features/eigene-reedereien-b5.md))
+
+### Welle B6 · Feedback-Fixes (TestFlight 1.6.2/14) (Feedback: Ausflug nicht entfernbar [M-H], Erfassung/Darstellung von Hafenfotos & Ausflügen „nicht elegant" → Tester erbittet je 3 Vorschläge [M], Hinweis auf B5-Funktion in Einstellungen fehlt [L] — Quelle: interner Tester 2026-07-04, Build 14; 0 Crashes)
+- [x] **B6.1** ✅ 2026-07-04 (sichtbarer Lösch-Button + Save-Disabled-Bugfix bei
+  leerem Land, echter Datenverlust-Bug über das gemeldete Symptom hinaus) Ausflug entfernen ermöglichen: Löschen einzelner Ausflüge im
+  Editor (`PortFormView`/`TempPortFormSheet`, ggf. Anzeige `CruiseDetailView`).
+  ✓ Test: Ausflug anlegen → löschen → gespeicherte Reise hat ihn nicht mehr.
+  ([Feature-Doku](features/feedback-fixes-b6.md#b61--ausflug-entfernen--edit-datenverlust-fix))
+- [x] **B6.2** ✅ 2026-07-04 Deck geliefert (Gemini-Gates #5a/#5b bestanden) —
+  Wahl durch Andre/Tester offen, Umsetzung als Folgewelle. Design-Deck „Hafen-Momente": je 3 Vorschläge für (a) Erfassungs-Flow
+  Ausflug/Hafenbild und (b) Darstellung von Hafenfoto/Ausflügen — Designer +
+  Gemini-Gate #5; Umsetzung erst nach Wahl (Andre/Tester) als Folgewelle.
+  ([Feature-Doku](features/feedback-fixes-b6.md#b62--design-deck-hafen-momente))
+- [x] **B6.3** ✅ 2026-07-04 (Section-Footer in `SettingsView` + `ShippingLineManagementView`/`ShipManagementView`) Einstellungen: Hinweis-/Erklärtext zur B5-Funktion „Reedereien &
+  Schiffe" (eigene Reederei/Schiff anlegen), damit Nutzer sie direkt finden.
+  `ShippingLineManagementView`/`SettingsView`.
+  ([Feature-Doku](features/feedback-fixes-b6.md#b63--einstellungen-hinweis-zur-reederei-schiff-verwaltung))
 
 ## Phase C — Richtung 3a „Companion & Abo" (3–4 Wochen) → TestFlight 2.0.0
 
