@@ -208,3 +208,72 @@ struct MapMarkerPlannerValidPortsTests {
         #expect(result.map(\.name) == ["A", "B"])
     }
 }
+
+// MARK: - stopNumber (nummerierte Wegpunkt-Badges, B4.3b)
+
+@Suite("MapMarkerPlanner.markerRoles stopNumber")
+struct MapMarkerPlannerStopNumberTests {
+
+    @Test("Normale Route: stopNumber zählt Start=1 fortlaufend bis zum Endhafen hoch")
+    func normalRouteNumbersSequentially() {
+        let home = makePort(name: "Hamburg", latitude: 53.55, longitude: 9.99, sortOrder: 0)
+        let stop = makePort(name: "Southampton", latitude: 50.90, longitude: -1.40, sortOrder: 1)
+        let end = makePort(name: "Rotterdam", latitude: 51.92, longitude: 4.48, sortOrder: 2)
+
+        let roles = MapMarkerPlanner.markerRoles(for: [home, stop, end])
+
+        #expect(roles.map(\.stopNumber) == [1, 2, 3])
+    }
+
+    @Test("Rundreise: der kollabierte End-Marker wird nicht mitgezählt, Nummern bleiben lückenlos")
+    func roundTripNumbersRemainContiguous() {
+        let home = makePort(name: "Hamburg", latitude: 53.55, longitude: 9.99, sortOrder: 0)
+        let stop = makePort(name: "Southampton", latitude: 50.90, longitude: -1.40, sortOrder: 1)
+        let end = makePort(name: "Hamburg", latitude: 53.55, longitude: 9.99, sortOrder: 2)
+
+        let roles = MapMarkerPlanner.markerRoles(for: [home, stop, end])
+
+        #expect(roles.map(\.stopNumber) == [1, 2])
+    }
+
+    @Test("Seetage sind vor markerRoles bereits gefiltert — stopNumber bleibt trotz Lücken in sortOrder lückenlos")
+    func skippedSeaDaysDoNotLeaveGapsInNumbering() {
+        // Simuliert das Ergebnis von validPorts(in:): Seetage (ursprünglich sortOrder 1, 3)
+        // wurden bereits herausgefiltert, die verbleibenden Ports haben Lücken im sortOrder.
+        let home = makePort(name: "Hamburg", latitude: 53.55, longitude: 9.99, sortOrder: 0)
+        let stop = makePort(name: "Southampton", latitude: 50.90, longitude: -1.40, sortOrder: 2)
+        let end = makePort(name: "Rotterdam", latitude: 51.92, longitude: 4.48, sortOrder: 4)
+
+        let roles = MapMarkerPlanner.markerRoles(for: [home, stop, end])
+
+        #expect(roles.map(\.stopNumber) == [1, 2, 3])
+    }
+
+    @Test("Ein-Hafen-Route ergibt stopNumber 1")
+    func singlePortRouteNumbersOne() {
+        let onlyPort = makePort(name: "Lissabon", latitude: 38.71, longitude: -9.14, sortOrder: 0)
+
+        let roles = MapMarkerPlanner.markerRoles(for: [onlyPort])
+
+        #expect(roles.map(\.stopNumber) == [1])
+    }
+
+    @Test("Mehrfachrouten: jeder markerRoles-Aufruf nummeriert unabhängig neu ab 1")
+    func multipleRoutesNumberIndependently() {
+        let routeA = [
+            makePort(name: "Barcelona", latitude: 41.38, longitude: 2.17, sortOrder: 0),
+            makePort(name: "Marseille", latitude: 43.30, longitude: 5.37, sortOrder: 1),
+        ]
+        let routeB = [
+            makePort(name: "Palma", latitude: 39.57, longitude: 2.65, sortOrder: 0),
+            makePort(name: "Ibiza", latitude: 38.91, longitude: 1.43, sortOrder: 1),
+            makePort(name: "Valencia", latitude: 39.47, longitude: -0.38, sortOrder: 2),
+        ]
+
+        let rolesA = MapMarkerPlanner.markerRoles(for: routeA)
+        let rolesB = MapMarkerPlanner.markerRoles(for: routeB)
+
+        #expect(rolesA.map(\.stopNumber) == [1, 2])
+        #expect(rolesB.map(\.stopNumber) == [1, 2, 3])
+    }
+}

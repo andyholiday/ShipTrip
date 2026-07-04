@@ -1,7 +1,10 @@
 # Welle B4 — Karten-Überarbeitung
 
-**Status:** B4.3a (Konsistenz-Fix) abgeschlossen — B4.3b (Mutige Richtung) offen
-**Testsuite:** `MapMarkerPlannerTests.swift`, 14 Unit-Tests, Teil der 164/164-Gesamtsuite
+**Status:** B4.3a (Konsistenz-Fix) + B4.3b-1 (Zwei-Stufen-Zoom, Badges, Callout)
+abgeschlossen — B4.3b-2 (Bottom-Sheet-Stopliste) und B4.3b-3
+(Bezier-Kurvenrouten) offen
+**Testsuite:** `MapMarkerPlannerTests.swift` (14 Unit-Tests) + `MapZoomAndSelectionTests.swift`
+(12 Unit-Tests), Teil der 202-Unit-Tests-Gesamtsuite
 **Quelle:** [Umsetzungsplan Audit 2026-07](../umsetzungsplan-audit-2026-07.md#welle-b4--karten-überarbeitung-feedback-route-stops-nicht-erkennbar-m-hafennamen-fehlen-teils-m-start-endhafen-nicht-unterscheidbar-m--quelle-testflight-feedback-2026-07-03-design-welle-benchmark-vor-umsetzung),
 TestFlight-Feedback 2026-07-03 (Route-Stopps nicht erkennbar, Hafennamen fehlen
 teils, Start-/Endhafen nicht unterscheidbar)
@@ -9,9 +12,11 @@ teils, Start-/Endhafen nicht unterscheidbar)
 ## Beschreibung
 
 Welle B4 überarbeitet die Kartendarstellung (`MapView`) in zwei Sprints: ein
-kleiner Konsistenz-Fix (B4.3a, dieser Stand) und eine größere „mutige Richtung"
-mit nummerierten Wegpunkt-Badges, Zwei-Stufen-Zoom und synchronisierter
-Bottom-Sheet-Stopliste (B4.3b, noch offen). Design-Benchmark und Mockups liegen
+kleiner Konsistenz-Fix (B4.3a) und eine größere „mutige Richtung" mit
+nummerierten Wegpunkt-Badges, Zwei-Stufen-Zoom, Tap-Callout und synchronisierter
+Bottom-Sheet-Stopliste (B4.3b — Zoom/Badges/Callout als B4.3b-1 umgesetzt,
+Bottom-Sheet-Stopliste und Bezier-Kurvenrouten als B4.3b-2/-3 noch offen).
+Design-Benchmark und Mockups liegen
 im HTML-Deck [`docs/ux-pitch-decks/b4-karten-redesign.html`](../ux-pitch-decks/b4-karten-redesign.html)
 (B4.1/B4.2). Andres Entscheid 2026-07-04: die mutige Richtung wird **nativ**
 umgesetzt (MapKit/SwiftUI, kein Fremd-SDK) statt mit einer Fertiglösung — Details
@@ -56,23 +61,22 @@ Neu: `MapView.swift` nutzt jetzt
 - `ShipTrip/Components/PortPinView.swift` — unverändert wiederverwendet
   (Rollensystem existierte bereits für die Detail-Route).
 
-### Known Limitation
+### Known Limitation — GELÖST in B4.3b-1
 
-Auf der „Alle Reisen"-Karte (mehrere Routen gleichzeitig sichtbar) sind
-Zwischenstopp-Pins jetzt zwar vollständig sichtbar (keine `[first,last]`-Kappung
+Auf der „Alle Reisen"-Karte (mehrere Routen gleichzeitig sichtbar) waren
+Zwischenstopp-Pins zwar vollständig sichtbar (keine `[first,last]`-Kappung
 mehr), aber **einfarbig** (`Color.portPin`, oceanBlue) statt in der jeweiligen
-Routenfarbe — die Per-Route-Farbe (`Color.routeColor(at:)`) bleibt nur noch auf
+Routenfarbe — die Per-Route-Farbe (`Color.routeColor(at:)`) blieb nur noch auf
 den Polylines erhalten. Bei mehreren gleichzeitig angezeigten Routen mit nahe
 beieinanderliegenden Häfen (z. B. mehrere Mittelmeer-Routen mit Stopp in Palma)
-stapeln sich dadurch gleichfarbige Pins, ohne dass erkennbar ist, welcher Pin zu
-welcher Reise gehört (verifiziert per Screenshot,
-`audit/screenshots/weltkarte-all-{light,dark}.png`). Das ist ein bewusst in Kauf
+stapelten sich dadurch gleichfarbige Pins, ohne dass erkennbar war, welcher Pin
+zu welcher Reise gehört (verifiziert per Screenshot,
+`audit/screenshots/weltkarte-all-{light,dark}.png`). Das war ein bewusst in Kauf
 genommener Zwischenschritt: die „Alle Reisen"-Ansicht ist ohne Auswahl die
-Default-Ansicht beim Öffnen des Karte-Tabs, der Zustand ist also live auf
-TestFlight sichtbar. Die geplante Lösung ist **B4.3b** (Zwei-Stufen-Zoom +
-Bottom-Sheet-Stopliste statt permanenter Einzel-Pins bei mehreren Routen) — im
-Quality-Review als Merge-Blocker verneint, aber mit der Empfehlung,
-B4.3b im nächsten Sprint zu priorisieren statt zu verschieben.
+Default-Ansicht beim Öffnen des Karte-Tabs, der Zustand war also live auf
+TestFlight sichtbar. Die Limitation ist mit **B4.3b-1** (Welt-Zoom zeigt
+routenfarbige Dots statt einfarbiger Pins, siehe unten) vollständig aufgelöst —
+unabhängig davon, ob B4.3b-2/-3 umgesetzt werden.
 
 ### Acceptance-Status
 
@@ -82,17 +86,91 @@ Endpunkt, Rundreise-Erkennung innerhalb/außerhalb der Toleranz (inkl. Grenzfäl
 knapp unter/über `0.0001°`), Ein-Hafen- und Leer-Routen, Seetag-Filterung sowie
 Filterung von (0,0)-, Out-of-Range- und NaN/Infinity-Koordinaten.
 
+## B4.3b-1 — Zwei-Stufen-Zoom, Wegpunkt-Badges, Tap-Callout
+
+### Was / Warum
+
+Erster Teilschritt der „mutigen Richtung" (Rest von B4.3b: Bottom-Sheet-Stopliste
+B4.3b-2, Bezier-Kurvenrouten B4.3b-3, beide noch offen). Löst dabei bereits die
+B4.3a-Known-Limitation (einfarbige Zwischenstopp-Pins auf der „Alle Reisen"-Karte)
+vollständig auf.
+
+`MapView.swift` unterscheidet jetzt zwei feste Zoom-Zustände statt eines
+einheitlichen Pin-Stils über alle Zoomstufen (SwiftUI `Map` bietet aktuell kein
+natives Clustering, siehe Research-Brief):
+
+- **`MapZoomBucketPlanner`** (reiner, SwiftUI-freier Helper-Enum) — bildet
+  `MKCoordinateRegion.span` auf `MapZoomBucket` (`.world`/`.route`) ab. Schwelle:
+  `10°` (größerer der beiden Span-Werte), das geometrische Mittel der beiden
+  Design-Deck-Anker (`b4-karten-redesign.html`, Slide 6: Welt-Zoom > 20°,
+  Reise-Zoom < 5° → √(5·20) = 10°) statt eines der beiden Extreme.
+  `MapView` beobachtet den Kamera-Zustand über `.onMapCameraChange(frequency: .onEnd)`
+  und setzt den Bucket synchron auch beim programmatischen `zoomTo(routes:)`
+  (verhindert einen kurzen Flash der falschen Zoom-Stufe bei Reisewechsel/Start).
+- **Welt-Zoom**: nur kleine, **routenfarbige** Dots (`Color.routeColor(at:)`,
+  9pt, weißer Rand) + Polylines — keine Rollen-Pins, keine Labels. Löst die
+  B4.3a-Limitation: jede Route behält jetzt auch bei den Zwischenstopp-Dots ihre
+  eigene Farbe, keine gleichfarbigen Pins mehr über mehrere Routen hinweg.
+- **Reise-Zoom**: volle `PortPinView`-Rollen-Pins (Start/Hafen/Endpunkt/Rundreise,
+  aus B4.3a) für Start/Ende, **nummerierte, routenfarbige Wegpunkt-Badges**
+  (neu: `MapStopBadgeView.swift`) für alle Zwischenstopps — die Nummer
+  entspricht der 1-basierten Position in der Routenreihenfolge (`MapPortRole.stopNumber`).
+
+Weitere neue Bausteine:
+
+- **`MapCalloutView.swift`** — Tap auf einen Pin/Badge zeigt einen Callout mit
+  Hafenname und optionalem Foto-Thumbnail (`AsyncPhotoView`, `maxPixelSize: 64`,
+  asynchron gedownsampled). Ersetzt ein permanentes Kartenlabel (Polarsteps-Prinzip
+  statt MapKit-Default-Label — dafür trägt die `Annotation` bewusst kein
+  Text-`label:`, sondern `EmptyView()`).
+- **`MapSelectionPlanner`** (reiner Helper-Enum) — Toggle-Logik für
+  `selectedStopID`: erneuter Tap auf denselben Stopp hebt die Auswahl auf
+  (Callout schließt), Tap auf einen anderen Stopp wechselt sie, ein Wechsel in
+  den Welt-Zoom verwirft eine bestehende Auswahl (im Welt-Zoom gibt es nur Dots
+  ohne Callout — eine überlebende Auswahl würde sonst ein Phantom-Callout oder,
+  später, einen irreführenden Selektionszustand für das **B4.3b-2**-Bottom-Sheet
+  vortäuschen). `selectedStopID` ist als Single Source of Truth bewusst schon
+  jetzt das Fundament für die Karte↔Liste-Synchronisation von B4.3b-2.
+
+### Berührte Dateien
+
+- `ShipTrip/Views/Map/MapView.swift` — `MapZoomBucket`/`MapZoomBucketPlanner`,
+  `MapSelectionPlanner`, `selectedStopID`-State, `.onMapCameraChange`-Handler,
+  `markerContent(for:routeIndex:)` (Bucket-abhängige Darstellung),
+  `worldDotView(color:)`.
+- `ShipTrip/Views/Map/MapStopBadgeView.swift` (neu) — nummeriertes,
+  routenfarbiges Wegpunkt-Badge für Zwischenstopps im Reise-Zoom.
+- `ShipTrip/Views/Map/MapCalloutView.swift` (neu) — Tap-Callout mit Hafenname +
+  Foto-Thumbnail.
+
+### Acceptance-Status
+
+Erfüllt (für den in B4.3b-1 definierten Teil-Scope: Zoom-Stufen, Badges,
+Callout, Selektionsfundament). Abgesichert durch `MapZoomAndSelectionTests.swift`
+(12 Unit-Tests): Bucket-Zuordnung nahe/knapp unter/knapp über der 10°-Schwelle
+sowie maßgeblich der größere der beiden Span-Werte; Tap-Toggle-Selektion
+(selektieren, erneuter Tap hebt auf, Wechsel zu anderem Stopp) und
+Selektions-Verwerfen/-Erhalten je nach Zielzoomstufe (Welt- vs. Reise-Zoom, mit
+und ohne bestehende Auswahl).
+
+### Noch offen (B4.3b-2, B4.3b-3)
+
+Aus `selectedStopID` folgt noch keine sichtbare Bottom-Sheet-Stopliste — das
+Selektionsfundament existiert, die eigentliche Sheet-UI und die bidirektionale
+Karte↔Liste-Synchronisation (laut Research-Brief der größte Aufwandstreiber der
+mutigen Richtung) sind B4.3b-2. Bezier-Kurvenrouten um Landmassen (statt
+gerader `MapPolyline`-Segmente) sind B4.3b-3.
+
 ## Nächster Schritt
 
-**B4.3b** (`docs/umsetzungsplan-audit-2026-07.md`, Welle B4): nummerierte
-Wegpunkt-Badges, Zwei-Stufen-Zoom über `.onMapCameraChange` +
-`MKCoordinateRegion.span`-Schwelle, Bottom-Sheet-Stopliste bidirektional mit der
-Karte synchronisiert (laut Research-Brief der größte Aufwandstreiber — reine
-SwiftUI-State-Synchronisation, kein MapKit-Feature), Tap-Callout mit Foto,
-Bezier-Kurvenrouten um Landmassen. Rein natives MapKit/SwiftUI, kein Fremd-SDK
-(Research-Brief-Fazit: kein Baustein der mutigen Richtung profitiert von einem
-Fremd-SDK gegenüber nativen Mitteln). Startet im selben Datei-Scope
-(`MapView.swift`) nach B4.3a.
+**B4.3b-2 + B4.3b-3** (`docs/umsetzungsplan-audit-2026-07.md`, Welle B4):
+Bottom-Sheet-Stopliste bidirektional mit der Karte synchronisiert (laut
+Research-Brief der größte Aufwandstreiber — reine SwiftUI-State-Synchronisation
+auf Basis von `selectedStopID`, kein MapKit-Feature), Bezier-Kurvenrouten um
+Landmassen statt gerader `MapPolyline`-Segmente. Rein natives MapKit/SwiftUI,
+kein Fremd-SDK (Research-Brief-Fazit: kein Baustein der mutigen Richtung
+profitiert von einem Fremd-SDK gegenüber nativen Mitteln). Startet im selben
+Datei-Scope (`MapView.swift`) nach B4.3b-1.
 
 ## Related Decisions
 

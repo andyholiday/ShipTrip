@@ -179,6 +179,10 @@
   bidirektional mit Karte synchronisiert (größter Aufwandstreiber), Tap-Callout
   mit Foto, Bezier-Kurvenrouten um Landmassen. Rein natives MapKit/SwiftUI.
   Startet nach B4.3a (gleicher Datei-Scope `MapView.swift`).
+  **B4.3b-1** ✅ 2026-07-04 (Zoom-Stufen + nummerierte Wegpunkt-Badges + Tap-Callout;
+  löst nebenbei die B4.3a-Known-Limitation einfarbiger Zwischenstopp-Pins vollständig)
+  — **B4.3b-2** (Bottom-Sheet-Stopliste) und **B4.3b-3** (Bezier-Kurvenrouten) offen.
+  ([Feature-Doku](features/karten-redesign-b4.md#b43b-1--zwei-stufen-zoom-wegpunkt-badges-tap-callout))
 
 ### Welle B5 · Eigene Reedereien & Schiffe verwalten ✅ Erledigt (ADR-006 ✓) (Feedback: Custom-Reederei/Schiff fehlt [M], Referenz-Vorschläge nicht ausblendbar [M] — Quelle: TestFlight-Feedback 2026-07-03 + App-Store-Review ★3 28.05.) — **ADR-006 + Gate #4**
 - [x] **B5.1** ✅ Datenmodell-Entscheidung: Custom-Reedereien/Schiffe neben Referenzdaten
@@ -205,6 +209,24 @@
   Schiffe" (eigene Reederei/Schiff anlegen), damit Nutzer sie direkt finden.
   `ShippingLineManagementView`/`SettingsView`.
   ([Feature-Doku](features/feedback-fixes-b6.md#b63--einstellungen-hinweis-zur-reederei-schiff-verwaltung))
+
+### Welle B7 · Hafen-Momente-Umsetzung (B6.2-Wahl: Andre 2026-07-04 → A2 + B2, Empfehlung bestätigt)
+- [x] **B7.1 (A2)** ✅ 2026-07-04 (Cover-Foto-Kachel, Ausflug-Chips, Freitext;
+  Reorder statt `.onMove`/EditMode über explizite Auf-/Ab-Buttons — natives
+  List-EditMode zeigte zweifach per UI-Test nachweislich KEINE Move-Griffe in
+  der echten Form/List, s. Feature-Doku) Geführter Erfassungsschritt für Hafen-Momente: große Foto-Kachel,
+  antippbare Vordefinierte-Ausflug-Chips + Freitext, Umsortieren über Auf-/Ab-Buttons —
+  KEIN Datenmodell-Umbau (excursions bleibt [String]). `PortFormView`/`TempPortFormSheet`.
+  ([Feature-Doku](features/hafen-momente-b7.md#b71-a2--geführter-erfassungsschritt-hafen-momente))
+- [x] **B7.2 (B2)** ✅ 2026-07-04 (`PortMemoryCard`, 16:9-Hero via `AsyncPhotoView`
+  mit neuem `maxPixelSize`-Downsampling, Liegezeit-Badge, Dashed-Border-Zero-State
+  nur für echte Häfen) `PortMemoryCard`-Komponente in `CruiseDetailView`-Route: volle Breite,
+  16:9-Hero-Foto, Liegezeit-Badge (Ankunft–Abfahrt), eleganter Zero-State. Deck:
+  `docs/ux-pitch-decks/b6-hafen-momente.html` (Gemini-Auflagen: Dashed-Border-Zero-State,
+  natives Reorder-Symbol, .scrollIndicators(.hidden) + .contentShape bei Chips).
+  ([Feature-Doku](features/hafen-momente-b7.md#b72-b2--portmemorycard-in-der-route-sektion))
+- [ ] **B7.3 Release** — TestFlight-Build nach Abschluss B7 + B4.3b-1 (Andre-Go liegt
+  vor, 2026-07-04; B4.3b-2/-3 folgen bewusst in einer späteren Welle) als 1.6.3 (Build 15).
 
 ## Phase C — Richtung 3a „Companion & Abo" (3–4 Wochen) → TestFlight 2.0.0
 

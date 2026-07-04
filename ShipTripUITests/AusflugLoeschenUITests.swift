@@ -64,6 +64,16 @@ final class AusflugLoeschenUITests: XCTestCase {
         portNameField.tap()
         portNameField.typeText(portName)
 
+        // B7.1/A2 vergrößert die "Hafen-Momente"-Sektion deutlich (große Cover-Foto-Kachel +
+        // Chip-Reihe vor der Ausflugsliste). Bei aktiver Tastatur ist "Ausflug hinzufügen"
+        // dadurch nicht mehr automatisch sichtbar/realisiert (das Form ist eine lazy
+        // gerenderte CollectionView) – ein Scroll ist hier nötig, wie bei jedem längeren
+        // Formular (kein Produktfehler, siehe testEinstellungenHinweisSichtbar für dasselbe
+        // Muster bei anderem Content).
+        let portForm = app.collectionViews.firstMatch
+        XCTAssertTrue(portForm.waitForExistence(timeout: 5))
+        portForm.swipeUp()
+
         let excursionField = app.textFields["Ausflug hinzufügen"]
         XCTAssertTrue(excursionField.waitForExistence(timeout: 5))
         excursionField.tap()
@@ -127,6 +137,125 @@ final class AusflugLoeschenUITests: XCTestCase {
         // 5. Roundtrip verifizieren: Ausflug bleibt nach dem Speichern gelöscht
         XCTAssertTrue(portRow.waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts[excursionName].exists, "Ausflug ist nach dem Speichern wieder da")
+    }
+
+    // MARK: - B7.1/A2: Reorder-Toggle + sichtbare native Reorder-Affordance (Gate #2)
+
+    @MainActor
+    func testAusflugReihenfolgeAendernZeigtReorderAffordance() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launch()
+
+        let cruiseTitle = "UI-Test-Reorder-B7"
+        let portName = "Testhafen"
+        let firstExcursion = "Stadtrundfahrt"
+        let secondExcursion = "Hafenrundfahrt"
+
+        let reisenTab = app.tabBars.buttons["Reisen"]
+        XCTAssertTrue(reisenTab.waitForExistence(timeout: 10))
+        reisenTab.tap()
+
+        let addCruiseButton = app.buttons["Neue Reise"]
+        XCTAssertTrue(addCruiseButton.waitForExistence(timeout: 10), "Button 'Neue Reise' nicht gefunden")
+        addCruiseButton.tap()
+
+        let titleField = app.textFields["Titel"]
+        XCTAssertTrue(titleField.waitForExistence(timeout: 5))
+        titleField.tap()
+        titleField.typeText(cruiseTitle)
+
+        let shipField = app.textFields["Schiffsname"]
+        XCTAssertTrue(shipField.waitForExistence(timeout: 5))
+        shipField.tap()
+        shipField.typeText("Testschiff")
+
+        let addPortButton = app.buttons["Hafen hinzufügen"]
+        XCTAssertTrue(addPortButton.waitForExistence(timeout: 5))
+        addPortButton.tap()
+
+        let portNameField = app.textFields["Hafenname"]
+        XCTAssertTrue(portNameField.waitForExistence(timeout: 5))
+        portNameField.tap()
+        portNameField.typeText(portName)
+
+        // B7.1/A2 vergrößert die "Hafen-Momente"-Sektion deutlich (große Cover-Foto-Kachel +
+        // Chip-Reihe vor der Ausflugsliste). Bei aktiver Tastatur ist "Ausflug hinzufügen"
+        // dadurch nicht mehr automatisch sichtbar/realisiert (das Form ist eine lazy
+        // gerenderte CollectionView) – ein Scroll ist hier nötig, wie bei jedem längeren
+        // Formular (kein Produktfehler, siehe testEinstellungenHinweisSichtbar für dasselbe
+        // Muster bei anderem Content).
+        let portForm = app.collectionViews.firstMatch
+        XCTAssertTrue(portForm.waitForExistence(timeout: 5))
+        portForm.swipeUp()
+
+        let excursionField = app.textFields["Ausflug hinzufügen"]
+        let addExcursionButton = app.buttons["Ausflug hinzufügen"]
+        XCTAssertTrue(excursionField.waitForExistence(timeout: 5))
+
+        // Ersten Ausflug anlegen.
+        excursionField.tap()
+        excursionField.typeText(firstExcursion)
+        addExcursionButton.tap()
+        XCTAssertTrue(app.staticTexts[firstExcursion].waitForExistence(timeout: 5))
+
+        // Mit nur einem Ausflug darf der Sortieren-Umschalter noch nicht sichtbar sein
+        // (Regressions-Guard für `if excursions.count > 1`).
+        XCTAssertFalse(app.buttons["Reihenfolge ändern"].exists,
+                        "Reorder-Toggle darf bei nur einem Ausflug nicht erscheinen")
+
+        // Zweiten Ausflug anlegen – erst ab zwei Einträgen ergibt Sortieren Sinn.
+        excursionField.tap()
+        excursionField.typeText(secondExcursion)
+        addExcursionButton.tap()
+        XCTAssertTrue(app.staticTexts[secondExcursion].waitForExistence(timeout: 5))
+
+        let reorderToggle = app.buttons["Reihenfolge ändern"]
+        XCTAssertTrue(reorderToggle.waitForExistence(timeout: 5), "Reorder-Toggle fehlt trotz zwei Ausflügen")
+
+        // Ausgangsreihenfolge vor dem Umsortieren: erster Ausflug steht über dem zweiten.
+        let firstRowText = app.staticTexts[firstExcursion]
+        let secondRowText = app.staticTexts[secondExcursion]
+        XCTAssertTrue(firstRowText.frame.minY < secondRowText.frame.minY,
+                      "Ausgangsreihenfolge unerwartet – '\(firstExcursion)' sollte über '\(secondExcursion)' stehen")
+
+        reorderToggle.tap()
+
+        let doneToggle = app.buttons["Fertig"]
+        XCTAssertTrue(doneToggle.waitForExistence(timeout: 5),
+                      "Toggle-Button wechselt nach dem Antippen nicht auf 'Fertig'")
+
+        // Sichtbare Reorder-Affordance (Gate #2, Plan B): explizite Auf-/Ab-Buttons statt
+        // nativem List-EditMode – Letzteres zeigte in der echten Form/List zweifach
+        // nachweislich KEINE Move-Griffe (s. Team-Report). Oberste Zeile ohne aktives
+        // "Nach oben", unterste Zeile ohne aktives "Nach unten".
+        let moveUpFirstRow = app.buttons["excursion-0-moveUp"]
+        let moveDownFirstRow = app.buttons["excursion-0-moveDown"]
+        let moveUpSecondRow = app.buttons["excursion-1-moveUp"]
+        let moveDownSecondRow = app.buttons["excursion-1-moveDown"]
+        XCTAssertTrue(moveUpFirstRow.waitForExistence(timeout: 5), "Auf-/Ab-Buttons für Reorder fehlen")
+        XCTAssertTrue(moveDownFirstRow.exists)
+        XCTAssertTrue(moveUpSecondRow.exists)
+        XCTAssertTrue(moveDownSecondRow.exists)
+        XCTAssertFalse(moveUpFirstRow.isEnabled, "Oberste Zeile darf keinen aktiven 'Nach oben'-Button haben")
+        XCTAssertFalse(moveDownSecondRow.isEnabled, "Unterste Zeile darf keinen aktiven 'Nach unten'-Button haben")
+
+        // Zweiten Ausflug einmal nach oben verschieben – Reihenfolge muss sich im UI vertauschen
+        // (stärkerer Beleg als ein reiner Elementzahl-Vergleich).
+        moveUpSecondRow.tap()
+        XCTAssertTrue(secondRowText.frame.minY < firstRowText.frame.minY,
+                      "Reihenfolge hat sich nach 'Nach oben' nicht vertauscht")
+
+        // Roundtrip: "Fertig" schaltet zurück, Auf-/Ab-Buttons verschwinden wieder.
+        doneToggle.tap()
+        XCTAssertTrue(reorderToggle.waitForExistence(timeout: 5),
+                      "Toggle-Button kehrt nach 'Fertig' nicht wieder zu 'Reihenfolge ändern' zurück")
+        XCTAssertFalse(app.buttons["excursion-0-moveUp"].exists,
+                       "Auf-/Ab-Buttons sollten nach 'Fertig' nicht mehr existieren")
+
+        // Sheets ohne Speichern verlassen (sauberer Teardown, kein Roundtrip-Anspruch hier).
+        app.navigationBars["Hafen hinzufügen"].buttons["Abbrechen"].tap()
+        app.navigationBars["Neue Kreuzfahrt"].buttons["Abbrechen"].tap()
     }
 
     // MARK: - B6.3: Einstellungen-Hinweis zu eigenen Reedereien/Schiffen

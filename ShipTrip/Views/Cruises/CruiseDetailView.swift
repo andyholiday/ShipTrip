@@ -303,34 +303,18 @@ struct CruiseDetailView: View {
 
                             Spacer()
 
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                if !port.isSeaDay {
-                                    Text("\(port.arrival.formatted(date: .omitted, time: .shortened)) – \(port.departure.formatted(date: .omitted, time: .shortened))")
-                                        .font(.caption2)
-                                        .foregroundStyle(.tertiary)
-                                }
-                            }
+                            Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
-                        // Hafenbild-Thumbnail + Ausflüge, nur wenn erfasst (siehe PortFormView).
-                        if port.imageData != nil || !port.excursions.isEmpty {
-                            HStack(alignment: .top, spacing: 10) {
-                                if let imageData = port.imageData {
-                                    AsyncPhotoView(imageData: imageData)
-                                        .frame(width: 44, height: 44)
-                                        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
-                                }
-                                if !port.excursions.isEmpty {
-                                    Text(port.excursions.joined(separator: " · "))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(2)
-                                }
-                            }
-                            .padding(.leading, 36)
+                        // Hafen-Momente (Foto + Ausflüge) als eigene Card in voller Breite –
+                        // die Liegezeit (vormals in der Metadaten-Zeile oben) sitzt jetzt als
+                        // Badge auf dem Hero-Foto (siehe PortMemoryCard.stayBadgeText).
+                        // Bei Seetagen ohne erfasste Momente bleibt die Zeile kompakt (keine
+                        // Einladungs-Card), siehe PortMemoryCard.shouldRender.
+                        if PortMemoryCard.shouldRender(for: port) {
+                            PortMemoryCard(port: port)
                         }
                     }
                     .padding(.vertical, 4)
@@ -485,9 +469,15 @@ enum ExpenseSorting {
 /// Dekodiert Bilddaten abseits des Main-Threads und zeigt Lade-/Fehler-Platzhalter,
 /// solange kein Bild verfügbar ist. `Data` wird synchron übergeben – nie eine
 /// @Model-Instanz über eine Task-Grenze reichen (siehe ThumbnailBackfill.swift).
-private struct AsyncPhotoView: View {
+/// Wird auch von PortMemoryCard.swift wiederverwendet, daher nicht `private`.
+struct AsyncPhotoView: View {
     let imageData: Data
     var contentMode: ContentMode = .fill
+    /// Optionale Zielgröße (längste Kante) fürs Downsampling per `ImageDownsampler`
+    /// (ImageIO-Thumbnail statt Vollbild-Decode) – schont Speicher bei mehreren Cards
+    /// über eine lange Route. `nil` behält das bisherige Verhalten (volle Auflösung)
+    /// für bestehende Call-Sites bei (Hero-Pager, PhotoZoomView).
+    var maxPixelSize: CGFloat? = nil
 
     @State private var uiImage: UIImage?
     @State private var didFail = false
@@ -513,8 +503,14 @@ private struct AsyncPhotoView: View {
         }
         .task(id: imageData) {
             let data = imageData
-            let decoded = await Task.detached(priority: .userInitiated) {
-                UIImage(data: data)
+            let targetSize = maxPixelSize
+            let decoded = await Task.detached(priority: .userInitiated) { () -> UIImage? in
+                if let targetSize,
+                   let thumbnailData = ImageDownsampler.thumbnail(from: data, maxPixelSize: targetSize),
+                   let thumbnail = UIImage(data: thumbnailData) {
+                    return thumbnail
+                }
+                return UIImage(data: data)
             }.value
             if let decoded {
                 uiImage = decoded

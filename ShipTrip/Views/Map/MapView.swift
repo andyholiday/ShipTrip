@@ -17,6 +17,10 @@ struct MapPortRole: Identifiable {
     let id: UUID
     let port: Port
     let type: PortPinType
+    /// 1-basierte Position in der Routenreihenfolge (Start zählt als 1). Treibt die
+    /// nummerierten Wegpunkt-Badges der Zwischenstopps im Reise-Zoom (B4.3b); Start-/End-/
+    /// Rundreise-Rollen zeigen weiterhin ihr eigenes `PortPinView`-Icon und ignorieren die Zahl.
+    let stopNumber: Int
 }
 
 /// Leitet aus einer Portliste die Kartenmarker-Rollen ab (Heimathafen/Zwischenstopp/Endhafen)
@@ -52,12 +56,12 @@ enum MapMarkerPlanner {
     static func markerRoles(for ports: [Port]) -> [MapPortRole] {
         guard let first = ports.first else { return [] }
         guard let last = ports.last, last.id != first.id else {
-            return [MapPortRole(id: first.id, port: first, type: .homePort)]
+            return [MapPortRole(id: first.id, port: first, type: .homePort, stopNumber: 1)]
         }
 
         let isRoundTrip = coordinatesMatch(first.coordinate, last.coordinate)
 
-        return ports.compactMap { port in
+        return ports.enumerated().compactMap { index, port in
             if isRoundTrip, port.id == last.id {
                 return nil
             }
@@ -69,12 +73,53 @@ enum MapMarkerPlanner {
             } else {
                 type = .port
             }
-            return MapPortRole(id: port.id, port: port, type: type)
+            return MapPortRole(id: port.id, port: port, type: type, stopNumber: index + 1)
         }
     }
 
     private static func coordinatesMatch(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Bool {
         abs(a.latitude - b.latitude) <= roundTripEpsilon && abs(a.longitude - b.longitude) <= roundTripEpsilon
+    }
+}
+
+// MARK: - Zoom-Stufen
+
+/// Zwei feste Zoom-Zustände statt echtem MapKit-Clustering (SwiftUI `Map` bietet dafür
+/// aktuell keine native Lösung, siehe `.planning/b4-fertigloesungen-research.md`): Welt-Zoom
+/// zeigt nur Dots + Polylines, Reise-Zoom zeigt volle Rollen-Pins und nummerierte Badges.
+enum MapZoomBucket: Equatable {
+    case world
+    case route
+}
+
+/// Reine, SwiftUI-freie Zuordnung `MKCoordinateRegion.span` → `MapZoomBucket`.
+enum MapZoomBucketPlanner {
+    /// Schwellenwert in Grad (größerer der beiden Span-Werte). Das Design-Deck
+    /// (`b4-karten-redesign.html`, Slide 6) gibt zwei Anker vor: Welt-Zoom bei Span > 20°,
+    /// Reise-Zoom bei Span < 5°. Für eine binäre Zwei-Zustands-Schwelle wird das geometrische
+    /// Mittel beider Anker verwendet (√(5·20) = 10°) statt eines der beiden Extreme.
+    static let threshold: Double = 10.0
+
+    static func bucket(for span: MKCoordinateSpan) -> MapZoomBucket {
+        max(span.latitudeDelta, span.longitudeDelta) > threshold ? .world : .route
+    }
+}
+
+// MARK: - Stopp-Auswahl
+
+/// Reine Toggle-Logik für `selectedStopID`: Tap auf einen bereits ausgewählten Stopp hebt die
+/// Auswahl auf (Callout schließt), Tap auf einen anderen Stopp wechselt die Auswahl.
+enum MapSelectionPlanner {
+    static func toggled(current: UUID?, tapped: UUID) -> UUID? {
+        current == tapped ? nil : tapped
+    }
+
+    /// Räumt die Stopp-Auswahl beim Wechsel in den Welt-Zoom auf: Im Welt-Zoom gibt es nur
+    /// Dots ohne Callout, eine bestehende Auswahl aus dem Reise-Zoom darf dort nicht als
+    /// Phantom-Callout überleben (und würde sonst auch dem späteren B4.3b-2-Sheet einen
+    /// Selektionszustand vortäuschen, der auf der Karte gar nicht mehr sichtbar ist).
+    static func selection(_ current: UUID?, afterBucketChangeTo bucket: MapZoomBucket) -> UUID? {
+        bucket == .world ? nil : current
     }
 }
 
@@ -85,9 +130,13 @@ struct MapView: View {
     @State private var position: MapCameraPosition = .automatic
     @State private var selectedRouteIDs: Set<UUID> = []
     @State private var primaryCruiseID: UUID?
-    
+    @State private var zoomBucket: MapZoomBucket = .route
+    /// Single Source of Truth für den ausgewählten Stopp (Port-`UUID`), gespeist vom
+    /// Pin-/Badge-Tap. Fundament für die spätere Karte↔Liste-Synchronisation (B4.3b-2).
+    @State private var selectedStopID: UUID?
+
     // Routenfarben aus zentraler Quelle (Color+Theme)
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -104,18 +153,41 @@ struct MapView: View {
                         }
 
                         ForEach(portsToMark) { role in
-                            Annotation(role.port.name, coordinate: role.port.coordinate) {
-                                Button {
-                                    primaryCruiseID = cruise.id
-                                } label: {
-                                    markerView(for: role)
+                            // `anchor: .bottom`, damit der Tap-Callout im VStack darüber
+                            // schweben kann, ohne die Pin-Position eigens zu verschieben.
+                            // Kein Text-`label:` (leerer `EmptyView`), sonst würde MapKit den
+                            // Portnamen wieder als Dauerlabel einblenden statt nur im Callout.
+                            Annotation(coordinate: role.port.coordinate, anchor: .bottom) {
+                                VStack(spacing: 6) {
+                                    if selectedStopID == role.port.id {
+                                        MapCalloutView(port: role.port)
+                                    }
+                                    Button {
+                                        selectedStopID = MapSelectionPlanner.toggled(current: selectedStopID, tapped: role.port.id)
+                                        primaryCruiseID = cruise.id
+                                    } label: {
+                                        markerContent(for: role, routeIndex: index)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(Text(role.port.name))
                                 }
-                                .buttonStyle(.plain)
+                            } label: {
+                                EmptyView()
                             }
                         }
                     }
                 }
                 .mapStyle(.standard)
+                .onTapGesture {
+                    selectedStopID = nil
+                }
+                .onMapCameraChange(frequency: .onEnd) { context in
+                    let bucket = MapZoomBucketPlanner.bucket(for: context.region.span)
+                    if bucket != zoomBucket {
+                        zoomBucket = bucket
+                        selectedStopID = MapSelectionPlanner.selection(selectedStopID, afterBucketChangeTo: bucket)
+                    }
+                }
 
                 mapHeader
 
@@ -174,11 +246,41 @@ struct MapView: View {
         MapMarkerPlanner.validPorts(in: cruise.route)
     }
 
+    /// Marker-Inhalt je Zoom-Bucket: Welt-Zoom zeigt nur einen kleinen, routenfarbenen Dot
+    /// (keine Labels/Rollen — Roadtrippers-/VesselFinder-Dichtereduktion statt Clustering),
+    /// Reise-Zoom zeigt die vollen Rollen-Pins bzw. nummerierte Wegpunkt-Badges.
+    @ViewBuilder
+    private func markerContent(for role: MapPortRole, routeIndex: Int) -> some View {
+        let isSelected = selectedStopID == role.port.id
+        switch zoomBucket {
+        case .world:
+            worldDotView(color: Color.routeColor(at: routeIndex))
+        case .route:
+            if role.type == .port {
+                MapStopBadgeView(number: role.stopNumber, color: Color.routeColor(at: routeIndex), isSelected: isSelected)
+            } else {
+                markerView(for: role, isSelected: isSelected)
+            }
+        }
+    }
+
+    /// Winziger Dot für den Welt-Zoom, in Routenfarbe statt einheitlichem `Color.portPin` —
+    /// behebt nebenbei die B4.3a-Known-Limitation (Zwischenstopps mehrerer Routen nicht
+    /// unterscheidbar), da hier ohnehin jede Route ihre eigene Farbe bekommt.
+    private func worldDotView(color: Color) -> some View {
+        Circle()
+            .fill(color)
+            .frame(width: 9, height: 9)
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1.5))
+            .shadow(color: .black.opacity(0.16), radius: 3, y: 1)
+    }
+
     /// Einheitliche Pin-Darstellung (siehe `PortPinView`) mit weißem Halo für Lesbarkeit auf der Karte.
-    private func markerView(for role: MapPortRole) -> some View {
+    private func markerView(for role: MapPortRole, isSelected: Bool) -> some View {
         PortPinView(type: role.type)
             .padding(6)
             .background(Circle().fill(.white))
+            .overlay(Circle().strokeBorder(Color.oceanBlue, lineWidth: isSelected ? 3 : 0))
             .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
     }
 
@@ -384,6 +486,10 @@ struct MapView: View {
         guard !coordinates.isEmpty else { return }
 
         let region = MKCoordinateRegion(coordinates: coordinates)
+        // Bucket sofort synchron setzen statt auf den nächsten `.onMapCameraChange`-Callback zu
+        // warten — verhindert einen kurzen Flash der falschen Zoom-Stufe bei Reisewechsel/Start.
+        zoomBucket = MapZoomBucketPlanner.bucket(for: region.span)
+        selectedStopID = MapSelectionPlanner.selection(selectedStopID, afterBucketChangeTo: zoomBucket)
 
         withAnimation(.easeInOut(duration: 0.5)) {
             position = .region(region)

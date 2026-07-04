@@ -14,14 +14,28 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
-- Karten-Überarbeitung B4.3b: nummerierte Wegpunkt-Badges, Zwei-Stufen-Zoom,
-  synchronisierte Bottom-Sheet-Stopliste ([Feature-Doku](docs/features/karten-redesign-b4.md))
-- Umsetzung des gewählten Vorschlags aus dem Design-Deck „Hafen-Momente"
-  (Erfassung/Darstellung von Hafenfoto & Ausflügen, B6.2 — Wahl durch Andre/Tester
-  offen; [Feature-Doku](docs/features/feedback-fixes-b6.md#b62--design-deck-hafen-momente))
+- Karten-Überarbeitung B4.3b-2/-3: synchronisierte Bottom-Sheet-Stopliste,
+  Bezier-Kurvenrouten um Landmassen ([Feature-Doku](docs/features/karten-redesign-b4.md))
 
 ### Hinzugefuegt
 
+- **Hafen-Momente erfassen**: Cover-Foto-Kachel, antippbare vordefinierte
+  Ausflug-Chips (Stadtbummel, Strand, Wanderung, Bootstour, Museum, Shopping) +
+  Freitext, Umsortieren über einen expliziten „Reihenfolge ändern"-Modus mit
+  Auf-/Ab-Pfeil-Buttons ersetzen die bisherigen generischen Formularfelder in
+  `PortFormView` und `TempPortFormSheet`.
+  ([Feature-Doku](docs/features/hafen-momente-b7.md#b71-a2--geführter-erfassungsschritt-hafen-momente))
+- **`PortMemoryCard` in der Reise-Detailansicht**: volle-Breite-Karte mit
+  16:9-Hero-Foto, Liegezeit-Badge und Ausflug-Chips ersetzt in der Route-Sektion
+  von `CruiseDetailView` den bisherigen kleinen Thumbnail-plus-Text-Block;
+  einladender Dashed-Border-Zero-State, solange noch kein Hafenbild erfasst wurde.
+  ([Feature-Doku](docs/features/hafen-momente-b7.md#b72-b2--portmemorycard-in-der-route-sektion))
+- **Karte: Zwei-Stufen-Zoom mit nummerierten Wegpunkt-Badges und Tap-Callout**:
+  Welt-Zoom zeigt routenfarbige Dots statt einheitlicher Pins (löst die
+  einfarbigen Zwischenstopps aus B4.3a), Reise-Zoom zeigt nummerierte,
+  routenfarbige Wegpunkt-Badges für Zwischenstopps; Tap auf Pin/Badge öffnet
+  einen Callout mit Hafenname und Foto-Thumbnail.
+  ([Feature-Doku](docs/features/karten-redesign-b4.md#b43b-1--zwei-stufen-zoom-wegpunkt-badges-tap-callout))
 - **Erklärtexte zur Reederei-/Schiff-Verwaltung**: Die Einstellungen sowie die
   Verwaltungsansicht selbst erklären jetzt an drei Stellen, wozu eigene
   Reedereien/Schiffe angelegt werden können und dass Katalog-Einträge sich

@@ -11,6 +11,7 @@
 import Testing
 import Foundation
 import SwiftData
+import SwiftUI // move(fromOffsets:toOffset:) für die B7.1/A2-Reorder-Tests (SwiftUICore-Extension)
 @testable import ShipTrip
 
 private typealias CruisePort = ShipTrip.Port
@@ -366,5 +367,207 @@ struct RemoveExcursionTests {
         let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
         #expect(fetched.excursions.isEmpty)
         #expect(fetched.excursionsRaw == "")
+    }
+}
+
+// MARK: - Ausflug per Chip hinzufügen (B7.1/A2): Duplikate erlaubt, wie im Freitext-Pfad
+
+/// Prüft dieselbe Append-Logik, die PortFormView/TempPortFormSheet beim Antippen eines
+/// vordefinierten Ausflug-Chips auslösen (`excursions.append(suggestion)`), inkl. bewusst
+/// erlaubter Duplikate (derselbe Chip mehrfach antippbar, konsistent zum Freitext-Pfad).
+@Suite("Ausflug per Chip hinzufügen (B7.1/A2)")
+struct AddExcursionViaChipTests {
+
+    @Test("Chip antippen fügt den Ausflug am Ende der Liste hinzu")
+    func appendsChipAtEnd() {
+        var excursions = ["Stadtrundfahrt"]
+        excursions.append("Strand")
+        #expect(excursions == ["Stadtrundfahrt", "Strand"])
+    }
+
+    @Test("Denselben Chip zweimal antippen erlaubt Duplikate, wie der Freitext-Pfad")
+    func sameChipTwiceAllowsDuplicates() {
+        var excursions: [String] = []
+        excursions.append("Strand")
+        excursions.append("Strand")
+        #expect(excursions == ["Strand", "Strand"])
+    }
+
+    @Test("SwiftData-Roundtrip (PortFormView-Pfad): zwei gleiche Chips bleiben als getrennte Einträge erhalten")
+    @MainActor
+    func portFormViewPathPersistsDuplicateChips() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+
+        let port = CruisePort(name: "Hamburg", country: "Deutschland", latitude: 53.5, longitude: 9.9)
+        port.excursions = ["Strand", "Strand"]
+        port.cruise = cruise
+        context.insert(port)
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Strand", "Strand"])
+        #expect(fetched.excursionsRaw == "Strand, Strand")
+    }
+}
+
+// MARK: - Ausflug-Reihenfolge ändern (B7.1/A2): Drag-Reorder
+
+/// Prüft dieselbe Move-Logik, die PortFormView/TempPortFormSheet über den sichtbaren
+/// Reorder-Griff auslösen (`excursions.move(fromOffsets:toOffset:)`), inkl. Persistenz der
+/// neuen Reihenfolge in `excursionsRaw`.
+@Suite("Ausflug-Reihenfolge ändern (B7.1/A2)")
+struct ReorderExcursionTests {
+
+    @Test("move(fromOffsets:toOffset:) verschiebt einen Ausflug an die gewünschte Position")
+    func movesEntryToNewPosition() {
+        var excursions = ["Stadtrundfahrt", "Hafenrundfahrt", "Strand"]
+        excursions.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+        #expect(excursions == ["Strand", "Stadtrundfahrt", "Hafenrundfahrt"])
+    }
+
+    @Test("SwiftData-Roundtrip (PortFormView-Pfad): neue Reihenfolge bleibt nach dem Speichern erhalten")
+    @MainActor
+    func portFormViewPathPersistsNewOrder() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+
+        let port = CruisePort(name: "Hamburg", country: "Deutschland", latitude: 53.5, longitude: 9.9)
+        port.excursions = ["Stadtrundfahrt", "Hafenrundfahrt", "Strand"]
+        port.cruise = cruise
+        context.insert(port)
+        try context.save()
+
+        // Reise erneut öffnen: PortFormView.loadExistingData() liest `port.excursions` in den Form-State.
+        var loadedExcursions = port.excursions
+        loadedExcursions.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+        port.excursions = loadedExcursions
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Strand", "Stadtrundfahrt", "Hafenrundfahrt"])
+        #expect(fetched.excursionsRaw == "Strand, Stadtrundfahrt, Hafenrundfahrt")
+    }
+
+    @Test("SwiftData-Roundtrip (reconcileRoute-Pfad): neue Reihenfolge bleibt über den Routen-Editor erhalten")
+    @MainActor
+    func reconcileRoutePathPersistsNewOrder() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+        try context.save()
+
+        var tempPort = TempPort(name: "Hamburg", country: "Deutschland", arrival: makeDate("2026-03-02"), departure: makeDate("2026-03-02"))
+        tempPort.excursions = ["Stadtrundfahrt", "Hafenrundfahrt", "Strand"]
+        reconcileRoute(existingPorts: cruise.route, tempPorts: [tempPort], cruise: cruise, modelContext: context)
+        try context.save()
+
+        // Reise erneut öffnen: CruiseFormView.loadExistingData() baut tempPorts aus cruise.route.
+        var reloadedTempPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { port in
+            TempPort(
+                id: port.id, name: port.name, country: port.country,
+                arrival: port.arrival, departure: port.departure,
+                latitude: port.latitude, longitude: port.longitude,
+                isSeaDay: port.isSeaDay, excursionsRaw: port.excursionsRaw, imageData: port.imageData
+            )
+        }
+        reloadedTempPorts[0].excursions.move(fromOffsets: IndexSet(integer: 2), toOffset: 0)
+        reconcileRoute(existingPorts: cruise.route, tempPorts: reloadedTempPorts, cruise: cruise, modelContext: context)
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Strand", "Stadtrundfahrt", "Hafenrundfahrt"])
+    }
+}
+
+// MARK: - Ausflug-Reihenfolge via Pfeil-Buttons (B7.1/A2 Plan B): swapAt-Semantik
+//
+// Natives List-EditMode zeigte in der echten Form/List nachweislich keine Move-Griffe
+// (zweifach per UI-Test widerlegt); PortFormView/TempPortFormSheet nutzen im Reorder-Modus
+// stattdessen "Nach oben"/"Nach unten"-Buttons pro Zeile, die per `swapAt` mit dem
+// Vorgänger/Nachfolger tauschen. Die Tests oben (`ReorderExcursionTests`) prüfen weiterhin
+// gültige, generische `move(fromOffsets:toOffset:)`-Semantik, spiegeln aber nicht mehr den
+// tatsächlichen Aufruf aus der UI – diese Suite tut das.
+
+@Suite("Ausflug-Reihenfolge via Pfeil-Buttons (B7.1/A2 Plan B)")
+struct SwapExcursionTests {
+
+    @Test("'Nach oben' (swapAt index, index-1) vertauscht mit dem Vorgänger")
+    func moveUpSwapsWithPredecessor() {
+        var excursions = ["Stadtrundfahrt", "Hafenrundfahrt", "Strand"]
+        excursions.swapAt(1, 0) // zweiter Ausflug "nach oben"
+        #expect(excursions == ["Hafenrundfahrt", "Stadtrundfahrt", "Strand"])
+    }
+
+    @Test("'Nach unten' (swapAt index, index+1) vertauscht mit dem Nachfolger")
+    func moveDownSwapsWithSuccessor() {
+        var excursions = ["Stadtrundfahrt", "Hafenrundfahrt", "Strand"]
+        excursions.swapAt(0, 1) // erster Ausflug "nach unten"
+        #expect(excursions == ["Hafenrundfahrt", "Stadtrundfahrt", "Strand"])
+    }
+
+    @Test("SwiftData-Roundtrip (PortFormView-Pfad): Swap-Reihenfolge bleibt nach dem Speichern erhalten")
+    @MainActor
+    func portFormViewPathPersistsSwappedOrder() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+
+        let port = CruisePort(name: "Hamburg", country: "Deutschland", latitude: 53.5, longitude: 9.9)
+        port.excursions = ["Stadtrundfahrt", "Hafenrundfahrt"]
+        port.cruise = cruise
+        context.insert(port)
+        try context.save()
+
+        // Reise erneut öffnen: PortFormView.loadExistingData() liest `port.excursions` in den Form-State.
+        var loadedExcursions = port.excursions
+        loadedExcursions.swapAt(1, 0) // zweiten Ausflug "nach oben"
+        port.excursions = loadedExcursions
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Hafenrundfahrt", "Stadtrundfahrt"])
+        #expect(fetched.excursionsRaw == "Hafenrundfahrt, Stadtrundfahrt")
+    }
+
+    @Test("SwiftData-Roundtrip (reconcileRoute-Pfad): Swap-Reihenfolge bleibt über den Routen-Editor erhalten")
+    @MainActor
+    func reconcileRoutePathPersistsSwappedOrder() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(title: "Test", startDate: makeDate("2026-03-01"), endDate: makeDate("2026-03-10"), shippingLine: "MSC", ship: "Bellissima")
+        context.insert(cruise)
+        try context.save()
+
+        var tempPort = TempPort(name: "Hamburg", country: "Deutschland", arrival: makeDate("2026-03-02"), departure: makeDate("2026-03-02"))
+        tempPort.excursions = ["Stadtrundfahrt", "Hafenrundfahrt"]
+        reconcileRoute(existingPorts: cruise.route, tempPorts: [tempPort], cruise: cruise, modelContext: context)
+        try context.save()
+
+        var reloadedTempPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder }).map { port in
+            TempPort(
+                id: port.id, name: port.name, country: port.country,
+                arrival: port.arrival, departure: port.departure,
+                latitude: port.latitude, longitude: port.longitude,
+                isSeaDay: port.isSeaDay, excursionsRaw: port.excursionsRaw, imageData: port.imageData
+            )
+        }
+        reloadedTempPorts[0].excursions.swapAt(1, 0) // zweiten Ausflug "nach oben"
+        reconcileRoute(existingPorts: cruise.route, tempPorts: reloadedTempPorts, cruise: cruise, modelContext: context)
+        try context.save()
+
+        let fetched = try #require(try context.fetch(FetchDescriptor<CruisePort>()).first)
+        #expect(fetched.excursions == ["Hafenrundfahrt", "Stadtrundfahrt"])
     }
 }
