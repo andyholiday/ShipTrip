@@ -17,6 +17,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Karten-Überarbeitung B4.3b-2/-3: synchronisierte Bottom-Sheet-Stopliste,
   Bezier-Kurvenrouten um Landmassen ([Feature-Doku](docs/features/karten-redesign-b4.md))
 
+---
+
+## [1.6.3] - 2026-07-04
+
 ### Hinzugefuegt
 
 - **Hafen-Momente erfassen**: Cover-Foto-Kachel, antippbare vordefinierte
@@ -559,7 +563,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.6.2...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...HEAD
+[1.6.3]: https://github.com/andyholiday/ShipTrip/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/andyholiday/ShipTrip/compare/v1.6.1...v1.6.2
 [1.6.0]: https://github.com/andyholiday/ShipTrip/compare/v1.5.1...v1.6.0
 [1.5.0]: https://github.com/andyholiday/ShipTrip/compare/v1.4.1...v1.5.0
