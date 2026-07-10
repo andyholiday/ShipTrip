@@ -15,6 +15,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.7.0] - 2026-07-10
+
 ### Hinzugefuegt
 
 - **Karte: Bottom-Sheet mit Stop-Timeline**: Tap auf eine Route (Linie oder
