@@ -20,6 +20,10 @@ struct RouteStopSheetView: View {
     let onStopTap: (Port) -> Void
     let onOpen: () -> Void
 
+    /// F3 (Design-Politur Welle C): treibt die Pin-Platzhalter-Kontrastfarben — Fill+Rand
+    /// brauchen unterschiedliche Werte in Light/Dark (siehe `pinPlaceholderFill`/-`Border`).
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -70,6 +74,10 @@ struct RouteStopSheetView: View {
             }
             .padding(.horizontal, 20)
         }
+        // F3: verhindert Rubber-Banding bei kurzen Listen, das sonst zusätzlich mit dem
+        // Sheet-Drag um denselben Touch konkurriert (zusammen mit `.presentationContentInteraction(.resizes)`
+        // am `.sheet{}`-Aufruf in MapView.swift).
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     private func stopRow(_ role: MapPortRole, isLast: Bool) -> some View {
@@ -104,7 +112,18 @@ struct RouteStopSheetView: View {
             }
             .padding(.vertical, 10)
             .frame(minHeight: 56)
-            .background(isSelected ? routeColor.opacity(0.12) : Color.clear)
+            // F3: Chip statt Full-Bleed-Wash — 4pt Inset gegenüber der Row-Kante lässt die
+            // Auswahl als schwebendes Element statt als screen-breiten Wisch wirken; Rand
+            // kommuniziert die Routenfarbe zusätzlich zum Fill.
+            .background(
+                RoundedRectangle(cornerRadius: DesignRadius.sm)
+                    .fill(isSelected ? routeColor.opacity(0.12) : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignRadius.sm)
+                            .strokeBorder(isSelected ? routeColor.opacity(0.35) : Color.clear, lineWidth: 1)
+                    )
+                    .padding(.horizontal, 4)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -134,9 +153,34 @@ struct RouteStopSheetView: View {
             Image(systemName: "mappin")
                 .foregroundStyle(.secondary)
                 .frame(width: 40, height: 40)
-                .background(Color.gray.opacity(0.15))
+                .background(pinPlaceholderFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(pinPlaceholderBorder, lineWidth: 1)
+                )
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
+    }
+
+    /// F3: reine Hairline ohne Fill hatte auf dem hellen `journalSurface`-Ton bei Sonnenlicht zu
+    /// wenig Kontrast (Gemini-Gate #5a) — ersetzt `Color.gray.opacity(0.15)`. Opacity-Werte in
+    /// `MapPinPlaceholderTokens` (Color+Theme.swift), damit `MapPinPlaceholderContrastTests`
+    /// dieselben Werte verifizieren kann, die hier tatsächlich gerendert werden.
+    private var pinPlaceholderFill: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(MapPinPlaceholderTokens.fillOpacityDark)
+            : Color.navyDark.opacity(MapPinPlaceholderTokens.fillOpacityLight)
+    }
+
+    /// Werte per Hand gegen die sRGB-Relativluminanz-Formel nachgerechnet (Gate #5b): 0.14/0.16
+    /// ergeben nur ~1.3:1 Kontrast gegen `journalSurface`, auch 0.30 bleibt bei ~1.8:1 unter dem
+    /// 3:1-Ziel — erst ab ~0.5–0.55 (Light) bzw. ~0.35–0.4 (Dark) wird 3:1 überschritten. Jetzt
+    /// zusätzlich per `MapPinPlaceholderContrastTests` gegen die echten `Color+Theme.swift`-
+    /// Konstanten verifiziert (Fix-Runde 1, F03a) statt nur behauptet.
+    private var pinPlaceholderBorder: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(MapPinPlaceholderTokens.borderOpacityDark)
+            : Color.navyDark.opacity(MapPinPlaceholderTokens.borderOpacityLight)
     }
 
     // MARK: - Large: „Öffnen"-CTA

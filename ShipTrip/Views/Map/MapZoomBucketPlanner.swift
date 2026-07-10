@@ -6,6 +6,7 @@
 //  Verschiebung, keine Verhaltensänderung.
 //
 
+import Foundation
 import MapKit
 
 // MARK: - Zoom-Stufen
@@ -20,13 +21,20 @@ enum MapZoomBucket: Equatable {
 
 /// Reine, SwiftUI-freie Zuordnung `MKCoordinateRegion.span` → `MapZoomBucket`.
 enum MapZoomBucketPlanner {
-    /// Schwellenwert in Grad (größerer der beiden Span-Werte). Das Design-Deck
-    /// (`b4-karten-redesign.html`, Slide 6) gibt zwei Anker vor: Welt-Zoom bei Span > 20°,
-    /// Reise-Zoom bei Span < 5°. Für eine binäre Zwei-Zustands-Schwelle wird das geometrische
-    /// Mittel beider Anker verwendet (√(5·20) = 10°) statt eines der beiden Extreme.
-    static let threshold: Double = 10.0
+    /// Schwellenwert in Grad (Design-Politur Welle C, F4). Ursprünglicher Deck-Anker
+    /// (`b4-karten-redesign.html`, Slide 6): Welt-Zoom bei Span > 20°. Der frühere binäre
+    /// Kompromiss von 10° (geometrisches Mittel aus 5°/20°) war nur nötig, solange es kein
+    /// Overlap-Clustering für den mittleren Zoom gab (siehe `MapClusterPlanner`) — mit
+    /// Clustering kann der ursprüngliche 20°-Anker direkt verwendet werden.
+    static let threshold: Double = 20.0
 
-    static func bucket(for span: MKCoordinateSpan) -> MapZoomBucket {
-        max(span.latitudeDelta, span.longitudeDelta) > threshold ? .world : .route
+    /// `centerLatitude` korrigiert die Mercator-Stauchung des Längengrad-Spans in höheren
+    /// Breiten (z. B. Nordnorwegen-Routen bis ~70°N): ein reiner Grad-Span überschätzt dort
+    /// die tatsächliche Bildschirmbreite. Bei Äquatornähe ist die Korrektur ein No-op
+    /// (`cos(0°) = 1`).
+    static func bucket(for span: MKCoordinateSpan, centerLatitude: Double) -> MapZoomBucket {
+        let correctedLonDelta = span.longitudeDelta * cos(centerLatitude * .pi / 180)
+        let effectiveSpan = max(span.latitudeDelta, correctedLonDelta)
+        return effectiveSpan > threshold ? .world : .route
     }
 }

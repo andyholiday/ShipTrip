@@ -47,6 +47,33 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   rechts nach oben links. Der Pin-Halo auf der Karte nutzt jetzt
   `Color.journalSurface` statt hartkodiertem `.white`.
   ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+- **Karte: Routen-Burger-Menü als eigenes Popover-Panel** (Build 17,
+  Tester-Feedback): ersetzt das native `Menu` durch ein selbst gebautes,
+  opakes Popover (max. 300pt breit) mit einheitlichem 24pt-Icon-Kreis-System
+  (gefüllt+Haken aktiv, Outline inaktiv, statt wechselnder Glyphen) und
+  einzeiligen Routentiteln mit mittiger Kürzung statt mehrzeiligem Umbruch.
+  ([Feature-Doku](docs/features/karten-politur-c.md))
+- **Karte: Routen-Detail-Sheet optisch aufgewertet** (Build 17,
+  Tester-Feedback): Stop-Badges zeigen jetzt einen Farbverlauf statt Flat-Fill,
+  die ausgewählte Stop-Zeile erscheint als abgesetzter Chip mit Rand statt als
+  Full-Bleed-Wash, und Downward-Swipe zum Schließen reagiert direkter (System-
+  Resize-Verhalten statt Konflikt mit der internen Stop-Liste).
+  ([Feature-Doku](docs/features/karten-politur-c.md))
+- **Karte: mittlerer Zoom zeigt jetzt lesbare Stopps** (Build 17,
+  Tester-Feedback): die Welt-/Reise-Zoom-Schwelle ist breitengrad-korrigiert
+  (vermeidet vorzeitigen Welt-Zoom bei nördlichen Routen), dicht beieinander
+  liegende Stopps fassen sich zu einem „+N"-Pill zusammen statt sich zu
+  überlagern, und ein Tap darauf zoomt hinein, bis sich die Stopps einzeln
+  auflösen.
+  ([Feature-Doku](docs/features/karten-politur-c.md))
+
+### Behoben
+
+- **Karte: weiße Karte nach „Alle anzeigen/ausblenden"** (Build 17,
+  Tester-Feedback): das Burger-Menü blieb nach dem Umschalten aller Routen
+  geöffnet und sein Hintergrund verdeckte die darunter korrekt gezoomte Karte;
+  das Menü schließt jetzt zuverlässig.
+  ([Feature-Doku](docs/features/karten-politur-c.md))
 
 ### Entfernt
 

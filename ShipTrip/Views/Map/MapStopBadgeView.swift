@@ -20,7 +20,11 @@ struct MapStopBadgeView: View {
             .font(.caption2.weight(.bold))
             .foregroundStyle(.white)
             .frame(width: 22, height: 22)
-            .background(color)
+            // Design-Politur Welle C (F3): dezenter Fill-Gradient statt Flat-Fill für „papierne"
+            // Tiefe (Deployment-Target iOS 18.5, `.glass*`-APIs sind iOS 26+).
+            .background(
+                LinearGradient(colors: [color, color.opacity(0.75)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            )
             .clipShape(Circle())
             .overlay(Circle().strokeBorder(.white, lineWidth: isSelected ? 3 : 1.5))
             .shadow(color: .black.opacity(0.18), radius: 6, y: 3)

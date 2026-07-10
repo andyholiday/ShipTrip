@@ -84,6 +84,19 @@ extension Color {
     }
 }
 
+// MARK: - Map-Sheet Pin-Platzhalter (Design-Politur Welle C, F3)
+
+/// Opacity-Werte für den Pin-Platzhalter-Fill/-Rand im Routen-Sheet (`RouteStopSheetView`) —
+/// als benannte Konstanten statt Inline-Magic-Numbers, damit `MapPinPlaceholderContrastTests`
+/// den WCAG-Kontrast direkt gegen dieselben Werte verifizieren kann, die auch die UI nutzt
+/// (Fix-Runde 1, F03a — macht die vorherige Handrechnung zur verifizierten Aussage).
+enum MapPinPlaceholderTokens {
+    static let fillOpacityLight: Double = 0.05
+    static let fillOpacityDark: Double = 0.06
+    static let borderOpacityLight: Double = 0.55
+    static let borderOpacityDark: Double = 0.40
+}
+
 // MARK: - Design Radius Tokens
 
 /// Einheitliche Corner-Radien fuer Karten/Panels quer durch die App.

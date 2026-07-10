@@ -37,6 +37,36 @@ struct MapView: View {
     /// den `NavigationStack` des Parents) — stattdessen wird das Sheet geschlossen und dieses
     /// Ziel gesetzt, `.navigationDestination(item:)` am `NavigationStack` übernimmt den Push.
     @State private var cruiseToNavigate: Cruise?
+    /// F2 (Design-Politur Welle C): eigenes Popover statt nativem `Menu` — löst das gesamte
+    /// Dismiss-Verhalten selbst (siehe `burgerMenu`), da `.popover` kein `Menu`-Äquivalent zu
+    /// `menuActionDismissBehavior` besitzt.
+    @State private var isRouteMenuOpen = false
+    /// F4 (Design-Politur Welle C): Overlap-Cluster-Ergebnis für den `.route`-Zoom-Bucket —
+    /// IDs von Stops, die wegen Bildschirm-Überlappung nicht als eigenes Badge gerendert werden
+    /// (siehe `recomputeClusters(using:)` in `MapView+RouteInteraction.swift`).
+    @State var suppressedStopIDs: Set<UUID> = []
+    /// Primär-Stop-ID → Koordinaten ALLER geclusterten Mitglieder (inkl. sich selbst). Treibt
+    /// sowohl den „+N"-Pill (`N = coordinates.count - 1`) als auch den Cluster-Tap: ein Tap auf
+    /// den Cluster fittet die Kamera über `zoomTo(coordinates:)` auf genau diese Koordinaten,
+    /// statt Callout/Sheet zu öffnen (Fix-Runde 1, F01 — Kern-Verhalten „Tap löst Cluster auf"
+    /// fehlte, weil nur die Anzahl, nicht die Mitglieder gespeichert wurden).
+    @State var clusterMemberCoordinates: [UUID: [CLLocationCoordinate2D]] = [:]
+    /// One-Shot-Guard (Fix-Runde 3, P1, angelehnt an das Loop-Schutz-Muster „eine Source of
+    /// Truth + programmatic-move-Guard"): wird ausschließlich beim Sheet-Row-Tap (`onStopTap`)
+    /// gesetzt, weil dort direkt danach ein programmatischer `zoomTo`-Kamera-Move folgt. Marker-
+    /// Taps (inkl. Unresolvable-Cluster-Fallback in `MapView+RouteInteraction.swift`) lösen
+    /// keinen Kamera-Move aus und brauchen den Guard daher nicht (Fix-Runde 4, Codex-Auflage —
+    /// ein hier gesetztes, aber nie durch ein Kamera-Ende konsumiertes Flag bliebe sonst bis zum
+    /// nächsten manuellen Pan/Zoom scharf und würde dort fälschlich eine legitime Stale-
+    /// Bereinigung überspringen). Verhindert so, dass der durch `zoomTo`/Kamera-Settle
+    /// ausgelöste `.onMapCameraChange(.onEnd)`-Recompute die frische Sheet-Row-Selektion sofort
+    /// wieder als „geclustert" wegräumt. Wird in `recomputeClusters(using:)`
+    /// nach genau einem Durchlauf per `defer` zurückgesetzt — kein Dauer-Skip.
+    @State var suppressSelectionCleanupOnNextCameraEnd = false
+    /// Container-Höhe der Karte (F4-Fix-Runde 1, F04) — ersetzt das deprecated/szenen-blinde
+    /// `UIScreen.main.bounds.height` für die Popover-Höhenbegrenzung. Default entspricht einer
+    /// typischen iPhone-Portrait-Höhe, bevor der erste `GeometryReader`-Callback feuert.
+    @State private var mapViewportHeight: CGFloat = 844
 
     var body: some View {
         NavigationStack {
@@ -54,11 +84,15 @@ struct MapView: View {
                         }
                     )
                     .onMapCameraChange(frequency: .onEnd) { context in
-                        let bucket = MapZoomBucketPlanner.bucket(for: context.region.span)
+                        let bucket = MapZoomBucketPlanner.bucket(for: context.region.span, centerLatitude: context.region.center.latitude)
                         if bucket != zoomBucket {
                             zoomBucket = bucket
                             selectedStopID = MapSelectionPlanner.selection(selectedStopID, afterBucketChangeTo: bucket)
                         }
+                        // Overlap-Cluster (F4) hängen vom tatsächlich gerenderten Kamera-Transform ab
+                        // (Bildschirm-Projektion via `reader.convert`) — nur hier korrekt berechenbar,
+                        // nicht vorab synchron in `zoomTo` (siehe Doc-Kommentar an `recomputeClusters`).
+                        recomputeClusters(using: reader)
                     }
                 }
 
@@ -72,6 +106,16 @@ struct MapView: View {
                     }
                 } else if allRoutesHidden {
                     allRoutesHiddenOverlay
+                }
+            }
+            // F4-Fix-Runde 1 (F04): liest die tatsächliche Container-Höhe reaktiv (statt der
+            // deprecated/szenen-blinden `UIScreen.main`) — `.background` sorgt dafür, dass der
+            // `GeometryReader` selbst keinen Einfluss auf das Layout nimmt.
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { mapViewportHeight = proxy.size.height }
+                        .onChange(of: proxy.size) { _, newSize in mapViewportHeight = newSize.height }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -96,6 +140,11 @@ struct MapView: View {
                         detent: $sheetDetent,
                         onStopTap: { port in
                             selectedStopID = port.id
+                            // Fix-Runde 3, P1: frische, explizite Nutzer-Selektion — der direkt
+                            // folgende `zoomTo`-Kamera-Settle darf `recomputeClusters` nicht dazu
+                            // bringen, sie sofort wieder als „geclustert" wegzuräumen (z. B. wenn
+                            // der Default-2°-Zoom einen Nachbar-Stop mit ins Bild holt).
+                            suppressSelectionCleanupOnNextCameraEnd = true
                             zoomTo(coordinate: port.coordinate)
                             sheetDetent = .height(140)
                         },
@@ -109,6 +158,11 @@ struct MapView: View {
                     .presentationCornerRadius(DesignRadius.lg)
                     .presentationDragIndicator(.visible)
                     .presentationBackground(.regularMaterial)
+                    // F3 (Design-Politur Welle C): löst den ScrollView-vs-Sheet-Drag-Konflikt
+                    // („hakeliges Runterswipen") — Drag im Content resized das Sheet zuerst bis
+                    // zum größten Detent, danach übernimmt Scrollen (Apple-Doku-Vertrag, gilt in
+                    // beide Richtungen — kein Bug, siehe design-spec-karten-politur-c.md F3).
+                    .presentationContentInteraction(.resizes)
                 }
             }
         }
@@ -217,39 +271,52 @@ struct MapView: View {
     }
 
     /// Ersetzt das frühere Filter-Menü + die „Routen"-Capsule der Bottom-Card vollständig.
+    /// Design-Politur Welle C (F2): eigenes Popover-Panel (`RouteMenuPanelView`) statt nativem
+    /// `Menu` — das System-`Menu` lief bis zu bildschirmfüllend und schien durch (siehe
+    /// `.planning/design-spec-karten-politur-c.md`, Abschnitt F2). `.popover` liefert
+    /// Dismiss-on-outside-tap/VoiceOver-Fokus-Trap weiterhin vom System, Breite/Hintergrund/
+    /// Radius bleiben voll in eigener Hand.
     private var burgerMenu: some View {
-        Menu {
-            routeMenuItems
+        Button {
+            isRouteMenuOpen.toggle()
         } label: {
             chromeButton(systemImage: "line.3.horizontal")
         }
-        // Mehrere Taps (z. B. drei Routen einzeln abwählen) sollen das Menü nicht nach jedem Tap
-        // schließen — sonst müsste der Nutzer für „alle bis auf eine abwählen" den Burger dreimal
-        // neu öffnen.
-        .menuActionDismissBehavior(.disabled)
+        .buttonStyle(.plain)
         .accessibilityLabel(Text(String(localized: "Routenauswahl")))
+        .popover(isPresented: $isRouteMenuOpen, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+            RouteMenuPanelView(
+                routableCruises: routableCruises,
+                activeRouteIDs: activeRouteIDs,
+                allRoutesCurrentlyVisible: allRoutesCurrentlyVisible,
+                onToggleAll: {
+                    // Einmaliger Tap, muss das Panel schließen — sonst verdeckt der weiterhin
+                    // offene Popover-Backdrop die darunter bereits korrekt neu gezoomte Karte
+                    // dauerhaft (F1, TestFlight-Feedback Build 16: „weißer Bildschirm").
+                    toggleAllRoutesVisibility()
+                    isRouteMenuOpen = false
+                },
+                onToggle: { route in
+                    // Mehrere Taps (z. B. drei Routen einzeln abwählen) sollen das Panel nicht
+                    // nach jedem Tap schließen — sonst müsste der Nutzer für „alle bis auf eine
+                    // abwählen" den Burger dreimal neu öffnen. Bewusst nur hier: `isRouteMenuOpen`
+                    // bleibt unangetastet.
+                    toggle(route: route)
+                }
+            )
+            .frame(maxWidth: 300, maxHeight: routeMenuPanelMaxHeight)
+            .presentationCompactAdaptation(.popover)
+            .presentationBackground(Color.journalSurface)
+            .presentationCornerRadius(DesignRadius.md)
+        }
     }
 
-    @ViewBuilder
-    private var routeMenuItems: some View {
-        Button {
-            toggleAllRoutesVisibility()
-        } label: {
-            Label(
-                allRoutesCurrentlyVisible ? String(localized: "Alle ausblenden") : String(localized: "Alle Reisen anzeigen"),
-                systemImage: allRoutesCurrentlyVisible ? "eye.slash.fill" : "eye.fill"
-            )
-        }
-
-        Divider()
-
-        ForEach(routableCruises, id: \.cruise.id) { route in
-            Button {
-                toggle(route: route)
-            } label: {
-                Label(route.cruise.title, systemImage: activeRouteIDs.contains(route.cruise.id) ? "checkmark" : "circle")
-            }
-        }
+    /// „Höhenbegrenzung verschärft" (Gate #5b): auf iPhone SE/Mini kann ein zu hohes Popover
+    /// fast den ganzen Screen blockieren — `min(0.45 × Container-Höhe, 380pt)` statt einer
+    /// vagen „~60 %"-Angabe. `mapViewportHeight` kommt reaktiv vom `GeometryReader` in `body`
+    /// (F4-Fix-Runde 1, F04 — ersetzt das deprecated `UIScreen.main.bounds.height`).
+    private var routeMenuPanelMaxHeight: CGFloat {
+        min(mapViewportHeight * 0.45, 380)
     }
 
     private var allRoutesCurrentlyVisible: Bool {
@@ -346,58 +413,28 @@ struct MapView: View {
         zoomTo(coordinates: [coordinate])
     }
 
-    private func zoomTo(coordinates: [CLLocationCoordinate2D]) {
+    /// `internal` (kein `private`) statt der Geschwister-Overloads: wird vom Cluster-Tap in
+    /// `MapView+RouteInteraction.swift` direkt aufgerufen (F4-Fix-Runde 1, F01 — Tap auf einen
+    /// Cluster fittet die Kamera auf dessen Mitglieder-Koordinaten statt Callout/Sheet zu öffnen).
+    /// Nutzt denselben, bereits an anderer Stelle (Sheet-Stop-Tap) bewährten Kamera-Pfad — kein
+    /// zusätzlicher Loop-Schutz nötig, da hier kein neuer Karte↔Liste-Rückkanal entsteht.
+    /// `minimumSpan` (Default `2.0`, unverändert für alle bestehenden Aufrufer) — Fix-Runde 2,
+    /// F01a: der Cluster-Tap ruft mit einem deutlich kleineren Wert
+    /// (`MapClusterPlanner.clusterZoomMinimumSpan`), damit geografisch nahe Cluster-Mitglieder
+    /// tatsächlich weit genug auseinandergezogen werden, statt am alten 2°-Floor hängen zu
+    /// bleiben.
+    func zoomTo(coordinates: [CLLocationCoordinate2D], minimumSpan: Double = 2.0) {
         guard !coordinates.isEmpty else { return }
 
-        let region = MKCoordinateRegion(coordinates: coordinates)
+        let region = MKCoordinateRegion(coordinates: coordinates, minimumSpan: minimumSpan)
         // Bucket sofort synchron setzen statt auf den nächsten `.onMapCameraChange`-Callback zu
         // warten — verhindert einen kurzen Flash der falschen Zoom-Stufe bei Reisewechsel/Start.
-        zoomBucket = MapZoomBucketPlanner.bucket(for: region.span)
+        zoomBucket = MapZoomBucketPlanner.bucket(for: region.span, centerLatitude: region.center.latitude)
         selectedStopID = MapSelectionPlanner.selection(selectedStopID, afterBucketChangeTo: zoomBucket)
 
         withAnimation(.easeInOut(duration: 0.5)) {
             position = .region(region)
         }
-    }
-}
-
-// MARK: - Helper Extension
-
-extension MKCoordinateRegion {
-    init(coordinates: [CLLocationCoordinate2D]) {
-        guard !coordinates.isEmpty else {
-            self = MKCoordinateRegion()
-            return
-        }
-        
-        let minLat = coordinates.map(\.latitude).min()!
-        let maxLat = coordinates.map(\.latitude).max()!
-        let minLon = coordinates.map(\.longitude).min()!
-        let maxLon = coordinates.map(\.longitude).max()!
-        
-        let center = CLLocationCoordinate2D(
-            latitude: (minLat + maxLat) / 2,
-            longitude: (minLon + maxLon) / 2
-        )
-        
-        // Berechne Span mit Padding und Minimum
-        var latDelta = (maxLat - minLat) * 1.5
-        var lonDelta = (maxLon - minLon) * 1.5
-        
-        // Minimum Span für einzelne Punkte oder sehr kleine Regionen
-        latDelta = max(latDelta, 2.0)
-        lonDelta = max(lonDelta, 2.0)
-        
-        // Maximum nur grob begrenzen, damit die Default-Karte mehrere Reisen weltweit zeigen kann.
-        latDelta = min(latDelta, 120.0)
-        lonDelta = min(lonDelta, 320.0)
-        
-        let span = MKCoordinateSpan(
-            latitudeDelta: latDelta,
-            longitudeDelta: lonDelta
-        )
-        
-        self = MKCoordinateRegion(center: center, span: span)
     }
 }
 
