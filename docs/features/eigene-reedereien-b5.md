@@ -98,6 +98,81 @@ CloudKit-Sync (Welle D2).
   Logo-Upload für eigene Reedereien, keine automatische Reparatur verwaister
   Hide-Keys bei Katalog-Umbenennungen.
 
+## Welle D (2026-07-10, Build 18)
+
+**Quelle:** TestFlight-Feedback zu Build 17. Zwei Nachbesserungen an der in
+Welle B5 gebauten Verwaltung eigener Reedereien/Schiffe: ein Stock-Cover statt
+generischem Ozean-Platzhalter, und direkte Weiterleitung zum ersten Schiff
+nach dem Anlegen einer eigenen Reederei.
+
+### D1 — Stock-Cover für eigene Reedereien/Schiffe
+
+`ShippingLine.coverAssetCandidates(shippingLine:ship:)` (`ShipTrip/Models/ShippingLine.swift`)
+bekommt einen neuen Fallback-Zweig: Schlägt der Katalog-Lookup
+(`find(byName:)`/`findByShipName`) komplett fehl und ist mindestens einer der
+beiden Namen nicht leer, wird deterministisch ein Stock-Bild aus dem
+eingefrorenen Pool `ShippingLine.stockCoverPool` gewählt — 70 Assets
+(`cover_line_<id>_1` bis `_5`) aus den 14 Katalog-Reedereien. Die Auswahl
+läuft über eine feste FNV-1a-64-Hash-Implementierung (`fnv1aHash`) über die
+normalisierten, zusammengesetzten Namen — bewusst **nicht** über Swifts
+`Hasher`, da dessen Seed pro Prozessstart zufällig ist und die Zuordnung sonst
+bei jedem App-Start wechseln würde.
+
+Kandidaten-Reihenfolge im Fallback-Zweig (Katalog-Pfad bleibt unverändert):
+
+1. `cover_ship_<slug>` (bestehender Legacy-Kandidat) — schützt Fälle wie
+   „Cunard Line" + „Queen-Mary 2" (Tippfehler/Variante eines Katalog-Namens),
+   die weiterhin ihr passendes Schiffs-Cover behalten, statt auf den neuen
+   Stock-Pool umgeleitet zu werden.
+2. Stock-Pool-Asset (neu, D1).
+3. `cover_ocean_route` (bestehender neutraler Fallback) — wird immer als
+   letzter Kandidat angehängt; nur wenn beide Namen leer sind, ist er der
+   einzige Kandidat.
+
+**Known Limitation:** Die Zuordnung ist namensbasiert. Ändert ein Nutzer den
+in der Reise gespeicherten Reederei- oder Schiffsnamen, kann sich das
+zugeloste Cover-Bild ändern. Pool-Liste und Hash-Funktion sind bewusst
+eingefroren (statische Liste, kein dynamischer Bezug auf `ShippingLine.all`),
+damit künftige Katalog-Erweiterungen bestehende Zuordnungen nicht verschieben.
+
+### D2 — Nach Reederei-Anlage direkt zum ersten Schiff
+
+`CustomLineFormSheet` (`ShipTrip/Views/Settings/ShippingLineManagementView.swift`)
+meldet eine neu angelegte Reederei über einen `onCreated`-Callback, der nur
+beim erfolgreichen Neuanlegen feuert — nicht beim Bearbeiten und nicht bei
+Abbruch/Fehler. `ShippingLineManagementView` puffert die neue Reederei
+zwischen (`pendingNewLine`) und übernimmt sie erst in `sheet(..., onDismiss:)`
+in den Navigations-Trigger `newLineDestination`, damit sich Sheet-Dismiss- und
+Push-Animation nicht überlappen. Die `navigationDestination(item:)` öffnet
+`ShipManagementView` mit `presentShipFormInitially: true`, was das
+Schiff-Anlegeformular über einen One-Shot-Guard
+(`hasPresentedInitialShipForm`) genau einmal automatisch öffnet — erneutes
+`onAppear` (z. B. nach Rückkehr in die Ansicht) löst es nicht erneut aus.
+
+Abbruch-Pfade: Abbrechen im Reederei-Anlegeformular ruft `onCreated` nicht
+auf, es gibt daher keine Navigation. Bearbeiten einer bestehenden Reederei
+übergibt gar keinen `onCreated`-Callback und löst folglich nie eine
+Navigation aus. Abbrechen im automatisch geöffneten Schiff-Formular lässt den
+Nutzer in der (leeren) Schiff-Liste der neu angelegten Reederei zurück, ohne
+dass sich das Formular erneut öffnet.
+
+### Tests (Welle D)
+
+- `CruiseCoverFallbackTests` in `ShipTripTests/CruiseAggregateTests.swift` um
+  10 Fälle erweitert: Determinismus und Streuung der Stock-Zuordnung, exakte
+  Kandidaten-Reihenfolge, zwei fest verdrahtete Frozen-Hash-Spotchecks,
+  Leerwert-Guards (ein bzw. beide Namen leer), Katalog- und
+  Near-Miss-Regressionen (bekannte Reederei/unbekanntes Schiff und
+  umgekehrt bleiben unverändert), sowie Eindeutigkeit und Ladbarkeit aller 70
+  Pool-Assets aus dem Asset-Katalog.
+- Neue UI-Test-Datei `ShipTripUITests/ReedereiAnlegenUITests.swift`: Happy
+  Path (automatisches Öffnen des Schiff-Formulars nach Reederei-Anlage,
+  Abbruch landet in der Schiff-Liste der neuen Reederei, One-Shot-Guard
+  verhindert erneutes Öffnen) und Abbruch-Pfad (Abbrechen im
+  Reederei-Formular löst keine Auto-Navigation aus).
+
+**Acceptance:** Quality-Gate GO, alle Tests grün (Stand 2026-07-10, Build 18).
+
 ## Related Decisions
 
 - [ADR-006: Eigene Reedereien & Schiffe als Overlay über dem statischen Katalog](../adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md)

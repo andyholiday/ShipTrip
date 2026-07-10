@@ -425,4 +425,99 @@ struct CruiseCoverFallbackTests {
         #expect(candidates.first == "cover_line_aida_1")
         #expect(candidates.first.flatMap { UIImage(named: $0) } != nil)
     }
+
+    // MARK: - D1: Stock-Cover für eigene Reedereien/Schiffe
+
+    @Test("Eigene Reederei/Schiff bekommen ein Schiffs-Cover vor dem Stock-Cover statt direkt Ocean-Fallback")
+    func unknownLineAndShipGetShipCoverThenStockCover() {
+        let candidates = ShippingLine.coverAssetCandidates(
+            shippingLine: "Meine Fantasie-Reederei",
+            ship: "MS Sonnenschein"
+        )
+
+        #expect(candidates == ["cover_ship_ms_sonnenschein", "cover_line_msc_3", "cover_ocean_route"])
+    }
+
+    @Test("Katalog-nahe, aber nicht treffende Namen priorisieren weiterhin ein existierendes Schiffs-Cover vor dem Stock-Pool (Regression)")
+    func nearMissCatalogNamesStillPreferExistingShipCoverOverStock() {
+        // "Cunard Line" matcht `find(byName:)` nicht exakt (Katalog-Name ist "Cunard"), und
+        // "Queen-Mary 2" matcht `findByShipName` wegen des Bindestrichs nicht (Katalog-Schiff ist
+        // "Queen Mary 2") – beide Katalog-Lookups verfehlen also, aber `cover_ship_queen_mary_2`
+        // existiert als Asset und muss weiterhin vor dem Stock-Pool gewinnen.
+        let candidates = ShippingLine.coverAssetCandidates(shippingLine: "Cunard Line", ship: "Queen-Mary 2")
+
+        #expect(candidates.first == "cover_ship_queen_mary_2")
+        #expect(candidates.count == 3)
+        #expect(ShippingLine.stockCoverPool.contains(candidates[1]))
+        #expect(candidates.last == "cover_ocean_route")
+    }
+
+    @Test("Stock-Cover-Zuordnung für eigene Reedereien/Schiffe ist deterministisch")
+    func stockCoverAssignmentIsDeterministic() {
+        let first = ShippingLine.coverAssetCandidates(shippingLine: "Meine Fantasie-Reederei", ship: "MS Sonnenschein")
+        let second = ShippingLine.coverAssetCandidates(shippingLine: "Meine Fantasie-Reederei", ship: "MS Sonnenschein")
+
+        #expect(first == second)
+    }
+
+    @Test("Verschiedene eigene Namenspaare streuen auf verschiedene Stock-Cover")
+    func stockCoverSpreadsAcrossDifferentCustomNamePairs() {
+        let candidatesA = ShippingLine.coverAssetCandidates(shippingLine: "Meine Fantasie-Reederei", ship: "MS Sonnenschein")
+        let candidatesB = ShippingLine.coverAssetCandidates(shippingLine: "Nordlicht Flotten GmbH", ship: "Polarstern Under Ice")
+
+        let stockA = candidatesA.first { ShippingLine.stockCoverPool.contains($0) }
+        let stockB = candidatesB.first { ShippingLine.stockCoverPool.contains($0) }
+
+        #expect(stockA != nil)
+        #expect(stockB != nil)
+        #expect(stockA != stockB)
+    }
+
+    @Test("Katalog-Reederei mit unbekanntem Schiff bleibt beim Reederei-Pool (Regression)")
+    func catalogLineWithUnknownShipStaysOnLinePool() {
+        let candidates = ShippingLine.coverAssetCandidates(shippingLine: "AIDA Cruises", ship: "Unbekanntes Schiff XYZ")
+        #expect(candidates.first?.hasPrefix("cover_line_aida_") == true)
+    }
+
+    @Test("Unbekannte Reederei mit bekanntem Katalog-Schiff bleibt bei bisheriger Zuordnung (Regression)")
+    func unknownLineWithKnownCatalogShipStaysOnPreviousMatch() {
+        let expected = ShippingLine.coverAssetCandidates(shippingLine: "AIDA Cruises", ship: "AIDAnova")
+        let actual = ShippingLine.coverAssetCandidates(shippingLine: "Unbekannte Reederei", ship: "AIDAnova")
+        #expect(actual == expected)
+    }
+
+    @Test("Leere Reederei und leeres Schiff liefern nur den Ocean-Fallback")
+    func emptyLineAndShipYieldOnlyOceanFallback() {
+        let candidates = ShippingLine.coverAssetCandidates(shippingLine: "", ship: "")
+        #expect(candidates == ["cover_ocean_route"])
+    }
+
+    @Test("Genau ein leerer Name (Reederei oder Schiff) liefert trotzdem einen Stock-Kandidaten")
+    func onlyOneEmptyNameStillYieldsStockCandidate() {
+        let emptyLine = ShippingLine.coverAssetCandidates(shippingLine: "", ship: "Sonnenschein Schiff")
+        #expect(emptyLine.contains { ShippingLine.stockCoverPool.contains($0) })
+        #expect(emptyLine.last == "cover_ocean_route")
+
+        let emptyShip = ShippingLine.coverAssetCandidates(shippingLine: "Sonnenschein Reederei", ship: "")
+        #expect(emptyShip.contains { ShippingLine.stockCoverPool.contains($0) })
+        #expect(emptyShip.last == "cover_ocean_route")
+    }
+
+    @Test("Alle 70 Stock-Cover-Pool-Assets sind eindeutig und aus dem Asset-Katalog ladbar")
+    func allStockCoverPoolAssetsAreUniqueAndLoadable() {
+        #expect(ShippingLine.stockCoverPool.count == 70)
+        #expect(Set(ShippingLine.stockCoverPool).count == ShippingLine.stockCoverPool.count, "Pool enthält Duplikate")
+        for assetName in ShippingLine.stockCoverPool {
+            #expect(UIImage(named: assetName) != nil, "Asset \(assetName) nicht ladbar")
+        }
+    }
+
+    @Test("Zwei Namenspaare sind als Frozen-Hash-Spotcheck fest verdrahtet")
+    func frozenStockCoverHashSpotChecks() {
+        let candidatesA = ShippingLine.coverAssetCandidates(shippingLine: "Meine Fantasie-Reederei", ship: "MS Sonnenschein")
+        #expect(candidatesA.contains("cover_line_msc_3"))
+
+        let candidatesB = ShippingLine.coverAssetCandidates(shippingLine: "Nordlicht Flotten GmbH", ship: "Polarstern Under Ice")
+        #expect(candidatesB.contains("cover_line_carnival_2"))
+    }
 }

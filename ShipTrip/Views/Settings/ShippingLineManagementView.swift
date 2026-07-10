@@ -20,6 +20,12 @@ struct ShippingLineManagementView: View {
     @State private var editingCustomLine: CustomShippingLine?
     @State private var deletingCustomLine: CustomShippingLine?
     @State private var actionErrorMessage: String?
+    /// Frisch angelegte Reederei, zwischengespeichert bis das Anlege-Sheet vollständig
+    /// geschlossen ist (D2: automatische Weiterleitung zum ersten Schiff). Wird nur in
+    /// `sheet(..., onDismiss:)` in `newLineDestination` übernommen, damit sich Dismiss- und
+    /// Push-Animation nicht überlappen.
+    @State private var pendingNewLine: ShippingLineOption?
+    @State private var newLineDestination: ShippingLineOption?
 
     var body: some View {
         List {
@@ -88,8 +94,18 @@ struct ShippingLineManagementView: View {
             }
         }
         .navigationTitle("Reedereien & Schiffe")
-        .sheet(isPresented: $showingAddLineSheet) {
-            CustomLineFormSheet(customLine: nil)
+        .navigationDestination(item: $newLineDestination) { option in
+            ShipManagementView(lineOptionID: option.id, lineName: option.name, presentShipFormInitially: true)
+        }
+        .sheet(isPresented: $showingAddLineSheet, onDismiss: {
+            if let pendingNewLine {
+                newLineDestination = pendingNewLine
+                self.pendingNewLine = nil
+            }
+        }) {
+            CustomLineFormSheet(customLine: nil) { created in
+                pendingNewLine = created
+            }
         }
         .sheet(item: $editingCustomLine) { line in
             CustomLineFormSheet(customLine: line)
@@ -150,6 +166,9 @@ private struct CustomLineFormSheet: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     let customLine: CustomShippingLine?
+    /// Nur beim erfolgreichen Neuanlegen aufgerufen (nicht beim Bearbeiten, nicht bei Fehler/
+    /// Abbruch) – Grundlage für die automatische Weiterleitung zum ersten Schiff (D2).
+    var onCreated: ((ShippingLineOption) -> Void)? = nil
 
     @State private var name = ""
     @State private var logo = "🚢"
@@ -200,7 +219,8 @@ private struct CustomLineFormSheet: View {
             if let customLine {
                 try ShippingLineCatalogService.updateCustomLine(customLine.id, name: name, logo: finalLogo, in: modelContext)
             } else {
-                _ = try ShippingLineCatalogService.createCustomLine(name: name, logo: finalLogo, in: modelContext)
+                let created = try ShippingLineCatalogService.createCustomLine(name: name, logo: finalLogo, in: modelContext)
+                onCreated?(created)
             }
             dismiss()
         } catch ShippingLineCatalogError.duplicateLineName {
@@ -221,15 +241,23 @@ struct ShipManagementView: View {
 
     let lineOptionID: String
     let lineName: String
+    /// Öffnet das Schiff-Anlege-Formular automatisch beim ersten Erscheinen (D2: nach dem
+    /// Anlegen einer eigenen Reederei direkt zum ersten Schiff). Nur die neue
+    /// `navigationDestination` in `ShippingLineManagementView` setzt dies `true`.
+    let presentShipFormInitially: Bool
 
     @State private var showingAddShipSheet = false
     @State private var editingCustomShip: CustomShip?
     @State private var deletingCustomShip: CustomShip?
     @State private var actionErrorMessage: String?
+    /// One-Shot-Guard für `presentShipFormInitially`: verhindert, dass ein erneutes `onAppear`
+    /// (z. B. nach Rückkehr in diese Ansicht) das Formular ein zweites Mal öffnet.
+    @State private var hasPresentedInitialShipForm = false
 
-    init(lineOptionID: String, lineName: String) {
+    init(lineOptionID: String, lineName: String, presentShipFormInitially: Bool = false) {
         self.lineOptionID = lineOptionID
         self.lineName = lineName
+        self.presentShipFormInitially = presentShipFormInitially
         _customShips = Query(
             filter: #Predicate<CustomShip> { ship in
                 ship.lineOptionID == lineOptionID
@@ -292,6 +320,11 @@ struct ShipManagementView: View {
             }
         }
         .navigationTitle(lineName)
+        .onAppear {
+            guard presentShipFormInitially, !hasPresentedInitialShipForm else { return }
+            hasPresentedInitialShipForm = true
+            showingAddShipSheet = true
+        }
         .sheet(isPresented: $showingAddShipSheet) {
             CustomShipFormSheet(customShip: nil, lineOptionID: lineOptionID)
         }

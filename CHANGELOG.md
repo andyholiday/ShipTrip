@@ -38,6 +38,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Catmull-Rom-Spline durch alle Hafen-Koordinaten statt gerader
   `MapPolyline`-Segmente, mit einem farbigen Schatten-Underlay für mehr Tiefe.
   ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+- **Eigene Reederei anlegen führt jetzt direkt zum ersten Schiff** (Build 18,
+  Tester-Feedback): nach dem Anlegen einer eigenen Reederei öffnet sich
+  automatisch die zugehörige Schiff-Verwaltung mit bereits geöffnetem
+  Schiff-Anlegeformular, statt den Nutzer in der Reederei-Liste zurückzulassen.
+  Bearbeiten einer bestehenden Reederei ist davon unberührt.
+  ([Feature-Doku](docs/features/eigene-reedereien-b5.md#d2--nach-reederei-anlage-direkt-zum-ersten-schiff))
 
 ### Geaendert
 
@@ -66,6 +72,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   überlagern, und ein Tap darauf zoomt hinein, bis sich die Stopps einzeln
   auflösen.
   ([Feature-Doku](docs/features/karten-politur-c.md))
+- **Eigene Reedereien/Schiffe bekommen ein Stock-Cover statt generischem
+  Ozean-Platzhalter** (Build 18, Tester-Feedback): Reisen, deren Reederei-/
+  Schiffs-Kombination sich nicht im Katalog auflösen lässt, zeigen jetzt
+  deterministisch eines von 70 fotorealistischen Stock-Covern statt des
+  neutralen `cover_ocean_route`-Fallbacks; Katalog-Reedereien sind unverändert.
+  ([Feature-Doku](docs/features/eigene-reedereien-b5.md#d1--stock-cover-für-eigene-reedereienschiffe))
 
 ### Behoben
 
