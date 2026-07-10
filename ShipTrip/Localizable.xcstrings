@@ -24,6 +24,17 @@
       }
     },
 
+    "Alle ausblenden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide all"
+          }
+        }
+      }
+    },
+
     "Alle Daten löschen" : {
       "localizations" : {
         "en" : {
@@ -63,6 +74,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All Shipping Lines"
+          }
+        }
+      }
+    },
+
+    "Alle Routen ausgeblendet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All routes hidden"
           }
         }
       }
@@ -1349,12 +1371,12 @@
       }
     },
 
-    "Routen" : {
+    "Routenauswahl" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Routes"
+            "value" : "Route selection"
           }
         }
       }
@@ -1510,6 +1532,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap + to add your first cruise"
+          }
+        }
+      }
+    },
+
+    "Tippe auf das Menü, um Routen einzublenden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the menu to show routes"
           }
         }
       }

@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrip — Karten-Redesign v2: 3 Richtungen</title>
+<style>
+  :root {
+    --ocean-blue: #0C8CE9;
+    --ocean-light: #36A9F0;
+    --navy-dark: #1A365D;
+    --sunset-orange: #FF6B35;
+    --sea-green: #34C759;
+    --purple: #AF52DE;
+    --pink: #FF2D92;
+    --cyan: #32ADE6;
+
+    --deck-bg: #0A1628;
+    --slide-bg: #111827;
+    --text-primary: #F9FAFB;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+    --border: rgba(255,255,255,0.08);
+
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 28px;
+
+    /* Journal Atlas (empfohlen) — warme Editorial-Töne */
+    --journal-surface-light: #FBF7F0;
+    --journal-surface-dark: #15212E;
+    --journal-line: rgba(26,54,93,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--deck-bg);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 44px 40px 56px;
+    overflow-y: auto;
+  }
+  .slide.active { display: flex; }
+  .slide-inner { width: 100%; max-width: 1180px; }
+
+  #progress-bar {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--ocean-blue), var(--sunset-orange));
+    transition: width 0.25s ease; z-index: 100;
+  }
+  #counter {
+    position: fixed; bottom: 18px; right: 24px; font-size: 12px;
+    color: var(--text-muted); font-variant-numeric: tabular-nums; z-index: 100;
+  }
+  .nav-btn {
+    position: fixed; top: 50%; transform: translateY(-50%);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+    border-radius: 50%; width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; color: var(--text-secondary); z-index: 100;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.12); }
+  #nav-prev { left: 12px; }
+  #nav-next { right: 12px; }
+
+  .slide-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ocean-light); margin-bottom: 10px;
+  }
+  h1 { font-size: 38px; font-weight: 800; line-height: 1.12; }
+  h2 { font-size: 26px; font-weight: 700; line-height: 1.2; margin-bottom: 6px; }
+  h3 { font-size: 17px; font-weight: 700; }
+  p.lead { font-size: 15px; color: var(--text-secondary); line-height: 1.55; max-width: 760px; }
+  .subtitle { font-size: 15px; color: var(--text-secondary); margin-top: 10px; }
+
+  .row { display: flex; gap: 22px; align-items: flex-start; width: 100%; }
+  .col { flex: 1; min-width: 0; }
+  .center { align-items: center; justify-content: center; text-align: center; }
+  .gap-sm { gap: 12px; }
+
+  .card {
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px;
+  }
+  .card-sm {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text-secondary);
+  }
+  .pill {
+    display: inline-block; padding: 3px 11px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .pill-blue { background: rgba(12,140,233,0.18); color: var(--ocean-light); }
+  .pill-orange { background: rgba(255,107,53,0.18); color: #FF8A5C; }
+  .pill-green { background: rgba(52,199,89,0.18); color: #34C759; }
+  .pill-purple { background: rgba(175,82,222,0.18); color: #C58AF0; }
+  .pill-reco { background: linear-gradient(135deg, var(--ocean-blue), var(--sea-green)); color: #fff; }
+
+  table.cmp { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.cmp th, table.cmp td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.cmp th { color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+  table.cmp td.reco { background: rgba(52,199,89,0.06); }
+
+  /* ===== COVER ===== */
+  .cover-gradient {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 25% 35%, rgba(12,140,233,0.20) 0%, transparent 58%),
+                radial-gradient(ellipse at 82% 72%, rgba(255,107,53,0.14) 0%, transparent 52%);
+  }
+  .cover-badge {
+    background: linear-gradient(135deg, var(--navy-dark), #0C3B6E);
+    border: 1px solid rgba(12,140,233,0.4); border-radius: 40px;
+    padding: 6px 18px; font-size: 12px; font-weight: 600; color: var(--ocean-light);
+    letter-spacing: 0.06em; margin-bottom: 30px;
+  }
+
+  /* ===== IPHONE MOCKUPS ===== */
+  .phones { display: flex; gap: 26px; align-items: flex-end; justify-content: center; width: 100%; flex-wrap: wrap; }
+  .phone-block { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .phone-caption { font-size: 12px; color: var(--text-muted); text-align: center; max-width: 180px; }
+
+  .iphone {
+    width: 168px; height: 342px; background: #1A1A1A; border-radius: 34px;
+    border: 2px solid #3A3A3C; position: relative; overflow: hidden; flex-shrink: 0;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.5);
+  }
+  .iphone.large { width: 210px; height: 428px; border-radius: 40px; }
+  .iphone-inner { position: absolute; inset: 7px; border-radius: 27px; overflow: hidden; }
+  .iphone.large .iphone-inner { border-radius: 33px; }
+  .notch {
+    position: absolute; top: 7px; left: 50%; transform: translateX(-50%);
+    width: 60px; height: 16px; background: #1A1A1A; border-radius: 0 0 12px 12px; z-index: 20;
+  }
+  .status-row {
+    position: absolute; top: 0; left: 0; right: 0; height: 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px 0 18px; font-size: 10px; font-weight: 600; z-index: 15;
+  }
+  .status-row.light { color: #1C1C1E; }
+  .status-row.dark { color: #F9FAFB; }
+
+  .map-canvas { position: absolute; inset: 0; overflow: hidden; }
+  .chrome-btn {
+    position: absolute; width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; z-index: 18;
+  }
+  .chrome-btn.tl { top: 34px; left: 12px; }
+  .chrome-btn.tr { top: 34px; right: 12px; }
+
+  /* Richtung 1: Liquid Glass */
+  .glass-btn {
+    background: rgba(255,255,255,0.22); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.35); color: #0C3B6E;
+    box-shadow: 0 4px 14px rgba(10,22,40,0.25);
+  }
+  .glass-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 16;
+    background: rgba(255,255,255,0.62); backdrop-filter: blur(14px);
+    border-radius: 20px 20px 0 0; border-top: 1px solid rgba(255,255,255,0.5);
+    padding: 8px 14px 14px; box-shadow: 0 -8px 24px rgba(0,0,0,0.18);
+  }
+  .glass-sheet.dark { background: rgba(20,30,48,0.68); border-top: 1px solid rgba(255,255,255,0.12); }
+
+  /* Richtung 2: Journal Atlas */
+  .solid-btn {
+    background: var(--navy-dark); color: #fff; box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  }
+  .journal-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 16;
+    background: var(--journal-surface-light); border-radius: 22px 22px 0 0;
+    padding: 8px 14px 14px; box-shadow: 0 -10px 26px rgba(0,0,0,0.22);
+  }
+  .journal-sheet.dark { background: var(--journal-surface-dark); }
+
+  /* Richtung 3: Captain's Chart */
+  .square-btn {
+    border-radius: 8px; background: var(--navy-dark); color: #FFD9A8;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.35);
+  }
+  .chart-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 16;
+    background: #0E2038; border-radius: 12px 12px 0 0; padding: 8px 14px 14px;
+    box-shadow: 0 -10px 26px rgba(0,0,0,0.35); color: #E8EEF6;
+  }
+
+  .grabber { width: 34px; height: 4px; border-radius: 3px; background: rgba(120,120,128,0.5); margin: 4px auto 8px; }
+  .sheet-title { font-size: 13px; font-weight: 700; }
+  .sheet-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .stop-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .stop-badge { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .stop-name { font-size: 11px; font-weight: 600; flex: 1; }
+  .stop-thumb { width: 20px; height: 20px; border-radius: 5px; flex-shrink: 0; }
+
+  .world-dot { fill: var(--ocean-blue); stroke: #fff; stroke-width: 1.2; }
+
+  /* ===== SECTION HEADERS ===== */
+  .direction-header { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; flex-wrap: wrap; }
+  .why-list { margin-top: 14px; font-size: 13px; color: var(--text-secondary); line-height: 1.7; }
+  .why-list li { margin-left: 18px; }
+
+  .footer-note { margin-top: 18px; font-size: 11px; color: var(--text-muted); }
+
+  code.tok { background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: var(--ocean-light); }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter">1 / 12</div>
+<div class="nav-btn" id="nav-prev" onclick="go(-1)">&#8592;</div>
+<div class="nav-btn" id="nav-next" onclick="go(1)">&#8594;</div>
+
+<!-- ============ SLIDE 1 — COVER ============ -->
+<section class="slide active" id="slide-1">
+  <div class="cover-gradient"></div>
+  <div class="slide-inner center" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:82vh;">
+    <div class="cover-badge">SHIPTRIP · KARTEN-REDESIGN v2</div>
+    <h1 style="font-size:52px; max-width:820px;">Die Weltkarte wird zum Reisetagebuch-Kernstück</h1>
+    <p class="lead" style="margin-top:20px;">3 unterscheidbare Design-Richtungen für den kompletten Karten-Bereich — kurvige Routen, Burger-Menü zur Routenauswahl, Hochswipe-Sheet mit Stopp-Liste. Alle 3 sind 100&nbsp;% nativ mit SwiftUI/MapKit baubar, kein Fremd-SDK.</p>
+    <div style="display:flex; gap:14px; margin-top:34px;">
+      <span class="pill pill-blue">Nachtjob 2026-07-10</span>
+      <span class="pill pill-orange">Hell &amp; Dunkel</span>
+      <span class="pill pill-green">Nativ MapKit</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2 — PROBLEM / IST ============ -->
+<section class="slide" id="slide-2">
+  <div class="slide-inner">
+    <div class="slide-label">Problem · Ist-Zustand</div>
+    <h2>Andre gefällt der aktuelle Kartenbereich nicht</h2>
+    <p class="lead">MapView.swift (543 Z.) hat die B4-Konsistenzfixes bereits (Rollen-Pins, Zwei-Zoom-Stufen, nummerierte Badges) — aber Interaktion und Optik wirken noch wie eine funktionale Übergangslösung, nicht wie das Herzstück eines Premium-Reisetagebuchs.</p>
+
+    <div class="row" style="margin-top:26px; align-items:stretch;">
+      <div class="col card">
+        <h3 style="color:#FF8A5C;">Was heute stört</h3>
+        <div class="why-list">
+          <li>Routen sind gerade Liniensegmente (<code class="tok">MapPolyline</code>, Zeile ~151) — wirkt technisch, nicht wie eine „gereiste" Route.</li>
+          <li>Filter-Menü oben links (Trichter-Icon) + separate „Routen"-Capsule unten in der Info-Card — zwei Orte für dieselbe Aufgabe.</li>
+          <li>Auswahl kennt nur „alle" oder Einzelauswahl — kein Ein-Klick-Umschalter für „alles ab-/anwählen".</li>
+          <li>Tap auf eine Route führt direkt in die volle <code class="tok">CruiseDetailView</code> — kein leichtgewichtiger Zwischenschritt mit Stopp-Übersicht.</li>
+          <li><code class="tok">.ultraThinMaterial</code>-Bottom-Card blockt permanent ~180pt Kartenfläche, auch wenn nichts ausgewählt ist.</li>
+        </div>
+      </div>
+      <div class="col card">
+        <h3 style="color:#34C759;">Was bereits gut ist &amp; bleibt</h3>
+        <div class="why-list">
+          <li><code class="tok">PortPinView</code>-Rollensystem (Start/Hafen/Endpunkt/Seetag) — Form + Farbe, konsistent mit der Detailansicht.</li>
+          <li>Zwei-Zoom-Stufen-Mechanik (<code class="tok">MapZoomBucketPlanner</code>, Schwelle 10°) — Welt-Zoom zeigt Dots, Routen-Zoom zeigt volle Pins/Badges.</li>
+          <li>Nummerierte, routenfarbige Wegpunkt-Badges (<code class="tok">MapStopBadgeView</code>) für Zwischenstopps.</li>
+          <li>Tap-Callout mit Foto-Thumbnail (<code class="tok">MapCalloutView</code>) statt Dauerlabel.</li>
+          <li>Zentrale Farb-/Radius-Tokens in <code class="tok">Color+Theme.swift</code> — Fundament für alle 3 Richtungen.</li>
+        </div>
+      </div>
+    </div>
+    <p class="footer-note">Screenshots (Ist-Zustand): audit/screenshots/weltkarte-all-light.png · weltkarte-all-dark.png</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 — REFERENZ-ANALYSE ============ -->
+<section class="slide" id="slide-3">
+  <div class="slide-inner">
+    <div class="slide-label">Referenz-Analyse</div>
+    <h2>Road-Trip-Planer-Vorlage (magnific.com)</h2>
+    <p class="lead" style="color:#FFAA44;">Hinweis: Die Referenz-URL war beim Lauf per WebFetch <strong>nicht erreichbar</strong> (HTTP 403 — Bot-Schutz der Stockseite). Die Design-Sprache wurde daher aus der im Brief mitgelieferten Beschreibung + <code class="tok">design-library</code>-Pattern-Wissen + einer ergänzenden Web-Recherche zu Road-Trip-Planer-UI 2026 rekonstruiert.</p>
+
+    <div class="row" style="margin-top:24px;">
+      <div class="col card">
+        <h3>Extrahierte Design-Sprache</h3>
+        <div class="why-list">
+          <li><strong>Flat UI</strong> — solide, satte Flächenfarben statt Glasmorphismus; Chrome-Buttons als kompakte, farbige Kreise mit klarem Icon.</li>
+          <li><strong>Helle, aufgeräumte Karte</strong> mit weichen, stark abgerundeten Karten/Sheets (große Radien).</li>
+          <li><strong>Klare Routenlinien</strong> mit deutlichen, unterscheidbaren Start-/Ziel-Markern (Form + Farbe, nicht nur Farbe).</li>
+          <li><strong>Stop-Liste als vertikale Timeline</strong> mit verbindenden Punkten/Linien — Reihenfolge sofort lesbar.</li>
+          <li><strong>Moderne Chips/Buttons</strong> für Kategorien/Aktionen, durchgehend abgerundet.</li>
+        </div>
+      </div>
+      <div class="col card">
+        <h3>2026-Trend-Check (Web-Recherche)</h3>
+        <div class="why-list">
+          <li>Gestenbasierte Navigation, Hamburger-Menüs sparsam/gezielt statt als Haupt-Navigation.</li>
+          <li>Kräftige Blau-/Grüntöne für Natur-/Reise-Themen, hoher Kontrast.</li>
+          <li>Dark Mode als Standard-Erwartung, nicht Zusatzfeature.</li>
+          <li>Referenz-Apps der Kategorie: Roadtrippers, Wanderlog, Google Maps (bereits in <code class="tok">.planning/b4-design-benchmark.md</code> vertieft ausgewertet — 6 Apps, Pattern-Tabelle vorhanden).</li>
+        </div>
+      </div>
+    </div>
+    <p class="footer-note">Quellen: Brief-Beschreibung der Referenz · saasfactor.co/blogs/road-trip-mobile-app-design-ideas · uizard.io Travel-Plan-Template-Recherche (2026-07-10)</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 — BENCHMARK ============ -->
+<section class="slide" id="slide-4">
+  <div class="slide-inner">
+    <div class="slide-label">Benchmark · 6 Apps (aus .planning/b4-design-benchmark.md)</div>
+    <h2>Wer setzt die Latte für Routen-Karten?</h2>
+    <table class="cmp" style="margin-top:18px;">
+      <tr><th>App</th><th>Routen-Visualisierung</th><th>Stop-Marker</th><th>Übertragbar</th></tr>
+      <tr><td><strong>Polarsteps</strong></td><td>Tatsächliche Reiseroute als Linie, Foto-Callouts</td><td>„Steps" mit Foto-Vorschau</td><td>Callout-Prinzip ✓ (bereits übernommen)</td></tr>
+      <tr><td><strong>Wanderlog</strong></td><td>Farbcodierte Pins, verbindende Linien</td><td>Pins in Sektionsfarbe, Liste synchron zur Karte</td><td>Karte↔Liste-Sync fürs Sheet ✓</td></tr>
+      <tr><td><strong>Flighty</strong> (ADA 2023)</td><td>Minimalistischer Routen-Bogen</td><td>Icon-Form je Richtung, kompakte Info-Kacheln</td><td>Klare Peek-Kachel als Sheet-Startzustand ✓</td></tr>
+      <tr><td><strong>AllTrails</strong></td><td>Trail-Linien, progressive Detailtiefe je Zoom</td><td>Weißer Halo-Hintergrund, Form+Farbe</td><td>Halo-Pin-Stil bereits im Code, bleibt ✓</td></tr>
+      <tr><td><strong>Apple Maps</strong></td><td>Blaue Routenlinie, System-Start/Ziel-Pins</td><td>OS-Konvention</td><td>Basis-Erwartungshaltung der Nutzer ✓</td></tr>
+      <tr><td><strong>Roadtrippers</strong></td><td>Multi-Stop mit nummerierten Wegpunkten</td><td>Nummerierte Badges + synchrone Stop-Liste</td><td>Bottom-Sheet-Stopliste, direkt Vorbild ✓</td></tr>
+    </table>
+    <p class="footer-note">Kein Pattern hier ist neu recherchiert für dieses Deck — Tabelle kondensiert aus der bereits verifizierten Benchmark-Datei (6 Apps, Quellen dort dokumentiert).</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5 — RICHTUNG 1: LIQUID GLASS ATLAS ============ -->
+<section class="slide" id="slide-5">
+  <div class="slide-inner">
+    <div class="direction-header">
+      <span class="pill pill-blue">RICHTUNG 1</span>
+      <h2 style="margin:0;">Liquid Glass Atlas</h2>
+    </div>
+    <p class="lead">System-natives Liquid-Glass-Chrome (2026-Baseline auf Apple-Plattformen), maximale Nähe zum aktuellen Code — <code class="tok">.ultraThinMaterial</code> überall, minimale Formsprache, dünne leuchtende Routenlinie mit sanftem Glow.</p>
+
+    <div class="phones" style="margin-top:22px;">
+      <div class="phone-block">
+        <div class="iphone">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:linear-gradient(160deg,#0E3A66,#0C8CE9 60%,#1BA6E8);">
+              <svg viewBox="0 0 168 342" width="100%" height="100%" style="position:absolute;inset:0;">
+                <circle class="world-dot" cx="40" cy="90" r="3.5"/>
+                <circle class="world-dot" cx="72" cy="130" r="3.5"/>
+                <circle class="world-dot" cx="60" cy="200" r="3.5"/>
+                <circle class="world-dot" cx="110" cy="230" r="3.5" fill="#FF6B35"/>
+                <circle class="world-dot" cx="130" cy="150" r="3.5" fill="#AF52DE"/>
+                <circle class="world-dot" cx="95" cy="95" r="3.5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl glass-btn">&#9635;</div>
+            <div class="chrome-btn tr glass-btn">&#9776;</div>
+          </div>
+        </div>
+        <div class="phone-caption">Welt-Zoom — Dots je Routenfarbe, Glass-Chrome oben</div>
+      </div>
+
+      <div class="phone-block">
+        <div class="iphone large">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:linear-gradient(160deg,#0E3A66,#0C8CE9 55%,#1BA6E8);">
+              <svg viewBox="0 0 210 428" width="100%" height="100%" style="position:absolute;inset:0;">
+                <defs><filter id="glow1"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
+                <path d="M40,70 C75,95 55,150 90,175 C120,196 100,235 140,250" fill="none" stroke="#36A9F0" stroke-width="7" opacity="0.35" filter="url(#glow1)"/>
+                <path d="M40,70 C75,95 55,150 90,175 C120,196 100,235 140,250" fill="none" stroke="#EAF6FF" stroke-width="2.5"/>
+                <circle cx="40" cy="70" r="8" fill="#FF6B35" stroke="#fff" stroke-width="1.5"/>
+                <circle cx="90" cy="175" r="9" fill="#0C8CE9" stroke="#fff" stroke-width="1.5"/>
+                <text x="90" y="179" font-size="9" fill="#fff" text-anchor="middle" font-weight="700">2</text>
+                <circle cx="140" cy="250" r="8" fill="#34C759" stroke="#fff" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl glass-btn">&#9635;</div>
+            <div class="chrome-btn tr glass-btn">&#9776;</div>
+            <div class="glass-sheet">
+              <div class="grabber"></div>
+              <div class="sheet-title">Mittelmeer-Route</div>
+              <div class="sheet-sub">7 Tage · 4 Häfen · 3 Länder</div>
+              <div style="margin-top:8px;">
+                <div class="stop-row"><div class="stop-badge" style="background:#FF6B35;">S</div><div class="stop-name">Barcelona</div></div>
+                <div class="stop-row"><div class="stop-badge" style="background:#0C8CE9;">2</div><div class="stop-name">Palma de Mallorca</div></div>
+                <div class="stop-row"><div class="stop-badge" style="background:#34C759;">E</div><div class="stop-name">Marseille</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption">Routen-Zoom + Sheet offen — Glow-Route, Frosted-Glass-Sheet über bedienbarer Karte</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+      <div class="col card-sm"><strong style="color:var(--ocean-light);">Chrome:</strong> Frosted-Glass-Kreise (<code class="tok">.ultraThinMaterial</code>), minimal, SF-Symbol-Icons</div>
+      <div class="col card-sm"><strong style="color:var(--ocean-light);">Routen:</strong> Dünn (2.5pt), leuchtender Glow-Unterzug, sehr „digital/clean"</div>
+      <div class="col card-sm"><strong style="color:var(--ocean-light);">Sheet:</strong> Frosted-Glass, iOS-Standard-Grabber, dichteste Nähe zum Ist-Zustand</div>
+    </div>
+    <p class="footer-note">Aufwand: S/M · Risiko: niedrig (kleinste Codeänderung ggü. Ist) · Wirkt am wenigsten „neu", am nächsten am Ist-Zustand.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6 — RICHTUNG 2: JOURNAL ATLAS (EMPFOHLEN) ============ -->
+<section class="slide" id="slide-6">
+  <div class="slide-inner">
+    <div class="direction-header">
+      <span class="pill pill-reco">RICHTUNG 2 · EMPFOHLEN</span>
+      <h2 style="margin:0;">Journal Atlas</h2>
+    </div>
+    <p class="lead">Flache, warme Editorial-Sprache — direkt an der Road-Trip-Referenz orientiert: solide Chrome-Buttons statt Glas, dicke „Ribbon"-Routen mit weichem Farbschatten, Stop-Liste als Foto-Timeline. Passt zur bereits beschlossenen Produktrichtung „Travel Journal Premium".</p>
+
+    <div class="phones" style="margin-top:22px;">
+      <div class="phone-block">
+        <div class="iphone">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row light"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:linear-gradient(160deg,#8FC6E8,#5FA8D3 55%,#3F8CBF);">
+              <svg viewBox="0 0 168 342" width="100%" height="100%" style="position:absolute;inset:0;">
+                <circle class="world-dot" cx="40" cy="90" r="4"/>
+                <circle class="world-dot" cx="72" cy="130" r="4"/>
+                <circle class="world-dot" cx="60" cy="200" r="4"/>
+                <circle class="world-dot" cx="110" cy="230" r="4" fill="#FF6B35"/>
+                <circle class="world-dot" cx="130" cy="150" r="4" fill="#AF52DE"/>
+                <circle class="world-dot" cx="95" cy="95" r="4" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl solid-btn">&#9635;</div>
+            <div class="chrome-btn tr solid-btn">&#9776;</div>
+          </div>
+        </div>
+        <div class="phone-caption">Welt-Zoom — warmer Kartenton, solide Navy-Chrome-Buttons (flach, kein Glas)</div>
+      </div>
+
+      <div class="phone-block">
+        <div class="iphone large">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row light"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:linear-gradient(160deg,#8FC6E8,#5FA8D3 55%,#3F8CBF);">
+              <svg viewBox="0 0 210 428" width="100%" height="100%" style="position:absolute;inset:0;">
+                <defs><filter id="shadow2"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0C8CE9" flood-opacity="0.35"/></filter></defs>
+                <path d="M40,70 C75,95 55,150 90,175 C120,196 100,235 140,250" fill="none" stroke="#0C8CE9" stroke-width="6.5" stroke-linecap="round" filter="url(#shadow2)"/>
+                <circle cx="40" cy="70" r="10" fill="#FF6B35" stroke="#FBF7F0" stroke-width="2.5"/>
+                <circle cx="90" cy="175" r="11" fill="#0C8CE9" stroke="#FBF7F0" stroke-width="2.5"/>
+                <text x="90" y="179" font-size="10" fill="#fff" text-anchor="middle" font-weight="700">2</text>
+                <circle cx="140" cy="250" r="10" fill="#34C759" stroke="#FBF7F0" stroke-width="2.5"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl solid-btn">&#9635;</div>
+            <div class="chrome-btn tr solid-btn">&#9776;</div>
+            <div class="journal-sheet">
+              <div class="grabber"></div>
+              <div class="sheet-title" style="color:#1A365D;">Mittelmeer-Route</div>
+              <div class="sheet-sub" style="color:#6B5F4F;">7 Tage · 4 Häfen · 3 Länder</div>
+              <div style="margin-top:10px; border-left:2px dotted rgba(26,54,93,0.3); padding-left:10px;">
+                <div class="stop-row"><div class="stop-badge" style="background:#FF6B35;">S</div><div class="stop-name" style="color:#1A365D;">Barcelona</div><div class="stop-thumb" style="background:#C9DCE8;"></div></div>
+                <div class="stop-row"><div class="stop-badge" style="background:#0C8CE9;">2</div><div class="stop-name" style="color:#1A365D;">Palma de Mallorca</div><div class="stop-thumb" style="background:#D9CBAE;"></div></div>
+                <div class="stop-row"><div class="stop-badge" style="background:#34C759;">E</div><div class="stop-name" style="color:#1A365D;">Marseille</div><div class="stop-thumb" style="background:#C9DCE8;"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption">Routen-Zoom + Sheet offen — dicke Ribbon-Route mit Farbschatten, warmes Papier-Sheet mit Foto-Timeline</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+      <div class="col card-sm"><strong style="color:#34C759;">Chrome:</strong> Solide Navy-Kreise, weißes Icon, harter Schlagschatten — flach statt Glas</div>
+      <div class="col card-sm"><strong style="color:#34C759;">Routen:</strong> Dick (4–6.5pt), abgerundete Kappen, weicher Farbschatten unterm Pfad</div>
+      <div class="col card-sm"><strong style="color:#34C759;">Sheet:</strong> Warmes Papier-Surface, gepunktete Timeline-Linie, Foto-Thumbnails je Stopp</div>
+    </div>
+    <p class="footer-note">Aufwand: M · Risiko: niedrig-mittel (native Materialien, kein Custom-Rendering-Risiko) · Nächste Übereinstimmung zur Referenz-Beschreibung.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 — RICHTUNG 3: CAPTAIN'S CHART ============ -->
+<section class="slide" id="slide-7">
+  <div class="slide-inner">
+    <div class="direction-header">
+      <span class="pill pill-purple">RICHTUNG 3</span>
+      <h2 style="margin:0;">Captain's Chart</h2>
+    </div>
+    <p class="lead">Nautisch-mutige Richtung, stark auf die Kreuzfahrt-Marke einzahlend: Seekarten-Optik mit Gradnetz, gestrichelte Navigationslinie mit Richtungs-Chevrons, Sheet im „Schiffsmanifest"-Stil. Am eigenständigsten, am weitesten von der Referenz entfernt.</p>
+
+    <div class="phones" style="margin-top:22px;">
+      <div class="phone-block">
+        <div class="iphone">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:#0E2038;">
+              <svg viewBox="0 0 168 342" width="100%" height="100%" style="position:absolute;inset:0;">
+                <g stroke="rgba(50,173,230,0.18)" stroke-width="1">
+                  <line x1="0" y1="40" x2="168" y2="40"/><line x1="0" y1="90" x2="168" y2="90"/>
+                  <line x1="0" y1="140" x2="168" y2="140"/><line x1="0" y1="190" x2="168" y2="190"/>
+                  <line x1="0" y1="240" x2="168" y2="240"/><line x1="0" y1="290" x2="168" y2="290"/>
+                  <line x1="40" y1="0" x2="40" y2="342"/><line x1="84" y1="0" x2="84" y2="342"/><line x1="128" y1="0" x2="128" y2="342"/>
+                </g>
+                <circle class="world-dot" cx="40" cy="90" r="3.5" stroke="#0E2038"/>
+                <circle class="world-dot" cx="72" cy="130" r="3.5" stroke="#0E2038"/>
+                <circle class="world-dot" cx="60" cy="200" r="3.5" stroke="#0E2038"/>
+                <circle cx="110" cy="230" r="3.5" fill="#FF6B35" stroke="#0E2038"/>
+                <circle cx="95" cy="95" r="3.5" fill="#34C759" stroke="#0E2038"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl square-btn">&#9635;</div>
+            <div class="chrome-btn tr square-btn">&#9776;</div>
+          </div>
+        </div>
+        <div class="phone-caption">Welt-Zoom — Seekarten-Gradnetz, quadratische Chrome-Buttons</div>
+      </div>
+
+      <div class="phone-block">
+        <div class="iphone large">
+          <div class="iphone-inner">
+            <div class="notch"></div>
+            <div class="status-row dark"><span>9:41</span><span>&#9679;&#9679;&#9679;</span></div>
+            <div class="map-canvas" style="background:#0E2038;">
+              <svg viewBox="0 0 210 428" width="100%" height="100%" style="position:absolute;inset:0;">
+                <g stroke="rgba(50,173,230,0.16)" stroke-width="1">
+                  <line x1="0" y1="50" x2="210" y2="50"/><line x1="0" y1="110" x2="210" y2="110"/>
+                  <line x1="0" y1="170" x2="210" y2="170"/><line x1="0" y1="230" x2="210" y2="230"/>
+                  <line x1="0" y1="290" x2="210" y2="290"/><line x1="0" y1="350" x2="210" y2="350"/>
+                  <line x1="50" y1="0" x2="50" y2="428"/><line x1="105" y1="0" x2="105" y2="428"/><line x1="160" y1="0" x2="160" y2="428"/>
+                </g>
+                <path d="M40,70 C75,95 55,150 90,175 C120,196 100,235 140,250" fill="none" stroke="#FFD9A8" stroke-width="3.5" stroke-dasharray="9,6"/>
+                <path d="M62,90 l6,-3 l-2,7 z" fill="#FFD9A8"/>
+                <path d="M108,205 l6,-3 l-2,7 z" fill="#FFD9A8"/>
+                <circle cx="40" cy="70" r="9" fill="#FF6B35" stroke="#0E2038" stroke-width="2"/>
+                <circle cx="90" cy="175" r="10" fill="#32ADE6" stroke="#0E2038" stroke-width="2"/>
+                <text x="90" y="179" font-size="9" fill="#0E2038" text-anchor="middle" font-weight="800">02</text>
+                <circle cx="140" cy="250" r="9" fill="#34C759" stroke="#0E2038" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="chrome-btn tl square-btn">&#9635;</div>
+            <div class="chrome-btn tr square-btn">&#9776;</div>
+            <div class="chart-sheet">
+              <div class="grabber" style="background:rgba(255,255,255,0.3);"></div>
+              <div class="sheet-title" style="font-family: ui-monospace, monospace; letter-spacing:0.04em;">MITTELMEER · MANIFEST</div>
+              <div class="sheet-sub" style="color:#8FA6BE;">7 TAGE · 4 HÄFEN · 3 LÄNDER</div>
+              <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.12);">
+                <div class="stop-row" style="border-bottom:1px solid rgba(255,255,255,0.1);"><div class="stop-badge" style="background:#FF6B35; border-radius:4px; font-family: ui-monospace, monospace;">01</div><div class="stop-name">BARCELONA</div></div>
+                <div class="stop-row" style="border-bottom:1px solid rgba(255,255,255,0.1);"><div class="stop-badge" style="background:#32ADE6; border-radius:4px; font-family: ui-monospace, monospace;">02</div><div class="stop-name">PALMA DE MALLORCA</div></div>
+                <div class="stop-row"><div class="stop-badge" style="background:#34C759; border-radius:4px; font-family: ui-monospace, monospace;">03</div><div class="stop-name">MARSEILLE</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption">Routen-Zoom + Sheet offen — gestrichelte Navigationslinie mit Chevrons, Manifest-Sheet mit Monospace-Nummern</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:20px;">
+      <div class="col card-sm"><strong style="color:#C58AF0;">Chrome:</strong> Quadratische Navy-Buttons, Bernstein-Icon-Ton — eigenständige Form gegen die anderen 2 Richtungen</div>
+      <div class="col card-sm"><strong style="color:#C58AF0;">Routen:</strong> Gestrichelt mit Richtungs-Chevrons, wirkt wie eine Navigationskarte statt einer Reise-App</div>
+      <div class="col card-sm"><strong style="color:#C58AF0;">Sheet:</strong> Dunkles Manifest, immer dunkel (auch im Light Mode) — höchstes Kontrastrisiko</div>
+    </div>
+    <p class="footer-note">Aufwand: M/L (Custom-Gradnetz-Overlay, Chevron-Sampling entlang der Kurve) · Risiko: mittel · Am stärksten „on-brand" fürs Kreuzfahrt-Thema, aber am weitesten von einer klassischen, hellen Reiseplaner-Referenz entfernt.</p>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8 — VERGLEICH ============ -->
+<section class="slide" id="slide-8">
+  <div class="slide-inner">
+    <div class="slide-label">Vergleich</div>
+    <h2>3 Richtungen nebeneinander</h2>
+    <table class="cmp" style="margin-top:18px;">
+      <tr><th>Dimension</th><th>1 · Liquid Glass Atlas</th><th class="reco">2 · Journal Atlas ★</th><th>3 · Captain's Chart</th></tr>
+      <tr><td>Chrome-Material</td><td>Frosted Glass (<code class="tok">.ultraThinMaterial</code>)</td><td class="reco">Solide Navy-Flächen, flach</td><td>Solide, quadratisch, Bernstein-Akzent</td></tr>
+      <tr><td>Routen-Stil</td><td>Dünn, leuchtender Glow</td><td class="reco">Dick, „Ribbon", weicher Farbschatten</td><td>Gestrichelt, Chevron-Richtungspfeile</td></tr>
+      <tr><td>Sheet-Ton</td><td>Frosted Glass, iOS-Standard</td><td class="reco">Warmes Papier, Foto-Timeline</td><td>Dunkles Manifest, Monospace</td></tr>
+      <tr><td>Nähe zur Referenz</td><td>Gering</td><td class="reco">Hoch (flach, solide Buttons, Timeline)</td><td>Gering</td></tr>
+      <tr><td>Markenpassung Kreuzfahrt</td><td>Neutral</td><td class="reco">Gut (warm, editorial, „Journal")</td><td>Sehr stark, aber riskant im Light Mode</td></tr>
+      <tr><td>Umsetzungsrisiko</td><td>Niedrig</td><td class="reco">Niedrig–mittel</td><td>Mittel (Gradnetz + Chevron-Sampling)</td></tr>
+      <tr><td>Aufwand</td><td>S/M</td><td class="reco">M</td><td>M/L</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9 — EMPFEHLUNG ============ -->
+<section class="slide" id="slide-9">
+  <div class="slide-inner center" style="min-height:78vh; display:flex; flex-direction:column; justify-content:center;">
+    <div class="slide-label">Empfehlung</div>
+    <h2 style="font-size:34px;">Richtung 2 — Journal Atlas</h2>
+    <p class="lead" style="margin-top:18px; max-width:820px;">
+      Journal Atlas kommt der Referenz-Beschreibung (flache UI, solide runde Buttons, Stop-Liste als Timeline) am nächsten und lässt sich fast vollständig mit nativen SwiftUI-Mitteln umsetzen — solide Farben statt Custom-Shadow-Tricks (Richtung 1) oder eines kompletten Seekarten-Rendering-Systems (Richtung 3). Die warme, editorial-hafte Papier-Optik zahlt direkt auf die bereits beschlossene Produktrichtung „Travel Journal Premium" ein (siehe Projektgedächtnis), statt eine vierte, unabhängige visuelle Sprache in die App zu bringen. Das gepunktete Timeline-Sheet mit Foto-Thumbnails ist ein in Polarsteps/Wanderlog bereits erprobtes Pattern (siehe Benchmark), löst also die Bottom-Sheet-Anforderung mit geringem Neuheits-Risiko. Richtung 3 ist visuell die mutigste und markenstärkste Idee, birgt aber im Light Mode Kontrastrisiken (dunkles Sheet auf hellem Grund) und deutlich mehr Custom-Rendering-Aufwand (Gradnetz, Chevron-Sampling) für den ersten Wurf.
+    </p>
+    <div style="margin-top:22px;"><span class="pill pill-reco">→ Design-Spec für Richtung 2 liegt bereit für den Developer</span></div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10 — TOKENS ============ -->
+<section class="slide" id="slide-10">
+  <div class="slide-inner">
+    <div class="slide-label">Token-Snapshot · Journal Atlas</div>
+    <h2>Werte, die dieses Deck verwendet hat</h2>
+    <p class="lead">Vollständig im Design-Spec (<code class="tok">.planning/karten-redesign-v2-spec.md</code>) und der maschinenlesbaren <code class="tok">.planning/karten-redesign-v2-tokens.json</code> dokumentiert — hier die Kernwerte für den schnellen Blick.</p>
+    <table class="cmp" style="margin-top:16px;">
+      <tr><th>Token</th><th>Hell</th><th>Dunkel</th><th>Herkunft</th></tr>
+      <tr><td>chrome.solid (Burger/Recenter-Buttons)</td><td>#1A365D (navyDark)</td><td>#1A365D (navyDark)</td><td>Bestehend, unverändert</td></tr>
+      <tr><td>sheet.surface (neu)</td><td>#FBF7F0</td><td>#15212E</td><td>Neu — warmes Journal-Papier</td></tr>
+      <tr><td>sheet.timelineLine (neu)</td><td>rgba(26,54,93,0.18)</td><td>rgba(255,255,255,0.14)</td><td>Neu</td></tr>
+      <tr><td>route.width aktiv/inaktiv</td><td>4pt / 2.5pt</td><td>gleich</td><td>Erweitert (Ist: 3pt/2pt)</td></tr>
+      <tr><td>route.opacity fokussiert/andere</td><td>0.85 / 0.35</td><td>gleich</td><td>Erweitert (Ist: 0.78/0.52)</td></tr>
+      <tr><td>radius.sheet</td><td>28pt (<code class="tok">DesignRadius.lg</code>)</td><td>gleich</td><td>Bestehend, wiederverwendet</td></tr>
+      <tr><td>routeColors[0..7]</td><td>oceanBlue…mint</td><td>gleich</td><td>Bestehend, unverändert</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ SLIDE 11 — ROADMAP ============ -->
+<section class="slide" id="slide-11">
+  <div class="slide-inner">
+    <div class="slide-label">Roadmap</div>
+    <h2>Wellen bis zum TestFlight-Build</h2>
+    <div class="row" style="margin-top:20px;">
+      <div class="col card"><h3 style="color:var(--ocean-light);">1 · Design ✓</h3><p class="card-sm" style="margin-top:8px;">3 Richtungen (dieses Deck) + Design-Spec für Richtung 2 — abgeschlossen.</p></div>
+      <div class="col card"><h3 style="color:#FF8A5C;">2 · Implementierung</h3><p class="card-sm" style="margin-top:8px;">MapView-Umbau: Burger-Menü rechts, Alle-an/aus, Bottom-Sheet mit Kamera-Sprung, Catmull-Rom-Kurvenrouten, neue Tokens.</p></div>
+      <div class="col card"><h3 style="color:#34C759;">3 · Qualität</h3><p class="card-sm" style="margin-top:8px;">Build+Tests grün, Simulator-Screenshots hell/dunkel, max. 3 Feedback-Iterationen.</p></div>
+      <div class="col card"><h3 style="color:#C58AF0;">4 · Release</h3><p class="card-sm" style="margin-top:8px;">Version 1.7.0 (16), CHANGELOG, TestFlight-Upload, VIP Tester + VIP Extern.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 12 — CLOSING ============ -->
+<section class="slide" id="slide-12">
+  <div class="slide-inner center" style="min-height:78vh; display:flex; flex-direction:column; justify-content:center;">
+    <div class="slide-label">Nächste Schritte</div>
+    <h2 style="font-size:32px;">Bereit für den Developer-Spawn</h2>
+    <p class="lead" style="margin-top:16px; max-width:700px;">Design-Spec liegt umsetzungsreif vor. Offene technische Fragen (Route-Tap-Hit-Testing, Polyline-Glow-Workaround) sind im Spec als konkrete Empfehlung + Fallback markiert, nicht als offene Rückfrage.</p>
+    <div style="display:flex; gap:14px; margin-top:26px;">
+      <span class="pill pill-blue">docs/ux-pitch-decks/karten-redesign-v2-richtungen.html</span>
+      <span class="pill pill-green">.planning/karten-redesign-v2-spec.md</span>
+    </div>
+  </div>
+</section>
+
+<script>
+  const total = document.querySelectorAll('.slide').length;
+  let current = 1;
+  function render() {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('slide-' + current).classList.add('active');
+    document.getElementById('counter').textContent = current + ' / ' + total;
+    document.getElementById('progress-bar').style.width = (current / total * 100) + '%';
+    location.hash = '#' + current;
+  }
+  function go(delta) {
+    current = Math.min(total, Math.max(1, current + delta));
+    render();
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+    else if (e.key === 'ArrowLeft') { go(-1); }
+    else if (e.key === 'Home') { current = 1; render(); }
+    else if (e.key === 'End') { current = total; render(); }
+  });
+  window.addEventListener('hashchange', () => {
+    const n = parseInt(location.hash.replace('#',''), 10);
+    if (n >= 1 && n <= total) { current = n; render(); }
+  });
+  (function init() {
+    const n = parseInt(location.hash.replace('#',''), 10);
+    if (n >= 1 && n <= total) current = n;
+    render();
+  })();
+</script>
+
+</body>
+</html>

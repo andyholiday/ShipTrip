@@ -14,8 +14,41 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
-- Karten-Überarbeitung B4.3b-2/-3: synchronisierte Bottom-Sheet-Stopliste,
-  Bezier-Kurvenrouten um Landmassen ([Feature-Doku](docs/features/karten-redesign-b4.md))
+
+### Hinzugefuegt
+
+- **Karte: Bottom-Sheet mit Stop-Timeline**: Tap auf eine Route (Linie oder
+  Marker) öffnet ein Sheet mit Peek-/Medium-/Large-Detents — Peek zeigt
+  Routentitel und Substats, Medium eine scrollbare, mit der Karte
+  synchronisierte Stop-Liste, Large zusätzlich einen „Öffnen"-Button zur
+  Reise-Detailansicht. Tap auf einen Stopp im Sheet springt die Kartenkamera
+  dorthin und kollabiert das Sheet zurück auf Peek.
+  ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+- **Karte: Burger-Menü zur Routenauswahl**: ersetzt das bisherige Filter-Menü,
+  neue „Alle ausblenden"/„Alle Reisen anzeigen"-Zeile blendet mit einem Tap alle
+  Routen aus bzw. wieder ein; einzelne Routen bleiben wie bisher per Tap
+  ab-/anwählbar, die letzte verbleibende Route lässt sich weiterhin nicht per
+  Einzel-Tap auf null reduzieren.
+  ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+- **Karte: kurvige Routen statt gerader Linien**: Routen folgen jetzt einer
+  Catmull-Rom-Spline durch alle Hafen-Koordinaten statt gerader
+  `MapPolyline`-Segmente, mit einem farbigen Schatten-Underlay für mehr Tiefe.
+  ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+
+### Geaendert
+
+- **Karte: solides Navy-Chrome statt Glasmorphismus**: Recenter- und
+  Burger-Button sind jetzt solide runde Buttons (`Color.navyDark`, weißes
+  Icon) statt `.ultraThinMaterial`; der Recenter-Button wandert dafür von oben
+  rechts nach oben links. Der Pin-Halo auf der Karte nutzt jetzt
+  `Color.journalSurface` statt hartkodiertem `.white`.
+  ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
+
+### Entfernt
+
+- **Bottom-Info-Card und „Routen"-Capsule-Button auf der Karte**: vollständig
+  ersetzt durch das neue Bottom-Sheet bzw. das Burger-Menü.
+  ([Feature-Doku](docs/features/karten-redesign-v2-journal-atlas.md))
 
 ---
 

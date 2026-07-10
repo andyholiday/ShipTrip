@@ -244,8 +244,8 @@ final class HauptansichtScreenshotTests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Alle Reisen"].waitForExistence(timeout: 10),
                       "Kartenansicht zeigt nicht standardmäßig alle Reisen")
-        XCTAssertTrue(app.staticTexts["Mehrere Routen gleichzeitig"].waitForExistence(timeout: 5),
-                      "Mehrfachrouten-Hinweis fehlt in der Auswahlkarte")
+        XCTAssertTrue(app.buttons["Routenauswahl"].waitForExistence(timeout: 5),
+                      "Burger-Menü (Routenauswahl) fehlt in der Chrome")
         RunLoop.current.run(until: Date().addingTimeInterval(1.0))
 
         app.activate()

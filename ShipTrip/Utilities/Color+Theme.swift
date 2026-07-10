@@ -56,6 +56,32 @@ extension Color {
     static func routeColor(at index: Int) -> Color {
         routeColors[index % routeColors.count]
     }
+
+    // MARK: - Journal Atlas (Karten-Redesign v2)
+
+    /// Journal Atlas — warmes Papier-Surface für das Routen-Sheet (Karten-Redesign v2).
+    static let journalSurfaceLight = Color(red: 0.984, green: 0.969, blue: 0.941) // #FBF7F0
+    static let journalSurfaceDark  = Color(red: 0.082, green: 0.129, blue: 0.180) // #15212E
+
+    /// Adaptiv je Farbschema — ersetzt das zuvor hartkodierte `.white` hinter `PortPinView`
+    /// und dient als Ziel-Ton für das Routen-Sheet (Fallback für `.presentationBackground`, siehe
+    /// `.planning/karten-redesign-v2-spec.md` Abschnitt 5).
+    static var journalSurface: Color {
+        Color(uiColor: UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(Color.journalSurfaceDark)
+                : UIColor(Color.journalSurfaceLight)
+        })
+    }
+
+    /// Journal Atlas — gepunktete Timeline-Linie zwischen den Stop-Rows im Routen-Sheet.
+    static var journalTimeline: Color {
+        Color(uiColor: UIColor { trait in
+            trait.userInterfaceStyle == .dark
+                ? UIColor(Color.white.opacity(0.14))
+                : UIColor(Color.navyDark.opacity(0.18))
+        })
+    }
 }
 
 // MARK: - Design Radius Tokens

@@ -2,7 +2,8 @@
 
 **Status:** B4.3a (Konsistenz-Fix) + B4.3b-1 (Zwei-Stufen-Zoom, Badges, Callout)
 abgeschlossen — B4.3b-2 (Bottom-Sheet-Stopliste) und B4.3b-3
-(Bezier-Kurvenrouten) offen
+(Bezier-Kurvenrouten) **geliefert in v2**, siehe
+[`karten-redesign-v2-journal-atlas.md`](karten-redesign-v2-journal-atlas.md)
 **Testsuite:** `MapMarkerPlannerTests.swift` (14 Unit-Tests) + `MapZoomAndSelectionTests.swift`
 (12 Unit-Tests), Teil der 202-Unit-Tests-Gesamtsuite
 **Quelle:** [Umsetzungsplan Audit 2026-07](../umsetzungsplan-audit-2026-07.md#welle-b4--karten-überarbeitung-feedback-route-stops-nicht-erkennbar-m-hafennamen-fehlen-teils-m-start-endhafen-nicht-unterscheidbar-m--quelle-testflight-feedback-2026-07-03-design-welle-benchmark-vor-umsetzung),
@@ -153,24 +154,18 @@ sowie maßgeblich der größere der beiden Span-Werte; Tap-Toggle-Selektion
 Selektions-Verwerfen/-Erhalten je nach Zielzoomstufe (Welt- vs. Reise-Zoom, mit
 und ohne bestehende Auswahl).
 
-### Noch offen (B4.3b-2, B4.3b-3)
+### B4.3b-2, B4.3b-3 — geliefert in v2
 
-Aus `selectedStopID` folgt noch keine sichtbare Bottom-Sheet-Stopliste — das
-Selektionsfundament existiert, die eigentliche Sheet-UI und die bidirektionale
-Karte↔Liste-Synchronisation (laut Research-Brief der größte Aufwandstreiber der
-mutigen Richtung) sind B4.3b-2. Bezier-Kurvenrouten um Landmassen (statt
-gerader `MapPolyline`-Segmente) sind B4.3b-3.
+Bottom-Sheet-Stopliste (B4.3b-2) und Bezier-/Spline-Kurvenrouten (B4.3b-3) waren
+hier noch offen — beide sind jetzt Teil der Welle „Karten-Redesign v2 — Journal
+Atlas" geliefert: siehe
+[`karten-redesign-v2-journal-atlas.md`](karten-redesign-v2-journal-atlas.md) für
+Details, berührte Dateien und Akzeptanzkriterien-Status.
 
 ## Nächster Schritt
 
-**B4.3b-2 + B4.3b-3** (`docs/umsetzungsplan-audit-2026-07.md`, Welle B4):
-Bottom-Sheet-Stopliste bidirektional mit der Karte synchronisiert (laut
-Research-Brief der größte Aufwandstreiber — reine SwiftUI-State-Synchronisation
-auf Basis von `selectedStopID`, kein MapKit-Feature), Bezier-Kurvenrouten um
-Landmassen statt gerader `MapPolyline`-Segmente. Rein natives MapKit/SwiftUI,
-kein Fremd-SDK (Research-Brief-Fazit: kein Baustein der mutigen Richtung
-profitiert von einem Fremd-SDK gegenüber nativen Mitteln). Startet im selben
-Datei-Scope (`MapView.swift`) nach B4.3b-1.
+**B4.3b-2 + B4.3b-3 — geliefert**, siehe
+[`karten-redesign-v2-journal-atlas.md`](karten-redesign-v2-journal-atlas.md).
 
 ## Related Decisions
 
