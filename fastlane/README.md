@@ -15,6 +15,14 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## iOS
 
+### ios validate
+
+```sh
+[bundle exec] fastlane ios validate
+```
+
+Read-only: prüft API-Key + findet die App
+
 ### ios fetch_profile
 
 ```sh
