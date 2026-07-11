@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ShipTrip Audit · 10. Juli 2026</title>
+  <style>
+    :root{--bg:#07101d;--panel:#101d2d;--panel2:#15263a;--text:#f5f7fb;--muted:#aebbd0;--line:#2a3d55;--blue:#48a9ff;--green:#51d493;--yellow:#ffd166;--orange:#ff9f43;--red:#ff6274;--shadow:0 18px 50px rgba(0,0,0,.28)}
+    *{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:radial-gradient(circle at 85% 0,#12365a 0,transparent 35%),var(--bg);color:var(--text);font:16px/1.6 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:var(--blue)} code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d6e8ff;background:#081322;padding:.12rem .35rem;border-radius:5px;overflow-wrap:anywhere}
+    nav{position:sticky;top:0;z-index:5;display:flex;gap:18px;overflow:auto;padding:12px max(18px,calc((100vw - 1180px)/2));background:rgba(7,16,29,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);white-space:nowrap} nav a{text-decoration:none;color:var(--muted);font-size:14px} nav a:hover{color:var(--text)}
+    main{width:min(1180px,calc(100% - 36px));margin:auto;padding:52px 0 90px} section{margin:58px 0} h1{font-size:clamp(42px,7vw,82px);line-height:1.02;letter-spacing:-.055em;margin:12px 0 22px} h2{font-size:clamp(28px,4vw,44px);letter-spacing:-.035em;margin:0 0 18px} h3{font-size:20px;margin:0 0 8px}.eyebrow{color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}.lede{max-width:820px;color:#d8e2f0;font-size:clamp(19px,2.2vw,26px);line-height:1.45}.muted{color:var(--muted)}
+    .verdict{display:inline-flex;align-items:center;gap:9px;margin:12px 0 4px;padding:9px 14px;border:1px solid rgba(255,159,67,.5);border-radius:999px;color:#ffd3a6;background:rgba(255,159,67,.1);font-weight:750}.dot{width:9px;height:9px;border-radius:50%;background:var(--orange)}
+    .grid{display:grid;gap:16px}.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}
+    .card{background:linear-gradient(145deg,rgba(21,38,58,.98),rgba(12,25,41,.98));border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}.card p:last-child{margin-bottom:0}.metric strong{display:block;font-size:32px;letter-spacing:-.04em}.metric span{color:var(--muted);font-size:14px}
+    .score{display:grid;grid-template-columns:150px 1fr 38px;gap:12px;align-items:center;margin:12px 0}.bar{height:8px;background:#07111f;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:inherit}
+    .callout{border-left:4px solid var(--orange);padding:14px 18px;background:rgba(255,159,67,.08);border-radius:0 12px 12px 0}.good{border-left-color:var(--green);background:rgba(81,212,147,.08)}
+    details{background:rgba(16,29,45,.95);border:1px solid var(--line);border-radius:14px;margin:10px 0;overflow:hidden} summary{cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:16px 18px;font-weight:720;list-style:none} summary::-webkit-details-marker{display:none} details[open] summary{border-bottom:1px solid var(--line)}.body{padding:16px 18px}.body dl{margin:0}.body dt{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-top:12px}.body dd{margin:2px 0}.badge{flex:none;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px}.high{color:#ffd1d7;background:rgba(255,98,116,.18)}.medium{color:#ffe0b3;background:rgba(255,159,67,.17)}.low{color:#c5f6dd;background:rgba(81,212,147,.15)}
+    table{width:100%;border-collapse:collapse;background:rgba(16,29,45,.7);border:1px solid var(--line);border-radius:14px;overflow:hidden} th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}tr:last-child td{border:0}
+    ol.roadmap{counter-reset:phase;list-style:none;padding:0}.roadmap li{counter-increment:phase;position:relative;padding:0 0 28px 62px}.roadmap li:before{content:counter(phase);position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#06101e;font-weight:850}.roadmap li:not(:last-child):after{content:"";position:absolute;left:18px;top:42px;bottom:4px;width:2px;background:var(--line)}
+    .two-up{display:grid;grid-template-columns:1.08fr .92fr;gap:22px;align-items:start}.shot{width:100%;max-height:620px;object-fit:cover;object-position:top;border-radius:18px;border:1px solid var(--line);box-shadow:var(--shadow)}
+    footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+    @media(max-width:850px){.cols-4,.cols-3,.cols-2,.two-up{grid-template-columns:1fr}.score{grid-template-columns:125px 1fr 32px}main{padding-top:34px}}
+    @media print{nav{display:none}body{background:#fff;color:#111}.card,details,table{box-shadow:none;background:#fff;border-color:#bbb}.muted,.body dt{color:#555}code{color:#111;background:#eee}main{width:100%;padding:0}.shot{max-height:500px}}
+  </style>
+</head>
+<body>
+<nav><a href="#summary">Summary</a><a href="#map">App-Überblick</a><a href="#good">Stärken</a><a href="#findings">Befunde</a><a href="#product">Produkt</a><a href="#plan">Maßnahmen</a><a href="#verification">Verifikation</a><a href="#appendix">Anhang</a></nav>
+<main>
+  <header id="summary">
+    <div class="eyebrow">ShipTrip · Voll-Audit · 10. Juli 2026</div>
+    <h1>Starkes Fundament.<br>Vor dem App Store fehlen harte Kanten.</h1>
+    <div class="verdict"><span class="dot"></span>GO-WITH-CHANGES</div>
+    <p class="lede">ShipTrip ist heute eine visuell hochwertige, lokale Kreuzfahrt-Archiv-App mit bemerkenswert breitem Testfundament. Die größten Risiken liegen nicht mehr in der Basisarchitektur, sondern in fünf realen Bedien-Dead-Ends, einem Datenverfälschungspfad beim Import, unvollständiger englischer Lokalisierung und einer fehlenden Apple-Privacy-Manifest-Deklaration.</p>
+    <div class="grid cols-4" style="margin-top:28px">
+      <div class="card metric"><strong>1.7.0 (18)</strong><span>aktueller Checkout / TestFlight laut Repo</span></div>
+      <div class="card metric"><strong>57</strong><span>produktive Swift-Dateien</span></div>
+      <div class="card metric"><strong>260 + 26</strong><span>Unit-Tests + ausgeführte UI-Fälle grün</span></div>
+      <div class="card metric"><strong>0 Critical</strong><span>8 High · 10 Medium · 5 Low</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Entscheidung in einem Satz</h2>
+    <div class="callout"><strong>Interne TestFlight-Nutzung: ja.</strong> Für eine breite englische Freigabe oder App-Store-Einreichung zuerst die High-Befunde H1–H7 schließen; für das Produktversprechen „Premium-Reisetagebuch“ zusätzlich die bewusst offenen Journal-/Onboarding-Bausteine priorisieren.</div>
+  </section>
+
+  <section id="map">
+    <h2>Was die App heute ist</h2>
+    <div class="two-up">
+      <div>
+        <p class="lede">Eine local-first iOS-App für Kreuzfahrtplanung, Archivierung und Erinnerung – ohne Konto, ohne aktives CloudKit und mit optionaler BYO-Gemini-Erfassung.</p>
+        <table>
+          <tr><th>Bereich</th><th>Aktueller Nutzerfluss</th></tr>
+          <tr><td>Reisen</td><td>CRUD für Reise, Route, Seetage, Hafen-Momente, Fotos, Ausgaben, Bewertung und Notizen</td></tr>
+          <tr><td>Karte</td><td>Alle Routen, kurvige Linien, Zoom-Cluster, Rollenmarker, Routenauswahl und Stop-Sheet</td></tr>
+          <tr><td>Wunschreisen</td><td>Gespeicherte Angebote mit Preis, Rabatt, Reederei, Zeitraum, URL und Notiz</td></tr>
+          <tr><td>Bilanz</td><td>Reisetage, Länder, Häfen, Jahre, Ausgaben und Top-Reedereien</td></tr>
+          <tr><td>Mehr</td><td>Darstellung, Gemini-Key, Erinnerungen, ZIP-Import/Export, eigene Reedereien/Schiffe</td></tr>
+          <tr><td>Persistenz</td><td>Acht SwiftData-Modelle, app-stabile UUIDs; CloudKit bewusst deaktiviert</td></tr>
+        </table>
+      </div>
+      <img class="shot" src="screenshots/meine-reisen-light.png" alt="ShipTrip Hauptansicht Meine Reisen">
+    </div>
+  </section>
+
+  <section>
+    <h2>Scorecard</h2>
+    <div class="card">
+      <div class="score"><span>UI / visuelles System</span><div class="bar"><i style="width:84%"></i></div><b>4.2</b></div>
+      <div class="score"><span>Architektur</span><div class="bar"><i style="width:78%"></i></div><b>3.9</b></div>
+      <div class="score"><span>Datenintegrität</span><div class="bar"><i style="width:66%"></i></div><b>3.3</b></div>
+      <div class="score"><span>Tests</span><div class="bar"><i style="width:82%"></i></div><b>4.1</b></div>
+      <div class="score"><span>Lokalisierung / A11y</span><div class="bar"><i style="width:52%"></i></div><b>2.6</b></div>
+      <div class="score"><span>Release / Doku</span><div class="bar"><i style="width:50%"></i></div><b>2.5</b></div>
+      <div class="score"><span>Produktversprechen</span><div class="bar"><i style="width:60%"></i></div><b>3.0</b></div>
+    </div>
+    <p class="muted">Skala 1–5; qualitative Audit-Einschätzung, kein telemetry-basierter KPI.</p>
+  </section>
+
+  <section id="good">
+    <h2>Was gut funktioniert</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>Datenbasis gereift</h3><p>Stabile UUIDs, Save/Rollback im zentralen Reise- und Importpfad, Kaskaden und echte 5→8-Modell-Migrationstests schließen mehrere alte Datenverlustbefunde.</p></div>
+      <div class="card"><h3>ZIP deutlich gehärtet</h3><p>Traversal- und Größenlimits, getrennte Reader/Writer, sichere Pfadauflösung sowie Roundtrip-Tests sind ein großer Fortschritt gegenüber dem Audit vom 3. Juli.</p></div>
+      <div class="card"><h3>Solides Swift-6-Fundament</h3><p>Debug- und Release-Simulator-Build sind grün; Services haben klarere Actor-/Sendable-Grenzen, Secrets liegen gerätegebunden in der Keychain.</p></div>
+      <div class="card"><h3>Karte ist ein Produkt-Highlight</h3><p>Markerrollen, Kurven, Cluster, Route-Menü und synchronisiertes Stop-Sheet bilden einen erkennbaren, hochwertigen Kern statt einer generischen Map.</p></div>
+      <div class="card"><h3>Testbreite überdurchschnittlich</h3><p>260 Unit-Tests in 51 Suites plus funktionale UI-Flows decken Importmanipulation, Migration, Kartenplaner, Reconciliation, Gemini und Custom-Kataloge ab.</p></div>
+      <div class="card"><h3>Fehlerzustände verbessert</h3><p>Persistenz-Fallback, Import-/Export-Feedback, Karten-Leerzustände und Notification-Permission-Flow sind sichtbar statt still oder fatal.</p></div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <h2>Priorisierte Befunde</h2>
+    <p class="muted">High = vor breiter Freigabe schließen. Medium = nächster Stabilitäts-/Release-Block. Low = planbare Politur. Alle Aussagen beziehen sich auf Commit <code>687657c</code> plus den beim Audit sichtbaren, bereits vorhandenen Working-Tree-Zustand.</p>
+
+    <h3 style="margin-top:28px">High</h3>
+    <details open><summary><span class="badge high">H1</span>Filter ohne Treffer erzeugt einen UX-Dead-End</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Views/Cruises/CruiseListView.swift:80–90, 109–113, 252–309</code></dd><dt>Evidenz</dt><dd>Bei null Treffern wird nur der Leerzustand gerendert; der Filter-Button lebt ausschließlich in <code>cruiseList</code>, die Navigationbar ist verborgen.</dd><dt>Auswirkung</dt><dd>Die Filterkombination kann auf diesem Screen nicht mehr zurückgesetzt werden.</dd><dt>Empfehlung</dt><dd>Header/Filter außerhalb des Ergebnis-Branches oder sichtbarer „Filter zurücksetzen“-CTA.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H2</span>Manuelle Hafen-Eingabe verschwindet nach dem ersten Zeichen</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Views/Cruises/PortFormView.swift:101–135, 192–207</code></dd><dt>Evidenz</dt><dd>Der manuelle Block existiert nur solange <code>name.isEmpty</code>. Das gebundene Feld macht die Bedingung beim ersten Zeichen falsch; Bestandswerte starten bereits im nicht editierbaren Zusammenfassungszustand.</dd><dt>Auswirkung</dt><dd>Name, Land und Koordinaten sind manuell kaum zuverlässig erfass- oder korrigierbar.</dd><dt>Empfehlung</dt><dd>Expliziten Such-/Auswahlmodus und dauerhaft sichtbaren manuellen Editiermodus trennen.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H3</span>Koordinatenloser echter Hafen wird beim Import zum Seetag und verliert Identität</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Services/ExportImportService.swift:355–380</code> und <code>:180–190</code></dd><dt>Evidenz</dt><dd><code>exportPort.lat == nil</code> setzt <code>isSeaDay = true</code> – unabhängig vom Namen. Beim nächsten Export wird daraus Name „Seetag“, Land <code>nil</code> und keine Koordinate.</dd><dt>Auswirkung</dt><dd>Web-/Legacy-Importe mit realen Häfen ohne Geokoordinaten werden semantisch verfälscht; ein Roundtrip macht den Verlust dauerhaft.</dd><dt>Empfehlung</dt><dd>Seetag nur aus explizitem Flag bzw. klaren Namen ableiten; „Koordinaten unbekannt“ als eigener Hafenfall testen.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H4</span>Der hervorgehobene Wunschreise-Eintrag kann nicht gelöscht werden</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Views/Deals/DealsView.swift:71–90, 94–164</code></dd><dt>Evidenz</dt><dd><code>filteredDeals.first</code> wird als Hero außerhalb des löschbaren <code>ForEach(filteredDeals.dropFirst())</code> dargestellt; auch das Formular bietet kein Löschen.</dd><dt>Auswirkung</dt><dd>Der neueste Eintrag – und bei Suche jeweils der erste Treffer – ist unlöschbar.</dd><dt>Empfehlung</dt><dd>Hero/Formular mit einheitlichem bestätigtem Löschpfad versehen.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H5</span>Ganze Reisen lassen sich in der Hauptansicht ohne Bestätigung löschen</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Views/Cruises/CruiseListView.swift:141–147, 220–225, 317–322</code></dd><dt>Evidenz</dt><dd>Beide Context-Menüs löschen sofort; nur <code>CruiseDetailView.swift:98–105</code> fragt nach. Zusätzlich wird die Notification fire-and-forget vor einem bestätigten <code>save</code> entfernt.</dd><dt>Auswirkung</dt><dd>Route, Ausgaben und Fotos können durch eine inkonsistente destructive Action irreversibel verschwinden; bei Store-Fehler kann die Reise bestehen bleiben, aber ihre Erinnerung fehlen.</dd><dt>Empfehlung</dt><dd>Zentrale Confirm-/Undo-Logik und dasselbe Save-before-side-effect-Muster wie bei „Alle Daten löschen“.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H6</span>Englische Oberfläche fällt in neuen Kernbereichen auf Deutsch zurück</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Localizable.xcstrings</code>; Beispiele in <code>CruiseListView.swift:72–74</code>, <code>MapView.swift:103–105</code>, <code>StatsView.swift:50–63</code></dd><dt>Evidenz</dt><dd>Der Katalog enthält 185 Schlüssel, doch ein statischer Abgleich findet 68 explizite <code>String(localized:)</code>-Schlüssel ohne Katalogeintrag, darunter Reiselogbuch, Karten-Leerzustände und neue Custom-Katalog-Texte. Dynamische <code>String</code>-Titel umgehen zusätzlich die Lokalisierung.</dd><dt>Auswirkung</dt><dd>Die angekündigte DE/EN-App ist in zentralen Flows gemischtsprachig.</dd><dt>Empfehlung</dt><dd>Katalog-Extraktion als Build-Gate, fehlende Schlüssel ergänzen, dynamische Titel auf <code>LocalizedStringKey</code>/lokalisierte Werte umstellen und einen englischen UI-Smoke ergänzen.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H7</span>Apple-Privacy-Manifest fehlt trotz Required-Reason-API</summary><div class="body"><dl><dt>Ort</dt><dd>Kein <code>PrivacyInfo.xcprivacy</code> im Source- oder gebauten Release-Bundle; <code>NotificationService.swift:55–56, 150–152</code>, <code>MainTabView.swift:13</code>, <code>SettingsView.swift:13, 317–319</code> verwenden UserDefaults/AppStorage.</dd><dt>Evidenz</dt><dd>Apple führt <code>UserDefaults</code> als Required-Reason-API und verlangt die Beschreibung im App-Manifest. Für nur app-eigene Werte ist <code>CA92.1</code> der naheliegende genehmigte Grund.</dd><dt>Auswirkung</dt><dd>Release-/Submission-Risiko trotz lokal grünem Build.</dd><dt>Empfehlung</dt><dd>Manifest ins App-Target aufnehmen, <code>NSPrivacyAccessedAPICategoryUserDefaults</code> mit zutreffendem Grund deklarieren und Archive-Privacy-Report prüfen. Quelle: <a href="https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api">Apple Required Reason API</a>.</dd></dl></div></details>
+    <details open><summary><span class="badge high">H8</span>Beschädigte ZIP-Backups können als teilweise erfolgreicher Restore erscheinen</summary><div class="body"><dl><dt>Ort</dt><dd><code>ShipTrip/Services/ZipArchiveReader.swift:101–123, 158–181</code>; <code>ExportImportService.swift:388–423, 453–461</code>; <code>ExportImportHardeningTests.swift:49–54</code></dd><dt>Evidenz</dt><dd>CRC, Local-Header-Signatur, Local-/Central-Name-Konsistenz und vollständige Entry-Anzahl werden nicht geprüft; manche Strukturfehler führen nur zu <code>break</code>/<code>continue</code>. Der Test-Builder setzt CRC ausdrücklich auf 0, weil der Parser sie ignoriert. Fehlende Medien werden still übersprungen.</dd><dt>Auswirkung</dt><dd>Ein korruptes Backup kann „importiert“ melden, obwohl Bilder oder Einträge fehlen – genau im Restore-Moment mit höchstem Datenrisiko.</dd><dt>Empfehlung</dt><dd>CRC und Struktur vollständig prüfen, bei Abweichung atomar abbrechen und fehlende/ungültige Assets im <code>ImportResult</code> sichtbar zählen.</dd></dl></div></details>
+
+    <h3 style="margin-top:34px">Medium</h3>
+    <details><summary><span class="badge medium">M1</span>„Datenexport“ ist weder vollständig noch vollständig ID-stabil</summary><div class="body"><p><code>SettingsView.swift:394–400, 518–524</code> übergibt nur <code>cruises</code>. Wunschreisen, eigene Reedereien/Schiffe, Ausblendungen und Einstellungen fehlen. Fotos besitzen im Export keine stabile ID; Zeitstempel werden nur teilweise geschrieben und beim Import nicht vollständig wiederhergestellt. UI und Privacy-/Listing-Texte müssen entweder den Scope ehrlich „Reisen exportieren“ nennen oder ein versioniertes Full-Backup aller persistenten Entitäten anbieten.</p></div></details>
+    <details><summary><span class="badge medium">M3</span>Import/Export können den Main Actor und Gerätespeicher überlasten</summary><div class="body"><p><code>ExportImportService.swift:64, 119–164</code> materialisiert Fotoeinträge und komplettes Archiv; <code>ZipArchiveReader.swift:66–85</code> akzeptiert bis 550 MB, liest das Archiv und anschließend erneut. Diese Arbeit läuft im Main-Actor-Pfad. Empfehlung: Streaming/Chunking, realistische Limits und nichtisolierte I/O-Pipeline mit Fortschritt und Cancellation.</p></div></details>
+    <details><summary><span class="badge medium">M4</span>Notification-Einstellungen ändern bereits geplante Erinnerungen nicht</summary><div class="body"><p><code>SettingsView.swift:317–365</code> ändert nur AppStorage. Neuplanung/Entfernung erfolgt erst beim erneuten Speichern einer Reise (<code>CruiseFormView.swift:848–869</code>). Außerdem bietet der Settings-Screen bei <code>.denied</code> erneut einen wirkungslosen Berechtigungsbutton statt „Systemeinstellungen öffnen“.</p></div></details>
+    <details><summary><span class="badge medium">M5</span>Zwei Hafen-Editoren haben widersprüchliche Datenvalidierung</summary><div class="body"><p><code>PortFormView.swift:128–140, 233–235</code> wandelt deutsche Dezimalkommas still in 0/0 um; <code>CruiseFormView.swift:1061–1065, 1131–1165</code> erlaubt im zweiten Editor Abfahrt vor Ankunft. Eine gemeinsame Form-/Parser-Logik würde gleichzeitig Validität und Wartbarkeit verbessern.</p></div></details>
+    <details><summary><span class="badge medium">M6</span>Testlauf ist breit, aber nicht hermetisch</summary><div class="body"><p>Der vollständige serielle Lauf ließ 26 UI-Fälle grün durchlaufen, scheiterte danach einmal beim Unit-Test-Host-Bootstrap. Der isolierte Unit-Lauf bestand 260/260. Zusätzlich schrieb <code>HauptansichtScreenshotTests.swift:5–20, 283–287</code> in einen absoluten lokalen Repo-Pfad und überschrieb beim Audit 11 versionierte PNGs; sie mussten zurückgestellt werden. Screenshot-Capture, funktionale UI-Tests und echte visuelle Regressionstests trennen.</p></div></details>
+    <details><summary><span class="badge medium">M7</span>Keine reproduzierbare CI-/Release-Kette</summary><div class="body"><p>Kein CI-Workflow und kein Testplan; <code>fastlane/Fastfile:37–50</code> erwartet eine fertige IPA und baut/testet nicht. Empfohlen: serielles Unit/UI/Release-Gate, gepinnte Fastlane-Version und dokumentierter Archive→Export→Upload-Pfad.</p></div></details>
+    <details><summary><span class="badge medium">M8</span>Roadmap, Modell-Doku und Store-Metadaten sind erneut auseinander gelaufen</summary><div class="body"><p><code>docs/umsetzungsplan-audit-2026-07.md:139–185</code> führt 1.7.0 und Karten-Bausteine als offen, die <code>CHANGELOG.md:20–94</code> bereits veröffentlicht. <code>docs/MODELS.md</code> zeigt fünf statt acht Modelle. README/Listing/Privacy nennen alte Versionen, JSON statt ZIP, veraltete „What’s New“-Texte und widersprüchliche App-Namen.</p></div></details>
+    <details><summary><span class="badge medium">M9</span>Temporärer In-Memory-Store bleibt voll bearbeitbar</summary><div class="body"><p><code>ShipTripApp.swift:45–59, 84–102</code> warnt korrekt, zeigt danach aber die gesamte App auf einem flüchtigen Store. Nach einem einzigen OK können Nutzer neue Daten anlegen, die sicher verloren gehen. Empfehlung: deutlicher dauerhafter Banner plus Schreibsperre/Retry/Supportpfad.</p></div></details>
+    <details><summary><span class="badge medium">M10</span>Wunschreisen versprechen mehr als die Logik liefert</summary><div class="body"><p><code>DealsView.swift:14, 73–75, 109–119</code> nennt den neuesten rabattierten Eintrag „Beste Option“, ohne Angebote zu vergleichen. Eine gespeicherte URL kann im Anzeige-Flow nicht geöffnet werden (<code>:354–358, 419</code>). Neutral benennen oder echte Vergleichs-/Öffnen-Logik ergänzen.</p></div></details>
+    <details><summary><span class="badge medium">M11</span>Gemini-Vertrauensfluss ist technisch sicherer als kommunikativ</summary><div class="body"><p><code>GeminiService.swift:54–95, 133–155</code> sendet den gesamten eingefügten Buchungstext an Google; die Importansicht <code>CruiseFormView.swift:1394–1450</code> erklärt das im Moment der Übermittlung nicht. Beim Key-Wechsel löscht <code>KeychainService.swift:22–39</code> außerdem zuerst den alten Key; ein Tippfehler oder transienter Validierungsfehler zerstört damit eine funktionierende Konfiguration. Drittanbieterhinweis direkt am CTA und Kandidaten-Key vor atomarem Ersetzen validieren.</p></div></details>
+
+    <h3 style="margin-top:34px">Low / Politur</h3>
+    <details><summary><span class="badge low">L1</span>Notification-Kernpfad ist nicht end-to-end bewiesen</summary><div class="body"><p><code>ShipTripTests/ShipTripTests.swift:582–626</code> dokumentiert, dass Scheduling/Auslösen nicht wirklich beobachtet wird. Service injizierbar machen; echte Zustellung als Device-Gate.</p></div></details>
+    <details><summary><span class="badge low">L2</span>Screenshot-Tests vergleichen keine visuellen Baselines</summary><div class="body"><p>Neun UI-Methoden erzeugen PNGs, prüfen aber keine Pixel-/Snapshot-Baseline. Der Name „Screenshot-Test“ darf nicht als automatischer visueller Regressionsbeweis gelesen werden.</p></div></details>
+    <details><summary><span class="badge low">L3</span>Form-/View-Dateien tragen unnötig viel Änderungsrisiko</summary><div class="body"><p><code>CruiseFormView.swift</code> hat 1.488 Zeilen und dupliziert Teile des 487-zeiligen <code>PortFormView</code>; <code>SettingsView.swift</code> hat 660 Zeilen. Nur entlang echter gemeinsamer Validierungslogik teilen, kein abstraktes Großrefactoring.</p></div></details>
+    <details><summary><span class="badge low">L4</span>Kleine UX-Lücken</summary><div class="body"><p>Foto-Ladefehler werden mit <code>try?</code> unsichtbar; Bewertung kann nicht auf „unbewertet“ zurückgesetzt werden; Port-Zero-States sind auf langen Routen sehr groß und kontrastarm.</p></div></details>
+    <details><summary><span class="badge low">L5</span>CloudKit-Folgerisiko: einmalige Dedup-Flags</summary><div class="body"><p>Die aktuelle lokale App ist nicht betroffen. Vor CloudKit-Aktivierung muss geprüft werden, ob einmalige <code>UserDefaults</code>-Flags in <code>ShippingLineCatalogDedup</code> Duplikate aus später eintreffendem Sync noch erkennen können.</p></div></details>
+  </section>
+
+  <section id="product">
+    <h2>Produkt-Realität vs. Produktrichtung</h2>
+    <div class="grid cols-2">
+      <div class="card"><h3>Heute gut belegt</h3><p>Kreuzfahrt-Archiv, Routenvisualisierung, Hafen-Momente, Ausgaben, lokale Erinnerungen, Wunschliste, Statistiken und optionaler KI-Import.</p></div>
+      <div class="card"><h3>Noch nicht eingelöst</h3><p>Der im Projekt gesetzte Kurs „Premium Travel Journal“ verlangt weiterhin Onboarding, Release-Demo, echte tägliche Journal-Einträge/Foto-Captions und einen teilbaren Rückblick. Diese Punkte stehen selbst im Plan B1–B3 offen.</p></div>
+    </div>
+    <div class="callout good" style="margin-top:18px"><strong>Empfehlung:</strong> Nach der Stabilitätswelle nicht noch mehr Kartenpolitur priorisieren. Der nächste sichtbare Produktblock sollte Aktivierung + Journal-Kern sein; sonst bleibt ShipTrip ein sehr schönes Archiv, aber noch kein eigenständiges Premium-Reisetagebuch.</div>
+  </section>
+
+  <section id="plan">
+    <h2>Empfohlene Reihenfolge</h2>
+    <ol class="roadmap">
+      <li><h3>P0 · Release-Sicherheit (1–2 Tage)</h3><p>PrivacyInfo.xcprivacy, Import-Seetag-Klassifikation, unbestätigte Reise-Löschung, Filter-Dead-End, Hafen-Editor und unlöschbarer Hero-Deal. Jeweils Regressionstest.</p></li>
+      <li><h3>P1 · Sprach- und Datenvertrauen (2–4 Tage)</h3><p>String Catalog vollständig, englischer UI-Smoke, Backup-Scope entscheiden, ZIP-CRC/Vollständigkeitsreport, Notification-Settings auf bestehende Requests anwenden.</p></li>
+      <li><h3>P2 · Release-Prozess (1–3 Tage)</h3><p>CI/Testplan, Screenshot-Capture aus dem Test-Gate lösen, Metadaten-/Privacy-/MODELS-/Roadmap-Quellen synchronisieren und kanonische Store-Datei festlegen.</p></li>
+      <li><h3>P3 · Produktkurs (1 fokussierte Welle)</h3><p>Onboarding + releasefähige Beispielreise, danach JournalEntry/Foto-Captions und ein teilbarer Offline-Rückblick. CloudKit erst nach dem bestehenden Zwei-Schritt-Gate.</p></li>
+    </ol>
+  </section>
+
+  <section id="verification">
+    <h2>Verifikation</h2>
+    <table>
+      <tr><th>Check</th><th>Ergebnis</th><th>Grenze</th></tr>
+      <tr><td>Debug Simulator Build</td><td>Bestanden</td><td>iOS-26.5-Simulator, Target iOS 18.5</td></tr>
+      <tr><td>Release Simulator Build</td><td>Bestanden</td><td>Kein signiertes Device-Archive / kein App-Store-Upload</td></tr>
+      <tr><td>Unit-Tests isoliert</td><td>260/260 in 51 Suites bestanden</td><td>Simulator, keine Gerätehardware</td></tr>
+      <tr><td>UI-Tests im Gesamtlauf</td><td>26 ausgeführte Fälle, 0 Fehler</td><td>Enthält 8 Launch-Matrix-Ausführungen und 9 Capture-Fälle ohne visuelle Baseline</td></tr>
+      <tr><td>Kombinierter <code>xcodebuild test</code></td><td>Fehlgeschlagen</td><td>Nach grünem UI-Target: Unit-Host „early unexpected exit“; isolierter Unit-Rerun grün</td></tr>
+      <tr><td>Statische Lokalisierungsprüfung</td><td>68 fehlende explizite Schlüssel</td><td>Kein vollständiger manueller EN-Screenwalk</td></tr>
+      <tr><td>Privacy Manifest</td><td>Fehlt in Source und Release-Bundle</td><td>Kein signiertes Archive-/ASC-Privacy-Report erzeugt</td></tr>
+    </table>
+    <p class="muted">Nicht durchgeführt: echtes iOS-18.5-Gerät, VoiceOver-/Dynamic-Type-Inspector, Instruments/Memgraph, große reale Fotoarchive, Notification-Zustellung, CloudKit, App Store Connect Live-Metadaten.</p>
+  </section>
+
+  <section id="appendix">
+    <h2>Technischer Anhang</h2>
+    <div class="grid cols-2">
+      <div class="card"><h3>Projektkarte</h3><p>Swift 6 · SwiftUI · SwiftData · MapKit · Charts · PhotosUI · UserNotifications · Security/Keychain · Foundation/Compression. Keine Drittanbieter-Runtime-Abhängigkeiten im App-Code entdeckt.</p><p>13.659 produktive Swift-Zeilen · 6.867 Test-Zeilen · 8 persistente Modelle.</p></div>
+      <div class="card"><h3>Checkout</h3><p><code>main</code> · <code>687657c</code>. Vor Audit vorhanden und nicht verändert: <code>docs/umsetzungsplan-audit-2026-07.md</code> sowie untracked <code>.planning/</code>. Neu durch dieses Audit: nur diese HTML-Datei. Testbedingte Screenshot-Überschreibungen wurden vollständig zurückgestellt.</p></div>
+      <div class="card"><h3>Geschlossene Altbefunde</h3><p>Swift-5-Drift, fataler Store-Start, Reise-Edit löscht Portdaten, fehlende Hafenbilder im ZIP, Zip-Slip/grundlegende Bombenlimits, Key im URL-Query, Keychain-Accessibility, hartes EUR im Hauptpfad, Full-Res-Detailgrid und fehlender Karten-Leerzustand.</p></div>
+      <div class="card"><h3>Restunsicherheit</h3><p>Der Bericht unterscheidet Codebeweis, Testbeweis und Produkturteil. Externe TestFlight-/App-Store-Zustände wurden nicht live verifiziert; Releaseangaben stammen aus Projektdateien/Commit-Historie.</p></div>
+    </div>
+  </section>
+
+  <footer>ShipTrip Audit · erstellt mit dem <code>project-audit</code>-Workflow · Scope: aktueller Checkout am 10.07.2026 · keine Produktionscode-Änderungen.</footer>
+</main>
+</body>
+</html>

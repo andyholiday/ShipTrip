@@ -120,6 +120,14 @@ final class AusflugLoeschenUITests: XCTestCase {
         portRow.tap()
 
         // 4. Ausflug über die sichtbare Schaltfläche löschen
+        // S1.2 (Audit H2) ergänzt im manuellen Modus eine "Zur Suche"-Zeile oberhalb der
+        // Hafen-Momente – die Ausflugszeile rutscht damit im Edit-Sheet unter die
+        // Bildschirmkante (Tap-Punkt off-screen, das Entfernen kommt nie an). Wie im
+        // Anlage-Pfad oben ist deshalb ein Scroll nötig (kein Produktfehler).
+        let editForm = app.collectionViews.firstMatch
+        XCTAssertTrue(editForm.waitForExistence(timeout: 5))
+        editForm.swipeUp()
+
         let removeExcursionButton = app.buttons["Ausflug entfernen"]
         XCTAssertTrue(removeExcursionButton.waitForExistence(timeout: 5), "Lösch-Schaltfläche im Edit-Pfad nicht gefunden")
         removeExcursionButton.tap()

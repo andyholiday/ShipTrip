@@ -45,6 +45,7 @@ struct DealsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityLabel(String(localized: "Eintrag hinzufügen"))
                 }
             }
             .sheet(isPresented: $showingAddSheet) {
@@ -93,9 +94,16 @@ struct DealsView: View {
 
 /// Größere Wunschreise-Karte für den besten/obersten Merkliste-Eintrag.
 struct DealHeroView: View {
+    @Environment(\.modelContext) private var modelContext
+
     let deal: Deal
 
     @State private var showingEditSheet = false
+    // H4-Fix: der Hero-Eintrag lag bislang außerhalb des Lösch-Pfads (siehe deleteListDeals
+    // in DealsView) – Kontextmenü + Bestätigung machen ihn unabhängig vom Listenindex löschbar.
+    @State private var showingDeleteConfirm = false
+    @State private var showingDeleteError = false
+    @State private var deleteErrorMessage = ""
 
     var body: some View {
         Button {
@@ -158,8 +166,39 @@ struct DealHeroView: View {
             .shadow(color: .black.opacity(0.10), radius: 16, y: 8)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button(role: .destructive) {
+                showingDeleteConfirm = true
+            } label: {
+                Label(String(localized: "Löschen"), systemImage: "trash")
+            }
+        }
+        .alert(String(localized: "Eintrag löschen?"), isPresented: $showingDeleteConfirm) {
+            Button(String(localized: "Abbrechen"), role: .cancel) {}
+            Button(String(localized: "Löschen"), role: .destructive) { deleteDeal() }
+        } message: {
+            Text(String(localized: "Diese Aktion kann nicht rückgängig gemacht werden."))
+        }
+        .alert(String(localized: "Info"), isPresented: $showingDeleteError) {
+            Button("OK") {}
+        } message: {
+            Text(deleteErrorMessage)
+        }
         .sheet(isPresented: $showingEditSheet) {
             DealFormView(deal: deal)
+        }
+    }
+
+    /// Lösch-Sequenz analog zum Projekt-Muster (SettingsView.deleteAllData): erst löschen,
+    /// dann explizit speichern – schlägt das fehl, Rollback + sichtbares Fehlerfeedback.
+    private func deleteDeal() {
+        modelContext.delete(deal)
+        do {
+            try modelContext.save()
+        } catch {
+            modelContext.rollback()
+            deleteErrorMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
+            showingDeleteError = true
         }
     }
 
@@ -295,7 +334,13 @@ struct DealFormView: View {
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(7 * 24 * 60 * 60)
     @State private var hasDateRange = false
-    
+
+    // H4-Fix: Delete-Pfad im Bearbeiten-Modus, damit auch der Hero-Eintrag (der im Sheet
+    // erneut geöffnet wird) unabhängig vom Listenindex löschbar ist.
+    @State private var showingDeleteConfirm = false
+    @State private var showingDeleteError = false
+    @State private var deleteErrorMessage = ""
+
     private var isEditing: Bool { deal != nil }
 
     /// Katalog- und eigene Reedereien gemischt, inkl. Ausgeblendeter-Filter und ggf. der
@@ -368,16 +413,38 @@ struct DealFormView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Abbrechen") { dismiss() }
                 }
-                
+
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Speichern") { saveDeal() }
                         .disabled(title.isEmpty)
                 }
+
+                if isEditing {
+                    ToolbarItem(placement: .destructiveAction) {
+                        Button(role: .destructive) {
+                            showingDeleteConfirm = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .accessibilityLabel(String(localized: "Löschen"))
+                    }
+                }
             }
             .onAppear { loadExistingData() }
+            .alert(String(localized: "Eintrag löschen?"), isPresented: $showingDeleteConfirm) {
+                Button(String(localized: "Abbrechen"), role: .cancel) {}
+                Button(String(localized: "Löschen"), role: .destructive) { deleteDeal() }
+            } message: {
+                Text(String(localized: "Diese Aktion kann nicht rückgängig gemacht werden."))
+            }
+            .alert(String(localized: "Info"), isPresented: $showingDeleteError) {
+                Button("OK") {}
+            } message: {
+                Text(deleteErrorMessage)
+            }
         }
     }
-    
+
     private func loadExistingData() {
         guard let deal = deal else { return }
         
@@ -423,6 +490,21 @@ struct DealFormView: View {
         targetDeal.updatedAt = Date()
 
         dismiss()
+    }
+
+    /// Lösch-Sequenz analog zum Projekt-Muster (SettingsView.deleteAllData): erst löschen,
+    /// dann explizit speichern – schlägt das fehl, Rollback + sichtbares Fehlerfeedback.
+    private func deleteDeal() {
+        guard let existingDeal = deal else { return }
+        modelContext.delete(existingDeal)
+        do {
+            try modelContext.save()
+            dismiss()
+        } catch {
+            modelContext.rollback()
+            deleteErrorMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
+            showingDeleteError = true
+        }
     }
 }
 

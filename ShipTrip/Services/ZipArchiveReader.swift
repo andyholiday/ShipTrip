@@ -99,17 +99,26 @@ enum ZipArchiveReader {
         guard let eocd = eocdOffset else { throw ExportImportService.ImportError.invalidFormat }
 
         let cdOffset = Int(data[eocd + 16]) | (Int(data[eocd + 17]) << 8) | (Int(data[eocd + 18]) << 16) | (Int(data[eocd + 19]) << 24)
+        let cdSize = Int(data[eocd + 12]) | (Int(data[eocd + 13]) << 8) | (Int(data[eocd + 14]) << 16) | (Int(data[eocd + 15]) << 24)
         let numEntries = Int(data[eocd + 10]) | (Int(data[eocd + 11]) << 8)
 
         var offset = cdOffset
         var cumulativeUncompressedSize = 0
         var cumulativeCompressedSize = 0
         for _ in 0..<numEntries {
-            guard offset + 46 <= data.count else { break }
+            // Entry-Count-Validierung (H8): behauptet die EOCD mehr Einträge, als das Central
+            // Directory tatsächlich enthält, ist das ein Strukturfehler — kein stilles `break` mehr,
+            // das den Rest des (potenziell manipulierten) Archivs unbemerkt verwirft.
+            guard offset + 46 <= data.count else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
 
-            guard data[offset] == 0x50 && data[offset+1] == 0x4B && data[offset+2] == 0x01 && data[offset+3] == 0x02 else { break }
+            guard data[offset] == 0x50 && data[offset+1] == 0x4B && data[offset+2] == 0x01 && data[offset+3] == 0x02 else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
 
             let compressionMethod = Int(data[offset + 10]) | (Int(data[offset + 11]) << 8)
+            let crc32Expected = UInt32(data[offset + 16]) | (UInt32(data[offset + 17]) << 8) | (UInt32(data[offset + 18]) << 16) | (UInt32(data[offset + 19]) << 24)
             let compressedSize = Int(data[offset + 20]) | (Int(data[offset + 21]) << 8) | (Int(data[offset + 22]) << 16) | (Int(data[offset + 23]) << 24)
             let uncompressedSize = Int(data[offset + 24]) | (Int(data[offset + 25]) << 8) | (Int(data[offset + 26]) << 16) | (Int(data[offset + 27]) << 24)
             let nameLength = Int(data[offset + 28]) | (Int(data[offset + 29]) << 8)
@@ -117,7 +126,9 @@ enum ZipArchiveReader {
             let commentLength = Int(data[offset + 32]) | (Int(data[offset + 33]) << 8)
             let localHeaderOffset = Int(data[offset + 42]) | (Int(data[offset + 43]) << 8) | (Int(data[offset + 44]) << 16) | (Int(data[offset + 45]) << 24)
 
-            guard offset + 46 + nameLength <= data.count else { break }
+            guard offset + 46 + nameLength <= data.count else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
 
             let nameData = data[offset + 46 ..< offset + 46 + nameLength]
             let name = String(data: nameData, encoding: .utf8) ?? ""
@@ -150,34 +161,91 @@ enum ZipArchiveReader {
             let isDirectory = name.hasSuffix("/")
             let destinationPath = try resolveSafePath(name, in: destURL)
 
+            // Local-File-Header-Signatur + Local/Central-Namens-Konsistenz (H8): gilt für JEDEN
+            // Central-Directory-Eintrag, nicht nur für Datei-Einträge — sonst könnte ein
+            // Verzeichnis-Eintrag (Name endet auf "/") die Integritätsprüfung komplett umgehen.
+            guard localHeaderOffset + 30 <= data.count else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
+            guard data[localHeaderOffset] == 0x50 && data[localHeaderOffset+1] == 0x4B
+                    && data[localHeaderOffset+2] == 0x03 && data[localHeaderOffset+3] == 0x04 else {
+                throw ExportImportService.ImportError.invalidLocalHeader(name: name)
+            }
+
+            let localNameLength = Int(data[localHeaderOffset + 26]) | (Int(data[localHeaderOffset + 27]) << 8)
+            let localExtraLength = Int(data[localHeaderOffset + 28]) | (Int(data[localHeaderOffset + 29]) << 8)
+
+            guard localHeaderOffset + 30 + localNameLength <= data.count else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
+
+            let localNameData = data[localHeaderOffset + 30 ..< localHeaderOffset + 30 + localNameLength]
+            let localName = String(data: localNameData, encoding: .utf8) ?? ""
+            guard localName == name else {
+                throw ExportImportService.ImportError.nameMismatch(central: name, local: localName)
+            }
+
+            // Local-Header-Extra-Feld vollständig gegen die Archivgröße prüfen (H8): gilt für JEDEN
+            // Eintrag (auch Verzeichnisse, die keine Nutzdaten-Prüfung über compressedSize durchlaufen)
+            // — ein abgeschnittenes Extra-Feld darf nicht unbemerkt bleiben.
+            guard localHeaderOffset + 30 + localNameLength + localExtraLength <= data.count else {
+                throw ExportImportService.ImportError.truncatedArchive
+            }
+
             if isDirectory {
+                // Verzeichnis-Einträge tragen laut ZIP-Spezifikation keine Nutzdaten; eine abweichende
+                // Größenangabe im Central-Directory-Eintrag ist ein Manipulationsindiz (H8).
+                guard uncompressedSize == 0 && compressedSize == 0 else {
+                    throw ExportImportService.ImportError.sizeMismatch(name: name)
+                }
                 try FileManager.default.createDirectory(at: destinationPath, withIntermediateDirectories: true)
             } else {
                 try FileManager.default.createDirectory(at: destinationPath.deletingLastPathComponent(), withIntermediateDirectories: true)
 
-                guard localHeaderOffset + 30 <= data.count else { continue }
-                let localNameLength = Int(data[localHeaderOffset + 26]) | (Int(data[localHeaderOffset + 27]) << 8)
-                let localExtraLength = Int(data[localHeaderOffset + 28]) | (Int(data[localHeaderOffset + 29]) << 8)
-
                 let dataOffset = localHeaderOffset + 30 + localNameLength + localExtraLength
 
-                if dataOffset + compressedSize <= data.count {
-                    let compressedData = Data(data[dataOffset ..< dataOffset + compressedSize])
-
-                    var fileData: Data?
-                    if compressionMethod == 0 {
-                        fileData = compressedData
-                    } else if compressionMethod == 8 {
-                        fileData = decompressDeflate(compressedData, uncompressedSize: uncompressedSize)
-                    }
-
-                    if let fileData = fileData {
-                        try fileData.write(to: destinationPath)
-                    }
+                guard dataOffset + compressedSize <= data.count else {
+                    throw ExportImportService.ImportError.truncatedArchive
                 }
+
+                let compressedData = Data(data[dataOffset ..< dataOffset + compressedSize])
+
+                var fileData: Data?
+                if compressionMethod == 0 {
+                    fileData = compressedData
+                } else if compressionMethod == 8 {
+                    fileData = decompressDeflate(compressedData, uncompressedSize: uncompressedSize)
+                }
+
+                guard let extractedData = fileData else {
+                    throw ExportImportService.ImportError.decompressionFailed(name: name)
+                }
+
+                // Größen-Konsistenz nach Dekompression (H8): die tatsächlich entpackte Byte-Anzahl muss
+                // der im Central-Directory-Eintrag deklarierten uncompressedSize entsprechen — sonst
+                // könnten widersprüchliche Größenmetadaten bei zufällig passender CRC durchrutschen.
+                guard extractedData.count == uncompressedSize else {
+                    throw ExportImportService.ImportError.sizeMismatch(name: name)
+                }
+
+                // CRC-32-Verifikation (H8): die entpackten Bytes müssen die im Central-Directory-Eintrag
+                // deklarierte Prüfsumme ergeben — sonst ist der Eintrag inhaltlich beschädigt.
+                guard CRC32.checksum(extractedData) == crc32Expected else {
+                    throw ExportImportService.ImportError.crcMismatch(name: name)
+                }
+
+                try extractedData.write(to: destinationPath)
             }
 
             offset += 46 + nameLength + extraLength + commentLength
+        }
+
+        // Entry-Count-Validierung, zweite Richtung (H8): behauptet die EOCD WENIGER Einträge, als das
+        // Central Directory tatsächlich enthält, würden weitere (nicht gezählte) CD-Records sonst still
+        // ignoriert. Nach genau `numEntries` Records muss der Offset exakt am Ende des laut EOCD
+        // deklarierten Central-Directory-Bereichs stehen.
+        guard offset == cdOffset + cdSize else {
+            throw ExportImportService.ImportError.truncatedArchive
         }
     }
 

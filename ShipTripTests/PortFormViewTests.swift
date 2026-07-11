@@ -132,6 +132,65 @@ struct SanitizedExcursionEntryTests {
     }
 }
 
+// MARK: - parseCoordinate (H2/M5: locale-toleranter Komma-Parser statt Double(_:) ?? 0)
+
+@Suite("parseCoordinate")
+struct ParseCoordinateTests {
+
+    @Test("Komma als Dezimaltrennzeichen wird akzeptiert")
+    func acceptsComma() {
+        #expect(parseCoordinate("53,5") == 53.5)
+    }
+
+    @Test("Negative Werte mit Komma werden akzeptiert")
+    func acceptsNegativeComma() {
+        #expect(parseCoordinate("-33,86") == -33.86)
+    }
+
+    @Test("Punkt als Dezimaltrennzeichen wird weiterhin akzeptiert")
+    func acceptsDot() {
+        #expect(parseCoordinate("53.5") == 53.5)
+    }
+
+    @Test("Müll-Eingabe ergibt nil statt eines stillen 0-Fallbacks")
+    func garbageYieldsNil() {
+        #expect(parseCoordinate("abc") == nil)
+        #expect(parseCoordinate("53,5,6") == nil)
+    }
+
+    @Test("Leere oder nur aus Whitespace bestehende Eingabe ergibt nil")
+    func emptyYieldsNil() {
+        #expect(parseCoordinate("") == nil)
+        #expect(parseCoordinate("   ") == nil)
+    }
+}
+
+// MARK: - clampedDeparture (M5 Teil 2: Abfahrt ≥ Ankunft auch in TempPortFormSheet.savePort())
+
+@Suite("clampedDeparture")
+struct ClampedDepartureTests {
+
+    @Test("Abfahrt nach Ankunft bleibt unverändert")
+    func departureAfterArrivalUnchanged() {
+        let arrival = makeDate("2026-03-02")
+        let departure = makeDate("2026-03-03")
+        #expect(clampedDeparture(arrival: arrival, departure: departure) == departure)
+    }
+
+    @Test("Abfahrt vor Ankunft wird auf die Ankunftszeit angehoben")
+    func departureBeforeArrivalClampedUp() {
+        let arrival = makeDate("2026-03-05")
+        let departure = makeDate("2026-03-02")
+        #expect(clampedDeparture(arrival: arrival, departure: departure) == arrival)
+    }
+
+    @Test("Identische Zeitpunkte bleiben unverändert")
+    func sameInstantStaysSame() {
+        let date = makeDate("2026-03-05")
+        #expect(clampedDeparture(arrival: date, departure: date) == date)
+    }
+}
+
 // MARK: - SwiftData-Roundtrip: Hafenbild + Ausflüge
 
 @Suite("Port Hafenbild/Ausflüge Roundtrip")

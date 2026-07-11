@@ -5,6 +5,9 @@
 > Tasks, betroffene Findings, Dateien und ein prüfbares Erfolgskriterium.
 > Reihenfolge ist abhängigkeitssortiert: **Phase 0 → A → B → C → D.**
 > Fortschritt bitte direkt hier abhaken (`[ ]` → `[x]`).
+>
+> **Nachtrag 10.07.2026:** Die Stabilitäts-Findings des Folge-Audits laufen separat in
+> `docs/umsetzungsplan-audit-2026-07-10.md` (Wellen S1–S4); der Produktkurs B1–B3 bleibt hier.
 
 ## Betriebsregeln für die Umsetzung (Winston)
 
@@ -225,8 +228,9 @@
   `docs/ux-pitch-decks/b6-hafen-momente.html` (Gemini-Auflagen: Dashed-Border-Zero-State,
   natives Reorder-Symbol, .scrollIndicators(.hidden) + .contentShape bei Chips).
   ([Feature-Doku](features/hafen-momente-b7.md#b72-b2--portmemorycard-in-der-route-sektion))
-- [ ] **B7.3 Release** — TestFlight-Build nach Abschluss B7 + B4.3b-1 (Andre-Go liegt
-  vor, 2026-07-04; B4.3b-2/-3 folgen bewusst in einer späteren Welle) als 1.6.3 (Build 15).
+- [x] **B7.3 Release** ✅ 2026-07-04 — TestFlight 1.6.3 (Build 15) hochgeladen (VALID),
+  Test-Hinweise gesetzt, „VIP Extern" zugeordnet, Beta-Review WAITING_FOR_REVIEW
+  (Release-Commit `bbcc06a`; B4.3b-2/-3 folgen bewusst in einer späteren Welle).
 
 ## Phase C — Richtung 3a „Companion & Abo" (3–4 Wochen) → TestFlight 2.0.0
 

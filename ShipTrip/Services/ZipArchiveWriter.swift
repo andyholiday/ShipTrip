@@ -218,13 +218,13 @@ enum ZipWriterError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidEntryName(let name):
-            return "ZIP-Eintragsname konnte nicht als UTF-8 kodiert werden: \(name)"
+            return String(localized: "ZIP-Eintragsname konnte nicht als UTF-8 kodiert werden: \(name)")
         case .tooManyEntries(let count):
-            return "Zu viele ZIP-Einträge (\(count)); Maximum ist \(UInt16.max)"
+            return String(localized: "Zu viele ZIP-Einträge (\(count)); Maximum ist \(UInt16.max)")
         case .entryTooLarge(let name, let size):
-            return "ZIP-Eintrag '\(name)' ist zu groß (\(size) Bytes); Maximum ohne ZIP64 ist \(UInt32.max) Bytes"
+            return String(localized: "ZIP-Eintrag '\(name)' ist zu groß (\(size) Bytes); Maximum ohne ZIP64 ist \(UInt32.max) Bytes")
         case .archiveTooLarge(let size):
-            return "ZIP-Archiv zu groß (\(size) Bytes); Maximum ohne ZIP64 ist \(UInt32.max) Bytes"
+            return String(localized: "ZIP-Archiv zu groß (\(size) Bytes); Maximum ohne ZIP64 ist \(UInt32.max) Bytes")
         }
     }
 }

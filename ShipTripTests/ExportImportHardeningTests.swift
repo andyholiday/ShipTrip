@@ -9,6 +9,10 @@
 import Testing
 import Foundation
 import SwiftData
+import CoreGraphics
+import ImageIO
+import UniformTypeIdentifiers
+import Compression
 @testable import ShipTrip
 
 private typealias CruisePort = ShipTrip.Port
@@ -28,35 +32,115 @@ private func makeInMemoryContainer() throws -> ModelContainer {
     return try ModelContainer(for: schema, configurations: config)
 }
 
+private struct TestFixtureError: Error {}
+
+/// Erzeugt echte, gültige (2x2 Pixel) PNG-Bytes für Roundtrip-Tests, die den Import durchlaufen —
+/// notwendig seit dem Codex-Fix (Major 1), der Bilddaten beim Import inhaltlich via ImageIO
+/// validiert. Beliebige Nicht-Bild-Bytes würden von `isValidImageData` verworfen.
+private func makeMinimalValidPNGData() throws -> Data {
+    let width = 2
+    let height = 2
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    guard let context = CGContext(
+        data: nil,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: width * 4,
+        space: colorSpace,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ), let cgImage = context.makeImage() else {
+        throw TestFixtureError()
+    }
+
+    let mutableData = NSMutableData()
+    guard let destination = CGImageDestinationCreateWithData(mutableData, UTType.png.identifier as CFString, 1, nil) else {
+        throw TestFixtureError()
+    }
+    CGImageDestinationAddImage(destination, cgImage, nil)
+    guard CGImageDestinationFinalize(destination) else {
+        throw TestFixtureError()
+    }
+    return mutableData as Data
+}
+
+/// Komprimiert `data` mit demselben Algorithmus (`COMPRESSION_ZLIB`), den `ZipArchiveReader.
+/// decompressDeflate` beim Entpacken verwendet — für Tests, die einen echten Deflate-Eintrag
+/// (Compression Method 8) brauchen.
+private func deflateCompress(_ data: Data) -> Data {
+    let destCapacity = data.count + 128
+    let destBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: destCapacity)
+    defer { destBuffer.deallocate() }
+
+    let encodedSize = data.withUnsafeBytes { (srcPtr: UnsafeRawBufferPointer) -> Int in
+        guard let baseAddress = srcPtr.baseAddress else { return 0 }
+        return compression_encode_buffer(
+            destBuffer,
+            destCapacity,
+            baseAddress.assumingMemoryBound(to: UInt8.self),
+            data.count,
+            nil,
+            COMPRESSION_ZLIB
+        )
+    }
+
+    return Data(bytes: destBuffer, count: encodedSize)
+}
+
 // MARK: - Roh-ZIP-Builder für Angriffsszenarien
 
 /// Ein einzelner Test-ZIP-Eintrag. `declaredUncompressedSize`/`declaredCompressedSize` dürfen vom
 /// tatsächlichen `data.count` abweichen, um lügende Header zu simulieren (Bomben-/Mismatch-Tests).
+/// `crcOverride` erlaubt eine bewusst falsche CRC-32 für Korruptionstests (H8); ohne Override wird
+/// die echte CRC-32 aus `data` berechnet, damit alle bestehenden Tests durch die neue
+/// CRC-Verifikation nicht betroffen sind. `compressionMethod` erlaubt Deflate-Einträge (8) — dann
+/// ist `data` bereits der komprimierte Payload, und `crcOverride` muss die CRC der UNKOMPRIMIERTEN
+/// Originaldaten liefern (die CRC wird laut ZIP-Spezifikation immer über die Originaldaten gebildet).
+/// `localExtraLengthOverride` schreibt eine gelogene Extra-Feld-Länge NUR in den Local Header, ohne
+/// tatsächlich Extra-Bytes zu schreiben (Truncation-Test für ein abgeschnittenes Extra-Feld, H8).
 private struct TestZipEntry {
     let name: String
     let data: Data
     var declaredUncompressedSize: Int?
     var declaredCompressedSize: Int?
+    var crcOverride: UInt32?
+    var compressionMethod: Int
+    var localExtraLengthOverride: Int?
 
-    init(name: String, data: Data, declaredUncompressedSize: Int? = nil, declaredCompressedSize: Int? = nil) {
+    init(
+        name: String,
+        data: Data,
+        declaredUncompressedSize: Int? = nil,
+        declaredCompressedSize: Int? = nil,
+        crcOverride: UInt32? = nil,
+        compressionMethod: Int = 0,
+        localExtraLengthOverride: Int? = nil
+    ) {
         self.name = name
         self.data = data
         self.declaredUncompressedSize = declaredUncompressedSize
         self.declaredCompressedSize = declaredCompressedSize
+        self.crcOverride = crcOverride
+        self.compressionMethod = compressionMethod
+        self.localExtraLengthOverride = localExtraLengthOverride
     }
 }
 
-/// Minimaler ZIP-Builder für Tests (Compression Method 0 / STORED), unabhängig von der
-/// privaten `buildZip`-Implementierung in ExportImportService. Erlaubt bewusst manipulierte
-/// Eintragsnamen (Zip-Slip) sowie Header, deren deklarierte Größen vom tatsächlichen
-/// `data.count` abweichen (Dekompressionsbomben-/Mismatch-Tests).
-/// CRC-32 wird nicht korrekt berechnet (0), da `parseAndExtractZip` die CRC nicht prüft.
-private func buildTestZip(entries: [TestZipEntry]) -> Data {
+/// Minimaler ZIP-Builder für Tests (standardmäßig Compression Method 0 / STORED, optional Deflate
+/// pro Eintrag), unabhängig von der privaten `buildZip`-Implementierung in ExportImportService.
+/// Erlaubt bewusst manipulierte Eintragsnamen (Zip-Slip), Header, deren deklarierte Größen vom
+/// tatsächlichen `data.count` abweichen (Dekompressionsbomben-/Mismatch-Tests), sowie eine falsche
+/// CRC-32 pro Eintrag (Korruptionstests, H8). `entryCountOverride` schreibt eine von der
+/// tatsächlichen Eintragszahl abweichende EOCD-Angabe (Test für "truncated Central Directory", H8).
+/// CRC-32 wird standardmäßig korrekt berechnet (Codex-Auflage #5), da `parseAndExtractZip` sie
+/// jetzt prüft.
+private func buildTestZip(entries: [TestZipEntry], entryCountOverride: Int? = nil) -> Data {
     struct Meta {
         let nameData: Data
-        let actualSize: UInt32
+        let crc: UInt32
         let declaredUncompressedSize: UInt32
         let declaredCompressedSize: UInt32
+        let compressionMethod: UInt16
         let localOffset: UInt32
     }
 
@@ -66,28 +150,31 @@ private func buildTestZip(entries: [TestZipEntry]) -> Data {
     for entry in entries {
         let nameData = Data(entry.name.utf8)
         let actualSize = UInt32(entry.data.count)
+        let crc = entry.crcOverride ?? CRC32.checksum(entry.data)
         let declaredUncompressedSize = UInt32(entry.declaredUncompressedSize ?? entry.data.count)
         let declaredCompressedSize = UInt32(entry.declaredCompressedSize ?? entry.data.count)
+        let compressionMethod = UInt16(entry.compressionMethod)
         let localOffset = UInt32(archive.count)
         metas.append(Meta(
             nameData: nameData,
-            actualSize: actualSize,
+            crc: crc,
             declaredUncompressedSize: declaredUncompressedSize,
             declaredCompressedSize: declaredCompressedSize,
+            compressionMethod: compressionMethod,
             localOffset: localOffset
         ))
 
         archive.append(contentsOf: [0x50, 0x4B, 0x03, 0x04]) // Local File Header Signatur
         archive.appendUInt16LE(20)  // Version needed
         archive.appendUInt16LE(0)   // Bit flag
-        archive.appendUInt16LE(0)   // Compression: STORED
+        archive.appendUInt16LE(compressionMethod) // Compression: 0 = STORED, 8 = Deflate
         archive.appendUInt16LE(0)   // Mod time
         archive.appendUInt16LE(0)   // Mod date
-        archive.appendUInt32LE(0)   // CRC-32 (ungeprüft vom Parser)
+        archive.appendUInt32LE(crc) // CRC-32
         archive.appendUInt32LE(actualSize) // Compressed size (lokal; wird vom Parser nicht gelesen)
         archive.appendUInt32LE(actualSize) // Uncompressed size (lokal; wird vom Parser nicht gelesen)
         archive.appendUInt16LE(UInt16(nameData.count))
-        archive.appendUInt16LE(0)   // Extra field length
+        archive.appendUInt16LE(UInt16(entry.localExtraLengthOverride ?? 0)) // Extra field length (ggf. gelogen)
         archive.append(nameData)
         archive.append(entry.data) // tatsächliche Bytes — die Extraktion liest exakt `actualSize` Bytes ab hier
     }
@@ -98,10 +185,10 @@ private func buildTestZip(entries: [TestZipEntry]) -> Data {
         archive.appendUInt16LE(20)  // Version made by
         archive.appendUInt16LE(20)  // Version needed
         archive.appendUInt16LE(0)   // Bit flag
-        archive.appendUInt16LE(0)   // Compression: STORED
+        archive.appendUInt16LE(meta.compressionMethod) // Compression: 0 = STORED, 8 = Deflate
         archive.appendUInt16LE(0)   // Mod time
         archive.appendUInt16LE(0)   // Mod date
-        archive.appendUInt32LE(0)   // CRC-32
+        archive.appendUInt32LE(meta.crc) // CRC-32
         archive.appendUInt32LE(meta.declaredCompressedSize)   // Compressed size — DAS liest der Größen-Limit-Check
         archive.appendUInt32LE(meta.declaredUncompressedSize) // Uncompressed size — DAS liest der Größen-Limit-Check
         archive.appendUInt16LE(UInt16(meta.nameData.count))
@@ -115,11 +202,12 @@ private func buildTestZip(entries: [TestZipEntry]) -> Data {
     }
     let centralDirSize = UInt32(archive.count) - centralDirOffset
 
+    let declaredEntryCount = UInt16(entryCountOverride ?? entries.count)
     archive.append(contentsOf: [0x50, 0x4B, 0x05, 0x06]) // EOCD Signatur
     archive.appendUInt16LE(0)
     archive.appendUInt16LE(0)
-    archive.appendUInt16LE(UInt16(entries.count))
-    archive.appendUInt16LE(UInt16(entries.count))
+    archive.appendUInt16LE(declaredEntryCount)
+    archive.appendUInt16LE(declaredEntryCount)
     archive.appendUInt32LE(centralDirSize)
     archive.appendUInt32LE(centralDirOffset)
     archive.appendUInt16LE(0)
@@ -574,7 +662,8 @@ struct PortImageRoundtripTests {
         sourceContext.insert(cruise)
 
         let port = CruisePort(name: "Nassau", country: "Bahamas", latitude: 25.05, longitude: -77.35)
-        let originalImageData = Data((0..<256).map { UInt8($0 % 256) })
+        // Echte PNG-Bytes statt beliebiger Rohdaten (Codex-Fix Major 1: Import validiert Bildinhalte).
+        let originalImageData = try makeMinimalValidPNGData()
         port.imageData = originalImageData
         port.cruise = cruise
         sourceContext.insert(port)
@@ -634,5 +723,716 @@ struct PortImageRoundtripTests {
         let decoded = try JSONDecoder().decode([ExportCruise].self, from: jsonData)
 
         #expect(decoded.first?.route.first?.imageUrl == nil)
+    }
+}
+
+// MARK: - Seetag-Klassifikation (H3)
+
+@Suite("Import-Härtung: Seetag-Klassifikation")
+struct SeaDayClassificationHardeningTests {
+
+    @Test("Alt-Format (kein isSeaDay-Feld): koordinatenloser echter Hafen übersteht Export→Import→Export mit Name und Land intakt")
+    @MainActor
+    func realPortWithoutCoordinatesSurvivesExportImportExportRoundtrip() throws {
+        // Simuliert ein Legacy-JSON (Web-App-Export/Alt-Archiv) ohne isSeaDay-Feld: ein echter,
+        // benannter Hafen, dessen Koordinaten (noch) nicht aufgelöst wurden.
+        let legacyPort = ExportPort(
+            id: UUID().uuidString,
+            name: "Kotor",
+            country: "Montenegro",
+            lat: nil,
+            lng: nil,
+            arrival: "2025-05-02T08:00:00",
+            departure: "2025-05-02T18:00:00",
+            imageUrl: nil,
+            excursions: []
+        )
+        let legacyCruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Adria",
+            startDate: "2025-05-01",
+            endDate: "2025-05-08",
+            shippingLine: "MSC",
+            ship: "Fantasia",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [legacyPort],
+            photos: [],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([legacyCruise])
+        let jsonURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("legacyport-\(UUID().uuidString).json")
+        try jsonData.write(to: jsonURL)
+        defer { try? FileManager.default.removeItem(at: jsonURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: jsonURL, modelContext: context)
+        #expect(result.imported == 1)
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        #expect(importedPorts.count == 1)
+        let importedPort = try #require(importedPorts.first)
+        #expect(importedPort.isSeaDay == false, "Ein benannter Hafen ohne Koordinaten darf kein Seetag werden")
+        #expect(importedPort.name == "Kotor")
+        #expect(importedPort.country == "Montenegro")
+
+        // Re-Export: darf Name/Land nicht mit "Seetag" überschreiben, da isSeaDay korrekt false ist.
+        let cruises = try context.fetch(FetchDescriptor<Cruise>())
+        let reExportedURL = try ExportImportService.shared.exportToJSON(cruises: cruises)
+        defer { try? FileManager.default.removeItem(at: reExportedURL) }
+
+        let reExportedData = try Data(contentsOf: reExportedURL)
+        let reExported = try JSONDecoder().decode([ExportCruise].self, from: reExportedData)
+        let reExportedPort = try #require(reExported.first?.route.first)
+        #expect(reExportedPort.name == "Kotor")
+        #expect(reExportedPort.country == "Montenegro")
+        #expect(reExportedPort.isSeaDay == false)
+    }
+
+    @Test("Alt-Format (kein isSeaDay-Feld): Seetag ohne Koordinaten wird weiterhin per Namens-Fallback erkannt")
+    @MainActor
+    func legacySeaDayWithoutFlagIsRecognizedByNameFallback() throws {
+        let legacySeaDay = ExportPort(
+            id: UUID().uuidString,
+            name: "Seetag",
+            country: nil,
+            lat: nil,
+            lng: nil,
+            arrival: "2025-05-03T00:00:00",
+            departure: "2025-05-03T23:59:59",
+            imageUrl: nil,
+            excursions: []
+        )
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Adria mit Seetag",
+            startDate: "2025-05-01",
+            endDate: "2025-05-08",
+            shippingLine: "MSC",
+            ship: "Fantasia",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [legacySeaDay],
+            photos: [],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        let jsonURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("legacyseaday-\(UUID().uuidString).json")
+        try jsonData.write(to: jsonURL)
+        defer { try? FileManager.default.removeItem(at: jsonURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: jsonURL, modelContext: context)
+        #expect(result.imported == 1)
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        let importedPort = try #require(importedPorts.first)
+        #expect(importedPort.isSeaDay == true)
+    }
+
+    @Test("Neu-Format (explizites isSeaDay-Feld): Flag übersteuert die Namens-Heuristik")
+    @MainActor
+    func explicitIsSeaDayFlagOverridesNameHeuristic() throws {
+        // Ein Hafen, der zufällig "Seetag" heißt, aber explizit als Nicht-Seetag markiert ist
+        // (z. B. via ZIP-Export dieses Fixes), darf nicht per Namens-Fallback überschrieben werden.
+        let portNamedSeaDayButReal = ExportPort(
+            id: UUID().uuidString,
+            name: "Seetag",
+            country: "Fantasialand",
+            lat: "12.00000000",
+            lng: "34.00000000",
+            arrival: "2025-05-04T08:00:00",
+            departure: "2025-05-04T18:00:00",
+            imageUrl: nil,
+            excursions: [],
+            isSeaDay: false
+        )
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Neues Format",
+            startDate: "2025-05-01",
+            endDate: "2025-05-08",
+            shippingLine: "MSC",
+            ship: "Fantasia",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [portNamedSeaDayButReal],
+            photos: [],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        let jsonURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("explicitflag-\(UUID().uuidString).json")
+        try jsonData.write(to: jsonURL)
+        defer { try? FileManager.default.removeItem(at: jsonURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: jsonURL, modelContext: context)
+        #expect(result.imported == 1)
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        let importedPort = try #require(importedPorts.first)
+        #expect(importedPort.isSeaDay == false, "Explizites Flag muss den Namens-Fallback übersteuern")
+    }
+
+    @Test("Neu-Format (explizites isSeaDay-Feld): echter Seetag wird auch ohne Namens-Match erkannt")
+    @MainActor
+    func explicitIsSeaDayFlagClassifiesWithoutNameMatch() throws {
+        // Deckt ab, dass das Flag auch dann greift, wenn der Name nicht "Seetag"/"Sea Day" lautet
+        // (z. B. lokalisierter Platzhalter aus einer anderen Quelle).
+        let flaggedSeaDay = ExportPort(
+            id: UUID().uuidString,
+            name: "Tag auf See",
+            country: nil,
+            lat: nil,
+            lng: nil,
+            arrival: "2025-05-05T00:00:00",
+            departure: "2025-05-05T23:59:59",
+            imageUrl: nil,
+            excursions: [],
+            isSeaDay: true
+        )
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Explizit markierter Seetag",
+            startDate: "2025-05-01",
+            endDate: "2025-05-08",
+            shippingLine: "MSC",
+            ship: "Fantasia",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [flaggedSeaDay],
+            photos: [],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        let jsonURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("explicitflagtrue-\(UUID().uuidString).json")
+        try jsonData.write(to: jsonURL)
+        defer { try? FileManager.default.removeItem(at: jsonURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: jsonURL, modelContext: context)
+        #expect(result.imported == 1)
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        let importedPort = try #require(importedPorts.first)
+        #expect(importedPort.isSeaDay == true)
+        #expect(importedPort.name == "Tag auf See")
+
+        // Re-Export: der individuelle Name eines echten Seetags darf nicht mit "Seetag"
+        // überschrieben werden — isSeaDay ist reines Klassifikations-Flag, keine Namensquelle.
+        let cruises = try context.fetch(FetchDescriptor<Cruise>())
+        let reExportedURL = try ExportImportService.shared.exportToJSON(cruises: cruises)
+        defer { try? FileManager.default.removeItem(at: reExportedURL) }
+
+        let reExportedData = try Data(contentsOf: reExportedURL)
+        let reExported = try JSONDecoder().decode([ExportCruise].self, from: reExportedData)
+        let reExportedPort = try #require(reExported.first?.route.first)
+        #expect(reExportedPort.name == "Tag auf See")
+        #expect(reExportedPort.isSeaDay == true)
+    }
+}
+
+// MARK: - ZIP-Integrität (H8)
+
+@Suite("Import-Härtung: ZIP-Integrität (H8)")
+struct ZipIntegrityHardeningTests {
+
+    @Test("ZIP-Eintrag mit falscher CRC-32 wird mit klarer Fehlermeldung abgelehnt")
+    @MainActor
+    func corruptCRCEntryIsRejectedWithClearError() throws {
+        let corruptZip = buildTestZip(entries: [
+            TestZipEntry(name: "data.json", data: Data("{}".utf8), crcOverride: 0x1234_5678)
+        ])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("crcmismatch-\(UUID().uuidString).zip")
+        try corruptZip.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .crcMismatch(let name) = importError else {
+            Issue.record("Erwartete .crcMismatch, erhalten: \(importError)")
+            return
+        }
+        #expect(name == "data.json")
+        #expect(importError.errorDescription?.isEmpty == false, "Fehler muss eine klare Meldung liefern")
+    }
+
+    @Test("EOCD behauptet mehr Einträge als das Central Directory tatsächlich enthält: klarer Fehler statt stillem Abbruch")
+    @MainActor
+    func truncatedCentralDirectoryIsRejectedWithClearError() throws {
+        let truncatedZip = buildTestZip(
+            entries: [TestZipEntry(name: "data.json", data: Data("{}".utf8))],
+            entryCountOverride: 3
+        )
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("truncatedcd-\(UUID().uuidString).zip")
+        try truncatedZip.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .truncatedArchive = importError else {
+            Issue.record("Erwartete .truncatedArchive, erhalten: \(importError)")
+            return
+        }
+        #expect(importError.errorDescription?.isEmpty == false, "Fehler muss eine klare Meldung liefern")
+    }
+
+    @Test("Local-File-Header mit ungültiger Signatur wird abgelehnt")
+    @MainActor
+    func corruptedLocalHeaderSignatureIsRejected() throws {
+        var zipData = buildTestZip(entries: [TestZipEntry(name: "data.json", data: Data("{}".utf8))])
+        // Local File Header Signatur beginnt bei Offset 0 mit PK\x03\x04 — letztes Signatur-Byte kippen.
+        zipData[3] = 0x00
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("badlocalsig-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .invalidLocalHeader = importError else {
+            Issue.record("Erwartete .invalidLocalHeader, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("Name im Local-Header weicht vom Central-Directory-Namen ab: wird abgelehnt")
+    @MainActor
+    func localCentralNameMismatchIsRejected() throws {
+        var zipData = buildTestZip(entries: [TestZipEntry(name: "data.json", data: Data("{}".utf8))])
+        // Name im Local Header beginnt bei Offset 30 ("data.json"); erstes Zeichen kippen, sodass er
+        // vom unveränderten Central-Directory-Namen abweicht, ohne die Namenslänge zu ändern.
+        zipData[30] = UInt8(ascii: "x")
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("namemismatch-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .nameMismatch = importError else {
+            Issue.record("Erwartete .nameMismatch, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("Fehlende Medien (Hafen-Bild + Foto) werden in ImportResult gezählt statt den Import abzubrechen")
+    @MainActor
+    func missingMediaFilesAreCountedNotFatal() throws {
+        let portWithMissingImage = ExportPort(
+            id: UUID().uuidString,
+            name: "Palma",
+            country: "Spanien",
+            lat: "39.50000000",
+            lng: "2.60000000",
+            arrival: "2025-01-02T08:00:00",
+            departure: "2025-01-02T18:00:00",
+            imageUrl: "images/missing/port.png",
+            excursions: []
+        )
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Fehlende Medien",
+            startDate: "2025-01-01",
+            endDate: "2025-01-08",
+            shippingLine: "MSC",
+            ship: "Seaside",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [portWithMissingImage],
+            photos: ["images/missing/photo.png"],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        // Nur data.json im Archiv — die referenzierten Bilddateien existieren bewusst nicht.
+        let zipData = buildTestZip(entries: [TestZipEntry(name: "data.json", data: jsonData)])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("missingmedia-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        #expect(result.imported == 1, "Kreuzfahrt muss trotz fehlender Medien importiert werden")
+        #expect(result.invalidMedia == 2, "Fehlendes Hafen-Bild UND fehlendes Foto müssen gezählt werden")
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        #expect(importedPorts.first?.imageData == nil)
+        let importedPhotos = try context.fetch(FetchDescriptor<Photo>())
+        #expect(importedPhotos.isEmpty)
+    }
+
+    @Test("Local-File-Header eines Verzeichnis-Eintrags mit ungültiger Signatur wird ebenfalls abgelehnt (Verzeichnisse dürfen die Prüfung nicht umgehen)")
+    @MainActor
+    func corruptedDirectoryEntryLocalHeaderSignatureIsRejected() throws {
+        var zipData = buildTestZip(entries: [TestZipEntry(name: "folder/", data: Data())])
+        // Local File Header Signatur beginnt bei Offset 0 mit PK\x03\x04 — letztes Signatur-Byte kippen.
+        zipData[3] = 0x00
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("baddirsig-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .invalidLocalHeader = importError else {
+            Issue.record("Erwartete .invalidLocalHeader, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("Verzeichnis-Eintrag mit von 0/0 abweichender Größenangabe im Central-Directory wird abgelehnt")
+    @MainActor
+    func directoryEntryWithNonZeroDeclaredSizeIsRejected() throws {
+        let zipData = buildTestZip(entries: [
+            TestZipEntry(name: "folder/", data: Data(), declaredUncompressedSize: 10, declaredCompressedSize: 10)
+        ])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dirsizemismatch-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .sizeMismatch = importError else {
+            Issue.record("Erwartete .sizeMismatch, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("EOCD behauptet weniger Einträge als das Central Directory tatsächlich enthält: zusätzlicher CD-Record wird nicht still ignoriert")
+    @MainActor
+    func understatedEntryCountWithExtraCentralDirectoryRecordIsRejected() throws {
+        let zipData = buildTestZip(
+            entries: [
+                TestZipEntry(name: "data.json", data: Data("{}".utf8)),
+                TestZipEntry(name: "extra.txt", data: Data("extra".utf8))
+            ],
+            entryCountOverride: 1
+        )
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("understatedcount-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .truncatedArchive = importError else {
+            Issue.record("Erwartete .truncatedArchive, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("Verzeichnis-Eintrag mit abgeschnittenem (gelogenem) Local-Header-Extra-Feld wird abgelehnt")
+    @MainActor
+    func directoryEntryWithTruncatedLocalExtraFieldIsRejected() throws {
+        // Local Header behauptet ein 5.000 Byte großes Extra-Feld, das tatsächlich nicht im Archiv
+        // enthalten ist — die Extraktion würde ohne den neuen Check über das Archivende hinauslesen.
+        let zipData = buildTestZip(entries: [
+            TestZipEntry(name: "folder/", data: Data(), localExtraLengthOverride: 5000)
+        ])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("truncatedextra-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .truncatedArchive = importError else {
+            Issue.record("Erwartete .truncatedArchive, erhalten: \(importError)")
+            return
+        }
+    }
+
+    @Test("Deflate-Eintrag mit falscher deklarierter uncompressedSize wird trotz korrekter CRC abgelehnt")
+    @MainActor
+    func deflateEntryWithWrongDeclaredUncompressedSizeIsRejectedDespiteCorrectCRC() throws {
+        // Payload lang genug, damit compression_encode_buffer echte Deflate-Bytes erzeugt (nicht nur
+        // einen Stored-Block).
+        let originalBytes = Data(String(repeating: "ShipTrip Deflate Truncation Test Payload. ", count: 20).utf8)
+        let compressedBytes = deflateCompress(originalBytes)
+        #expect(!compressedBytes.isEmpty, "Deflate-Kompression der Testdaten darf nicht fehlschlagen")
+
+        // CRC wird korrekt über die ECHTEN (unkomprimierten) Originaldaten berechnet — die
+        // deklarierte uncompressedSize im Central-Directory-Eintrag wird bewusst verfälscht.
+        let correctCRC = CRC32.checksum(originalBytes)
+        let zipData = buildTestZip(entries: [
+            TestZipEntry(
+                name: "data.json",
+                data: compressedBytes,
+                declaredUncompressedSize: originalBytes.count + 500,
+                crcOverride: correctCRC,
+                compressionMethod: 8
+            )
+        ])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("deflatesizelie-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        var caughtError: Error?
+        do {
+            _ = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        } catch {
+            caughtError = error
+        }
+
+        guard let importError = caughtError as? ExportImportService.ImportError else {
+            Issue.record("Erwarteter ExportImportService.ImportError, erhalten: \(String(describing: caughtError))")
+            return
+        }
+        guard case .sizeMismatch(let name) = importError else {
+            Issue.record("Erwartete .sizeMismatch, erhalten: \(importError)")
+            return
+        }
+        #expect(name == "data.json")
+    }
+}
+
+// MARK: - Bildvalidierung (Codex-Gate #2, Major 1)
+
+@Suite("Import-Härtung: Bildvalidierung")
+struct MediaContentValidationHardeningTests {
+
+    @Test("Strukturell valider ZIP-Eintrag mit inhaltlich ungültigen Bilddaten (kein echtes Bild) wird nicht übernommen, sondern als invalidMedia gezählt")
+    @MainActor
+    func structurallyValidButNonImageMediaFileIsRejectedAndCounted() throws {
+        let portWithBogusImage = ExportPort(
+            id: UUID().uuidString,
+            name: "Palma",
+            country: "Spanien",
+            lat: "39.50000000",
+            lng: "2.60000000",
+            arrival: "2025-01-02T08:00:00",
+            departure: "2025-01-02T18:00:00",
+            imageUrl: "images/bogus.png",
+            excursions: []
+        )
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Ungültiges Bild",
+            startDate: "2025-01-01",
+            endDate: "2025-01-08",
+            shippingLine: "MSC",
+            ship: "Seaside",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [portWithBogusImage],
+            photos: ["images/bogus.png"],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        // "images/bogus.png" ist ein strukturell valider ZIP-Eintrag (korrekte CRC, korrekte Header) —
+        // die Bytes sind aber kein dekodierbares Bild (reiner Text). Muss von ImageIO abgelehnt werden,
+        // nicht nur vom CRC-/Struktur-Check durchgelassen werden.
+        let bogusImageBytes = Data("not actually a png".utf8)
+        let zipData = buildTestZip(entries: [
+            TestZipEntry(name: "data.json", data: jsonData),
+            TestZipEntry(name: "images/bogus.png", data: bogusImageBytes)
+        ])
+
+        let zipURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("bogusimage-\(UUID().uuidString).zip")
+        try zipData.write(to: zipURL)
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromZip(url: zipURL, modelContext: context)
+        #expect(result.imported == 1, "Kreuzfahrt muss trotz ungültigem Bildinhalt importiert werden")
+        #expect(result.invalidMedia == 2, "Hafen-Bild UND Foto referenzieren dieselbe ungültige Bilddatei — beide müssen gezählt werden")
+
+        let importedPorts = try context.fetch(FetchDescriptor<CruisePort>())
+        #expect(importedPorts.first?.imageData == nil, "Inhaltlich ungültige Bilddaten dürfen nicht als Hafen-Bild übernommen werden")
+        let importedPhotos = try context.fetch(FetchDescriptor<Photo>())
+        #expect(importedPhotos.isEmpty, "Inhaltlich ungültige Bilddaten dürfen nicht als Photo übernommen werden")
+    }
+
+    @Test("Base64-kodierte, aber inhaltlich ungültige Bilddaten werden nicht übernommen, sondern als invalidMedia gezählt")
+    @MainActor
+    func invalidBase64ImageBytesAreRejectedAndCounted() throws {
+        let bogusBase64 = Data("this is not image data".utf8).base64EncodedString()
+        let cruise = ExportCruise(
+            id: UUID().uuidString,
+            title: "Ungültiges Base64-Bild",
+            startDate: "2025-02-01",
+            endDate: "2025-02-08",
+            shippingLine: "AIDA",
+            ship: "AIDAmar",
+            cabinType: nil,
+            cabinNumber: nil,
+            bookingNumber: nil,
+            notes: nil,
+            rating: 4,
+            route: [],
+            photos: ["data:image/png;base64,\(bogusBase64)"],
+            expenses: []
+        )
+
+        let jsonData = try JSONEncoder().encode([cruise])
+        let jsonURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("bogusbase64-\(UUID().uuidString).json")
+        try jsonData.write(to: jsonURL)
+        defer { try? FileManager.default.removeItem(at: jsonURL) }
+
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: jsonURL, modelContext: context)
+        #expect(result.imported == 1, "Kreuzfahrt muss trotz ungültigem Base64-Bild importiert werden")
+        #expect(result.invalidMedia == 1)
+
+        let importedPhotos = try context.fetch(FetchDescriptor<Photo>())
+        #expect(importedPhotos.isEmpty, "Ein inhaltlich ungültiges Bild darf nicht als Photo übernommen werden")
     }
 }

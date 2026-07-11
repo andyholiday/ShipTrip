@@ -987,6 +987,13 @@ private struct ReminderPermissionSheet: View {
 
 // MARK: - Temp Port Form Sheet
 
+/// Erzwingt Abfahrt ≥ Ankunft als Sicherheitsnetz zum `DatePicker(in: arrivalDate...)`-
+/// Constraint: ändert sich `arrivalDate`, nachdem `departureDate` schon gesetzt wurde, bleibt
+/// der gespeicherte Hafen dennoch konsistent (M5 Teil 2, Muster: PortFormView Zeile 140).
+func clampedDeparture(arrival: Date, departure: Date) -> Date {
+    max(arrival, departure)
+}
+
 struct TempPortFormSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var ports: [TempPort]
@@ -1061,7 +1068,7 @@ struct TempPortFormSheet: View {
                 // Times
                 Section("Zeiten") {
                     DatePicker("Ankunft", selection: $arrivalDate)
-                    DatePicker("Abfahrt", selection: $departureDate)
+                    DatePicker("Abfahrt", selection: $departureDate, in: arrivalDate...)
                 }
 
                 hafenMomenteSection
@@ -1137,20 +1144,24 @@ struct TempPortFormSheet: View {
             lon = suggestion.longitude
         }
 
+        // Abfahrt ≥ Ankunft erzwingen (M5 Teil 2) – Sicherheitsnetz zum DatePicker-Constraint
+        // oben, falls arrivalDate sich änderte, nachdem departureDate schon gesetzt war.
+        let safeDepartureDate = clampedDeparture(arrival: arrivalDate, departure: departureDate)
+
         // Beim Bearbeiten vom Original ausgehen, damit id und isSeaDay erhalten bleiben;
         // die im Sheet editierbaren Felder (inkl. Bild/Ausflüge) werden überschrieben.
         var port = originalPort ?? TempPort(
             name: name,
             country: country,
             arrival: arrivalDate,
-            departure: departureDate,
+            departure: safeDepartureDate,
             latitude: lat,
             longitude: lon
         )
         port.name = name
         port.country = country
         port.arrival = arrivalDate
-        port.departure = departureDate
+        port.departure = safeDepartureDate
         port.latitude = lat
         port.longitude = lon
         port.imageData = imageData

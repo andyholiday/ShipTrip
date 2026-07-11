@@ -2041,6 +2041,1117 @@
           }
         }
       }
+    },
+
+    "API-Kontingent überschritten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "API quota exceeded"
+          }
+        }
+      }
+    },
+
+    "Aktion fehlgeschlagen: " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action failed: "
+          }
+        }
+      }
+    },
+
+    "Aktive Schiffe (Katalog)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active Ships (Catalog)"
+          }
+        }
+      }
+    },
+
+    "Alle Reisen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Trips"
+          }
+        }
+      }
+    },
+
+    "Alle Reisen anzeigen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show All Trips"
+          }
+        }
+      }
+    },
+
+    "Archiv, Komfort und Premium-Funktionen an einem Ort." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archive, comfort, and premium features in one place."
+          }
+        }
+      }
+    },
+
+    "Ausblenden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide"
+          }
+        }
+      }
+    },
+
+    "Ausflug entfernen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove Excursion"
+          }
+        }
+      }
+    },
+
+    "Ausflug hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Excursion"
+          }
+        }
+      }
+    },
+
+    "Bereits vorbei" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already Over"
+          }
+        }
+      }
+    },
+
+    "Beste Option" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best Option"
+          }
+        }
+      }
+    },
+
+    "Bild ersetzen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replace Photo"
+          }
+        }
+      }
+    },
+
+    "Bootstour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boat Tour"
+          }
+        }
+      }
+    },
+
+    "Cover-Foto hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Cover Photo"
+          }
+        }
+      }
+    },
+
+    "Dein Kreuzfahrt-Archiv" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Cruise Archive"
+          }
+        }
+      }
+    },
+
+    "Diese Reederei ist bereits vorhanden — bitte den bestehenden Eintrag verwenden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This cruise line already exists — please use the existing entry."
+          }
+        }
+      }
+    },
+
+    "Dieses Schiff ist bei dieser Reederei bereits vorhanden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This ship already exists for this cruise line."
+          }
+        }
+      }
+    },
+
+    "Eigene Reederei" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Cruise Line"
+          }
+        }
+      }
+    },
+
+    "Eigene Reedereien" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Cruise Lines"
+          }
+        }
+      }
+    },
+
+    "Eigene Schiffe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Ships"
+          }
+        }
+      }
+    },
+
+    "Eigenes Schiff" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Ship"
+          }
+        }
+      }
+    },
+
+    "Einblenden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show"
+          }
+        }
+      }
+    },
+
+    "Eintrag löschen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Entry?"
+          }
+        }
+      }
+    },
+
+    "Endhafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination Port"
+          }
+        }
+      }
+    },
+
+    "Entfernen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+
+    "Fehlt das Schiff dieser Reederei im Katalog? Lege es hier selbst an." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is this cruise line's ship missing from the catalog? Add it here yourself."
+          }
+        }
+      }
+    },
+
+    "Fehlt deine Reederei oder dein Schiff im Katalog? Lege sie hier selbst an. Katalog-Einträge kannst du per Wisch-Geste ausblenden, statt sie zu löschen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is your cruise line or ship missing from the catalog? Add it here yourself. You can hide catalog entries with a swipe instead of deleting them."
+          }
+        }
+      }
+    },
+
+    "Fehlt eine Reederei oder ein Schiff im Katalog? Hier kannst du eigene Einträge anlegen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is a cruise line or ship missing from the catalog? You can add your own entries here."
+          }
+        }
+      }
+    },
+
+    "Fertig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+
+    "Füge Häfen zu deinen Reisen hinzu, um sie hier zu sehen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add ports to your trips to see them here"
+          }
+        }
+      }
+    },
+
+    "Gesamterinnerung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Total Memories"
+          }
+        }
+      }
+    },
+
+    "Hafen-Momente" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Port Moments"
+          }
+        }
+      }
+    },
+
+    "Heimathafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home Port"
+          }
+        }
+      }
+    },
+
+    "Heute!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today!"
+          }
+        }
+      }
+    },
+
+    "Historische Schiffe (Katalog)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historical Ships (Catalog)"
+          }
+        }
+      }
+    },
+
+    "Katalog-Reedereien" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Catalog Cruise Lines"
+          }
+        }
+      }
+    },
+
+    "Kein API-Key konfiguriert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No API key configured"
+          }
+        }
+      }
+    },
+
+    "Keine Häfen auf der Karte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Ports on the Map"
+          }
+        }
+      }
+    },
+
+    "Keine data.json in der ZIP-Datei gefunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No data.json found in the ZIP file"
+          }
+        }
+      }
+    },
+
+    "Logo (Emoji)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Logo (Emoji)"
+          }
+        }
+      }
+    },
+
+    "Löschen fehlgeschlagen: " : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete failed: "
+          }
+        }
+      }
+    },
+
+    "Medien fehlten oder waren ungültig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media was missing or invalid"
+          }
+        }
+      }
+    },
+
+    "Morgen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        }
+      }
+    },
+
+    "Museum" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Museum"
+          }
+        }
+      }
+    },
+
+    "Nach oben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Up"
+          }
+        }
+      }
+    },
+
+    "Nach unten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move Down"
+          }
+        }
+      }
+    },
+
+    "Netzwerkfehler" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error"
+          }
+        }
+      }
+    },
+
+    "Neue Reise" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Trip"
+          }
+        }
+      }
+    },
+
+    "Reederei bearbeiten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Cruise Line"
+          }
+        }
+      }
+    },
+
+    "Reihenfolge ändern" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reorder"
+          }
+        }
+      }
+    },
+
+    "Reise" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip"
+          }
+        }
+      }
+    },
+
+    "Reise öffnen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Trip"
+          }
+        }
+      }
+    },
+
+    "Reisejournal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel Journal"
+          }
+        }
+      }
+    },
+
+    "Reiselogbuch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travel Log"
+          }
+        }
+      }
+    },
+
+    "Route anzeigen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Route"
+          }
+        }
+      }
+    },
+
+    "Schiff bearbeiten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Ship"
+          }
+        }
+      }
+    },
+
+    "Seetag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sea Day"
+          }
+        }
+      }
+    },
+
+    "Shopping" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shopping"
+          }
+        }
+      }
+    },
+
+    "Stadtbummel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "City Stroll"
+          }
+        }
+      }
+    },
+
+    "Strand" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beach"
+          }
+        }
+      }
+    },
+
+    "Ungültige Anfrage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid request"
+          }
+        }
+      }
+    },
+
+    "Ungültige Antwort" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid response"
+          }
+        }
+      }
+    },
+
+    "Ungültige Koordinate – bitte z. B. „53,5“ oder „53.5“ eingeben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid coordinate – please enter e.g. “53,5” or “53.5”"
+          }
+        }
+      }
+    },
+
+    "Ungültige URL" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid URL"
+          }
+        }
+      }
+    },
+
+    "Ungültiger API-Key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid API key"
+          }
+        }
+      }
+    },
+
+    "Ungültiges Dateiformat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid file format"
+          }
+        }
+      }
+    },
+
+    "Wanderung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hike"
+          }
+        }
+      }
+    },
+
+    "ZIP-Archiv ist beschädigt oder unvollständig (Central Directory)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP archive is corrupted or incomplete (central directory)"
+          }
+        }
+      }
+    },
+
+    "Zur Suche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to Search"
+          }
+        }
+      }
+    },
+
+    "ausgewählt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "selected"
+          }
+        }
+      }
+    },
+
+    "nicht ausgewählt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "not selected"
+          }
+        }
+      }
+    },
+
+    "Öffnen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open"
+          }
+        }
+      }
+    },
+
+    "Dein persönliches Kreuzfahrt-Archiv: %lld Länder, %lld Häfen und %lld Reisen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your personal cruise archive: %lld countries, %lld ports, and %lld trips."
+          }
+        }
+      }
+    },
+
+    "In %lld Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld week"
+          }
+        }
+      }
+    },
+
+    "In %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld weeks"
+          }
+        }
+      }
+    },
+
+    "In ca. %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In approx. %lld weeks"
+          }
+        }
+      }
+    },
+
+    "In %lld Monat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld month"
+          }
+        }
+      }
+    },
+
+    "In %lld Monaten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld months"
+          }
+        }
+      }
+    },
+
+    "Reise %@ öffnen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open trip %@"
+          }
+        }
+      }
+    },
+
+    "Serverfehler (%lld)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Server error (%lld)"
+          }
+        }
+      }
+    },
+
+    "Stopp %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop %lld"
+          }
+        }
+      }
+    },
+
+    "Stopp %lld von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop %lld of %lld"
+          }
+        }
+      }
+    },
+
+    "Unsicherer Pfad im Archiv abgelehnt: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsafe path in archive rejected: %@"
+          }
+        }
+      }
+    },
+
+    "ZIP-Archiv zu groß (%lld Bytes); Maximum ohne ZIP64 ist %lld Bytes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP archive too large (%lld bytes); maximum without ZIP64 is %lld bytes"
+          }
+        }
+      }
+    },
+
+    "ZIP-Archiv überschreitet das kumulierte Größenlimit (%lld Bytes; Maximum %lld Bytes)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP archive exceeds the cumulative size limit (%lld bytes; maximum %lld bytes)"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@' ist zu groß (%lld Bytes); Maximum ohne ZIP64 ist %lld Bytes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@' is too large (%lld bytes); maximum without ZIP64 is %lld bytes"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@' konnte nicht entpackt werden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@' could not be extracted"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@' überschreitet das Größenlimit (%lld Bytes; Maximum %lld Bytes)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@' exceeds the size limit (%lld bytes; maximum %lld bytes)"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@': CRC-32-Prüfsumme stimmt nicht überein (Archiv beschädigt)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@': CRC-32 checksum does not match (archive corrupted)"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@': compressedSize stimmt nicht mit uncompressedSize überein (Methode STORED erfordert Gleichheit)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@': compressedSize does not match uncompressedSize (method STORED requires equality)"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@': ungültige Local-File-Header-Signatur" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@': invalid local file header signature"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag beschädigt: Name im Local-Header ('%@') weicht vom Central-Directory-Eintrag ('%@') ab" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry corrupted: name in the local header ('%@') differs from the central directory entry ('%@')"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintragsname konnte nicht als UTF-8 kodiert werden: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry name could not be encoded as UTF-8: %@"
+          }
+        }
+      }
+    },
+
+    "Zu viele ZIP-Einträge (%lld); Maximum ist %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many ZIP entries (%lld); maximum is %lld"
+          }
+        }
+      }
+    },
+
+    "%lld Reisen · %lld Länder · Reiselogbuch" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld trips · %lld countries · Travel log"
+          }
+        }
+      }
+    },
+
+    "%lld Reisen · %lld Länder · nächste Reise in %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld trips · %lld countries · next trip in %lld days"
+          }
+        }
+      }
+    },
+
+    "%lld Reisen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld trips"
+          }
+        }
+      }
+    },
+
+    "Wunschreisen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deals"
+          }
+        }
+      }
+    },
+
+    "Bilanz" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stats"
+          }
+        }
+      }
+    },
+
+    "Anzahl" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Count"
+          }
+        }
+      }
+    },
+
+    "Speichere interessante Kreuzfahrten als Wunschreisen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save interesting cruises as deals"
+          }
+        }
+      }
     }
 
   },

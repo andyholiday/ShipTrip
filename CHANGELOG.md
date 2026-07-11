@@ -15,6 +15,48 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefuegt
+
+- **Privacy-Manifest**: `PrivacyInfo.xcprivacy` deklariert
+  `NSPrivacyAccessedAPICategoryUserDefaults` (CA92.1) und
+  `NSPrivacyAccessedAPICategoryFileTimestamp` (3B52.1).
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h7--fehlendes-privacy-manifest-task-s15))
+- **101 neue Lokalisierungs-Keys mit EN-Übersetzung** (u. a. Deals-, Stats-,
+  Hafen-Editor- und Export/Import-Texte, Gemini-Disclosure) sowie ein
+  EN-UI-Smoke-Test über die Kernbildschirme.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h6--unvollständige-lokalisierung-tasks-s21a-s22s24-anteile-s21b-1-2))
+
+### Behoben
+
+- **Reiseliste: Filter ohne sichtbaren Reset-Weg**: Der Empty-State bei einem
+  Jahres-/Reederei-Filter ohne Treffer zeigt jetzt einen
+  „Filter zurücksetzen"-Button.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h1--filter-dead-end-in-der-reiseliste-task-s11))
+- **Reise löschen ohne Bestätigung/Rollback**: Löschen einer Reise (Liste und
+  Detail) lief bisher ohne Bestätigungsdialog und ohne Rollback bei
+  fehlgeschlagenem Speichern; die neue `CruiseDeletionSequence` bestätigt,
+  speichert und macht bei Fehler den Löschvorgang rückgängig, bevor
+  Erinnerungen entfernt werden.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h5--löschen-ohne-bestätigungrollback-task-s11))
+- **Hafen-Editor: instabiler Modus-Switch Suche/manuell**: Expliziter
+  Modus-Switch inkl. Rückweg „Zur Suche"; Bestands-Häfen sind jetzt in beiden
+  Modi editierbar; locale-toleranter Komma-/Punkt-Parser für Koordinaten.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h2--instabiler-modus-switch-im-hafen-editor-task-s12-inkl-m5))
+- **Hero-Deal nicht löschbar**: Löschen mit Bestätigungsdialog jetzt sowohl
+  aus der Kartenansicht als auch aus dem Formular möglich.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h4--hero-deal-nicht-löschbar-task-s13))
+- **ZIP-Import klassifizierte koordinatenlose Häfen fälschlich als Seetag**
+  und überschrieb dabei den echten Hafennamen; `isSeaDay` ist jetzt ein
+  optionales, explizites Flag mit Namens-Fallback nur für Alt-Formate ohne
+  das Feld.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h3--seetag-fehlklassifikation-beim-import-task-s14))
+- **ZIP-Restore ungehärtet**: CRC-32-Verifikation pro Eintrag,
+  Local-Header-Signatur- und Namenskonsistenz-Checks, beidseitige
+  Entry-Count-Validierung und Bildvalidierung via ImageIO verhindern jetzt
+  stille Teil-Importe; ungültige/fehlende Medien werden gezählt und im
+  Import-Alert ausgewiesen.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h8--ungehärteter-zip-restore-task-s22))
+
 ---
 
 ## [1.7.0] - 2026-07-10

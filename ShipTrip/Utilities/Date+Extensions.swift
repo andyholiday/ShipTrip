@@ -60,19 +60,23 @@ extension Date {
         
         switch days {
         case ..<0:
-            return "Bereits vorbei"
+            return String(localized: "Bereits vorbei")
         case 0:
-            return "Heute!"
+            return String(localized: "Heute!")
         case 1:
-            return "Morgen"
+            return String(localized: "Morgen")
         case 2...7:
-            return "In \(days) Tagen"
+            return String(localized: "In \(days) Tagen")
         case 8...14:
-            return "In \(days / 7) Woche\(days >= 14 ? "n" : "")"
+            return days >= 14
+                ? String(localized: "In \(days / 7) Wochen")
+                : String(localized: "In \(days / 7) Woche")
         case 15...30:
-            return "In ca. \(days / 7) Wochen"
+            return String(localized: "In ca. \(days / 7) Wochen")
         default:
-            return "In \(days / 30) Monat\(days >= 60 ? "en" : "")"
+            return days >= 60
+                ? String(localized: "In \(days / 30) Monaten")
+                : String(localized: "In \(days / 30) Monat")
         }
     }
 }

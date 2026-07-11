@@ -580,6 +580,9 @@ struct DataManagementView: View {
                         if result.skippedInvalid > 0 {
                             msg += " · \(result.skippedInvalid) " + String(localized: "mit ungültigem Datum übersprungen")
                         }
+                        if result.invalidMedia > 0 {
+                            msg += " · \(result.invalidMedia) " + String(localized: "Medien fehlten oder waren ungültig")
+                        }
                         alertMessage = msg
                         showingAlert = true
                     }

@@ -22,6 +22,8 @@ struct CruiseDetailView: View {
     @State private var selectedPort: Port?
     @State private var selectedExpense: Expense?
     @State private var zoomedPhoto: Photo?
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -102,6 +104,11 @@ struct CruiseDetailView: View {
             }
         } message: {
             Text("Diese Aktion kann nicht rückgängig gemacht werden.")
+        }
+        .alert("Info", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
         }
     }
     
@@ -424,9 +431,21 @@ struct CruiseDetailView: View {
     private func deleteCruise() {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
         let cruiseID = String(describing: cruise.persistentModelID)
-        Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
-        modelContext.delete(cruise)
-        dismiss()
+        let succeeded = CruiseDeletionSequence.run(
+            delete: { modelContext.delete(cruise) },
+            save: { try modelContext.save() },
+            rollback: { modelContext.rollback() },
+            removeReminders: {
+                Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
+            },
+            onError: { error in
+                alertMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
+                showingAlert = true
+            }
+        )
+        if succeeded {
+            dismiss()
+        }
     }
     
     private func deletePort(_ port: Port) {

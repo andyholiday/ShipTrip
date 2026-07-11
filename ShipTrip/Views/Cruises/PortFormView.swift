@@ -28,6 +28,23 @@ func sanitizedExcursionEntry(_ raw: String) -> String? {
     return cleaned.isEmpty ? nil : cleaned
 }
 
+/// Locale-toleranter Parser für Breiten-/Längengrad: akzeptiert Komma und Punkt als
+/// Dezimaltrennzeichen (M5). Gibt `nil` bei ungültiger Eingabe zurück statt still auf 0.
+func parseCoordinate(_ text: String) -> Double? {
+    let trimmed = text.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty else { return nil }
+    let formatter = NumberFormatter()
+    formatter.numberStyle = .decimal
+    formatter.usesGroupingSeparator = false
+    for separator in [",", "."] {
+        formatter.decimalSeparator = separator
+        if let number = formatter.number(from: trimmed) {
+            return number.doubleValue
+        }
+    }
+    return nil
+}
+
 /// Formular zum Hinzufügen/Bearbeiten eines Hafens
 struct PortFormView: View {
     @Environment(\.modelContext) private var modelContext
@@ -43,6 +60,10 @@ struct PortFormView: View {
     @State private var longitude = ""
     @State private var arrival = Date()
     @State private var departure = Date()
+
+    /// Ob die manuelle Eingabe-Section sichtbar ist – expliziter Modus statt `if
+    /// name.isEmpty` (H2), sonst verschwindet sie beim ersten getippten Zeichen.
+    @State private var isManualEntry = false
 
     // Hafenbild
     @State private var imageData: Data?
@@ -61,75 +82,102 @@ struct PortFormView: View {
     @State private var showingSuggestions = false
     
     private var isEditing: Bool { port != nil }
-    
+
     private var filteredSuggestions: [PortSuggestion] {
         guard !searchText.isEmpty else { return [] }
         return PortSuggestion.search(searchText).prefix(5).map { $0 }
+    }
+
+    /// Leere Felder sind erlaubt; nur nicht-leere, unparsbare Eingaben blockieren (M5).
+    private var isCoordinateValid: Bool {
+        (latitude.isEmpty || parseCoordinate(latitude) != nil)
+            && (longitude.isEmpty || parseCoordinate(longitude) != nil)
     }
     
     var body: some View {
         NavigationStack {
             Form {
-                // Hafen-Suche mit Vorschlägen
-                Section("Hafen") {
-                    TextField("Hafen suchen...", text: $searchText)
-                        .onChange(of: searchText) { _, newValue in
-                            showingSuggestions = !newValue.isEmpty && name.isEmpty
-                        }
-                    
-                    if showingSuggestions && !filteredSuggestions.isEmpty {
-                        ForEach(filteredSuggestions) { suggestion in
-                            Button {
-                                selectSuggestion(suggestion)
-                            } label: {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text(suggestion.name)
-                                            .foregroundStyle(.primary)
-                                        Text(suggestion.country)
-                                            .font(.caption)
+                // Hafen-Suche mit Vorschlägen (nur im Such-Modus; s. isManualEntry)
+                if !isManualEntry {
+                    Section("Hafen") {
+                        TextField("Hafen suchen...", text: $searchText)
+                            .onChange(of: searchText) { _, newValue in
+                                showingSuggestions = !newValue.isEmpty
+                            }
+
+                        if showingSuggestions && !filteredSuggestions.isEmpty {
+                            ForEach(filteredSuggestions) { suggestion in
+                                Button {
+                                    selectSuggestion(suggestion)
+                                } label: {
+                                    HStack {
+                                        VStack(alignment: .leading) {
+                                            Text(suggestion.name)
+                                                .foregroundStyle(.primary)
+                                            Text(suggestion.country)
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                        Image(systemName: "arrow.up.left")
                                             .foregroundStyle(.secondary)
                                     }
-                                    Spacer()
-                                    Image(systemName: "arrow.up.left")
-                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
-                    }
-                    
-                    if !name.isEmpty {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(name)
-                                    .font(.headline)
-                                Text(country)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+
+                        if !name.isEmpty {
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text(name)
+                                        .font(.headline)
+                                    Text(country)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Button {
+                                    clearSelection()
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
                             }
-                            Spacer()
+                            .padding(.vertical, 4)
+                        } else {
                             Button {
-                                clearSelection()
+                                isManualEntry = true
                             } label: {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundStyle(.secondary)
+                                Label(String(localized: "Manuell eingeben"), systemImage: "square.and.pencil")
                             }
                         }
-                        .padding(.vertical, 4)
                     }
                 }
-                
-                // Manuelle Eingabe (falls kein Vorschlag)
-                if name.isEmpty {
+
+                // Manuelle Eingabe (H2); Bestandsport startet hier direkt, s. loadExistingData().
+                if isManualEntry {
                     Section("Manuell eingeben") {
                         TextField("Hafenname", text: $name)
                         TextField("Land", text: $country)
-                        
+
                         HStack {
                             TextField("Breitengrad", text: $latitude)
                                 .keyboardType(.decimalPad)
                             TextField("Längengrad", text: $longitude)
                                 .keyboardType(.decimalPad)
+                        }
+                        if !isCoordinateValid {
+                            Text(String(localized: "Ungültige Koordinate – bitte z. B. „53,5“ oder „53.5“ eingeben"))
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+
+                        // Rückweg ohne Reset (Codex-Gate #2): nur Moduswechsel, Eingaben bleiben
+                        // erhalten. Der "X"-Button oben bleibt der einzige echte Reset-Pfad.
+                        Button {
+                            isManualEntry = false
+                        } label: {
+                            Label(String(localized: "Zur Suche"), systemImage: "magnifyingglass")
                         }
                     }
                 }
@@ -159,7 +207,8 @@ struct PortFormView: View {
                         // "Land"-Feld nur sichtbar ist, solange `name` leer ist, ließ sich ein
                         // bestehender Port mit leerem Land danach nie wieder speichern (auch keine
                         // anderen Änderungen wie das Löschen eines Ausflugs).
-                        .disabled(name.isEmpty)
+                        // Zusätzlich gesperrt bei ungültiger Koordinaten-Eingabe (M5).
+                        .disabled(name.isEmpty || !isCoordinateValid)
                 }
             }
             .onAppear { loadExistingData() }
@@ -187,8 +236,9 @@ struct PortFormView: View {
         longitude = ""
         searchText = ""
         showingSuggestions = false
+        isManualEntry = false
     }
-    
+
     private func loadExistingData() {
         guard let port = port else {
             // Neuer Hafen: Ankunft auf den Folgetag des letzten Stopps vorbelegen (A5.3).
@@ -204,6 +254,7 @@ struct PortFormView: View {
         departure = port.departure
         imageData = port.imageData
         excursions = port.excursions
+        isManualEntry = true // Bestandsport direkt korrigierbar (H2), nicht nur via "X"-Reset
     }
 
     private func addExcursion() {
@@ -231,8 +282,9 @@ struct PortFormView: View {
     }
 
     private func savePort() {
-        let lat = Double(latitude) ?? 0
-        let lon = Double(longitude) ?? 0
+        // Leer = bewusst keine Koordinate (0/0); Save-Button sperrt unparsbare Eingaben bereits.
+        let lat = latitude.isEmpty ? 0 : (parseCoordinate(latitude) ?? 0)
+        let lon = longitude.isEmpty ? 0 : (parseCoordinate(longitude) ?? 0)
 
         let now = Date()
 

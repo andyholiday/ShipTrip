@@ -211,21 +211,21 @@ enum GeminiError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noApiKey:
-            return "Kein API-Key konfiguriert"
+            return String(localized: "Kein API-Key konfiguriert")
         case .invalidURL:
-            return "Ungültige URL"
+            return String(localized: "Ungültige URL")
         case .invalidRequest:
-            return "Ungültige Anfrage"
+            return String(localized: "Ungültige Anfrage")
         case .invalidApiKey:
-            return "Ungültiger API-Key"
+            return String(localized: "Ungültiger API-Key")
         case .quotaExceeded:
-            return "API-Kontingent überschritten"
+            return String(localized: "API-Kontingent überschritten")
         case .networkError:
-            return "Netzwerkfehler"
+            return String(localized: "Netzwerkfehler")
         case .serverError(let code):
-            return "Serverfehler (\(code))"
+            return String(localized: "Serverfehler (\(code))")
         case .invalidResponse:
-            return "Ungültige Antwort"
+            return String(localized: "Ungültige Antwort")
         case .apiError(let message):
             return message
         }

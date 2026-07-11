@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ImageIO
 import SwiftData
 import UniformTypeIdentifiers
 
@@ -39,6 +40,10 @@ struct ExportPort: Codable {
     let departure: String
     let imageUrl: String?
     let excursions: [String]
+    /// Explizites Seetag-Flag (H3-Fix). Optional + `var` statt `let`, damit Swifts Codable-Synthese
+    /// die fehlende Property in Alt-ZIPs/Legacy-JSON per `decodeIfPresent` zu `nil` auflöst, statt den
+    /// Decode abzubrechen; der Import fällt für `nil` auf die Namens-Heuristik zurück.
+    var isSeaDay: Bool? = nil
 }
 
 struct ExportExpense: Codable {
@@ -57,6 +62,10 @@ struct ImportResult {
     let imported: Int
     let skippedDuplicates: Int
     let skippedInvalid: Int
+    /// Anzahl Foto-/Hafenbild-Referenzen, die nicht aufgelöst werden konnten (Datei fehlt im Archiv,
+    /// ungültige Base64-Daten oder abgelehnter Pfad). Die zugehörige Kreuzfahrt/der Hafen wird trotzdem
+    /// importiert, nur das Bild fehlt (H8).
+    let invalidMedia: Int
 }
 
 // MARK: - Export/Import Service
@@ -180,14 +189,17 @@ class ExportImportService {
             let exportPorts = sortedRoute.enumerated().map { index, port in
                 ExportPort(
                     id: port.id.uuidString,
-                    name: port.isSeaDay ? "Seetag" : port.name,
+                    // H3-Fix: Name nie durch "Seetag" ersetzen — isSeaDay ist ausschließlich das
+                    // Klassifikations-Flag, der echte Name bleibt auch für Seetage erhalten.
+                    name: port.name,
                     country: port.isSeaDay ? nil : port.country,
                     lat: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.latitude),
                     lng: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.longitude),
                     arrival: dateTimeFormatter.string(from: port.arrival),
                     departure: dateTimeFormatter.string(from: port.departure),
                     imageUrl: portImageURL(cruise, port, index),
-                    excursions: port.excursions
+                    excursions: port.excursions,
+                    isSeaDay: port.isSeaDay
                 )
             }
 
@@ -287,6 +299,7 @@ class ExportImportService {
         var importedCount = 0
         var skippedDuplicates = 0
         var skippedInvalid = 0
+        var invalidMediaCount = 0
 
         // ID-basierte Duplikate INNERHALB derselben Import-Datei (z.B. manipuliertes data.json
         // mit zwei Cruises gleicher id): nur die erste wird importiert.
@@ -354,9 +367,13 @@ class ExportImportService {
 
             // Häfen importieren
             for (index, exportPort) in exportCruise.route.enumerated() {
-                let isSeaDay = exportPort.name.lowercased() == "seetag" ||
-                               exportPort.name.lowercased() == "sea day" ||
-                               exportPort.lat == nil
+                // H3-Fix: explizites Flag hat Vorrang; nur Alt-Formate ohne das Feld (exportPort.isSeaDay
+                // == nil) fallen auf die Namens-Heuristik zurück. `lat == nil` klassifiziert nicht mehr
+                // als Seetag — ein benannter Hafen ohne (noch) aufgelöste Koordinaten bleibt ein Hafen.
+                let isSeaDay = exportPort.isSeaDay ?? (
+                    exportPort.name.lowercased() == "seetag" ||
+                    exportPort.name.lowercased() == "sea day"
+                )
 
                 let lat = Double(exportPort.lat ?? "0") ?? 0
                 let lng = Double(exportPort.lng ?? "0") ?? 0
@@ -386,10 +403,16 @@ class ExportImportService {
                 }
 
                 // Hafen-Bild importieren (Pfadreferenz aus data.json: ../-Traversal/absolute Pfade abgelehnt)
-                if let imagesDir = imagesDir, let imageUrlString = exportPort.imageUrl,
-                   let imagePath = try? ZipArchiveReader.resolveSafePath(imageUrlString, in: imagesDir) {
-                    if let imageData = try? Data(contentsOf: imagePath) {
+                if let imagesDir = imagesDir, let imageUrlString = exportPort.imageUrl {
+                    if let imagePath = try? ZipArchiveReader.resolveSafePath(imageUrlString, in: imagesDir),
+                       let imageData = try? Data(contentsOf: imagePath),
+                       isValidImageData(imageData) {
                         port.imageData = imageData
+                    } else {
+                        // Referenzierte Bilddatei fehlt im Archiv, ist unlesbar, inhaltlich kein
+                        // gültiges Bild, oder der Pfad wurde abgelehnt: Hafen bleibt erhalten, nur das
+                        // Bild fehlt (H8).
+                        invalidMediaCount += 1
                     }
                 }
 
@@ -402,24 +425,36 @@ class ExportImportService {
                 if photoRef.hasPrefix("data:image") {
                     // Legacy Base64-Format
                     if let base64Data = photoRef.components(separatedBy: ",").last,
-                       let imageData = Data(base64Encoded: base64Data) {
+                       let imageData = Data(base64Encoded: base64Data),
+                       isValidImageData(imageData) {
                         let photo = Photo(imageData: imageData, sortOrder: index)
                         photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
                         photo.cruise = cruise
                         modelContext.insert(photo)
+                    } else {
+                        // Fehlendes, nicht dekodierbares Base64 oder inhaltlich kein gültiges Bild:
+                        // Photo-Objekt wird übersprungen, Cruise wird trotzdem importiert (H8).
+                        invalidMediaCount += 1
                     }
-                    // Fehlendes Bild: Photo-Objekt wird übersprungen, Cruise wird trotzdem importiert
-                } else if let imagesDir = imagesDir,
-                          let imagePath = try? ZipArchiveReader.resolveSafePath(photoRef, in: imagesDir) {
+                } else if let imagesDir = imagesDir {
                     // ZIP-Pfadreferenz: fehlende Datei tolerieren (nur Photo überspringen);
                     // ../-Traversal/absolute Pfade werden von resolveSafePath abgelehnt
-                    if let imageData = try? Data(contentsOf: imagePath) {
+                    if let imagePath = try? ZipArchiveReader.resolveSafePath(photoRef, in: imagesDir),
+                       let imageData = try? Data(contentsOf: imagePath),
+                       isValidImageData(imageData) {
                         let photo = Photo(imageData: imageData, sortOrder: index)
                         photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
                         photo.cruise = cruise
                         modelContext.insert(photo)
+                    } else {
+                        // Fehlende oder inhaltlich ungültige Bilddatei: Photo wird übersprungen,
+                        // Cruise bleibt erhalten (H8).
+                        invalidMediaCount += 1
                     }
-                    // Fehlende Bilddatei: Photo wird übersprungen, Cruise bleibt erhalten
+                } else {
+                    // Weder Base64 noch ZIP-Kontext (Legacy-JSON-Import ohne Bilder): Referenz kann
+                    // nicht aufgelöst werden.
+                    invalidMediaCount += 1
                 }
             }
 
@@ -458,7 +493,20 @@ class ExportImportService {
             modelContext.rollback()
             throw error
         }
-        return ImportResult(imported: importedCount, skippedDuplicates: skippedDuplicates, skippedInvalid: skippedInvalid)
+        return ImportResult(imported: importedCount, skippedDuplicates: skippedDuplicates, skippedInvalid: skippedInvalid, invalidMedia: invalidMediaCount)
+    }
+
+    /// Prüft, ob `data` von ImageIO als Bild dekodiert werden kann (Signatur-/Struktur-Check ohne
+    /// vollständiges Decodieren). Verhindert, dass beliebige Bytes mit `.png`/`.jpg`-Namen (z. B. eine
+    /// Textdatei) unvalidiert als Foto/Hafenbild übernommen werden.
+    /// WICHTIG: `CGImageSourceCreateWithData` allein validiert nichts — die Quelle wird lazy erzeugt
+    /// und ist auch für Nicht-Bild-Daten non-nil. Erst `CGImageSourceGetCount` liest die Bytes
+    /// tatsächlich und liefert 0, wenn kein Bild erkannt wurde.
+    private func isValidImageData(_ data: Data) -> Bool {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
+            return false
+        }
+        return CGImageSourceGetCount(source) > 0
     }
 
     private func mapCategory(_ rawCategory: String) -> ExpenseCategory {
@@ -484,23 +532,49 @@ class ExportImportService {
         /// Die kumulierte (un-)komprimierte Größe aller Einträge oder die Archiv-Dateigröße selbst
         /// überschreitet das Limit.
         case archiveTooLarge(Int)
-        /// STORED-Eintrag (Methode 0), dessen compressedSize nicht mit uncompressedSize übereinstimmt.
+        /// STORED-Eintrag (Methode 0), dessen compressedSize nicht mit uncompressedSize übereinstimmt,
+        /// oder ein Verzeichnis-Eintrag mit einer von 0/0 abweichenden Größenangabe (H8).
         case sizeMismatch(name: String)
+        /// Central Directory ist unvollständig/beschädigt: die EOCD behauptet mehr oder weniger
+        /// Einträge, als tatsächlich im Central Directory enthalten sind, oder ein Eintrags-/Local-
+        /// Header liegt außerhalb der Datei (H8).
+        case truncatedArchive
+        /// Der von einem Central-Directory-Eintrag referenzierte Local Header beginnt nicht mit der
+        /// erwarteten ZIP-Signatur PK\x03\x04 (H8).
+        case invalidLocalHeader(name: String)
+        /// Der Dateiname im Local Header weicht vom Namen im Central-Directory-Eintrag ab (H8).
+        case nameMismatch(central: String, local: String)
+        /// Ein ZIP-Eintrag konnte nicht entpackt werden (nicht unterstützte Kompressionsmethode oder
+        /// beschädigter Deflate-Stream).
+        case decompressionFailed(name: String)
+        /// Die entpackten Bytes eines Eintrags ergeben nicht die im Central-Directory-Eintrag
+        /// deklarierte CRC-32-Prüfsumme — der Eintrag ist inhaltlich beschädigt (H8).
+        case crcMismatch(name: String)
 
         var errorDescription: String? {
             switch self {
             case .noDataFile:
-                return "Keine data.json in der ZIP-Datei gefunden"
+                return String(localized: "Keine data.json in der ZIP-Datei gefunden")
             case .invalidFormat:
-                return "Ungültiges Dateiformat"
+                return String(localized: "Ungültiges Dateiformat")
             case .unsafePath(let path):
-                return "Unsicherer Pfad im Archiv abgelehnt: \(path)"
+                return String(localized: "Unsicherer Pfad im Archiv abgelehnt: \(path)")
             case .entryTooLarge(let name, let size):
-                return "ZIP-Eintrag '\(name)' überschreitet das Größenlimit (\(size) Bytes; Maximum \(ZipArchiveReader.maxEntryUncompressedSize) Bytes)"
+                return String(localized: "ZIP-Eintrag '\(name)' überschreitet das Größenlimit (\(size) Bytes; Maximum \(ZipArchiveReader.maxEntryUncompressedSize) Bytes)")
             case .archiveTooLarge(let size):
-                return "ZIP-Archiv überschreitet das kumulierte Größenlimit (\(size) Bytes; Maximum \(ZipArchiveReader.maxTotalUncompressedSize) Bytes)"
+                return String(localized: "ZIP-Archiv überschreitet das kumulierte Größenlimit (\(size) Bytes; Maximum \(ZipArchiveReader.maxTotalUncompressedSize) Bytes)")
             case .sizeMismatch(let name):
-                return "ZIP-Eintrag '\(name)': compressedSize stimmt nicht mit uncompressedSize überein (Methode STORED erfordert Gleichheit)"
+                return String(localized: "ZIP-Eintrag '\(name)': compressedSize stimmt nicht mit uncompressedSize überein (Methode STORED erfordert Gleichheit)")
+            case .truncatedArchive:
+                return String(localized: "ZIP-Archiv ist beschädigt oder unvollständig (Central Directory)")
+            case .invalidLocalHeader(let name):
+                return String(localized: "ZIP-Eintrag '\(name)': ungültige Local-File-Header-Signatur")
+            case .nameMismatch(let central, let local):
+                return String(localized: "ZIP-Eintrag beschädigt: Name im Local-Header ('\(local)') weicht vom Central-Directory-Eintrag ('\(central)') ab")
+            case .decompressionFailed(let name):
+                return String(localized: "ZIP-Eintrag '\(name)' konnte nicht entpackt werden")
+            case .crcMismatch(let name):
+                return String(localized: "ZIP-Eintrag '\(name)': CRC-32-Prüfsumme stimmt nicht überein (Archiv beschädigt)")
             }
         }
     }

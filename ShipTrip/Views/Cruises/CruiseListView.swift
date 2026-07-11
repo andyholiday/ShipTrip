@@ -18,6 +18,9 @@ struct CruiseListView: View {
     @State private var selectedYear: Int?
     @State private var selectedShippingLine: String?
     @State private var navigationPath = NavigationPath()
+    @State private var cruiseToDelete: Cruise?
+    @State private var alertMessage = ""
+    @State private var showingAlert = false
     
     // MARK: - Computed Properties
     
@@ -82,7 +85,14 @@ struct CruiseListView: View {
                 if cruises.isEmpty {
                     emptyStateView
                 } else if filteredCruises.isEmpty {
-                    ContentUnavailableView(String(localized: "Keine Treffer"), systemImage: "line.3.horizontal.decrease.circle")
+                    ContentUnavailableView {
+                        Label(String(localized: "Keine Treffer"), systemImage: "line.3.horizontal.decrease.circle")
+                    } actions: {
+                        Button(String(localized: "Filter zurücksetzen"), role: .destructive) {
+                            selectedYear = nil
+                            selectedShippingLine = nil
+                        }
+                    }
                 } else {
                     cruiseList
                 }
@@ -100,6 +110,28 @@ struct CruiseListView: View {
                 IdBackfill.run(context: modelContext)
                 await ThumbnailBackfill.run(context: modelContext)
                 ShippingLineCatalogDedup.run(context: modelContext)
+            }
+            .alert(
+                String(localized: "Kreuzfahrt löschen?"),
+                isPresented: Binding(
+                    get: { cruiseToDelete != nil },
+                    set: { isPresented in
+                        if !isPresented { cruiseToDelete = nil }
+                    }
+                ),
+                presenting: cruiseToDelete
+            ) { cruise in
+                Button(String(localized: "Abbrechen"), role: .cancel) { }
+                Button(String(localized: "Löschen"), role: .destructive) {
+                    deleteCruise(cruise)
+                }
+            } message: { _ in
+                Text(String(localized: "Diese Aktion kann nicht rückgängig gemacht werden."))
+            }
+            .alert("Info", isPresented: $showingAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(alertMessage)
             }
         }
     }
@@ -140,7 +172,7 @@ struct CruiseListView: View {
                     .contentShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
                     .contextMenu {
                         Button(role: .destructive) {
-                            deleteCruise(hero)
+                            cruiseToDelete = hero
                         } label: {
                             Label("Löschen", systemImage: "trash")
                         }
@@ -219,7 +251,7 @@ struct CruiseListView: View {
                     .contentShape(RoundedRectangle(cornerRadius: DesignRadius.lg))
                     .contextMenu {
                         Button(role: .destructive) {
-                            deleteCruise(cruise)
+                            cruiseToDelete = cruise
                         } label: {
                             Label("Löschen", systemImage: "trash")
                         }
@@ -306,8 +338,9 @@ struct CruiseListView: View {
                 .clipShape(Circle())
                 .shadow(color: Color.navyDark.opacity(0.08), radius: 11, y: 4)
         }
+        .accessibilityIdentifier("filterMenuButton")
     }
-    
+
     private var hasActiveFilters: Bool {
         selectedYear != nil || selectedShippingLine != nil
     }
@@ -317,8 +350,45 @@ struct CruiseListView: View {
     private func deleteCruise(_ cruise: Cruise) {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
         let cruiseID = String(describing: cruise.persistentModelID)
-        Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
-        modelContext.delete(cruise)
+        CruiseDeletionSequence.run(
+            delete: { modelContext.delete(cruise) },
+            save: { try modelContext.save() },
+            rollback: { modelContext.rollback() },
+            removeReminders: {
+                Task { await NotificationService.shared.removeReminders(cruiseID: cruiseID) }
+            },
+            onError: { error in
+                alertMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
+                showingAlert = true
+            }
+        )
+    }
+}
+
+/// Sichere Lösch-Sequenz für Kreuzfahrten: delete → save → bei Fehler rollback (kein
+/// removeReminders-Aufruf, Datensatz bleibt sichtbar) → bei Erfolg removeReminders. Als freie
+/// Funktion mit injizierten Seiteneffekten testbar, ohne echten ModelContext/NotificationService
+/// (siehe ShipTripTests/CruiseDeletionSequenceTests.swift). Wird von CruiseListView und
+/// CruiseDetailView geteilt, damit beide Lösch-Pfade nicht auseinanderlaufen.
+enum CruiseDeletionSequence {
+    @discardableResult
+    static func run(
+        delete: () -> Void,
+        save: () throws -> Void,
+        rollback: () -> Void,
+        removeReminders: () -> Void,
+        onError: (Error) -> Void
+    ) -> Bool {
+        delete()
+        do {
+            try save()
+        } catch {
+            rollback()
+            onError(error)
+            return false
+        }
+        removeReminders()
+        return true
     }
 }
 

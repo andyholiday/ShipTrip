@@ -83,42 +83,42 @@ struct StatsView: View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             StatCard(
                 icon: "ferry",
-                title: "Kreuzfahrten",
+                title: String(localized: "Kreuzfahrten"),
                 value: "\(cruises.count)",
                 color: .oceanBlue
             )
             
             StatCard(
                 icon: "calendar",
-                title: "Reisetage",
+                title: String(localized: "Reisetage"),
                 value: "\(totalTravelDays)",
                 color: .oceanLight
             )
             
             StatCard(
                 icon: "mappin.and.ellipse",
-                title: "Häfen",
+                title: String(localized: "Häfen"),
                 value: "\(uniquePorts)",
                 color: .sunsetOrange
             )
             
             StatCard(
                 icon: "globe",
-                title: "Länder",
+                title: String(localized: "Länder"),
                 value: "\(uniqueCountries)",
                 color: .seaGreen
             )
             
             StatCard(
                 icon: "eurosign.circle",
-                title: "Ausgaben",
+                title: String(localized: "Ausgaben"),
                 value: totalExpenses.formattedCurrencyOrNumber,
                 color: .navyDark
             )
             
             StatCard(
                 icon: "star.fill",
-                title: "Ø Bewertung",
+                title: String(localized: "Ø Bewertung"),
                 value: averageRating > 0 ? String(format: "%.1f", averageRating) : "-",
                 color: .sunsetOrange
             )
