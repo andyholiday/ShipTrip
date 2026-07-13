@@ -9,8 +9,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geplant
 
-- CloudKit-Schema von Development nach Production promoten und Build 21 über
-  TestFlight bereitstellen.
+- CloudKit-Schema von Development nach Production promoten.
 - ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
   festlegen; Build 19 enthält noch das alte Relationship-Schema.
 - Wetter-API Integration

@@ -62,5 +62,15 @@ Cover-Zuordnungen oder Änderungen am Kalender-Datenmodell.
 - Fokustests für Cover-Auswahl und Sync-Operationszustand: grün.
 - Das eingecheckte Schema entspricht der live exportierten Development-Umgebung;
   der Production-Export enthielt vor der Promotion nur den Systemtyp `Users`.
-- Production-Promotion, Release-Archiv, Upload und App-Store-Connect-Status werden
-  nach Abschluss der externen Gates ergänzt.
+- Archiv und automatischer App-Store-Export für Version 1.7.0 (21) waren
+  erfolgreich. Die exportierte IPA ist gültig signiert, enthält
+  `aps-environment=production`, CloudKit-Umgebung `Production` und
+  `get-task-allow=false`.
+- Die IPA wurde erfolgreich hochgeladen. App Store Connect meldet
+  `processingState=VALID`; intern ist Build 21 `IN_BETA_TESTING`, extern
+  `WAITING_FOR_BETA_REVIEW`. Build 20 wurde dafür abgelöst und ist abgelaufen.
+- Deutsche und englische Testhinweise sind am Build hinterlegt; die interne
+  Gruppe „VIP Tester“ und die externe Gruppe „VIP Extern“ sind zugeordnet.
+- Noch offen ist ausschließlich die kontogebundene Promotion des CloudKit-
+  Schemas über die CloudKit Console. Der echte iCloud-Geräte-Smoke bleibt mangels
+  verfügbarem entsperrtem Gerät als dokumentierte Einschränkung bestehen.

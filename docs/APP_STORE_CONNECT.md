@@ -83,6 +83,13 @@ Kreuzfahrt,Schiff,Reise,Urlaub,Meer,Hafen,Route,Tagebuch,TUI,AIDA,MSC
 ## 🆕 What's New (Version 1.7.0, Build 21)
 
 ```
+
+### TestFlight-Status (13.07.2026)
+
+- Build 21: `VALID`, intern `IN_BETA_TESTING`
+- Externe Gruppe „VIP Extern“: `WAITING_FOR_BETA_REVIEW`
+- Testhinweise: Deutsch und Englisch hinterlegt
+- Build 20: durch Build 21 ersetzt und abgelaufen
 ☁️ Sync und passendere Reise-Cover
 
 • Private iCloud-Synchronisation deiner Reisedaten
