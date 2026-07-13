@@ -34,3 +34,13 @@ der blauen Illustration `cover_ship_mein_schiff_relax`.
 - Vollständige Unit-Suite: 297/297 Tests grün.
 - UI-Screenshottest `testScreenshot_HeroPhotoClean`: grün; das gerenderte
   Hero-Cover wurde visuell als fotografisches Fjordmotiv kontrolliert.
+
+## TestFlight-Status
+
+- Version 1.7.0 (22), App-Store-Connect-Build-ID
+  `6d74cd68-032c-4f13-a523-407fbf28437d`.
+- `processingState=VALID`; intern `IN_BETA_TESTING`.
+- Gruppe „VIP Extern“ ist zugeordnet; extern
+  `WAITING_FOR_BETA_REVIEW` / `WAITING_FOR_REVIEW`.
+- Deutsche und englische Hotfix-Testhinweise sind hinterlegt.
+- Build 21 mit der Cover-Regression ist abgelaufen und damit abgelöst.
