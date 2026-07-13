@@ -40,6 +40,22 @@ enum DemoDataService {
         try? context.save()
     }
 
+    /// Setzt den persistenten Store nur für deterministische UI-Tests vollständig zurück.
+    /// Der Launch-Parameter dafür wird ausschließlich im DEBUG-Build ausgewertet.
+    static func resetAndLoadDemoDataForUITesting(in context: ModelContext) throws {
+        try deleteAll(Cruise.self, in: context)
+        try deleteAll(Port.self, in: context)
+        try deleteAll(Expense.self, in: context)
+        try deleteAll(Photo.self, in: context)
+        try deleteAll(Deal.self, in: context)
+        try deleteAll(CustomShippingLine.self, in: context)
+        try deleteAll(CustomShip.self, in: context)
+        try deleteAll(HiddenCatalogItem.self, in: context)
+        try context.save()
+
+        loadDemoData(into: context)
+    }
+
     /// True wenn mindestens eine Demo-Kreuzfahrt oder ein Demo-Angebot vorhanden ist.
     static func hasDemoData(in context: ModelContext) -> Bool {
         !fetch(Cruise.self, where: \.isDemo, in: context).isEmpty ||
@@ -65,6 +81,14 @@ enum DemoDataService {
         let descriptor = FetchDescriptor<T>()
         let all = (try? context.fetch(descriptor)) ?? []
         return all.filter { $0[keyPath: keyPath] }
+    }
+
+    private static func deleteAll<T: PersistentModel>(
+        _ type: T.Type,
+        in context: ModelContext
+    ) throws {
+        let objects = try context.fetch(FetchDescriptor<T>())
+        objects.forEach(context.delete)
     }
 
     // MARK: - Demo-Kreuzfahrten

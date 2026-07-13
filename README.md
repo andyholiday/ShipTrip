@@ -6,7 +6,7 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
 ![iOS](https://img.shields.io/badge/iOS-18.5+-blue)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-native-green)
 ![SwiftData](https://img.shields.io/badge/SwiftData-native-purple)
-![Version](https://img.shields.io/badge/Version-1.5.1-brightgreen)
+![Version](https://img.shields.io/badge/Version-1.7.0%20(Build%2021)-brightgreen)
 
 📋 **[Changelog](CHANGELOG.md)** | 📖 **[Dokumentation](docs/)**
 
@@ -41,6 +41,8 @@ Eine iOS-App zum Verwalten und Dokumentieren von Kreuzfahrt-Reisen.
 - 💸 Ausgaben-Tracking (Geräte-Locale-Währung, kein hartkodiertes EUR)
 - 💾 Export/Import als ZIP (verlustfrei, inkl. Reise- und Hafenbilder)
 - 🔔 Lokale Erinnerungen vor Reisestart (keine Push-Notifications/APNs)
+- ☁️ SwiftData-Sync über den privaten iCloud-CloudKit-Container
+- 📅 Optionaler Kalender-Sync: nur Reisen oder Reisen inklusive Häfen/Seetagen
 - 🎨 Dark Mode Support
 - 📱 Natives iOS-Design
 
@@ -81,6 +83,9 @@ ShipTrip/
 │   ├── KeychainService.swift       # Sichere Speicherung des API-Keys
 │   ├── NotificationService.swift   # Lokale Erinnerungen (kein APNs)
 │   ├── ExportImportService.swift   # ZIP-/JSON-Export/-Import
+│   ├── ShipTripCloudSync.swift      # SwiftData-/CloudKit-Konfiguration und Accountstatus
+│   ├── CalendarSyncService.swift    # Optionale EventKit-Spiegelung
+│   ├── CalendarEventPlanner.swift   # Deterministische Kalendertermine
 │   ├── ZipArchiveWriter.swift      # ZIP-Erstellung (STORED)
 │   ├── ZipArchiveReader.swift      # ZIP-Extraktion (Zip-Slip-/Bomben-Schutz)
 │   └── CRC32.swift                 # CRC-32 für den ZIP-Stack
@@ -143,9 +148,19 @@ Vollständige Architektur- und API-Doku: [docs/ARCHITECTURE.md](docs/ARCHITECTUR
 - [x] ~1.900 Häfen (Wikidata Import)
 - [x] Export/Import als ZIP (verlustfrei, inkl. Bilder)
 
+### TestFlight Build 21
+- [x] CloudKit-konformes Modell und privater SwiftData-CloudKit-Store
+- [x] CloudKit-Schema in Development installiert
+- [x] Optionaler Kalender-Sync mit Zielkalender und Detailstufe
+- [x] Sichtbarer Arbeitszustand beim manuellen Kalender-Sync
+- [x] Passendere und abwechslungsreichere Fallback-Cover
+- [ ] CloudKit-Schema nach Production promoten und Build 21 über TestFlight ausliefern
+
+Siehe [Build-21-Feature-Doku](docs/features/testflight-feedback-build-21.md),
+[Build-20-Feature-Doku](docs/features/testflight-feedback-build-20.md) und
+[ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md).
+
 ### Geplant
-- [ ] CloudKit Sync (Datenmodell teilweise vorbereitet, aber noch nicht
-      konform/aktiv — siehe [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
 - [ ] Hafen-Bilder + KI-Generierung
 - [ ] Wetter-API Integration
 - [ ] Auto-Import von Reederei-Angeboten

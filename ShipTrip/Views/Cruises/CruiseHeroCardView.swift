@@ -138,12 +138,21 @@ struct CruiseHeroCardView: View {
     private var coverAssetImage: Image? {
         ShippingLine.coverAssetCandidates(
             shippingLine: cruise.shippingLine,
-            ship: cruise.ship
+            ship: cruise.ship,
+            context: coverSelectionContext
         )
         .lazy
         .compactMap { UIImage(named: $0) }
         .first
         .map { Image(uiImage: $0) }
+    }
+
+    private var coverSelectionContext: String {
+        let routeKey = cruise.route
+            .sorted { $0.sortOrder < $1.sortOrder }
+            .map { "\($0.name)|\($0.country)" }
+            .joined(separator: "::")
+        return "\(cruise.id.uuidString)|\(cruise.startDate.timeIntervalSinceReferenceDate)|\(routeKey)"
     }
 
     private var subline: String {

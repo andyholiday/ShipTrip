@@ -9,13 +9,35 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geplant
 
-- iCloud-Backup/Sync via CloudKit (Datenmodell bereits vorbereitet; Aktivierung
-  in separatem Build nach manuellem Xcode-Capability-Setup und Smoke-Test — siehe
-  [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- CloudKit-Schema von Development nach Production promoten und Build 21 über
+  TestFlight bereitstellen.
+- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
+  festlegen; Build 19 enthält noch das alte Relationship-Schema.
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
 ### Hinzugefuegt
+
+- **Kalender-Sync mit sichtbarem Arbeitszustand (Build 21,
+  TestFlight-Feedback vom 13.07.2026)**: Manuelles Synchronisieren zeigt nun
+  während der Operation einen lokalisierten Fortschrittszustand; erneute Starts
+  und abhängige Eingaben bleiben bis zum Abschluss gesperrt.
+  ([Feature-Doku](docs/features/testflight-feedback-build-21.md))
+
+- **iCloud-Sync (Build 20, TestFlight-Feedback vom 12.07.2026)**: SwiftData
+  verwendet nun den privaten Container `iCloud.com.andre.ShipTrip`; die App zeigt
+  den aktuellen iCloud-Accountstatus in den Einstellungen. Das zugehörige Schema
+  liegt unter `docs/cloudkit/ShipTrip.ckdb` und ist in Development installiert.
+  Build 20 wurde erfolgreich zu TestFlight hochgeladen; die Production-Promotion
+  ist Teil des Build-21-Release-Gates.
+  ([Feature-Doku](docs/features/testflight-feedback-build-20.md),
+  [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- **Optionaler Kalender-Sync (Build 20, TestFlight-Feedback vom 12.07.2026)**:
+  Nutzer können vollständigen Kalenderzugriff erteilen, einen beschreibbaren
+  Zielkalender wählen und entweder nur Reisen oder zusätzlich Häfen und Seetage
+  spiegeln. Seetage benennen nach Möglichkeit den vorherigen und nächsten Hafen;
+  Deaktivieren entfernt die von ShipTrip verwalteten Termine.
+  ([Feature-Doku](docs/features/testflight-feedback-build-20.md))
 
 - **Privacy-Manifest**: `PrivacyInfo.xcprivacy` deklariert
   `NSPrivacyAccessedAPICategoryUserDefaults` (CA92.1) und
@@ -27,6 +49,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h6--unvollständige-lokalisierung-tasks-s21a-s22s24-anteile-s21b-1-2))
 
 ### Behoben
+
+- **Passendere und abwechslungsreichere Fallback-Cover (Build 21,
+  TestFlight-Feedback vom 13.07.2026)**: Vorhandene schiffsspezifische Assets
+  haben Vorrang vor generischen Bildern; der Stock-Pool nutzt zusätzlich
+  vorhandene Schiffs-Cover und bezieht Reise-/Zielkontext in die stabile Auswahl
+  ein, um Wiederholungen zwischen verschiedenen Reisen zu reduzieren.
+  ([Feature-Doku](docs/features/testflight-feedback-build-21.md))
 
 - **Reiseliste: Filter ohne sichtbaren Reset-Weg**: Der Empty-State bei einem
   Jahres-/Reederei-Filter ohne Treffer zeigt jetzt einen

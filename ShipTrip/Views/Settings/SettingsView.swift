@@ -7,15 +7,43 @@
 
 import SwiftUI
 import SwiftData
+import EventKit
+import UIKit
+
+@MainActor
+struct CalendarSyncOperationState {
+    enum Phase: Equatable {
+        case idle
+        case running
+    }
+
+    private(set) var phase: Phase = .idle
+
+    var isWorking: Bool {
+        phase == .running
+    }
+
+    mutating func begin() -> Bool {
+        guard phase == .idle else { return false }
+        phase = .running
+        return true
+    }
+
+    mutating func finish() {
+        phase = .idle
+    }
+}
 
 /// Einstellungen und Mehr
 struct SettingsView: View {
     @AppStorage("colorScheme") private var colorScheme = "system"
+    @AppStorage(CalendarSyncPreferences.enabledKey) private var calendarSyncEnabled = false
 
     @State private var showingApiKeySheet = false
     @State private var isValidatingKey = false
     @State private var keyValidationResult: Bool?
     @State private var hasApiKey = false
+    @State private var cloudSyncStatus: ShipTripCloudSync.AccountStatus = .loading
 
     #if DEBUG
     @Environment(\.modelContext) private var modelContext
@@ -75,14 +103,25 @@ struct SettingsView: View {
                     }
                 }
                 
-                // iCloud
+                // Synchronisation
                 Section(header: Text("Synchronisation"),
-                        footer: Text("iCloud-Sync ist für eine zukünftige Version geplant.")) {
+                        footer: Text("Reisedaten werden automatisch über deinen privaten iCloud-Account synchronisiert. Die Kalender-Synchronisation ist optional.")) {
                     HStack {
                         Label("iCloud Sync", systemImage: "icloud")
                         Spacer()
-                        Text("Geplant")
+                        Text(cloudSyncStatus.label)
                             .foregroundStyle(.secondary)
+                    }
+
+                    NavigationLink {
+                        CalendarSyncSettingsView()
+                    } label: {
+                        HStack {
+                            Label("Kalender", systemImage: "calendar.badge.plus")
+                            Spacer()
+                            Text(calendarSyncEnabled ? "Aktiv" : "Aus")
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
                 
@@ -161,6 +200,9 @@ struct SettingsView: View {
                 hasDemoData = DemoDataService.hasDemoData(in: modelContext)
                 #endif
             }
+            .task {
+                cloudSyncStatus = await ShipTripCloudSync.accountStatus()
+            }
             .preferredColorScheme(colorSchemeValue)
         }
     }
@@ -205,6 +247,203 @@ struct SettingsView: View {
         case "light": return .light
         case "dark": return .dark
         default: return nil
+        }
+    }
+}
+
+/// Optionale Spiegelung aller Reisen in einen auswählbaren Systemkalender.
+struct CalendarSyncSettingsView: View {
+    @Query(sort: \Cruise.startDate) private var cruises: [Cruise]
+    @AppStorage(CalendarSyncPreferences.enabledKey) private var isEnabled = false
+    @AppStorage(CalendarSyncPreferences.calendarIdentifierKey) private var calendarIdentifier = ""
+    @AppStorage(CalendarSyncPreferences.modeKey) private var modeRawValue = CalendarSyncMode.tripOnly.rawValue
+
+    @State private var calendars: [WritableCalendar] = []
+    @State private var operationState = CalendarSyncOperationState()
+    @State private var statusMessage = ""
+    @State private var showingAccessAlert = false
+
+    private var isWorking: Bool {
+        operationState.isWorking
+    }
+
+    private var mode: Binding<String> {
+        Binding(
+            get: { modeRawValue },
+            set: { newValue in
+                modeRawValue = newValue
+                synchronizeIfEnabled()
+            }
+        )
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle(
+                    "Reisen mit Kalender synchronisieren",
+                    isOn: Binding(
+                        get: { isEnabled },
+                        set: { newValue in
+                            startUpdatingEnabled(newValue)
+                        }
+                    )
+                )
+                .disabled(isWorking)
+
+                if isWorking {
+                    HStack {
+                        ProgressView()
+                        Text("Kalender wird aktualisiert …")
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(Text("Kalender wird aktualisiert …"))
+                    .accessibilityIdentifier("calendarSyncProgress")
+                } else if !statusMessage.isEmpty {
+                    Text(statusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            } footer: {
+                Text("ShipTrip aktualisiert angelegte Termine automatisch und entfernt sie wieder, wenn eine Reise gelöscht oder die Synchronisation deaktiviert wird.")
+            }
+
+            Section("Zielkalender") {
+                if calendars.isEmpty {
+                    Text("Kein beschreibbarer Kalender verfügbar")
+                        .foregroundStyle(.secondary)
+                } else {
+                    Picker("Kalender", selection: $calendarIdentifier) {
+                        ForEach(calendars) { calendar in
+                            Text(calendar.displayName).tag(calendar.id)
+                        }
+                    }
+                    .disabled(!isEnabled || isWorking)
+                    .onChange(of: calendarIdentifier) {
+                        synchronizeIfEnabled()
+                    }
+                }
+            }
+
+            Section {
+                Picker("Kalendereinträge", selection: mode) {
+                    ForEach(CalendarSyncMode.allCases) { option in
+                        Text(option.displayName).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.inline)
+                .disabled(!isEnabled || isWorking)
+            } header: {
+                Text("Umfang")
+            } footer: {
+                Text("Im Detailmodus erhält jeder Hafen und Seetag einen eigenen Eintrag. Seetage nennen die Häfen davor und danach.")
+            }
+
+            if isEnabled {
+                Section {
+                    Button("Jetzt synchronisieren") {
+                        synchronizeIfEnabled()
+                    }
+                    .disabled(isWorking)
+                }
+            }
+        }
+        .navigationTitle("Kalender")
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await refreshCalendars()
+        }
+        .alert("Kalenderzugriff erforderlich", isPresented: $showingAccessAlert) {
+            Button("Abbrechen", role: .cancel) { }
+            Button("Einstellungen öffnen") {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            }
+        } message: {
+            Text("Erlaube ShipTrip den vollständigen Kalenderzugriff, damit du einen Zielkalender auswählen und bestehende ShipTrip-Termine aktualisieren kannst.")
+        }
+    }
+
+    private func refreshCalendars() async {
+        guard CalendarSyncService.shared.authorizationStatus == .fullAccess else {
+            calendars = []
+            return
+        }
+        calendars = CalendarSyncService.shared.writableCalendars()
+        calendarIdentifier = CalendarSyncService.shared.selectDefaultCalendarIfNeeded() ?? ""
+        if isEnabled {
+            synchronizeIfEnabled()
+        }
+    }
+
+    private func startUpdatingEnabled(_ newValue: Bool) {
+        guard operationState.begin() else { return }
+        Task { @MainActor in
+            await Task.yield()
+            await updateEnabled(newValue)
+        }
+    }
+
+    private func updateEnabled(_ newValue: Bool) async {
+        defer { operationState.finish() }
+
+        guard newValue else {
+            isEnabled = false
+            do {
+                try CalendarSyncService.shared.removeAllManagedEvents()
+                statusMessage = String(localized: "ShipTrip-Termine wurden entfernt.")
+            } catch CalendarSyncError.accessDenied {
+                isEnabled = false
+                statusMessage = String(localized: "Die Synchronisation ist aus. Erlaube Kalenderzugriff erneut, um vorhandene ShipTrip-Termine zu entfernen.")
+                showingAccessAlert = true
+            } catch {
+                isEnabled = true
+                statusMessage = error.localizedDescription
+            }
+            return
+        }
+
+        guard await CalendarSyncService.shared.requestAccess() else {
+            isEnabled = false
+            showingAccessAlert = true
+            return
+        }
+
+        calendars = CalendarSyncService.shared.writableCalendars()
+        guard let selectedIdentifier = CalendarSyncService.shared.selectDefaultCalendarIfNeeded() else {
+            isEnabled = false
+            statusMessage = String(localized: "Kein beschreibbarer Kalender verfügbar.")
+            return
+        }
+
+        calendarIdentifier = selectedIdentifier
+        isEnabled = true
+        performSynchronization()
+    }
+
+    private func synchronizeIfEnabled() {
+        guard isEnabled, operationState.begin() else { return }
+        Task { @MainActor in
+            await Task.yield()
+            synchronizeNow()
+        }
+    }
+
+    private func synchronizeNow() {
+        defer { operationState.finish() }
+        performSynchronization()
+    }
+
+    private func performSynchronization() {
+        do {
+            let count = try CalendarSyncService.shared.synchronize(cruises: cruises)
+            statusMessage = String(localized: "\(count) Kalendereinträge synchronisiert.")
+        } catch CalendarSyncError.accessDenied {
+            isEnabled = false
+            showingAccessAlert = true
+        } catch {
+            statusMessage = error.localizedDescription
         }
     }
 }

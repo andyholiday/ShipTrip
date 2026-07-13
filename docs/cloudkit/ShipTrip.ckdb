@@ -1,0 +1,187 @@
+DEFINE SCHEMA
+
+    RECORD TYPE CD_Cruise (
+        CD_bookingNumber STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_cabinNumber   STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_cabinType     STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_createdAt     TIMESTAMP QUERYABLE SORTABLE,
+        CD_endDate       TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_isDemo        INT64 QUERYABLE SORTABLE,
+        CD_notes         STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_rating        DOUBLE QUERYABLE SORTABLE,
+        CD_ship          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_shippingLine  STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_startDate     TIMESTAMP QUERYABLE SORTABLE,
+        CD_title         STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_updatedAt     TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_CustomShip (
+        CD_createdAt     TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_lineOptionID  STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_name          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_updatedAt     TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_CustomShippingLine (
+        CD_createdAt     TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_logo          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_name          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_updatedAt     TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_Deal (
+        CD_createdAt      TIMESTAMP QUERYABLE SORTABLE,
+        CD_destination    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_endDate        TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName     STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id             STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_isDemo         INT64 QUERYABLE SORTABLE,
+        CD_notes          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_originalPrice  DOUBLE QUERYABLE SORTABLE,
+        CD_price          DOUBLE QUERYABLE SORTABLE,
+        CD_ship           STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_shippingLine   STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_startDate      TIMESTAMP QUERYABLE SORTABLE,
+        CD_title          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_updatedAt      TIMESTAMP QUERYABLE SORTABLE,
+        CD_url            STRING QUERYABLE SEARCHABLE SORTABLE,
+        "___createTime"  TIMESTAMP,
+        "___createdBy"   REFERENCE,
+        "___etag"        STRING,
+        "___modTime"     TIMESTAMP,
+        "___modifiedBy"  REFERENCE,
+        "___recordID"    REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_Expense (
+        CD_amount          DOUBLE QUERYABLE SORTABLE,
+        CD_categoryRaw     STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_createdAt       TIMESTAMP QUERYABLE SORTABLE,
+        CD_cruise          STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_descriptionText STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_entityName      STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_expenseDate     TIMESTAMP QUERYABLE SORTABLE,
+        CD_id              STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_updatedAt       TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime"   TIMESTAMP,
+        "___createdBy"    REFERENCE,
+        "___etag"         STRING,
+        "___modTime"      TIMESTAMP,
+        "___modifiedBy"   REFERENCE,
+        "___recordID"     REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_HiddenCatalogItem (
+        CD_createdAt     TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_lineID        STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_shipKey       STRING QUERYABLE SEARCHABLE SORTABLE,
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_Photo (
+        CD_createdAt             TIMESTAMP QUERYABLE SORTABLE,
+        CD_cruise                STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_entityName            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id                    STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_imageData_ckAsset     ASSET,
+        CD_sortOrder             INT64 QUERYABLE SORTABLE,
+        CD_thumbnailData_ckAsset ASSET,
+        CD_updatedAt             TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime"         TIMESTAMP,
+        "___createdBy"          REFERENCE,
+        "___etag"               STRING,
+        "___modTime"            TIMESTAMP,
+        "___modifiedBy"         REFERENCE,
+        "___recordID"           REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE CD_Port (
+        CD_arrival           TIMESTAMP QUERYABLE SORTABLE,
+        CD_country           STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_cruise            STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_departure         TIMESTAMP QUERYABLE SORTABLE,
+        CD_entityName        STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_excursionsRaw     STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_id                STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_imageData_ckAsset ASSET,
+        CD_isSeaDay          INT64 QUERYABLE SORTABLE,
+        CD_latitude          DOUBLE QUERYABLE SORTABLE,
+        CD_longitude         DOUBLE QUERYABLE SORTABLE,
+        CD_name              STRING QUERYABLE SEARCHABLE SORTABLE,
+        CD_sortOrder         INT64 QUERYABLE SORTABLE,
+        CD_updatedAt         TIMESTAMP QUERYABLE SORTABLE,
+        "___createTime"     TIMESTAMP,
+        "___createdBy"      REFERENCE,
+        "___etag"           STRING,
+        "___modTime"        TIMESTAMP,
+        "___modifiedBy"     REFERENCE,
+        "___recordID"       REFERENCE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Users (
+        "___createTime" TIMESTAMP,
+        "___createdBy"  REFERENCE,
+        "___etag"       STRING,
+        "___modTime"    TIMESTAMP,
+        "___modifiedBy" REFERENCE,
+        "___recordID"   REFERENCE,
+        roles            LIST<INT64>,
+        GRANT WRITE TO "_creator",
+        GRANT READ TO "_world"
+    );

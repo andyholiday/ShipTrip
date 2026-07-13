@@ -145,7 +145,8 @@ struct ShippingLine: Identifiable, Hashable {
         return "cover_ship_\(coverSlug(for: normalizedShip))"
     }
 
-    /// Priorisierte Cover-Kandidaten: stabiler Reederei-Pool vor Legacy-Covern vor neutralem Ocean-Fallback.
+    /// Priorisierte Cover-Kandidaten: schiffsspezifisches Cover vor stabilem Reederei-Pool,
+    /// Legacy-Reederei-Cover und neutralem Ocean-Fallback.
     /// Findet der Katalog-Lookup (`find(byName:)`/`findByShipName`) keine Reederei — z. B. bei
     /// eigenen Reedereien/Schiffen, aber auch bei Katalog-Namen mit Tippfehler/Variante wie
     /// „Cunard Line" + „Queen-Mary 2" —, greift zuerst weiterhin der namensbasierte
@@ -153,20 +154,25 @@ struct ShippingLine: Identifiable, Hashable {
     /// erst danach ein namensbasiert zugelostes Stock-Cover aus `stockCoverPool`, statt direkt auf
     /// `cover_ocean_route` zu springen. Achtung: eine Umbenennung der Reederei/des Schiffs kann
     /// dadurch das zugeloste Cover ändern.
-    static func coverAssetCandidates(shippingLine: String, ship: String) -> [String] {
+    static func coverAssetCandidates(shippingLine: String, ship: String, context: String = "") -> [String] {
         var candidates: [String] = []
 
         if let line = find(byName: shippingLine) ?? findByShipName(ship) {
+            let shipAsset = shipCoverAssetName(for: ship)
+            let hasExactCatalogShip = findByShipName(ship) != nil
+            if hasExactCatalogShip, let shipAsset {
+                candidates.append(shipAsset)
+            }
             candidates.append(line.coverPoolAssetName(for: ship))
             candidates.append(line.coverAssetName)
-            if let shipAsset = shipCoverAssetName(for: ship) {
+            if !hasExactCatalogShip, let shipAsset {
                 candidates.append(shipAsset)
             }
         } else {
             if let shipAsset = shipCoverAssetName(for: ship) {
                 candidates.append(shipAsset)
             }
-            if let stockAsset = stockCoverAssetName(shippingLine: shippingLine, ship: ship) {
+            if let stockAsset = stockCoverAssetName(shippingLine: shippingLine, ship: ship, context: context) {
                 candidates.append(stockAsset)
             }
         }
@@ -175,7 +181,8 @@ struct ShippingLine: Identifiable, Hashable {
         return Array(dictOrderedKeys: candidates)
     }
 
-    /// Eingefrorener Pool aller 70 Reederei-Cover-Assets (14 Katalog-Reedereien × 5 Varianten) als
+    /// Eingefrorener Pool aller 70 Reederei-Cover-Assets (14 Katalog-Reedereien × 5 Varianten) und
+    /// 114 vorhandenen schiffsspezifischen Cover als
     /// feste Liste — bewusst NICHT dynamisch aus `all`/`coverPoolAssetNames` abgeleitet, damit die
     /// `hash % count`-Zuordnung für eigene Reedereien/Schiffe stabil bleibt, auch wenn der Katalog
     /// später um weitere Reedereien erweitert wird.
@@ -194,16 +201,51 @@ struct ShippingLine: Identifiable, Hashable {
         "cover_line_princess_1", "cover_line_princess_2", "cover_line_princess_3", "cover_line_princess_4", "cover_line_princess_5",
         "cover_line_disney_1", "cover_line_disney_2", "cover_line_disney_3", "cover_line_disney_4", "cover_line_disney_5",
         "cover_line_virgin_1", "cover_line_virgin_2", "cover_line_virgin_3", "cover_line_virgin_4", "cover_line_virgin_5",
+        "cover_ship_aidaaura", "cover_ship_aidabella", "cover_ship_aidablu", "cover_ship_aidacara",
+        "cover_ship_aidacosma", "cover_ship_aidadiva", "cover_ship_aidaluna", "cover_ship_aidamar",
+        "cover_ship_aidanova", "cover_ship_aidaperla", "cover_ship_aidaprima", "cover_ship_aidasol",
+        "cover_ship_aidastella", "cover_ship_aidavita", "cover_ship_allure_of_the_seas", "cover_ship_amadea",
+        "cover_ship_amera", "cover_ship_anthem_of_the_seas", "cover_ship_artania", "cover_ship_brilliant_lady",
+        "cover_ship_carnival_celebration", "cover_ship_carnival_firenze", "cover_ship_carnival_jubilee", "cover_ship_carnival_venezia",
+        "cover_ship_celebrity_apex", "cover_ship_celebrity_ascent", "cover_ship_celebrity_beyond", "cover_ship_celebrity_eclipse",
+        "cover_ship_celebrity_edge", "cover_ship_celebrity_reflection", "cover_ship_celebrity_silhouette", "cover_ship_celebrity_xcel",
+        "cover_ship_costa_deliziosa", "cover_ship_costa_diadema", "cover_ship_costa_fascinosa", "cover_ship_costa_favolosa",
+        "cover_ship_costa_firenze", "cover_ship_costa_fortuna", "cover_ship_costa_pacifica", "cover_ship_costa_serena",
+        "cover_ship_costa_smeralda", "cover_ship_costa_toscana", "cover_ship_deutschland", "cover_ship_discovery_princess",
+        "cover_ship_disney_adventure", "cover_ship_disney_destiny", "cover_ship_disney_dream", "cover_ship_disney_fantasy",
+        "cover_ship_disney_magic", "cover_ship_disney_treasure", "cover_ship_disney_wish", "cover_ship_disney_wonder",
+        "cover_ship_enchanted_princess", "cover_ship_europa", "cover_ship_europa_2", "cover_ship_hanseatic_inspiration",
+        "cover_ship_hanseatic_nature", "cover_ship_hanseatic_spirit", "cover_ship_harmony_of_the_seas", "cover_ship_icon_of_the_seas",
+        "cover_ship_majestic_princess", "cover_ship_mardi_gras", "cover_ship_mein_schiff_1", "cover_ship_mein_schiff_2",
+        "cover_ship_mein_schiff_3", "cover_ship_mein_schiff_4", "cover_ship_mein_schiff_5", "cover_ship_mein_schiff_6",
+        "cover_ship_mein_schiff_7", "cover_ship_mein_schiff_flow", "cover_ship_mein_schiff_herz", "cover_ship_mein_schiff_relax",
+        "cover_ship_msc_bellissima", "cover_ship_msc_divina", "cover_ship_msc_euribia", "cover_ship_msc_fantasia",
+        "cover_ship_msc_grandiosa", "cover_ship_msc_meraviglia", "cover_ship_msc_preziosa", "cover_ship_msc_seascape",
+        "cover_ship_msc_seashore", "cover_ship_msc_seaside", "cover_ship_msc_splendida", "cover_ship_msc_virtuosa",
+        "cover_ship_msc_world_america", "cover_ship_msc_world_europa", "cover_ship_norwegian_aqua", "cover_ship_norwegian_bliss",
+        "cover_ship_norwegian_breakaway", "cover_ship_norwegian_encore", "cover_ship_norwegian_escape", "cover_ship_norwegian_joy",
+        "cover_ship_norwegian_luna", "cover_ship_norwegian_prima", "cover_ship_norwegian_viva", "cover_ship_oasis_of_the_seas",
+        "cover_ship_odyssey_of_the_seas", "cover_ship_queen_anne", "cover_ship_queen_elizabeth", "cover_ship_queen_mary_2",
+        "cover_ship_queen_victoria", "cover_ship_regal_princess", "cover_ship_resilient_lady", "cover_ship_royal_princess",
+        "cover_ship_scarlet_lady", "cover_ship_sky_princess", "cover_ship_spectrum_of_the_seas", "cover_ship_star_of_the_seas",
+        "cover_ship_star_princess", "cover_ship_sun_princess", "cover_ship_symphony_of_the_seas", "cover_ship_utopia_of_the_seas",
+        "cover_ship_valiant_lady", "cover_ship_wonder_of_the_seas",
     ]
 
     /// Deterministisches Stock-Cover für eine eigene (im Katalog nicht gefundene) Reederei/Schiff-
     /// Kombination, gewählt aus `stockCoverPool`. `nil`, wenn beide Namen leer sind.
-    private static func stockCoverAssetName(shippingLine: String, ship: String) -> String? {
+    private static func stockCoverAssetName(shippingLine: String, ship: String, context: String) -> String? {
         let normalizedLine = coverSlug(for: shippingLine)
         let normalizedShip = coverSlug(for: ship)
         guard !normalizedLine.isEmpty || !normalizedShip.isEmpty else { return nil }
-        let key = "\(normalizedLine)::\(normalizedShip)"
-        let index = Int(fnv1aHash(key) % UInt64(stockCoverPool.count))
+        let normalizedContext = coverSlug(for: context)
+        let key = [normalizedLine, normalizedShip, normalizedContext]
+            .filter { !$0.isEmpty }
+            .joined(separator: "::")
+        // Aufrufe ohne Reise-/Ortskontext behalten die bisherige 70er-Zuordnung bei;
+        // reale Reisen und Wunschreisen nutzen den erweiterten, vielfältigeren Pool.
+        let poolCount = normalizedContext.isEmpty ? 70 : stockCoverPool.count
+        let index = Int(fnv1aHash(key) % UInt64(poolCount))
         return stockCoverPool[index]
     }
 

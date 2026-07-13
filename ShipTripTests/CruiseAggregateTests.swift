@@ -387,14 +387,15 @@ struct HeroSelectionTests {
 @Suite("Cruise-Cover-Fallback")
 struct CruiseCoverFallbackTests {
 
-    @Test("Cover-Kandidaten priorisieren stabilen Reederei-Pool vor Legacy-Covern")
-    func coverCandidatesPreferStableLinePoolThenLegacyCovers() {
+    @Test("Cover-Kandidaten priorisieren vorhandenes Schiffs-Cover vor dem Reederei-Pool")
+    func coverCandidatesPreferExactShipCoverBeforeStableLinePool() {
         let candidates = ShippingLine.coverAssetCandidates(
             shippingLine: "AIDA Cruises",
             ship: "AIDAnova"
         )
 
-        #expect(candidates.first?.hasPrefix("cover_line_aida_") == true)
+        #expect(candidates.first == "cover_ship_aidanova")
+        #expect(candidates.dropFirst().first?.hasPrefix("cover_line_aida_") == true)
         #expect(candidates.contains("cover_line_aida"))
         #expect(candidates.contains("cover_ship_aidanova"))
         #expect(candidates.last == "cover_ocean_route")
@@ -412,7 +413,7 @@ struct CruiseCoverFallbackTests {
         ).first
 
         #expect(first == second)
-        #expect(first?.hasPrefix("cover_line_msc_") == true)
+        #expect(first == "cover_ship_msc_seaside")
     }
 
     @Test("AIDAnova Hero-Cover-Kandidat ist aus Assets ladbar")
@@ -422,7 +423,7 @@ struct CruiseCoverFallbackTests {
             ship: "AIDAnova"
         )
 
-        #expect(candidates.first == "cover_line_aida_1")
+        #expect(candidates.first == "cover_ship_aidanova")
         #expect(candidates.first.flatMap { UIImage(named: $0) } != nil)
     }
 
@@ -458,6 +459,48 @@ struct CruiseCoverFallbackTests {
         let second = ShippingLine.coverAssetCandidates(shippingLine: "Meine Fantasie-Reederei", ship: "MS Sonnenschein")
 
         #expect(first == second)
+    }
+
+    @Test("Reise- und Ortskontext streut gleiche eigene Namen stabil auf unterschiedliche Stock-Cover")
+    func voyageContextDiversifiesCustomNamesDeterministically() {
+        let firstVoyage = ShippingLine.coverAssetCandidates(
+            shippingLine: "Meine Fantasie-Reederei",
+            ship: "MS Sonnenschein",
+            context: "2026-07-01 Hamburg Kiel"
+        )
+        let repeatedVoyage = ShippingLine.coverAssetCandidates(
+            shippingLine: "Meine Fantasie-Reederei",
+            ship: "MS Sonnenschein",
+            context: "2026-07-01 Hamburg Kiel"
+        )
+        let otherVoyage = ShippingLine.coverAssetCandidates(
+            shippingLine: "Meine Fantasie-Reederei",
+            ship: "MS Sonnenschein",
+            context: "2027-03-10 Barcelona Marseille"
+        )
+
+        let firstStock = firstVoyage.first { ShippingLine.stockCoverPool.contains($0) }
+        let repeatedStock = repeatedVoyage.first { ShippingLine.stockCoverPool.contains($0) }
+        let otherStock = otherVoyage.first { ShippingLine.stockCoverPool.contains($0) }
+
+        #expect(firstStock == repeatedStock)
+        #expect(firstStock != otherStock)
+        #expect(firstStock?.hasPrefix("cover_ship_") == true)
+    }
+
+    @Test("Reisekontext ändert bekannte Katalog-Zuordnung nicht")
+    func voyageContextDoesNotChangeCatalogAssignment() {
+        let withoutContext = ShippingLine.coverAssetCandidates(
+            shippingLine: "AIDA Cruises",
+            ship: "AIDAnova"
+        )
+        let withContext = ShippingLine.coverAssetCandidates(
+            shippingLine: "AIDA Cruises",
+            ship: "AIDAnova",
+            context: "2027-03-10 Barcelona Marseille"
+        )
+
+        #expect(withContext == withoutContext)
     }
 
     @Test("Verschiedene eigene Namenspaare streuen auf verschiedene Stock-Cover")
@@ -503,9 +546,10 @@ struct CruiseCoverFallbackTests {
         #expect(emptyShip.last == "cover_ocean_route")
     }
 
-    @Test("Alle 70 Stock-Cover-Pool-Assets sind eindeutig und aus dem Asset-Katalog ladbar")
+    @Test("Alle 184 Stock-Cover-Pool-Assets sind eindeutig und aus dem Asset-Katalog ladbar")
     func allStockCoverPoolAssetsAreUniqueAndLoadable() {
-        #expect(ShippingLine.stockCoverPool.count == 70)
+        #expect(ShippingLine.stockCoverPool.count == 184)
+        #expect(ShippingLine.stockCoverPool.filter { $0.hasPrefix("cover_ship_") }.count == 114)
         #expect(Set(ShippingLine.stockCoverPool).count == ShippingLine.stockCoverPool.count, "Pool enthält Duplikate")
         for assetName in ShippingLine.stockCoverPool {
             #expect(UIImage(named: assetName) != nil, "Asset \(assetName) nicht ladbar")

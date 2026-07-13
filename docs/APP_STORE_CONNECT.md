@@ -56,10 +56,16 @@ FEATURES:
 • Behalte dein Budget im Blick
 
 🔄 EXPORT & IMPORT
-• Sichere deine Daten als JSON
+• Sichere deine Daten als ZIP-Archiv
 • Importiere Kreuzfahrten von anderen Geräten
 
-Die App ist komplett auf Deutsch und wurde speziell für den deutschsprachigen Markt entwickelt. Alle Daten werden lokal auf deinem Gerät gespeichert – deine Privatsphäre ist uns wichtig.
+☁️ PRIVATER ICLOUD-SYNC
+• Synchronisiere deine Reisedaten über deinen Apple-Account
+• Spiegle Reisen optional in einen ausgewählten Kalender
+
+Die App unterstützt Deutsch und Englisch. Reisedaten werden lokal gespeichert und
+über den privaten iCloud-/CloudKit-Bereich des Apple-Accounts synchronisiert;
+ShipTrip betreibt dafür keine eigenen Server.
 
 Starte jetzt deine digitale Kreuzfahrt-Sammlung!
 ```
@@ -74,15 +80,15 @@ Kreuzfahrt,Schiff,Reise,Urlaub,Meer,Hafen,Route,Tagebuch,TUI,AIDA,MSC
 
 ---
 
-## 🆕 What's New (Version 1.0.3)
+## 🆕 What's New (Version 1.7.0, Build 21)
 
 ```
-🐛 Bug-Fixes & neue Häfen!
+☁️ Sync und passendere Reise-Cover
 
-• Kritische Karten-Bugs behoben
-• ~120 neue Häfen: Kanaren, Türkei, Marokko, Portugal
-• Verbessertes Port-Matching
-• Alle Kanarischen Inseln mit allen Namensvarianten
+• Private iCloud-Synchronisation deiner Reisedaten
+• Optionaler Kalender-Sync mit sichtbarem Fortschritt
+• Passendere und abwechslungsreichere Fallback-Cover
+• Stabilitäts- und Qualitätsverbesserungen
 ```
 
 ---
@@ -133,7 +139,9 @@ This app uses Google Gemini AI for extracting cruise booking data from pasted te
 
 Demo data can be created by using the AI import feature with sample booking texts.
 
-No login required. All data is stored locally on device.
+No login is required. Travel data is stored locally and synchronized through
+the private iCloud/CloudKit area of the user's Apple Account. Calendar sync is
+optional and writes only to the calendar selected by the user.
 ```
 
 ---
@@ -152,5 +160,5 @@ No login required. All data is stored locally on device.
 - [ ] Kategorie gewählt (Travel)
 - [ ] Altersfreigabe ausgefüllt (4+)
 - [ ] Preis festgelegt
-- [ ] Build ausgewählt (v1.0.3)
+- [ ] Build ausgewählt (v1.7.0, Build 21)
 - [ ] Review Notes hinzugefügt

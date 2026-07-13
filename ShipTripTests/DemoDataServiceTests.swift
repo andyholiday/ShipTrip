@@ -56,7 +56,7 @@ struct DemoDataServiceTests {
         #expect(ShippingLine.coverAssetCandidates(
             shippingLine: cruise.shippingLine,
             ship: cruise.ship
-        ).first?.hasPrefix("cover_line_aida_") == true)
+        ).first == "cover_ship_aidanova")
     }
 
     @Test("Demo data does not seed cruise photos")
@@ -178,8 +178,8 @@ struct DemoDataServiceTests {
         #expect(photoCount == 0,
             "hero '\(heroTitle)' hat \(photoCount) Fotos – erwartet 0, damit der Cover-Fallback greift")
 
-        // 3. Schiffsspezifisch stabiler Reederei-Pool ist der erste Kandidat
-        #expect(coverCandidates.first?.hasPrefix("cover_line_aida_") == true,
+        // 3. Das vorhandene exakte Schiffs-Cover ist der erste Kandidat
+        #expect(coverCandidates.first == "cover_ship_aidanova",
             "hero '\(heroTitle)' nutzt unerwartete Cover-Kandidaten: \(coverCandidates)")
     }
 

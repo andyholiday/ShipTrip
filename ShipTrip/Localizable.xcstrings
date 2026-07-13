@@ -3152,6 +3152,109 @@
           }
         }
       }
+    },
+
+    "%lld Kalendereinträge synchronisiert." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld calendar entries synced." } } }
+    },
+    "Aktiv" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Active" } } }
+    },
+    "Angemeldet" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Signed In" } } }
+    },
+    "Aus" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Off" } } }
+    },
+    "Automatisch mit ShipTrip synchronisiert" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Automatically synced with ShipTrip" } } }
+    },
+    "Der ausgewählte Kalender ist nicht mehr verfügbar." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected calendar is no longer available." } } }
+    },
+    "Die Synchronisation ist aus. Erlaube Kalenderzugriff erneut, um vorhandene ShipTrip-Termine zu entfernen." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync is off. Allow calendar access again to remove existing ShipTrip events." } } }
+    },
+    "Eingeschränkt" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Restricted" } } }
+    },
+    "Einstellungen öffnen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Settings" } } }
+    },
+    "Erlaube ShipTrip den vollständigen Kalenderzugriff, damit du einen Zielkalender auswählen und bestehende ShipTrip-Termine aktualisieren kannst." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow ShipTrip full calendar access so you can select a calendar and update existing ShipTrip events." } } }
+    },
+    "Hafen: %@" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Port: %@" } } }
+    },
+    "Im Detailmodus erhält jeder Hafen und Seetag einen eigenen Eintrag. Seetage nennen die Häfen davor und danach." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "In detailed mode, each port and sea day gets its own entry. Sea days name the preceding and following ports." } } }
+    },
+    "Jetzt synchronisieren" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Now" } } }
+    },
+    "Kalender" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar" } } }
+    },
+    "Kalendereinträge" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar Entries" } } }
+    },
+    "Kalender wird aktualisiert …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Updating calendar…" } } }
+    },
+    "Kalenderzugriff erforderlich" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar Access Required" } } }
+    },
+    "Kalenderzugriff ist nicht erlaubt." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar access is not allowed." } } }
+    },
+    "Kein beschreibbarer Kalender verfügbar" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No writable calendar available" } } }
+    },
+    "Kein beschreibbarer Kalender verfügbar." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No writable calendar available." } } }
+    },
+    "Kreuzfahrt: %@" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cruise: %@" } } }
+    },
+    "Nur Reisen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips Only" } } }
+    },
+    "Reisedaten werden automatisch über deinen privaten iCloud-Account synchronisiert. Die Kalender-Synchronisation ist optional." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trip data syncs automatically through your private iCloud account. Calendar sync is optional." } } }
+    },
+    "Reisen mit Kalender synchronisieren" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Trips with Calendar" } } }
+    },
+    "Reisen, Häfen & Seetage" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips, Ports & Sea Days" } } }
+    },
+    "Seetag: %@ → %@" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sea Day: %@ → %@" } } }
+    },
+    "ShipTrip aktualisiert angelegte Termine automatisch und entfernt sie wieder, wenn eine Reise gelöscht oder die Synchronisation deaktiviert wird." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "ShipTrip updates created events automatically and removes them when a trip is deleted or sync is disabled." } } }
+    },
+    "ShipTrip-Termine wurden entfernt." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "ShipTrip events were removed." } } }
+    },
+    "Status nicht verfügbar" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Status unavailable" } } }
+    },
+    "Umfang" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Scope" } } }
+    },
+    "Vorübergehend nicht verfügbar" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Temporarily unavailable" } } }
+    },
+    "Wird geprüft …" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Checking…" } } }
+    },
+    "Zielkalender" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Target Calendar" } } }
+    },
+    "iCloud-Anmeldung nötig" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Sign-In Required" } } }
     }
 
   },

@@ -1,9 +1,10 @@
 # ADR-002: CloudKit-Sync, stabile IDs und ZIP-Export
 
-**Status:** Accepted  
+**Status:** Accepted; CloudKit-Aktivierung in Build 20 implementiert, Release ausstehend
 **Datum:** 2026-06-14  
 **Autor:** Andre (via Phase-1-Planung / Codex-Plan-Review)  
 **Querverweis:** ADR-001 (Schema-Stabilitaet als gemeinsame Motivation)
+**Implementierungsstand:** 2026-07-12
 
 ---
 
@@ -25,14 +26,12 @@ stabiles, konfliktstabiles Schema voraus; ein robuster Export benoetigt stabile 
 fuer Rundtripstabilitaet; und sowohl CloudKit als auch Export erfordern, dass die
 Modelle konkrete Constraints erfuellen.
 
-Das Modell besitzt derzeit keine expliziten `id`-Felder (SwiftData erzeugt zwar
+Zum Entscheidungszeitpunkt besaß das Modell keine expliziten `id`-Felder (SwiftData erzeugt zwar
 intern `PersistentIdentifier`, dieser ist aber nicht export-stabil). `Photo.imageData`
 ist `Data` ohne Default (problematisch unter CloudKit). Es existiert noch kein
 Export-ZIP-Format.
 
-Hinweis: Die iCloud-Capability und die Container-Registrierung
-(`iCloud.com.andre.ShipTrip`) sind manuelle Schritte in Xcode, die ausschliesslich
-Andre durchfuehren kann. Die genaue Container-ID ist in Xcode zu bestaetigen.
+Die inzwischen bestätigte Container-ID ist `iCloud.com.andre.ShipTrip`.
 
 ---
 
@@ -44,7 +43,7 @@ Backup- und Sync-Infrastruktur bilden.
 ### 1. Sync-Mechanismus: SwiftData + CloudKit Private Container
 
 Wir nutzen SwiftData-CloudKit-Mirroring ueber einen **privaten** iCloud-Container
-(`iCloud.com.andre.ShipTrip` — genaue ID in Xcode zu bestaetigen). Der Container
+(`iCloud.com.andre.ShipTrip`). Der Container
 ist primaer fuer Single-User-Backup und Multi-Geraete-Sync; kein Shared-Container,
 keine CKShare-Logik.
 
@@ -112,8 +111,10 @@ In dieser Phase ist CloudKit noch deaktiviert. Ziel: Alle bestehenden Zeilen erh
 ein persistiertes `id` und behalten es unveraendert.
 
 **(b) CloudKit-Aktivierung als separates Release**  
-Erst nachdem Schritt (a) im App-Store gelandet und in Produktion verifiziert ist,
-wird CloudKit-Mirroring aktiviert. Kein zusammengefasstes Release.
+Build 19 enthält noch die nicht-optionalen Beziehungen `route`, `expenses` und
+`photos`. Der aktuelle Build-20-Arbeitsstand bereitet diese Beziehungen vor und
+enthält zugleich die CloudKit-Konfiguration; er darf deshalb ohne ausdrückliche
+ADR-Änderung nicht als einstufiges CloudKit-Update ausgeliefert werden.
 
 **(c) Nutzerkommunikation vor dem Update**  
 In den Release-Notes wird explizit empfohlen, vor dem Update einen manuellen
@@ -123,10 +124,31 @@ Export als Backup anzulegen.
 Sync muss auf einem bevoelkerten Store mit einem echten iCloud-Account (nicht
 Simulator) verifiziert werden, bevor der Build an TestFlight geht.
 
-**(e) Manuelle Xcode-Schritte (nur Andre)**  
-iCloud-Capability hinzufuegen, Container `iCloud.com.andre.ShipTrip` registrieren,
-Push-Notification-Background-Mode aktivieren — alles in Xcode, nicht
-automatisierbar.
+**(e) Signing und CloudKit-Umgebungen**
+iCloud-/CloudKit- und Push-Capabilities, Container-Zuordnung, Entitlements und
+Provisioning müssen zum Release-Profil passen. Das Schemakontrakt-Artefakt wird in
+Development installiert und anschließend kontrolliert nach Production promotet.
+
+## Implementierungsstand Build 20 (2026-07-12)
+
+- `ShipTripCloudSync` konfiguriert den persistenten SwiftData-Store für die
+  private Datenbank von `iCloud.com.andre.ShipTrip`; XCTest deaktiviert CloudKit.
+- Die iCloud-, CloudKit- und APNs-Entitlements sowie der Background-Mode
+  `remote-notification` sind im Projekt vorhanden.
+- `Cruise.routeStorage`, `expensesStorage` und `photosStorage` sind optionale
+  Relationships. Berechnete Wrapper erhalten die nicht-optionale App-Sicht;
+  `originalName` schützt die bisherigen Relationship-Namen bei der Migration.
+- Das CloudKit-Schema liegt als `docs/cloudkit/ShipTrip.ckdb` vor und ist in der
+  Development-Umgebung installiert.
+- Ein echter Upgrade-Smoke von unverändertem Build-19-Code auf den aktuellen
+  Store erhält Reise und Route; dabei wurde außerdem korrigiert, dass die
+  CloudKit-Konfiguration weiterhin den bisherigen `default.store` öffnen muss.
+- **Noch offen:** Entscheidung über den verbindlichen Zwei-Release-Ablauf,
+  Promotion des Schemas nach Production, Smoke-Test auf einem entsperrten echten
+  iCloud-Gerät und anschließende TestFlight-Auslieferung.
+
+Damit ist die Code- und Development-Schema-Implementierung abgeschlossen, nicht
+jedoch das Sequenz-, Geräte- und Release-Gate dieses ADRs.
 
 ---
 
@@ -192,7 +214,7 @@ Dieses ADR treibt folgende Task-Kategorien, die in Phase 1 umgesetzt werden:
   Default-Wert fuer `Photo.imageData`, optionale Beziehungen pruefen)
 - **T-EXPORT**: ZIP-Export/-Import in `ExportImportService`, rueckwaertskompatible
   Base64-Erkennung
-- **T-CK**: CloudKit-Capability (manuell Andre), Container-Konfiguration,
+- **T-CK**: CloudKit-Capability, Container-Konfiguration, Schema-Promotion und
   Smoke-Tests auf bevoelkertem Store
 
 ---
@@ -204,5 +226,7 @@ Dieses ADR treibt folgende Task-Kategorien, die in Phase 1 umgesetzt werden:
 - `docs/features/phase-1-vertrauen-und-substanz.md` — Implementiert durch Phase 1
 - `ShipTrip/Models/Cruise.swift`, `Deal.swift`, `Photo.swift`, `Port.swift`,
   `Expense.swift` — betroffene Modelle
+- `ShipTrip/Services/ShipTripCloudSync.swift` — aktive Store-Konfiguration
+- `docs/cloudkit/ShipTrip.ckdb` — CloudKit-Schemakontrakt für Build 20
 - Apple Dokumentation: SwiftData + CloudKit (`ModelConfiguration(cloudKitDatabase:)`)
 - SwiftData-Skill (`~/.claude/skills/swiftdata/SKILL.md`), Abschnitt 6 "CloudKit sync"

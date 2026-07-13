@@ -58,16 +58,34 @@ final class Cruise {
     // MARK: - Relationships
 
     /// Route mit allen besuchten Häfen
-    @Relationship(deleteRule: .cascade, inverse: \Port.cruise)
-    var route: [Port] = []
+    @Relationship(deleteRule: .cascade, originalName: "route", inverse: \Port.cruise)
+    var routeStorage: [Port]?
 
     /// Ausgaben für diese Kreuzfahrt
-    @Relationship(deleteRule: .cascade, inverse: \Expense.cruise)
-    var expenses: [Expense] = []
+    @Relationship(deleteRule: .cascade, originalName: "expenses", inverse: \Expense.cruise)
+    var expensesStorage: [Expense]?
 
     /// Fotos der Kreuzfahrt
-    @Relationship(deleteRule: .cascade, inverse: \Photo.cruise)
-    var photos: [Photo] = []
+    @Relationship(deleteRule: .cascade, originalName: "photos", inverse: \Photo.cruise)
+    var photosStorage: [Photo]?
+
+    /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    var route: [Port] {
+        get { routeStorage ?? [] }
+        set { routeStorage = newValue }
+    }
+
+    /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    var expenses: [Expense] {
+        get { expensesStorage ?? [] }
+        set { expensesStorage = newValue }
+    }
+
+    /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    var photos: [Photo] {
+        get { photosStorage ?? [] }
+        set { photosStorage = newValue }
+    }
     
     // MARK: - Initialization
     

@@ -54,6 +54,9 @@ struct MainTabView: View {
         }
         .tint(.accentColor)
         .preferredColorScheme(colorSchemeValue)
+        .background {
+            CalendarSyncObserver()
+        }
     }
 }
 

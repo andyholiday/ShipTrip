@@ -77,15 +77,40 @@ Die KI-Import-Funktion benötigt einen Google Gemini API-Key.
 3. Buchungsbestätigung einfügen
 4. "Analysieren" tippen
 
-## Lokale Erinnerungen (kein Push/APNs)
+## iCloud-/CloudKit-Setup
+
+Build 21 erwartet für `com.andre.ShipTrip`:
+
+- iCloud-Capability mit CloudKit-Container `iCloud.com.andre.ShipTrip`
+- Push-Notifications-Capability und Background Mode `remote-notification` für
+  entfernte CloudKit-Store-Änderungen
+- ein Provisioning Profile, das diese Entitlements enthält
+
+Das Schema-Artefakt liegt unter `docs/cloudkit/ShipTrip.ckdb` und entspricht der
+installierten **Development**-Umgebung. Die Promotion nach **Production** erfolgt
+in der CloudKit Console; `cktool` unterstützt für Production nur den Export, nicht
+den Schema-Import. Der anschließende Export dient als maschinenlesbarer Nachweis.
+Ein Geräte-Smoke benötigt ein entsperrtes, bei iCloud angemeldetes Gerät. Unit-
+Tests benötigen keinen iCloud-Account, weil `ShipTripCloudSync` CloudKit unter
+XCTest deaktiviert.
+
+## Optionalen Kalender-Sync testen
+
+1. App öffnen: Mehr → Kalender.
+2. „Reisen mit Kalender synchronisieren“ aktivieren und vollständigen Zugriff
+   erlauben.
+3. Einen beschreibbaren Zielkalender und „Nur Reisen“ oder
+   „Reisen, Häfen & Seetage“ wählen.
+4. Eine Nicht-Demo-Reise anlegen bzw. ändern und den Termin in Kalender prüfen.
+5. Sync deaktivieren und prüfen, dass die von ShipTrip verwalteten Termine
+   entfernt werden.
+
+## Lokale Erinnerungen (keine Nutzer-Push-Nachrichten)
 
 `NotificationService` plant ausschließlich **lokale** Notifications
-(`UNUserNotificationCenter`) vor Reisestart. Es gibt aktuell **keine**
-Push-Notifications-Capability im Projekt (kein `aps-environment`-Entitlement) —
-sie ist nicht nötig für lokale Erinnerungen. Echte Push-Notifications (APNs)
-sind erst für die CloudKit-Aktivierung vorgesehen (siehe
-[ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md), Welle D2.1), noch
-nicht umgesetzt.
+(`UNUserNotificationCenter`) vor Reisestart. Das APNs-Entitlement von Build 21
+gehört zur CloudKit-Spiegelung; ShipTrip versendet weiterhin keine eigenen
+Nutzer-Push-Nachrichten.
 
 ### Simulator
 
@@ -99,10 +124,11 @@ Anzeige). Kein zusätzliches Setup nötig.
 
 ## Fastlane / TestFlight-Release
 
-Der Release-Prozess läuft über `fastlane` (`fastlane/Fastfile`), zwei Lanes:
+Der Release-Prozess läuft über `fastlane` (`fastlane/Fastfile`), drei Lanes:
 
 | Lane | Zweck |
 |------|-------|
+| `fastlane ios validate` | Prüft API-Key und liest die neueste TestFlight-Buildnummer |
 | `fastlane ios fetch_profile` | Holt das App-Store-Provisioning-Profile über die App Store Connect API |
 | `fastlane ios upload_testflight` | Lädt `build/export/ShipTrip.ipa` zu TestFlight hoch |
 
@@ -122,6 +148,11 @@ jedem Fastlane-Lauf neu geschrieben) — nicht manuell editieren.
 > **Sicherheit**: Der `.p8`-API-Key und alle drei Umgebungsvariablen sind
 > Secrets. Niemals Key-Inhalte oder reale Werte in Doku, Commits oder Issues
 > einfügen.
+
+Für CloudKit-Releases gilt zusätzlich: Schema in Development validieren, über die
+CloudKit Console nach Production promoten und den Production-Export vergleichen.
+Ein echter Geräte-Smoke bleibt der stärkste End-to-End-Nachweis; ist kein Gerät
+verfügbar, muss diese Einschränkung im Release-Status ausdrücklich stehen.
 
 ## Projektstruktur verstehen
 

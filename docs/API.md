@@ -140,9 +140,9 @@ enum KeychainService {
 ## NotificationService
 
 `ShipTrip/Services/NotificationService.swift` — **lokale** Erinnerungen vor
-Reisen über `UserNotifications`. Es handelt sich **nicht** um Push-Notifications
-(APNs); es gibt aktuell keine `aps-environment`-Capability im Projekt (siehe
-[ARCHITECTURE.md](ARCHITECTURE.md#push-vs-lokale-notifications)).
+Reisen über `UserNotifications`. Es handelt sich **nicht** um Nutzer-Push-
+Notifications (APNs). Das vorhandene APNs-Entitlement dient der CloudKit-
+Store-Spiegelung (siehe [ARCHITECTURE.md](ARCHITECTURE.md#apns-entitlement-vs-lokale-notifications)).
 
 ```swift
 final class NotificationService: Sendable {
@@ -358,11 +358,46 @@ enum ZipArchiveReader {
 
 ---
 
+## ShipTripCloudSync
+
+`ShipTrip/Services/ShipTripCloudSync.swift` kapselt den CloudKit-Vertrag:
+
+```swift
+enum ShipTripCloudSync {
+    static let containerIdentifier = "iCloud.com.andre.ShipTrip"
+    static func persistentConfiguration(for schema: Schema,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> ModelConfiguration
+    static func accountStatus() async -> AccountStatus
+}
+```
+
+Im App-Prozess verwendet die Konfiguration die private CloudKit-Datenbank. Unter
+XCTest wird CloudKit bewusst deaktiviert. `accountStatus()` bildet den Status des
+CloudKit-Accounts auf lokalisierbare UI-Zustände ab. Das Development-Schema ist in
+`docs/cloudkit/ShipTrip.ckdb` dokumentiert; die Production-Promotion ist noch offen.
+
+## CalendarEventPlanner und CalendarSyncService
+
+`CalendarEventPlanner.makeDrafts(for:mode:calendar:)` erzeugt deterministische
+`CalendarEventDraft`-Werte für `.tripOnly` oder `.tripAndItinerary`. Stabile Keys
+werden als `shiptrip://calendar/...`-Marker in EventKit gespeichert.
+
+`@MainActor CalendarSyncService` bietet:
+
+```swift
+func requestAccess() async -> Bool
+func writableCalendars() -> [WritableCalendar]
+func selectDefaultCalendarIfNeeded() -> String?
+func synchronize(cruises: [Cruise]) throws -> Int
+func removeAllManagedEvents() throws
+```
+
+Die Synchronisation verarbeitet nur Nicht-Demo-Reisen, aktualisiert vorhandene
+verwaltete Events, verschiebt sie bei Kalenderwechsel und löscht überholte Events.
+Die Preferences und das Event-ID-Mapping liegen in `UserDefaults`.
+
 ## Zukünftige APIs (Roadmap, nicht implementiert)
 
-- **CloudKit-Sync** — Datenmodell teilweise vorbereitet (stabile IDs,
-  `updatedAt`), aber nicht aktiv und nicht vollständig konform. Siehe
-  [MODELS.md → CloudKit-Status](MODELS.md#cloudkit-status-projektweit) und
-  [ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md).
 - **Wetter-API** — nicht begonnen.
 - **Hafen-Bilder mit KI-Generierung** — nicht begonnen.

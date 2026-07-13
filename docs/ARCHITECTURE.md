@@ -31,7 +31,7 @@ Stand: Xcode-Projekt `IPHONEOS_DEPLOYMENT_TARGET = 18.5`, `SWIFT_VERSION = 6.0`.
 │  └───────────────────────────────────────────────────────┘  │
 │                          │                                   │
 │  ┌───────────────────────┴───────────────────────────────┐  │
-│  │                  Lokale SQLite DB                      │  │
+│  │       Lokale SQLite DB ↔ private CloudKit-DB           │  │
 │  └───────────────────────────────────────────────────────┘  │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
@@ -44,11 +44,14 @@ Stand: Xcode-Projekt `IPHONEOS_DEPLOYMENT_TARGET = 18.5`, `SWIFT_VERSION = 6.0`.
 │  (Google AI)    │               │  - MapKit       │
 │                 │               │  - Keychain     │
 │                 │               │  - Notifications│
-│                 │               │    (lokal)      │
+│                 │               │  - CloudKit     │
+│                 │               │  - EventKit     │
 └─────────────────┘               └─────────────────┘
 ```
 
-CloudKit ist **nicht** Teil des aktiven Datenflusses — siehe
+Der Build-20-Release-Kandidat bindet SwiftData an die private CloudKit-Datenbank
+`iCloud.com.andre.ShipTrip`. Das Development-Schema ist installiert; die
+Production-Promotion und TestFlight-Auslieferung sind noch offen. Siehe
 [„CloudKit-Status" in MODELS.md](MODELS.md#cloudkit-status-projektweit).
 
 ## Schichten
@@ -99,12 +102,9 @@ final class Cruise {
     var startDate: Date = Date()
     var endDate: Date = Date()
     // ...
-    @Relationship(deleteRule: .cascade, inverse: \Port.cruise)
-    var route: [Port] = []
-    @Relationship(deleteRule: .cascade, inverse: \Expense.cruise)
-    var expenses: [Expense] = []
-    @Relationship(deleteRule: .cascade, inverse: \Photo.cruise)
-    var photos: [Photo] = []
+    @Relationship(deleteRule: .cascade, originalName: "route", inverse: \Port.cruise)
+    var routeStorage: [Port]?
+    // expensesStorage/photosStorage analog; App-Zugriff über nicht-optionale Wrapper
 }
 ```
 
@@ -130,6 +130,9 @@ Deal — keine Relationships
 | `ExportImportService` | Export/Import als JSON (Legacy) oder ZIP; Orchestrierung, keine ZIP-Bytes selbst |
 | `ZipArchiveWriter` / `ZipArchiveReader` / `CRC32` | ZIP-Unterbau (STORED-Writer, STORED+Deflate-Reader, CRC-32) — seit Welle A3.11 eigene Dateien |
 | `DemoDataService` | Demo-Daten seeden/entfernen (nur `#if DEBUG`) |
+| `ShipTripCloudSync` | Privaten SwiftData-CloudKit-Store konfigurieren und iCloud-Accountstatus lesen |
+| `CalendarEventPlanner` | Stabile Event-Entwürfe für Reise, Häfen und Seetage erzeugen |
+| `CalendarSyncService` | EventKit-Zugriff, Zielkalender und verwaltete Termine synchronisieren |
 
 Vollständige API-Signaturen: [API.md](API.md).
 
@@ -178,6 +181,28 @@ SwiftData Query → [Cruise] → MapView
 ### 3. Export/Import
 
 ```
+
+### 4. CloudKit-Sync
+
+```
+SwiftData-Änderung → lokaler Store → private CloudKit-Datenbank
+App-Start → ShipTripCloudSync.accountStatus → Statuszeile unter „Mehr"
+```
+
+Tests deaktivieren CloudKit über die XCTest-Umgebung, damit Unit-Tests weder
+iCloud-Login noch Netzwerkzugriff benötigen. Das Schemakontrakt-Artefakt liegt in
+`docs/cloudkit/ShipTrip.ckdb`.
+
+### 5. Optionaler Kalender-Sync
+
+```
+Cruises + Modus → CalendarEventPlanner → CalendarSyncService → Zielkalender
+       ↑                                      │
+CalendarSyncObserver ← App-/Datenänderung     └─ stabile Marker + Event-ID-Mapping
+```
+
+Die Funktion ist Opt-in. Sie benötigt vollständigen Kalenderzugriff, spiegelt
+keine Demo-Reisen und entfernt bei Deaktivierung ihre verwalteten Events.
 [Cruise] → ExportImportService.exportToZip
               │
               ├── data.json (Struktur, Bild-Pfadreferenzen)
@@ -204,6 +229,8 @@ ZIP-Datei → ExportImportService.importFromZip
 | KI | Gemini API | 2.5 Flash |
 | Sicherheit | Keychain Services | Generic Password, `WhenUnlockedThisDeviceOnly` |
 | Benachrichtigungen | UserNotifications | lokal, kein APNs |
+| Cloud-Sync | SwiftData + CloudKit | private Datenbank |
+| Kalender | EventKit | optionaler Vollzugriff |
 | Zielplattform | iOS | 18.5+ (`IPHONEOS_DEPLOYMENT_TARGET = 18.5`) |
 
 ## Datei-Organisation
@@ -248,20 +275,21 @@ Das Projekt baut mit `SWIFT_STRICT_CONCURRENCY = complete` unter Swift 6.0
   `NotificationService`), werden ausschließlich reine, `Sendable`-Wertdaten
   (`String`, `Date`, `UUID`) übergeben — **nie** `@Model`-Objektreferenzen.
 
-### Push vs. lokale Notifications
+### APNs-Entitlement vs. lokale Notifications
 
 `NotificationService` plant ausschließlich **lokale** Notifications
 (`UNUserNotificationCenter` + `UNCalendarNotificationTrigger`). Es gibt aktuell
-**keine** APNs-/Push-Capability im Projekt (kein `aps-environment`-Entitlement,
-kein Background-Mode „Remote notifications"). Diese Fähigkeiten sind für die
-CloudKit-Aktivierung vorgesehen (siehe ADR-002, Schritt „Manuelle Xcode-Schritte")
-und noch nicht umgesetzt.
+keine selbst implementierte Push-Nachrichtenfunktion. Build 20 besitzt jedoch das
+`aps-environment`-Entitlement und den Background-Mode `remote-notification`, weil
+SwiftData-CloudKit darüber entfernte Store-Änderungen empfängt. Diese Infrastruktur
+ist nicht mit Nutzer-Push-Mitteilungen gleichzusetzen.
 
 ## Speicher
 
 | Datentyp | Speicherort |
 |----------|-------------|
-| Cruise/Port/Expense/Deal | SwiftData (lokale SQLite-DB) |
+| Cruise/Port/Expense/Deal | SwiftData (lokaler Store, private CloudKit-Spiegelung) |
 | Fotos (`Photo.imageData`, `Port.imageData`) | SwiftData mit `@Attribute(.externalStorage)` |
 | Gemini-API-Key | iOS Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`) |
 | Nutzereinstellungen (Erinnerungs-Flags, Farbschema) | Standard `UserDefaults` |
+| Kalender-Sync-Konfiguration und verwaltete Event-IDs | Standard `UserDefaults` |

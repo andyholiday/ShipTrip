@@ -134,13 +134,14 @@
 
             <div class="card">
                 <h2>Welche Daten werden erhoben?</h2>
-                <h3>Lokal gespeicherte Daten (nur auf Ihrem Gerät)</h3>
+                <h3>Reise- und App-Daten</h3>
                 <ul>
                     <li>Kreuzfahrt-Informationen (Titel, Daten, Schiff, Route)</li>
                     <li>Fotos, die Sie hinzufügen</li>
                     <li>Ausgaben und Notizen</li>
                     <li>Einstellungen und Präferenzen</li>
                 </ul>
+                <p>Diese Daten werden lokal auf Ihrem Gerät gespeichert und über Apples privaten iCloud-/CloudKit-Bereich Ihres Apple-Accounts zwischen Ihren Geräten synchronisiert. Wir betreiben dafür keine eigenen Server und erhalten keinen Zugriff auf Ihren privaten iCloud-Bereich.</p>
 
                 <h3>Optional: Gemini API (nur bei Nutzung der KI-Import-Funktion)</h3>
                 <ul>
@@ -153,8 +154,10 @@
             <div class="card">
                 <h2>Wo werden die Daten gespeichert?</h2>
                 <ul>
-                    <li><strong>Lokal:</strong> Alle Ihre Kreuzfahrtdaten werden ausschließlich auf Ihrem Gerät gespeichert</li>
-                    <li><strong>Keine Cloud:</strong> Wir betreiben keine eigenen Server</li>
+                    <li><strong>Gerät:</strong> ShipTrip speichert Ihre Reisedaten lokal mit SwiftData/SQLite</li>
+                    <li><strong>Privates iCloud:</strong> Apple CloudKit synchronisiert die Reisedaten im privaten Bereich Ihres Apple-Accounts</li>
+                    <li><strong>Kalender (optional):</strong> Bei aktiviertem Kalender-Sync legt ShipTrip Reise-, Hafen- und Seetag-Termine im gewählten Apple-Kalender an</li>
+                    <li><strong>Keine eigenen Server:</strong> Wir betreiben keinen eigenen Cloud-Dienst</li>
                     <li><strong>Keine Accounts:</strong> Es gibt kein Benutzerkonto</li>
                 </ul>
             </div>
@@ -163,6 +166,8 @@
                 <h2>Welche Daten werden an Dritte übermittelt?</h2>
                 <table>
                     <tr><th>Dienst</th><th>Daten</th><th>Wann</th></tr>
+                    <tr><td>Apple iCloud/CloudKit</td><td>Reisedaten einschließlich hinzugefügter Fotos</td><td>Für privaten Geräte-Sync</td></tr>
+                    <tr><td>Apple Kalender</td><td>Ausgewählte Reise-, Hafen- und Seetag-Daten</td><td>Nur bei aktiviertem Kalender-Sync</td></tr>
                     <tr><td>Google Gemini API</td><td>Buchungstext</td><td>Nur bei KI-Import (optional)</td></tr>
                     <tr><td>Apple</td><td>Crash-Reports</td><td>Nur bei Absturz (iOS Standard)</td></tr>
                 </table>
@@ -172,7 +177,7 @@
                 <h2>Ihre Rechte</h2>
                 <ul>
                     <li><strong>Löschen:</strong> Alle Daten können in Einstellungen → Daten verwalten gelöscht werden</li>
-                    <li><strong>Export:</strong> Sie können Ihre Daten jederzeit als JSON exportieren</li>
+                    <li><strong>Export:</strong> Sie können Ihre Daten jederzeit als ZIP-Archiv exportieren</li>
                     <li><strong>Keine Werbung:</strong> Die App enthält keine Werbung</li>
                     <li><strong>Kein Tracking:</strong> Wir tracken Sie nicht</li>
                 </ul>
@@ -194,13 +199,14 @@
 
             <div class="card">
                 <h2>What data is collected?</h2>
-                <h3>Locally stored data (only on your device)</h3>
+                <h3>Travel and app data</h3>
                 <ul>
                     <li>Cruise information (title, dates, ship, route)</li>
                     <li>Photos you add</li>
                     <li>Expenses and notes</li>
                     <li>Settings and preferences</li>
                 </ul>
+                <p>This data is stored locally on your device and synchronized between your devices through the private iCloud/CloudKit area of your Apple Account. We do not operate our own servers for this purpose and cannot access your private iCloud area.</p>
 
                 <h3>Optional: Gemini API (only when using AI import feature)</h3>
                 <ul>
@@ -213,8 +219,10 @@
             <div class="card">
                 <h2>Where is data stored?</h2>
                 <ul>
-                    <li><strong>Locally:</strong> All your cruise data is stored exclusively on your device</li>
-                    <li><strong>No Cloud:</strong> We do not operate our own servers</li>
+                    <li><strong>Device:</strong> ShipTrip stores your travel data locally using SwiftData/SQLite</li>
+                    <li><strong>Private iCloud:</strong> Apple CloudKit synchronizes travel data in the private area of your Apple Account</li>
+                    <li><strong>Calendar (optional):</strong> When enabled, ShipTrip creates voyage, port, and sea-day events in the selected Apple calendar</li>
+                    <li><strong>No own servers:</strong> We do not operate our own cloud service</li>
                     <li><strong>No Accounts:</strong> There is no user account</li>
                 </ul>
             </div>
@@ -223,6 +231,8 @@
                 <h2>What data is shared with third parties?</h2>
                 <table>
                     <tr><th>Service</th><th>Data</th><th>When</th></tr>
+                    <tr><td>Apple iCloud/CloudKit</td><td>Travel data including photos you add</td><td>For private device sync</td></tr>
+                    <tr><td>Apple Calendar</td><td>Selected voyage, port, and sea-day data</td><td>Only when calendar sync is enabled</td></tr>
                     <tr><td>Google Gemini API</td><td>Booking text</td><td>Only during AI import (optional)</td></tr>
                     <tr><td>Apple</td><td>Crash reports</td><td>Only on crash (iOS standard)</td></tr>
                 </table>
@@ -232,7 +242,7 @@
                 <h2>Your rights</h2>
                 <ul>
                     <li><strong>Delete:</strong> All data can be deleted in Settings → Manage Data</li>
-                    <li><strong>Export:</strong> You can export your data as JSON at any time</li>
+                    <li><strong>Export:</strong> You can export your data as a ZIP archive at any time</li>
                     <li><strong>No Ads:</strong> The app contains no advertising</li>
                     <li><strong>No Tracking:</strong> We do not track you</li>
                 </ul>
@@ -246,8 +256,8 @@
         </div>
 
         <footer>
-            <p>© 2024 André Jaszka · ShipTrip</p>
-            <p>Zuletzt aktualisiert / Last updated: December 2024</p>
+            <p>© 2026 André Jaszka · ShipTrip</p>
+            <p>Zuletzt aktualisiert / Last updated: July 13, 2026</p>
         </footer>
     </div>
 

@@ -31,8 +31,7 @@ struct ShipTripApp: App {
             HiddenCatalogItem.self
         ])
 
-        // CloudKit folgt in einem separaten Build nach verifizierter Schema-Migration (siehe ADR-002, Zwei-Schritt-Migration).
-        let persistentConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let persistentConfig = ShipTripCloudSync.persistentConfiguration(for: schema)
 
         do {
             let container = try ModelContainer(for: schema, configurations: [persistentConfig])
@@ -71,10 +70,13 @@ struct ShipTripApp: App {
         guard ProcessInfo.processInfo.arguments.contains("-uiTestingResetAndLoadDemoData") else { return }
 
         let context = ModelContext(container)
-        DemoDataService.removeDemoData(from: context)
-        DemoDataService.loadDemoData(into: context)
-        try? context.save()
+        do {
+            try DemoDataService.resetAndLoadDemoDataForUITesting(in: context)
+        } catch {
+            fatalError("UI-Testdaten konnten nicht zurückgesetzt werden: \(error)")
+        }
     }
+
 #endif
 
     // MARK: - UI

@@ -46,21 +46,20 @@ gebumpt; das muss jeder Schreibpfad manuell tun.
 ### Relationships
 
 ```swift
-@Relationship(deleteRule: .cascade, inverse: \Port.cruise)
-var route: [Port] = []
+@Relationship(deleteRule: .cascade, originalName: "route", inverse: \Port.cruise)
+var routeStorage: [Port]?
 
-@Relationship(deleteRule: .cascade, inverse: \Expense.cruise)
-var expenses: [Expense] = []
+@Relationship(deleteRule: .cascade, originalName: "expenses", inverse: \Expense.cruise)
+var expensesStorage: [Expense]?
 
-@Relationship(deleteRule: .cascade, inverse: \Photo.cruise)
-var photos: [Photo] = []
+@Relationship(deleteRule: .cascade, originalName: "photos", inverse: \Photo.cruise)
+var photosStorage: [Photo]?
 ```
 
-> **Bekannte CloudKit-Lücke:** ADR-002 §3 verlangt optionale Beziehungen für
-> CloudKit-Mirroring. `route`, `expenses` und `photos` sind aktuell
-> **nicht-optionale** Arrays (`[Port] = []` statt `[Port]?`). Solange das nicht
-> behoben ist, ist das Schema nicht CloudKit-konform — siehe
-> [„CloudKit-Status" unten](#cloudkit-status-projektweit).
+Die optionalen Storage-Beziehungen erfüllen die CloudKit-Anforderung. Die
+berechneten Properties `route`, `expenses` und `photos` stellen der App weiterhin
+nicht-optionale Arrays bereit. `originalName` erhält die bisherigen Relationship-
+Namen für die Store-Migration.
 
 ### Computed Properties
 
@@ -340,15 +339,16 @@ struct ShippingLine: Identifiable, Hashable {
 
 ## CloudKit-Status (projektweit)
 
-CloudKit ist **vorbereitet, aber nicht aktiv und nicht konform**:
+CloudKit ist im **Build-20-Release-Kandidaten konfiguriert**:
 
-- `ShipTripApp.swift` verwendet `ModelConfiguration(schema:isStoredInMemoryOnly:)`
-  ohne `cloudKitDatabase:` — kein CloudKit-Container ist konfiguriert.
-- Alle Modelle haben stabile `id: UUID`-Felder und (bis auf `Cruise.createdAt`)
-  `updatedAt`-Felder für die geplante Last-Writer-Wins-Logik.
-- **Offene Lücke:** `Cruise.route`, `Cruise.expenses` und `Cruise.photos` sind
-  nicht-optionale Arrays; ADR-002 §3 verlangt optionale Beziehungen für
-  CloudKit-Mirroring. Diese drei Felder müssten vor einer CloudKit-Aktivierung
-  auf `[Port]?` / `[Expense]?` / `[Photo]?` umgestellt werden.
+- `ShipTripCloudSync.persistentConfiguration` bindet den persistenten SwiftData-
+  Store an die private Datenbank von `iCloud.com.andre.ShipTrip`; XCTest-Läufe
+  verwenden bewusst `.none` und bleiben unabhängig von einem iCloud-Account.
+- Alle Modelle besitzen Default-Werte, stabile app-seitige IDs ohne
+  `@Attribute(.unique)` und optionale Beziehungen. `Cruise` kapselt seine drei
+  optionalen Storage-Beziehungen hinter nicht-optionalen App-Properties.
+- `docs/cloudkit/ShipTrip.ckdb` dokumentiert das installierte Development-Schema.
+- **Release-Grenze:** Die Promotion dieses Schemas nach Production sowie die
+  anschließende TestFlight-Auslieferung von Build 20 sind noch ausstehend.
 
 Details und Migrationsplan: [ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md).

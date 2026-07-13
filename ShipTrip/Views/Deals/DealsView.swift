@@ -218,12 +218,21 @@ struct DealHeroView: View {
     private var coverAssetImage: Image? {
         ShippingLine.coverAssetCandidates(
             shippingLine: deal.shippingLine ?? "",
-            ship: deal.ship ?? ""
+            ship: deal.ship ?? "",
+            context: coverSelectionContext
         )
         .lazy
         .compactMap { UIImage(named: $0) }
         .first
         .map { Image(uiImage: $0) }
+    }
+
+    private var coverSelectionContext: String {
+        let dateKey = [deal.startDate, deal.endDate]
+            .compactMap { $0?.timeIntervalSinceReferenceDate }
+            .map { String($0) }
+            .joined(separator: "|")
+        return "\(deal.id.uuidString)|\(deal.destination ?? "")|\(dateKey)"
     }
 
     private var subtitle: String {

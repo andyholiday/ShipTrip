@@ -59,8 +59,8 @@ Verwalte alle deine Kreuzfahrten an einem Ort! ShipTrip ist die perfekte App fü
 • Ausgaben-Übersicht
 
 💾 Deine Daten gehören dir
-• Alle Daten lokal auf deinem Gerät
-• Export als JSON jederzeit möglich
+• Private Synchronisation über deinen Apple-iCloud-Account
+• Export als ZIP-Archiv jederzeit möglich
 • Kein Account erforderlich
 
 🎨 Modernes Design
@@ -107,8 +107,8 @@ Manage all your cruises in one place! ShipTrip is the perfect app for cruise ent
 • Expense overview
 
 💾 Your Data Belongs to You
-• All data stored locally on your device
-• Export as JSON anytime
+• Private synchronization through your Apple iCloud account
+• Export as a ZIP archive anytime
 • No account required
 
 🎨 Modern Design
@@ -127,16 +127,16 @@ Download now and start your cruise collection! 🌊
 
 ---
 
-## What's New (Version 1.0.3)
+## What's New (Version 1.7.0, Build 21)
 
 **DE:**
 ```
-🐛 Bug-Fixes & neue Häfen!
+☁️ Sync und passendere Reise-Cover
 
-• Kritische Karten-Bugs behoben
-• ~120 neue Häfen: Kanaren, Türkei, Marokko, Portugal, und mehr
-• Verbessertes Port-Matching (Klammer-Hinweise, Akzente)
-• Alle Kanarischen Inseln mit allen Namensvarianten
+• Private iCloud-Synchronisation deiner Reisedaten
+• Optionaler Kalender-Sync mit sichtbarem Fortschritt
+• Passendere und abwechslungsreichere Fallback-Cover
+• Stabilitäts- und Qualitätsverbesserungen
 ```
 
 **EN:**
