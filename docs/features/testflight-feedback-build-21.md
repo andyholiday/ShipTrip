@@ -1,5 +1,11 @@
 # TestFlight-Feedback: Cover-Auswahl und Sync-Fortschritt (Build 21)
 
+> **Korrektur in Build 22:** Die pauschale Aufnahme aller schiffsspezifischen
+> Assets in Build 21 war eine visuelle Regression, weil 111 davon stilisierte
+> Illustrationen statt Stockfotos sind. Build 22 beschränkt große Hero-Cover auf
+> den visuell geprüften Foto-Pool und verdrahtet eindeutige Routenziele gezielt.
+> Siehe [Build-22-Hotfix](testflight-cover-hotfix-build-22.md).
+
 ## User Story
 
 Als ShipTrip-Nutzer möchte ich abwechslungsreiche, zum Schiff und zur Reise

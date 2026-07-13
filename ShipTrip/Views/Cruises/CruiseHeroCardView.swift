@@ -152,7 +152,7 @@ struct CruiseHeroCardView: View {
             .sorted { $0.sortOrder < $1.sortOrder }
             .map { "\($0.name)|\($0.country)" }
             .joined(separator: "::")
-        return "\(cruise.id.uuidString)|\(cruise.startDate.timeIntervalSinceReferenceDate)|\(routeKey)"
+        return "\(cruise.id.uuidString)|\(cruise.startDate.timeIntervalSinceReferenceDate)|\(cruise.title)|\(routeKey)"
     }
 
     private var subline: String {

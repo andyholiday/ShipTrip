@@ -49,6 +49,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Fotografische Reise-Cover statt Illustrationen (Build 22)**: Die in Build 21
+  versehentlich freigeschalteten 111 stilisierten `cover_ship_*`-Assets sind aus
+  allen großen Hero-Covern ausgeschlossen. Die Auswahl verwendet nur noch 73
+  visuell geprüfte Fotos und verdrahtet Reisetitel und Route mit kuratierten
+  Regions-Pools für Norwegen, Kanaren, Karibik, Ostsee und Mittelmeer.
+  ([Feature-Doku](docs/features/testflight-cover-hotfix-build-22.md))
+
 - **Passendere und abwechslungsreichere Fallback-Cover (Build 21,
   TestFlight-Feedback vom 13.07.2026)**: Vorhandene schiffsspezifische Assets
   haben Vorrang vor generischen Bildern; der Stock-Pool nutzt zusätzlich
