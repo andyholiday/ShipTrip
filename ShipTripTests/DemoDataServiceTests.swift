@@ -71,6 +71,21 @@ struct DemoDataServiceTests {
         #expect(photos.isEmpty)
     }
 
+    @Test("Demo data seeds curated port moments for release screenshots")
+    @MainActor
+    func seedsCuratedPortMoments() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        DemoDataService.loadDemoData(into: context)
+
+        let ports = try context.fetch(FetchDescriptor<CruisePort>())
+        let barcelona = ports.first { $0.name == "Barcelona" }
+
+        #expect(barcelona?.excursions == ["Altstadt-Spaziergang", "Gaudí-Tour"])
+        #expect(barcelona?.imageData?.isEmpty == false)
+    }
+
     @Test("loadDemoData removes stale demo photos so cover fallback can render")
     @MainActor
     func loadDemoDataRemovesStaleDemoPhotos() throws {

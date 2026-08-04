@@ -9,6 +9,7 @@
 #if DEBUG
 import SwiftData
 import Foundation
+import UIKit
 
 /// Verwaltet realistische Demo-Daten für manuelle Tests.
 /// Alle Aktionen sind idempotent.
@@ -285,11 +286,25 @@ enum DemoDataService {
             port.departure  = departure
             port.sortOrder  = offset
             port.isSeaDay   = isSeaDay
+            if let moments = demoPortMoments[name] {
+                port.excursions = moments.excursions
+                port.imageData = UIImage(named: moments.imageAsset)?.jpegData(compressionQuality: 0.86)
+            }
             port.cruise     = cruise
             context.insert(port)
             cruise.route.append(port)
         }
     }
+
+    /// Kuratierte Erinnerungen für realistische Screenshots und manuelle Demo-Runs.
+    /// Die Bildassets sind text- und logo-freie, eigens erzeugte Hafenmotive.
+    private static let demoPortMoments: [String: (imageAsset: String, excursions: [String])] = [
+        "Barcelona": ("demo_port_barcelona", ["Altstadt-Spaziergang", "Gaudí-Tour"]),
+        "Bergen": ("demo_port_bergen", ["Bryggen", "Stadtbummel"]),
+        "Geiranger": ("demo_port_geiranger", ["Fjord-Aussicht", "Wanderung"]),
+        "Cozumel": ("demo_port_cozumel", ["Schnorcheln", "Bootstour"]),
+        "Palma": ("demo_port_palma", ["Kathedrale", "Altstadt"]),
+    ]
 
     private static func addExpense(
         cruise: Cruise,
