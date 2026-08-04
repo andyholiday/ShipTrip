@@ -49,6 +49,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Zielkalender-Wechsel ließ bestehende Termine im alten Kalender zurück
+  (Build 23)**: Wählt der Nutzer bei aktivem Kalender-Sync einen anderen Zielkalender,
+  erscheint jetzt ein Bestätigungsdialog; „Abbrechen" lässt die Auswahl und
+  beide Kalender unverändert. Nach der Bestätigung werden alle von ShipTrip
+  verwalteten Termine im neuen Kalender angelegt und im alten entfernt;
+  scheitert der Umzug, wird der bisherige Zielkalender wiederhergestellt und
+  der Fehler angezeigt. Die Termine werden dabei gelöscht und neu angelegt
+  statt verschoben, weil EventKit einen Kalenderwechsel über Source-Grenzen
+  hinweg (iCloud, lokal, Google) nicht zuverlässig zusichert.
+
 - **Fotografische Reise-Cover statt Illustrationen (Build 22)**: Die in Build 21
   versehentlich freigeschalteten 111 stilisierten `cover_ship_*`-Assets sind aus
   allen großen Hero-Covern ausgeschlossen. Die Auswahl verwendet nur noch 73

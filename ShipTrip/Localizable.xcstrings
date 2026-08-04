@@ -2,6 +2,47 @@
   "sourceLanguage" : "de",
   "strings" : {
 
+    "%lld Kalendereinträge in den neuen Kalender übertragen." : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Kalendereintrag in den neuen Kalender übertragen."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Kalendereinträge in den neuen Kalender übertragen."
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld calendar entry moved to the new calendar."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld calendar entries moved to the new calendar."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "Abbrechen" : {
       "localizations" : {
         "en" : {
@@ -30,6 +71,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hide all"
+          }
+        }
+      }
+    },
+
+    "Alle bestehenden ShipTrip-Termine werden im neuen Kalender angelegt und im bisherigen Kalender gelöscht." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All existing ShipTrip events are created in the new calendar and deleted from the previous one."
           }
         }
       }
@@ -1526,6 +1578,17 @@
       }
     },
 
+    "Termine in den neuen Kalender übertragen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move events to the new calendar?"
+          }
+        }
+      }
+    },
+
     "Tippe auf + um deine erste Kreuzfahrt hinzuzufügen" : {
       "localizations" : {
         "en" : {
@@ -1565,6 +1628,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Top Shipping Lines"
+          }
+        }
+      }
+    },
+
+    "Übertragen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move"
           }
         }
       }
@@ -3155,7 +3229,44 @@
     },
 
     "%lld Kalendereinträge synchronisiert." : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld calendar entries synced." } } }
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Kalendereintrag synchronisiert."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Kalendereinträge synchronisiert."
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld calendar entry synced."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld calendar entries synced."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Aktiv" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Active" } } }

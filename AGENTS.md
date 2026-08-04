@@ -69,9 +69,10 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 # Projekt: ShipTrip
 
 Kreuzfahrt-Tagebuch-App (iOS). Produktrichtung „Travel Journal" (Premium-Reisetagebuch
-mit Freemium-Abo), erreicht über schrittweise visuelle Politur. Roadmap und Phasenplan
-liegen im Projektgedächtnis (`memory/shiptrip-roadmap.md`); der Voll-Audit unter
-`audit/audit-2026-06-13.html`.
+mit Freemium-Abo), erreicht über schrittweise visuelle Politur. Phasenplan und Produktkurs
+liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–S4) und
+`docs/umsetzungsplan-audit-2026-07.md` (Journal-Kern B1–B3); der jüngste Voll-Audit unter
+`audit/audit-2026-07-10.html`.
 
 ## Stack & Plattform
 

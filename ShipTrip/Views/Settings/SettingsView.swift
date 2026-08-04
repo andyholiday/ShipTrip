@@ -262,9 +262,27 @@ struct CalendarSyncSettingsView: View {
     @State private var operationState = CalendarSyncOperationState()
     @State private var statusMessage = ""
     @State private var showingAccessAlert = false
+    @State private var pendingCalendarIdentifier: String?
 
     private var isWorking: Bool {
         operationState.isWorking
+    }
+
+    /// Der Picker schreibt die Auswahl erst nach einer eventuell nötigen
+    /// Bestätigung fort. Bis dahin bleibt der bisherige Kalender aktiv, damit
+    /// vor dem Umzug nichts in einen Kalender geschrieben wird.
+    private var calendarSelection: Binding<String> {
+        Binding(
+            get: { calendarIdentifier },
+            set: { requestCalendarChange(to: $0) }
+        )
+    }
+
+    private var isConfirmingMigration: Binding<Bool> {
+        Binding(
+            get: { pendingCalendarIdentifier != nil },
+            set: { if !$0 { pendingCalendarIdentifier = nil } }
+        )
     }
 
     private var mode: Binding<String> {
@@ -314,15 +332,12 @@ struct CalendarSyncSettingsView: View {
                     Text("Kein beschreibbarer Kalender verfügbar")
                         .foregroundStyle(.secondary)
                 } else {
-                    Picker("Kalender", selection: $calendarIdentifier) {
+                    Picker("Kalender", selection: calendarSelection) {
                         ForEach(calendars) { calendar in
                             Text(calendar.displayName).tag(calendar.id)
                         }
                     }
                     .disabled(!isEnabled || isWorking)
-                    .onChange(of: calendarIdentifier) {
-                        synchronizeIfEnabled()
-                    }
                 }
             }
 
@@ -363,6 +378,76 @@ struct CalendarSyncSettingsView: View {
         } message: {
             Text("Erlaube ShipTrip den vollständigen Kalenderzugriff, damit du einen Zielkalender auswählen und bestehende ShipTrip-Termine aktualisieren kannst.")
         }
+        .alert(
+            "Termine in den neuen Kalender übertragen?",
+            isPresented: isConfirmingMigration,
+            presenting: pendingCalendarIdentifier
+        ) { identifier in
+            Button("Abbrechen", role: .cancel) {
+                pendingCalendarIdentifier = nil
+            }
+            Button("Übertragen") {
+                startMigration(to: identifier)
+            }
+        } message: { _ in
+            Text("Alle bestehenden ShipTrip-Termine werden im neuen Kalender angelegt und im bisherigen Kalender gelöscht.")
+        }
+    }
+
+    // MARK: - Zielkalender wechseln
+
+    private func requestCalendarChange(to identifier: String) {
+        switch CalendarTargetChangePlanner.decide(
+            current: calendarIdentifier,
+            selected: identifier,
+            isSyncEnabled: isEnabled,
+            hasManagedEvents: CalendarSyncService.shared.hasManagedEvents
+        ) {
+        case .ignore:
+            break
+        case .apply:
+            calendarIdentifier = identifier
+            synchronizeIfEnabled()
+        case .confirmMigration:
+            pendingCalendarIdentifier = identifier
+        }
+    }
+
+    private func startMigration(to identifier: String) {
+        pendingCalendarIdentifier = nil
+        guard operationState.begin() else { return }
+        Task { @MainActor in
+            await Task.yield()
+            migrateNow(to: identifier)
+        }
+    }
+
+    private func migrateNow(to identifier: String) {
+        defer { operationState.finish() }
+
+        let previousIdentifier = calendarIdentifier
+        calendarIdentifier = identifier
+        do {
+            let count = try CalendarSyncService.shared.migrateManagedEvents(cruises: cruises)
+            statusMessage = String(localized: "\(count) Kalendereinträge in den neuen Kalender übertragen.")
+        } catch CalendarSyncError.accessDenied {
+            calendarIdentifier = previousIdentifier
+            isEnabled = false
+            showingAccessAlert = true
+        } catch {
+            calendarIdentifier = previousIdentifier
+            restorePreviousCalendarEvents()
+            statusMessage = error.localizedDescription
+        }
+    }
+
+    /// Stellt nach einer fehlgeschlagenen Migration die Termine im bisherigen
+    /// Kalender wieder her. Nötig, weil `calendarIdentifier` durch den Rollback
+    /// netto unverändert bleibt und `CalendarSyncObserver` deshalb nicht feuert.
+    private func restorePreviousCalendarEvents() {
+        // Ein Fehler hier bleibt bewusst stumm: Sichtbar ist die Ursache des
+        // Fehlschlags, die der Aufrufer direkt danach in `statusMessage` setzt.
+        try? CalendarSyncService.shared.synchronize(cruises: cruises)
     }
 
     private func refreshCalendars() async {

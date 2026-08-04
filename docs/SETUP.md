@@ -105,6 +105,18 @@ XCTest deaktiviert.
 5. Sync deaktivieren und prüfen, dass die von ShipTrip verwalteten Termine
    entfernt werden.
 
+### Kalender-Grant für die Migrationstests
+
+`ShipTripTests/CalendarSyncServiceMigrationTests.swift` arbeitet gegen einen
+echten EventStore und benötigt deshalb einen Kalender-Grant auf dem Simulator:
+
+```bash
+xcrun simctl privacy <udid> grant calendar com.andre.ShipTrip
+```
+
+Ohne den Grant schlagen genau diese vier Tests hart fehl (Exit-Code 65); es gibt
+keinen stillen Skip.
+
 ## Lokale Erinnerungen (keine Nutzer-Push-Nachrichten)
 
 `NotificationService` plant ausschließlich **lokale** Notifications

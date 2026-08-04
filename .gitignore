@@ -74,3 +74,6 @@ Testexport/
 
 # Local coding standards
 .codingstandards/
+
+# Gate-Evidenz (Test-/Build-Belege der Orchestrierung)
+.winston-evidence/

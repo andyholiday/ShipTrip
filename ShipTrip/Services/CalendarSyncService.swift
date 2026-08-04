@@ -67,6 +67,15 @@ final class CalendarSyncService {
         EKEventStore.authorizationStatus(for: .event)
     }
 
+    /// Ob ShipTrip Termine verwaltet, die im Kalender noch existieren.
+    ///
+    /// Ein veraltetes Mapping (Termine in der Kalender-App gelöscht) zählt
+    /// bewusst nicht: Sonst erschiene beim Kalenderwechsel ein Umzugsdialog,
+    /// obwohl es nichts zu übertragen gibt.
+    var hasManagedEvents: Bool {
+        managedEventIdentifiers.values.contains { eventStore.event(withIdentifier: $0) != nil }
+    }
+
     func requestAccess() async -> Bool {
         switch authorizationStatus {
         case .fullAccess:
@@ -138,7 +147,7 @@ final class CalendarSyncService {
             for draft in drafts {
                 let event = identifiers[draft.stableKey]
                     .flatMap(eventStore.event(withIdentifier:))
-                    ?? matchingEvent(for: draft)
+                    ?? matchingEvent(for: draft, in: targetCalendar)
                     ?? EKEvent(eventStore: eventStore)
 
                 event.calendar = targetCalendar
@@ -173,6 +182,30 @@ final class CalendarSyncService {
         return drafts.count
     }
 
+    /// Überträgt alle verwalteten Termine in den inzwischen eingestellten
+    /// Zielkalender: Die bestehenden Einträge werden im bisherigen Kalender
+    /// gelöscht und im neuen Kalender neu angelegt.
+    ///
+    /// Bewusst löschen statt umhängen: Beim Kalenderwechsel ändert sich laut
+    /// Apple-Doku ohnehin der `eventIdentifier`, und ein Wechsel über
+    /// Source-Grenzen (iCloud → lokal → Google) ist für gespeicherte Termine
+    /// nicht dokumentiert zugesichert.
+    ///
+    /// Löschung und Neuanlage sind zwei getrennte EventKit-Commits. Damit die
+    /// Termine nicht gelöscht werden, ohne im neuen Kalender anzukommen, prüft
+    /// die Migration **vorher** alle Vorbedingungen von `synchronize`.
+    @discardableResult
+    func migrateManagedEvents(cruises: [Cruise]) throws -> Int {
+        guard CalendarSyncPreferences.isEnabled else { return 0 }
+        guard authorizationStatus == .fullAccess else { throw CalendarSyncError.accessDenied }
+        guard calendar(withIdentifier: CalendarSyncPreferences.calendarIdentifier) != nil else {
+            throw CalendarSyncError.calendarMissing
+        }
+
+        try removeAllManagedEvents()
+        return try synchronize(cruises: cruises)
+    }
+
     func removeAllManagedEvents() throws {
         guard authorizationStatus == .fullAccess else { throw CalendarSyncError.accessDenied }
 
@@ -195,13 +228,16 @@ final class CalendarSyncService {
             .flatMap { $0.allowsContentModifications ? $0 : nil }
     }
 
-    private func matchingEvent(for draft: CalendarEventDraft) -> EKEvent? {
+    /// Sucht ausschließlich im Zielkalender: Termine in einem früher genutzten
+    /// Kalender dürfen nicht wieder übernommen werden, sonst bliebe ein
+    /// Kalenderwechsel wirkungslos.
+    private func matchingEvent(for draft: CalendarEventDraft, in calendar: EKCalendar) -> EKEvent? {
         let searchStart = Calendar.current.date(byAdding: .day, value: -1, to: draft.startDate) ?? draft.startDate
         let searchEnd = Calendar.current.date(byAdding: .day, value: 1, to: draft.endDate) ?? draft.endDate
         let predicate = eventStore.predicateForEvents(
             withStart: searchStart,
             end: searchEnd,
-            calendars: nil
+            calendars: [calendar]
         )
         return eventStore.events(matching: predicate).first { $0.url == draft.markerURL }
     }
