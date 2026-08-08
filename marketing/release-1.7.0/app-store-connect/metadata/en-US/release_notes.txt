@@ -1,0 +1,12 @@
+ShipTrip turns every cruise into a personal travel journal — now more beautiful, connected and reliable.
+
+• Private iCloud sync between your devices
+• Optional calendar sync for cruises, ports and sea days
+• Safe calendar changes: after confirmation, managed events move completely to the new calendar; the previous calendar is restored if migration fails
+• New Journal Atlas with flowing routes, port clusters and a stop timeline
+• Port Moments for photos, port times and excursions
+• Better matching and more varied travel covers
+• Custom cruise lines and ships
+• Quality improvements for importing, editing, deleting and English localization
+
+Enjoy capturing your next voyage!

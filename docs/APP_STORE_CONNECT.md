@@ -80,22 +80,19 @@ Kreuzfahrt,Schiff,Reise,Urlaub,Meer,Hafen,Route,Tagebuch,TUI,AIDA,MSC
 
 ---
 
-## 🆕 What's New (Version 1.7.0, Build 21)
+## 🆕 What's New (Version 1.7.0, Build 23)
 
 ```
 
-### TestFlight-Status (13.07.2026)
+ShipTrip macht aus jeder Kreuzfahrt ein persönliches Reisetagebuch – jetzt schöner, vernetzter und zuverlässiger.
 
-- Build 21: `VALID`, intern `IN_BETA_TESTING`
-- Externe Gruppe „VIP Extern“: `WAITING_FOR_BETA_REVIEW`
-- Testhinweise: Deutsch und Englisch hinterlegt
-- Build 20: durch Build 21 ersetzt und abgelaufen
-☁️ Sync und passendere Reise-Cover
-
-• Private iCloud-Synchronisation deiner Reisedaten
-• Optionaler Kalender-Sync mit sichtbarem Fortschritt
-• Passendere und abwechslungsreichere Fallback-Cover
-• Stabilitäts- und Qualitätsverbesserungen
+• Privater iCloud-Sync zwischen deinen Geräten
+• Optionaler Kalender-Sync für Reisen, Häfen und Seetage
+• Sicherer Zielkalender-Wechsel mit Rollback bei Fehlern
+• Neuer Journal-Atlas mit kurvigen Routen und interaktiver Stop-Timeline
+• Hafen-Momente für Fotos, Liegezeiten und Ausflüge
+• Passendere und abwechslungsreichere Reise-Cover
+• Qualitätsverbesserungen bei Import, Bearbeiten, Löschen und Lokalisierung
 ```
 
 ---
@@ -122,7 +119,8 @@ https://github.com/andyholiday/ShipTrip
 
 ### Privacy Policy URL
 ```
-https://andyholiday.github.io/ShipTrip/privacy
+Deutsch: https://app-legals.vercel.app/shiptrip/privacy-de
+English: https://app-legals.vercel.app/shiptrip/privacy-en
 ```
 
 ---
@@ -134,8 +132,8 @@ https://andyholiday.github.io/ShipTrip/privacy
 | **Primary Category** | Travel |
 | **Secondary Category** | Lifestyle |
 | **Age Rating** | 4+ |
-| **Price** | Kostenlos (oder dein Wunschpreis) |
-| **Availability** | Weltweit oder nur Deutschland/Österreich/Schweiz |
+| **Price** | 0,99 EUR, Basisland Deutschland |
+| **Availability** | Weltweit, alle 175 App-Store-Regionen |
 
 ---
 
@@ -155,17 +153,17 @@ optional and writes only to the calendar selected by the user.
 
 ## ✅ Checkliste vor dem Einreichen
 
-- [ ] Screenshots hochgeladen (6.7" iPhone)
-- [ ] App Name eingegeben
-- [ ] Subtitle eingegeben
-- [ ] Description eingefügt
-- [ ] Keywords eingegeben
-- [ ] What's New Text eingefügt
-- [ ] Promotional Text eingegeben
-- [ ] Support URL eingegeben
-- [ ] Privacy Policy URL eingegeben
-- [ ] Kategorie gewählt (Travel)
+- [x] Screenshots hochgeladen (6.9" iPhone)
+- [x] App Name eingegeben
+- [x] Subtitle eingegeben
+- [x] Description eingefügt
+- [x] Keywords eingegeben
+- [x] What's New Text eingefügt
+- [x] Promotional Text eingegeben
+- [x] Support URL eingegeben
+- [x] Privacy Policy URL eingegeben
+- [x] Kategorie gewählt (Travel)
 - [ ] Altersfreigabe ausgefüllt (4+)
-- [ ] Preis festgelegt
-- [ ] Build ausgewählt (v1.7.0, Build 21)
-- [ ] Review Notes hinzugefügt
+- [x] Preis festgelegt (0,99 EUR)
+- [x] Build ausgewählt (v1.7.0, Build 23, `VALID`)
+- [x] Review Notes hinzugefügt

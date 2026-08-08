@@ -86,10 +86,11 @@ Build 21 erwartet für `com.andre.ShipTrip`:
   entfernte CloudKit-Store-Änderungen
 - ein Provisioning Profile, das diese Entitlements enthält
 
-Das Schema-Artefakt liegt unter `docs/cloudkit/ShipTrip.ckdb` und entspricht der
-installierten **Development**-Umgebung. Die Promotion nach **Production** erfolgt
-in der CloudKit Console; `cktool` unterstützt für Production nur den Export, nicht
-den Schema-Import. Der anschließende Export dient als maschinenlesbarer Nachweis.
+Das Schema-Artefakt unter `docs/cloudkit/ShipTrip.ckdb` entspricht der installierten
+**Development**-Umgebung. Die Promotion nach **Production** wurde am 08.08.2026
+in der CloudKit Console ausgeführt. Der anschließende maschinenlesbare Export liegt
+unter `docs/cloudkit/ShipTrip-production.ckdb` und entspricht semantisch dem
+Development-Schema.
 Ein Geräte-Smoke benötigt ein entsperrtes, bei iCloud angemeldetes Gerät. Unit-
 Tests benötigen keinen iCloud-Account, weil `ShipTripCloudSync` CloudKit unter
 XCTest deaktiviert.
@@ -161,8 +162,9 @@ jedem Fastlane-Lauf neu geschrieben) — nicht manuell editieren.
 > Secrets. Niemals Key-Inhalte oder reale Werte in Doku, Commits oder Issues
 > einfügen.
 
-Für CloudKit-Releases gilt zusätzlich: Schema in Development validieren, über die
-CloudKit Console nach Production promoten und den Production-Export vergleichen.
+Für künftige CloudKit-Schemaänderungen gilt zusätzlich: Schema in Development
+validieren, über die CloudKit Console nach Production promoten und den
+Production-Export vergleichen.
 Ein echter Geräte-Smoke bleibt der stärkste End-to-End-Nachweis; ist kein Gerät
 verfügbar, muss diese Einschränkung im Release-Status ausdrücklich stehen.
 

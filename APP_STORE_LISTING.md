@@ -127,26 +127,38 @@ Download now and start your cruise collection! 🌊
 
 ---
 
-## What's New (Version 1.7.0, Build 21)
+## What's New (Version 1.7.0, Build 23)
 
 **DE:**
 ```
-☁️ Sync und passendere Reise-Cover
+ShipTrip macht aus jeder Kreuzfahrt ein persönliches Reisetagebuch – jetzt schöner, vernetzter und zuverlässiger.
 
-• Private iCloud-Synchronisation deiner Reisedaten
-• Optionaler Kalender-Sync mit sichtbarem Fortschritt
-• Passendere und abwechslungsreichere Fallback-Cover
-• Stabilitäts- und Qualitätsverbesserungen
+• Privater iCloud-Sync zwischen deinen Geräten
+• Optionaler Kalender-Sync für Reisen, Häfen und Seetage
+• Sicherer Zielkalender-Wechsel: verwaltete Termine werden nach Bestätigung vollständig umgezogen; bei einem Fehler bleibt der bisherige Kalender erhalten
+• Neuer Journal-Atlas mit kurvigen Routen, Hafen-Clustern und interaktiver Stop-Timeline
+• Hafen-Momente für Fotos, Liegezeiten und Ausflüge
+• Passendere und abwechslungsreichere Reise-Cover
+• Eigene Reedereien und Schiffe
+• Qualitätsverbesserungen bei Import, Bearbeiten, Löschen und englischer Lokalisierung
+
+Viel Freude beim Festhalten deiner nächsten Reise!
 ```
 
 **EN:**
 ```
-🐛 Bug fixes & new ports!
+ShipTrip turns every cruise into a personal travel journal — now more beautiful, connected and reliable.
 
-• Critical map bugs fixed
-• ~120 new ports: Canaries, Turkey, Morocco, Portugal, and more
-• Improved port matching (parenthetical hints, accents)
-• All Canary Islands with all name variants
+• Private iCloud sync between your devices
+• Optional calendar sync for cruises, ports and sea days
+• Safe calendar changes: after confirmation, managed events move completely to the new calendar; the previous calendar is restored if migration fails
+• New Journal Atlas with flowing routes, port clusters and a stop timeline
+• Port Moments for photos, port times and excursions
+• Better matching and more varied travel covers
+• Custom cruise lines and ships
+• Quality improvements for importing, editing, deleting and English localization
+
+Enjoy capturing your next voyage!
 ```
 
 ---
@@ -166,7 +178,9 @@ https://github.com/andyholiday/ShipTrip/issues
 https://github.com/andyholiday/ShipTrip
 
 ## Privacy Policy URL
-https://andyholiday.github.io/ShipTrip/privacy (muss noch erstellt werden)
+DE: https://app-legals.vercel.app/shiptrip/privacy-de
+
+EN: https://app-legals.vercel.app/shiptrip/privacy-en
 
 ---
 
@@ -178,4 +192,4 @@ https://andyholiday.github.io/ShipTrip/privacy (muss noch erstellt werden)
 4+ (keine bedenklichen Inhalte)
 
 ## Copyright
-© 2024 André Jaszka
+© 2026 André Jaszka

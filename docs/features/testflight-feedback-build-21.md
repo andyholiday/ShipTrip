@@ -66,8 +66,10 @@ Cover-Zuordnungen oder Änderungen am Kalender-Datenmodell.
 - 31 UI-Tests: 30 bestanden, 1 expliziter Build-19-Migrationstest ohne
   vorbereitetes Alt-Store-Artefakt übersprungen, 0 Fehler.
 - Fokustests für Cover-Auswahl und Sync-Operationszustand: grün.
-- Das eingecheckte Schema entspricht der live exportierten Development-Umgebung;
-  der Production-Export enthielt vor der Promotion nur den Systemtyp `Users`.
+- Das eingecheckte Schema entspricht der live exportierten Development-Umgebung.
+  Am 08.08.2026 wurde es nach Production promotet; der danach exportierte Stand
+  enthält alle acht ShipTrip-Record-Types und entspricht semantisch dem
+  Development-Schema.
 - Archiv und automatischer App-Store-Export für Version 1.7.0 (21) waren
   erfolgreich. Die exportierte IPA ist gültig signiert, enthält
   `aps-environment=production`, CloudKit-Umgebung `Production` und
@@ -77,6 +79,5 @@ Cover-Zuordnungen oder Änderungen am Kalender-Datenmodell.
   `WAITING_FOR_BETA_REVIEW`. Build 20 wurde dafür abgelöst und ist abgelaufen.
 - Deutsche und englische Testhinweise sind am Build hinterlegt; die interne
   Gruppe „VIP Tester“ und die externe Gruppe „VIP Extern“ sind zugeordnet.
-- Noch offen ist ausschließlich die kontogebundene Promotion des CloudKit-
-  Schemas über die CloudKit Console. Der echte iCloud-Geräte-Smoke bleibt mangels
-  verfügbarem entsperrtem Gerät als dokumentierte Einschränkung bestehen.
+- Der echte iCloud-Geräte-Smoke bleibt mangels verfügbarem entsperrtem Gerät als
+  dokumentierte Einschränkung bestehen.

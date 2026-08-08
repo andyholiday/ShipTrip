@@ -155,7 +155,7 @@ Vollständige Architektur- und API-Doku: [docs/ARCHITECTURE.md](docs/ARCHITECTUR
 - [x] Sichtbarer Arbeitszustand beim manuellen Kalender-Sync
 - [x] Passendere und abwechslungsreichere Fallback-Cover
 - [x] Build 21 intern über TestFlight ausliefern und extern zur Beta-Prüfung einreichen
-- [ ] CloudKit-Schema nach Production promoten
+- [x] CloudKit-Schema nach Production promoten (08.08.2026)
 
 Siehe [Build-21-Feature-Doku](docs/features/testflight-feedback-build-21.md),
 [Build-20-Feature-Doku](docs/features/testflight-feedback-build-20.md) und

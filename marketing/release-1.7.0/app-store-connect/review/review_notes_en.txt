@@ -1,0 +1,10 @@
+Version 1.7.0 (Build 23) adds private iCloud/CloudKit sync, optional calendar sync, and the new Journal Atlas.
+
+Important review steps:
+1. No login is required. The app stores travel data locally and optionally in the signed-in user's private iCloud area.
+2. In More > Calendar Sync, users can grant full calendar access and choose a writable destination calendar. This feature is optional.
+3. If the destination calendar is changed while sync is active, the app shows a confirmation dialog. After confirmation, only ShipTrip-managed events are created in the new calendar and removed from the previous calendar. If migration fails, the previous selection is restored.
+4. AI import is optional and requires the user's own Gemini API key. A disclosure is shown before transmission, and the extracted result must be reviewed before saving.
+5. ShipTrip operates no own servers and has no user accounts.
+
+For testing, reviewers can create a cruise manually and add ports, photos, excursions, and expenses. Calendar and photo access are requested only after the corresponding user action.

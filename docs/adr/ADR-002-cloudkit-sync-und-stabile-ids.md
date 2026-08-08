@@ -1,6 +1,6 @@
 # ADR-002: CloudKit-Sync, stabile IDs und ZIP-Export
 
-**Status:** Accepted; CloudKit-Aktivierung in Build 20 implementiert, Release ausstehend
+**Status:** Accepted; CloudKit-Aktivierung implementiert, Production-Schema seit 08.08.2026 aktiv
 **Datum:** 2026-06-14  
 **Autor:** Andre (via Phase-1-Planung / Codex-Plan-Review)  
 **Querverweis:** ADR-001 (Schema-Stabilitaet als gemeinsame Motivation)
@@ -138,17 +138,17 @@ Development installiert und anschließend kontrolliert nach Production promotet.
 - `Cruise.routeStorage`, `expensesStorage` und `photosStorage` sind optionale
   Relationships. Berechnete Wrapper erhalten die nicht-optionale App-Sicht;
   `originalName` schützt die bisherigen Relationship-Namen bei der Migration.
-- Das CloudKit-Schema liegt als `docs/cloudkit/ShipTrip.ckdb` vor und ist in der
-  Development-Umgebung installiert.
+- Das CloudKit-Schema liegt als `docs/cloudkit/ShipTrip.ckdb` vor, ist in der
+  Development-Umgebung installiert und wurde am 08.08.2026 nach Production
+  promotet. Der Production-Export ist als
+  `docs/cloudkit/ShipTrip-production.ckdb` versioniert.
 - Ein echter Upgrade-Smoke von unverändertem Build-19-Code auf den aktuellen
   Store erhält Reise und Route; dabei wurde außerdem korrigiert, dass die
   CloudKit-Konfiguration weiterhin den bisherigen `default.store` öffnen muss.
-- **Noch offen:** Entscheidung über den verbindlichen Zwei-Release-Ablauf,
-  Promotion des Schemas nach Production, Smoke-Test auf einem entsperrten echten
-  iCloud-Gerät und anschließende TestFlight-Auslieferung.
+- **Noch offen:** Smoke-Test auf einem entsperrten echten iCloud-Gerät.
 
-Damit ist die Code- und Development-Schema-Implementierung abgeschlossen, nicht
-jedoch das Sequenz-, Geräte- und Release-Gate dieses ADRs.
+Damit sind Code-, Development- und Production-Schema abgeschlossen; offen bleibt
+der stärkste End-to-End-Nachweis auf einem echten iCloud-Gerät.
 
 ---
 

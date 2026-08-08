@@ -49,9 +49,10 @@ Stand: Xcode-Projekt `IPHONEOS_DEPLOYMENT_TARGET = 18.5`, `SWIFT_VERSION = 6.0`.
 └─────────────────┘               └─────────────────┘
 ```
 
-Der Build-20-Release-Kandidat bindet SwiftData an die private CloudKit-Datenbank
-`iCloud.com.andre.ShipTrip`. Das Development-Schema ist installiert; die
-Production-Promotion und TestFlight-Auslieferung sind noch offen. Siehe
+ShipTrip bindet SwiftData an die private CloudKit-Datenbank
+`iCloud.com.andre.ShipTrip`. Das Schema ist in Development installiert und seit
+dem 08.08.2026 nach Production promotet; Build 23 ist in App Store Connect
+`VALID`. Siehe
 [„CloudKit-Status" in MODELS.md](MODELS.md#cloudkit-status-projektweit).
 
 ## Schichten

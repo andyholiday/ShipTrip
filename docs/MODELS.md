@@ -339,7 +339,7 @@ struct ShippingLine: Identifiable, Hashable {
 
 ## CloudKit-Status (projektweit)
 
-CloudKit ist im **Build-20-Release-Kandidaten konfiguriert**:
+CloudKit ist im Release-Build konfiguriert:
 
 - `ShipTripCloudSync.persistentConfiguration` bindet den persistenten SwiftData-
   Store an die private Datenbank von `iCloud.com.andre.ShipTrip`; XCTest-Läufe
@@ -348,7 +348,8 @@ CloudKit ist im **Build-20-Release-Kandidaten konfiguriert**:
   `@Attribute(.unique)` und optionale Beziehungen. `Cruise` kapselt seine drei
   optionalen Storage-Beziehungen hinter nicht-optionalen App-Properties.
 - `docs/cloudkit/ShipTrip.ckdb` dokumentiert das installierte Development-Schema.
-- **Release-Grenze:** Die Promotion dieses Schemas nach Production sowie die
-  anschließende TestFlight-Auslieferung von Build 20 sind noch ausstehend.
+- Das Schema wurde am 08.08.2026 nach Production promotet. Der anschließende
+  Export unter `docs/cloudkit/ShipTrip-production.ckdb` entspricht semantisch
+  dem Development-Schema; Build 23 ist in App Store Connect `VALID`.
 
 Details und Migrationsplan: [ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md).

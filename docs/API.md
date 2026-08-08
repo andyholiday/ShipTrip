@@ -375,7 +375,8 @@ enum ShipTripCloudSync {
 Im App-Prozess verwendet die Konfiguration die private CloudKit-Datenbank. Unter
 XCTest wird CloudKit bewusst deaktiviert. `accountStatus()` bildet den Status des
 CloudKit-Accounts auf lokalisierbare UI-Zustände ab. Das Development-Schema ist in
-`docs/cloudkit/ShipTrip.ckdb` dokumentiert; die Production-Promotion ist noch offen.
+`docs/cloudkit/ShipTrip.ckdb` dokumentiert. Das am 08.08.2026 promotete und erneut
+exportierte Production-Schema liegt unter `docs/cloudkit/ShipTrip-production.ckdb`.
 
 ## CalendarEventPlanner und CalendarSyncService
 

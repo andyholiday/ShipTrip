@@ -1,0 +1,1 @@
+cruise,travel,journal,ship,voyage,ports,excursions,photos,planner,tracker

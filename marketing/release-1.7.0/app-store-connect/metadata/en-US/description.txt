@@ -1,0 +1,40 @@
+Your personal cruise journal.
+
+ShipTrip helps you plan every voyage, capture each port and turn your cruise history into a beautiful travel logbook. Keep routes, photos, excursions, expenses and memories together in one private place.
+
+CRUISE JOURNAL
+• Create detailed entries for every cruise
+• Save your ship, cabin, cruise line and travel dates
+• Add personal notes and ratings
+• Browse upcoming and completed voyages in your travel logbook
+
+JOURNAL ATLAS
+• See your routes on an interactive world map
+• Explore more than 1,800 ports worldwide
+• Follow each voyage through an interactive stop timeline
+• Quickly see the countries and ports you have visited
+
+PORT MOMENTS
+• Capture port photos, arrival and departure times
+• Keep excursions with the stop where they happened
+• Build a visual record of every destination
+
+SMART BOOKING IMPORT
+• Paste text from a cruise booking confirmation
+• Let AI extract the trip details for you
+• Review the result before saving it
+
+INSIGHTS AND EXPENSES
+• Track cruises, days at sea, ports and countries
+• Review your personal cruise history at a glance
+• Record onboard and travel expenses
+• Keep an eye on your budget
+
+PRIVATE SYNC AND BACKUP
+• Sync travel data through your private iCloud account
+• Optionally add cruises, ports and sea days to a calendar you choose
+• Export your data as a ZIP archive and import it again when needed
+
+ShipTrip supports English and German. Your travel data is stored locally and, when enabled, synchronized through the private iCloud/CloudKit area of your Apple account. ShipTrip does not operate its own servers for your journal data.
+
+Start your personal cruise collection today.

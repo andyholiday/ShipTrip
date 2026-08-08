@@ -1,0 +1,10 @@
+Version 1.7.0 (Build 23) erweitert ShipTrip um privaten iCloud-/CloudKit-Sync, optionalen Kalender-Sync und den neuen Journal-Atlas.
+
+Wichtige Prüfschritte:
+1. Es ist kein Login erforderlich. Die App speichert Reisedaten lokal und optional im privaten iCloud-Bereich des angemeldeten Apple-Accounts.
+2. Unter Mehr > Kalender-Sync kann vollständiger Kalenderzugriff erteilt und ein beschreibbarer Zielkalender gewählt werden. Die Funktion ist optional.
+3. Wird bei aktivem Sync der Zielkalender geändert, zeigt die App einen Bestätigungsdialog. Nach Bestätigung werden ausschließlich von ShipTrip verwaltete Termine im neuen Kalender angelegt und im bisherigen Kalender entfernt. Bei einem Fehler wird die bisherige Auswahl wiederhergestellt.
+4. Der KI-Import ist optional und erfordert einen eigenen Gemini-API-Key. Vor der Übermittlung wird ein Disclosure angezeigt; das Ergebnis muss vor dem Speichern bestätigt werden.
+5. Es gibt keine eigenen ShipTrip-Server und kein Benutzerkonto.
+
+Zum Testen können Prüfer eine neue Reise manuell anlegen und Häfen, Fotos, Ausflüge sowie Ausgaben ergänzen. Kalender- und Fotozugriff werden erst nach einer entsprechenden Nutzeraktion angefragt.

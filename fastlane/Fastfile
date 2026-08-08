@@ -1,6 +1,283 @@
+require "base64"
+require "json"
+require "spaceship"
+
 default_platform(:ios)
 
+APP_IDENTIFIER = "com.andre.ShipTrip"
+APP_STORE_APP_ID = "6756786576"
+APP_STORE_VERSION = "1.7.0"
+APP_STORE_BUILD = 23
+APP_STORE_BASE_TERRITORY = "DEU"
+APP_STORE_BASE_PRICE = "0.99"
+APP_STORE_ASSET_ROOT = File.expand_path(
+  "../marketing/release-1.7.0/app-store-connect",
+  __dir__
+)
+
+def connect_api_client
+  Spaceship::ConnectAPI.client.tunes_request_client
+end
+
+def all_response_models(response)
+  response.all_pages.flat_map(&:to_models)
+end
+
+def app_price_point(base_territory:, customer_price:)
+  client = connect_api_client
+  params = client.build_params(
+    filter: { territory: base_territory },
+    includes: "territory",
+    fields: {
+      appPricePoints: "customerPrice,proceeds,territory",
+      territories: "currency"
+    },
+    limit: 200
+  )
+  points = all_response_models(
+    client.get("v1/apps/#{APP_STORE_APP_ID}/appPricePoints", params)
+  )
+  matches = points.select { |point| point.customer_price.to_s == customer_price }
+  UI.user_error!(
+    "Expected exactly one #{customer_price} price point for #{base_territory}, found #{matches.count}"
+  ) unless matches.one?
+
+  matches.first
+end
+
+def opaque_price_code(identifier)
+  padded = identifier + ("=" * ((4 - identifier.length % 4) % 4))
+  JSON.parse(Base64.urlsafe_decode64(padded))["p"].to_s
+rescue JSON::ParserError, ArgumentError
+  nil
+end
+
+def current_base_price_code
+  response = connect_api_client.get(
+    "v1/apps/#{APP_STORE_APP_ID}/appPriceSchedule",
+    { include: "baseTerritory,manualPrices", "limit[manualPrices]" => 50 }
+  )
+  price_ids = response.body.dig(
+    "data",
+    "relationships",
+    "manualPrices",
+    "data"
+  ) || []
+  opaque_price_code(price_ids.last&.fetch("id", nil).to_s)
+end
+
+def set_base_price
+  point = app_price_point(
+    base_territory: APP_STORE_BASE_TERRITORY,
+    customer_price: APP_STORE_BASE_PRICE
+  )
+  desired_price_code = opaque_price_code(point.id)
+  UI.user_error!("Could not identify the selected App Store price point") if desired_price_code.nil?
+
+  if current_base_price_code == desired_price_code
+    UI.success("Price already set to EUR #{APP_STORE_BASE_PRICE}")
+    return
+  end
+
+  placeholder = "${shiptrip-price}"
+  body = {
+    data: {
+      type: "appPriceSchedules",
+      relationships: {
+        app: { data: { type: "apps", id: APP_STORE_APP_ID } },
+        baseTerritory: {
+          data: { type: "territories", id: APP_STORE_BASE_TERRITORY }
+        },
+        manualPrices: {
+          data: [{ type: "appPrices", id: placeholder }]
+        }
+      }
+    },
+    included: [
+      {
+        type: "appPrices",
+        id: placeholder,
+        attributes: { startDate: nil, endDate: nil },
+        relationships: {
+          appPricePoint: {
+            data: { type: "appPricePoints", id: point.id }
+          }
+        }
+      }
+    ]
+  }
+  connect_api_client.post("v1/appPriceSchedules", body)
+  UI.success("Set base territory Germany to EUR #{APP_STORE_BASE_PRICE}")
+end
+
+def territory_availabilities
+  client = connect_api_client
+  schedule = client.get("v1/apps/#{APP_STORE_APP_ID}/appAvailabilityV2")
+  schedule_id = schedule.body.dig("data", "id")
+  UI.user_error!("App Store availability is not configured") if schedule_id.nil?
+
+  params = client.build_params(includes: "territory", limit: 200)
+  all_response_models(
+    client.get(
+      "v2/appAvailabilities/#{schedule_id}/territoryAvailabilities",
+      params
+    )
+  )
+end
+
+def current_worldwide_availability?
+  models = territory_availabilities
+  models.count == 175 && models.all?(&:available)
+end
+
+def set_worldwide_availability
+  if current_worldwide_availability?
+    UI.success("App already available in all App Store territories")
+    return
+  end
+
+  client = connect_api_client
+  unavailable = territory_availabilities.reject(&:available)
+  unavailable.each do |entry|
+    body = {
+      data: {
+        type: "territoryAvailabilities",
+        id: entry.id,
+        attributes: { available: true, preOrderEnabled: false }
+      }
+    }
+    client.patch("v1/territoryAvailabilities/#{entry.id}", body)
+  end
+
+  UI.user_error!("Not all App Store territories were enabled") unless current_worldwide_availability?
+  UI.success("Enabled all 175 App Store territories")
+end
+
+def validate_store_assets
+  metadata_root = File.join(APP_STORE_ASSET_ROOT, "metadata")
+  screenshots_root = File.join(APP_STORE_ASSET_ROOT, "screenshots")
+  %w[de-DE en-US].each do |locale|
+    %w[
+      description keywords marketing_url name privacy_url promotional_text
+      release_notes subtitle support_url
+    ].each do |filename|
+      file = File.join(metadata_root, locale, "#{filename}.txt")
+      UI.user_error!("Missing metadata file: #{file}") unless File.file?(file)
+      UI.user_error!("Empty metadata file: #{file}") if File.read(file).strip.empty?
+    end
+
+    screenshots = Dir[File.join(screenshots_root, locale, "*.png")].sort
+    UI.user_error!("Expected four #{locale} screenshots") unless screenshots.count == 4
+  end
+end
+
+def editable_app_store_version
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  UI.user_error!("ShipTrip was not found in App Store Connect") if app.nil?
+
+  version = app.get_edit_app_store_version(
+    platform: Spaceship::ConnectAPI::Platform::IOS
+  )
+  UI.user_error!("No editable iOS version found") if version.nil?
+  UI.user_error!(
+    "Expected editable version #{APP_STORE_VERSION}, found #{version.version_string}"
+  ) unless version.version_string == APP_STORE_VERSION
+
+  [app, version]
+end
+
+def select_app_store_build
+  app, version = editable_app_store_version
+  build = Spaceship::ConnectAPI::Build.all(
+    app_id: app.id,
+    version: APP_STORE_VERSION,
+    build_number: APP_STORE_BUILD.to_s,
+    platform: Spaceship::ConnectAPI::Platform::IOS
+  ).first
+  UI.user_error!("Build #{APP_STORE_BUILD} is unavailable") if build.nil?
+
+  if version.build&.id == build.id
+    UI.success("Build #{APP_STORE_BUILD} already selected")
+    return
+  end
+
+  version.select_build(build_id: build.id)
+  UI.success("Selected App Store build #{APP_STORE_BUILD}")
+end
+
+def set_app_store_copyright
+  _app, version = editable_app_store_version
+  expected = File.read(
+    File.join(APP_STORE_ASSET_ROOT, "metadata", "copyright.txt")
+  ).strip
+  if version.copyright.to_s.strip == expected
+    UI.success("App Store copyright already current")
+    return
+  end
+
+  version.update(attributes: { copyright: expected })
+  UI.success("Updated App Store copyright to #{expected}")
+end
+
+def deduplicate_app_store_screenshots
+  _app, version = editable_app_store_version
+  version.get_app_store_version_localizations.each do |localization|
+    localization.get_app_screenshot_sets.each do |set|
+      seen_checksums = {}
+      set.app_screenshots.to_a.each do |screenshot|
+        checksum = screenshot.source_file_checksum
+        if seen_checksums.key?(checksum)
+          screenshot.delete!
+        else
+          seen_checksums[checksum] = screenshot.id
+        end
+      end
+
+      next unless set.screenshot_display_type == "APP_IPHONE_67"
+      UI.user_error!(
+        "Expected four unique #{localization.locale} screenshots, found #{seen_checksums.count}"
+      ) unless seen_checksums.count == 4
+    end
+  end
+  UI.success("Verified four unique screenshots for each locale")
+end
+
+def verify_app_store_privacy_urls
+  app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+  UI.user_error!("ShipTrip was not found in App Store Connect") if app.nil?
+
+  app_info = app.fetch_edit_app_info
+  UI.user_error!("No editable app information found") if app_info.nil?
+
+  localizations = app_info.get_app_info_localizations
+  %w[de-DE en-US].each do |locale|
+    expected = File.read(
+      File.join(
+        APP_STORE_ASSET_ROOT,
+        "metadata",
+        locale,
+        "privacy_url.txt"
+      )
+    ).strip
+    actual = localizations.find { |entry| entry.locale == locale }&.privacy_policy_url.to_s.strip
+    UI.user_error!(
+      "Privacy URL mismatch for #{locale}: expected #{expected}, found #{actual}"
+    ) unless actual == expected
+  end
+
+  UI.success("Verified localized App Store privacy URLs")
+end
+
 platform :ios do
+
+  private_lane :asc_api_key do
+    app_store_connect_api_key(
+      key_id: ENV["ASC_KEY_ID"],
+      issuer_id: ENV["ASC_ISSUER_ID"],
+      key_filepath: ENV["ASC_KEY_PATH"],
+      in_house: false
+    )
+  end
 
   desc "Read-only: prüft API-Key + findet die App"
   lane :validate do
@@ -48,6 +325,89 @@ platform :ios do
       skip_waiting_for_build_processing: true,
       skip_submission: true
     )
+  end
+
+  desc "Prepare App Store Connect 1.7.0, excluding app preview videos"
+  lane :prepare_app_store do
+    api_key = asc_api_key
+    validate_store_assets
+
+    latest_build = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      initial_build_number: 0
+    )
+    UI.user_error!(
+      "Expected TestFlight build #{APP_STORE_BUILD}, found #{latest_build}"
+    ) unless latest_build == APP_STORE_BUILD
+
+    deliver(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: APP_STORE_VERSION,
+      build_number: APP_STORE_BUILD.to_s,
+      metadata_path: File.join(APP_STORE_ASSET_ROOT, "metadata"),
+      screenshots_path: File.join(APP_STORE_ASSET_ROOT, "screenshots"),
+      skip_binary_upload: true,
+      overwrite_screenshots: true,
+      force: true,
+      submit_for_review: false,
+      automatic_release: true,
+      phased_release: false,
+      reset_ratings: false,
+      primary_category: "TRAVEL",
+      secondary_category: "LIFESTYLE",
+      app_review_information: {
+        notes: File.read(
+          File.join(APP_STORE_ASSET_ROOT, "review", "review_notes_en.txt")
+        )
+      },
+      run_precheck_before_submit: true,
+      precheck_include_in_app_purchases: false
+    )
+
+    deduplicate_app_store_screenshots
+    select_app_store_build
+    set_app_store_copyright
+    set_base_price
+    set_worldwide_availability
+  end
+
+  desc "Enable and verify all current App Store territories"
+  lane :sync_worldwide_availability do
+    asc_api_key
+    set_worldwide_availability
+  end
+
+  desc "Repair duplicate screenshots and select build 23"
+  lane :repair_app_store_version do
+    asc_api_key
+    deduplicate_app_store_screenshots
+    select_app_store_build
+    set_app_store_copyright
+  end
+
+  desc "Update App Store privacy URLs from the prepared localized metadata"
+  lane :sync_privacy_urls do
+    api_key = asc_api_key
+    deliver(
+      api_key: api_key,
+      app_identifier: APP_IDENTIFIER,
+      app_version: APP_STORE_VERSION,
+      metadata_path: File.join(APP_STORE_ASSET_ROOT, "metadata"),
+      skip_binary_upload: true,
+      skip_screenshots: true,
+      force: true,
+      submit_for_review: false,
+      run_precheck_before_submit: false
+    )
+    verify_app_store_privacy_urls
+  end
+
+  desc "Read-only: verify localized App Store privacy URLs"
+  lane :verify_privacy_urls do
+    asc_api_key
+    verify_app_store_privacy_urls
   end
 
 end

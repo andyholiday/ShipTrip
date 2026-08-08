@@ -1,0 +1,40 @@
+Dein persönliches Kreuzfahrt-Logbuch.
+
+Mit ShipTrip planst du jede Reise, hältst jeden Hafen fest und verwandelst deine Kreuzfahrt-Historie in ein wunderschönes Reisetagebuch. Routen, Fotos, Ausflüge, Ausgaben und Erinnerungen bleiben gemeinsam an einem privaten Ort.
+
+KREUZFAHRT-LOGBUCH
+• Lege detaillierte Einträge für jede Kreuzfahrt an
+• Speichere Schiff, Kabine, Reederei und Reisedaten
+• Ergänze persönliche Notizen und Bewertungen
+• Durchsuche kommende und vergangene Reisen in deinem Logbuch
+
+JOURNAL-ATLAS
+• Erlebe deine Routen auf einer interaktiven Weltkarte
+• Finde mehr als 1.800 Häfen weltweit
+• Folge jeder Reise über eine interaktive Stop-Timeline
+• Sieh auf einen Blick, welche Länder und Häfen du besucht hast
+
+HAFEN-MOMENTE
+• Halte Hafenfotos, Ankunfts- und Abfahrtszeiten fest
+• Bewahre Ausflüge direkt bei dem Stopp, an dem sie stattgefunden haben
+• Erstelle eine visuelle Erinnerung an jedes Reiseziel
+
+INTELLIGENTER BUCHUNGSIMPORT
+• Füge Text aus einer Buchungsbestätigung ein
+• Lass die Reisedaten mit KI-Unterstützung extrahieren
+• Prüfe das Ergebnis, bevor du es speicherst
+
+STATISTIKEN UND AUSGABEN
+• Verfolge Kreuzfahrten, Reisetage, Häfen und Länder
+• Sieh deine persönliche Reise-Historie auf einen Blick
+• Erfasse Ausgaben an Bord und unterwegs
+• Behalte dein Reisebudget im Blick
+
+PRIVATER SYNC UND BACKUP
+• Synchronisiere Reisedaten über deinen privaten iCloud-Account
+• Übertrage Reisen, Häfen und Seetage optional in einen Kalender deiner Wahl
+• Exportiere deine Daten als ZIP-Archiv und importiere sie bei Bedarf wieder
+
+ShipTrip unterstützt Deutsch und Englisch. Deine Reisedaten werden lokal gespeichert und, wenn aktiviert, über den privaten iCloud-/CloudKit-Bereich deines Apple-Accounts synchronisiert. ShipTrip betreibt keine eigenen Server für deine Logbuchdaten.
+
+Starte heute deine persönliche Kreuzfahrt-Sammlung.

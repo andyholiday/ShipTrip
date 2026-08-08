@@ -9,13 +9,18 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geplant
 
-- CloudKit-Schema von Development nach Production promoten.
 - ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
   festlegen; Build 19 enthält noch das alte Relationship-Schema.
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
 ### Hinzugefuegt
+
+- **CloudKit-Production-Schema (08.08.2026)**: Die acht ShipTrip-Record-Types,
+  zugehörigen Indizes und Security Roles wurden von Development nach Production
+  promotet. Der anschließend exportierte Production-Stand liegt unter
+  `docs/cloudkit/ShipTrip-production.ckdb` und entspricht semantisch dem
+  dokumentierten Development-Schema.
 
 - **Kalender-Sync mit sichtbarem Arbeitszustand (Build 21,
   TestFlight-Feedback vom 13.07.2026)**: Manuelles Synchronisieren zeigt nun
