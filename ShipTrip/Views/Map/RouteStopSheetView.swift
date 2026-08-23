@@ -60,7 +60,12 @@ struct RouteStopSheetView: View {
 
     private var substats: String {
         let countries = Set(ports.map(\.port.country)).filter { !$0.isEmpty }.count
-        return "\(cruise.duration) \(String(localized: "Tage")) · \(ports.count) \(String(localized: "Häfen")) · \(countries) \(String(localized: "Länder"))"
+        // Teil-Strings, damit jeder Zähler seine eigene Pluralform bekommt
+        return [
+            String(localized: "\(cruise.duration) Tage"),
+            String(localized: "\(ports.count) Häfen"),
+            String(localized: "\(countries) Länder")
+        ].joined(separator: " · ")
     }
 
     // MARK: - Medium: Stop-Liste mit gepunkteter Timeline

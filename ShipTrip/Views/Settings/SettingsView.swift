@@ -186,6 +186,18 @@ struct SettingsView: View {
                     Link(destination: URL(string: "https://github.com/andyholiday/ShipTrip")!) {
                         Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
+
+                    if let privacyPolicyURL {
+                        Link(destination: privacyPolicyURL) {
+                            Label("Datenschutzerklärung", systemImage: "hand.raised")
+                        }
+                    }
+
+                    if let supportURL {
+                        Link(destination: supportURL) {
+                            Label("Support", systemImage: "questionmark.circle")
+                        }
+                    }
                 }
             }
             .navigationTitle("Einstellungen")
@@ -205,6 +217,17 @@ struct SettingsView: View {
             }
             .preferredColorScheme(colorSchemeValue)
         }
+    }
+
+    /// Datenschutzerklärung – deutsche Fassung nur bei deutscher Gerätesprache.
+    private var privacyPolicyURL: URL? {
+        let isGerman = Locale.current.language.languageCode?.identifier == "de"
+        return URL(string: "https://app-legals.vercel.app/shiptrip/privacy-\(isGerman ? "de" : "en")")
+    }
+
+    /// Support-Kanal: Issue-Tracker des Projekts.
+    private var supportURL: URL? {
+        URL(string: "https://github.com/andyholiday/ShipTrip/issues")
     }
 
     private var moreHeader: some View {
@@ -676,7 +699,7 @@ struct NotificationSettingsView: View {
                 
                 if notifyBeforeCruise {
                     Stepper(value: $reminderDaysBefore, in: 1...30) {
-                        Text("\(reminderDaysBefore) \(String(localized: "Tage vorher"))")
+                        Text(String(localized: "\(reminderDaysBefore) Tage vorher"))
                     }
                     .disabled(!isAuthorized)
                 }
