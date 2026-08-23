@@ -28,3 +28,19 @@
 
 - [major] ShipTrip/Views/Settings/SettingsView.swift:641-688 — Erinnerungs-Toggle/Offset-Änderung löst keinen Reconcile aus; wirkt erst beim nächsten App-Start (nach A1) bzw. Speichern
 - [minor] ShipTrip/Views/Cruises/CruiseFormView.swift:374 — Plural „Einträge" fehlt (aus A4 ausgenommen, fremder Dev-Scope)
+- [minor] ShipTrip/Views/Cruises/CruiseHeroCardView.swift:52 — daysUntilStart == 0 zeigt „In 0 Tagen" statt „Heute" (vorbestehend, A4 hat nur one/other)
+- [minor] ShipTrip/Localizable.xcstrings:1 — Katalog unsortiert, 33 Kompakt-Einträge; einmalige Xcode-Normalisierung als eigener Task (~3.000-Zeilen-Diff)
+- [major] ShipTrip/Views/Settings/SettingsView.swift:923-931 — Konkatenat-Plurale `"\(n) " + String(localized:)` nicht pluralisierbar (gleiche Klasse: CruiseFormView.swift:722)
+- [minor] ShipTrip/Views/Settings/SettingsView.swift:223 — Datenschutz-Link wählt nach Gerätesprache (`Locale.current.language.languageCode`), nicht nach App-Lokalisierung; Drittsprachen landen auf EN-Seite bei DE-UI
+- [minor] ShipTrip/Views/Cruises/CruiseFormView.swift:1428 — Gemini-Hinweis steht unter dem TextEditor, „Analysieren" sitzt in der Toolbar; Hinweis sichtbar vor dem Senden, aber nicht in Leserichtung vor dem Button
+- [minor] ShipTripTests/ShipTripTests.swift:591-617 — prefixFilterLogic beschreibt altes `cruise-<id>-`-Schema, seit A1 stale; streichen oder auf ReminderIdentifier.prefix umstellen
+- [minor] ShipTrip/Views/Cruises/CruiseFormView.swift:828 — Kommentar „damit persistentModelID final ist" irreführend, Identifier kommt seit A1 aus Cruise.id
+- [minor] ShipTrip/Views/Cruises/CruiseListView.swift:1 — 402 Zeilen, überschreitet seit A1 erstmals das 400er-Soft-Limit
+- [major] ShipTripTests/TempPortCoordinatesTests.swift:1 — Rot-Beweis deckt nur die Entscheidungslogik, nicht die Verdrahtung in savePort (bräuchte XCUITest über das Sheet)
+- [minor] ShipTrip/Views/Cruises/CruiseFormView.swift:1168 — fieldChanged faltet keine Diakritika („Málaga"→„Malaga" gilt als Änderung), enger als findBestMatch
+- [minor] ShipTrip/Services/NotificationService.swift:82-86 — Vorab-Erinnerung erbt die Uhrzeit des date-only Startdatums (00:00); importierte Daten können am falschen lokalen Tag feuern (vorbestehend, Codex Gate #2 A1)
+- [minor] ShipTrip/Views/Settings/SettingsView.swift:1 — 1010 Zeilen, überschreitet seit A3–A5 erstmals SwiftLint file_length 1000 (Projekt hat keine .swiftlint.yml)
+- [minor] ShipTrip/Services/NotificationReconciler.swift:316 — Add-Fehler-Guard ist global; Removes gelöschter Reisen verschieben sich dann auf den nächsten Start
+- [minor] ShipTrip/Services/NotificationService.swift:99-103 — removeReminders filtert nur neues Prefix; Legacy-Requests einer gelöschten Reise räumt erst der Start-Reconcile
+- [minor] CHANGELOG.md:112 — Datum von [1.7.0] steht auf 2026-07-10, echtes App-Store-Freigabedatum nachtragen
+- [major] marketing/release-1.7.0/app-store-connect/release-configuration.md:32 — Blocker „EEA Paid Services" weiterhin offen (Altersfreigabe-Teil erledigt)
