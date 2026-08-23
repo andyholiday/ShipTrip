@@ -1456,7 +1456,13 @@ struct AIImportSheet: View {
                         RoundedRectangle(cornerRadius: DesignRadius.sm)
                             .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                     )
-                
+
+                // Hinweis auf die Datenübertragung an den KI-Dienst – vor dem Senden sichtbar
+                Text("Der eingefügte Text wird zur Auswertung an Google Gemini übertragen.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 if isProcessing {
                     HStack {
                         ProgressView()

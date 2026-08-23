@@ -173,7 +173,11 @@ struct CruiseHeroCardView: View {
     private var metaLine: String {
         let countryCount = cruise.countriesVisited.filter { !$0.isEmpty }.count
         let portCount = cruise.route.filter { !$0.isSeaDay }.count
-        return "\(portCount) \(String(localized: "Häfen")) · \(countryCount) \(String(localized: "Länder"))"
+        // Teil-Strings, damit jeder Zähler seine eigene Pluralform bekommt
+        return [
+            String(localized: "\(portCount) Häfen"),
+            String(localized: "\(countryCount) Länder")
+        ].joined(separator: " · ")
     }
 }
 

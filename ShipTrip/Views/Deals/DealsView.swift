@@ -239,7 +239,7 @@ struct DealHeroView: View {
         [
             deal.ship,
             deal.destination,
-            deal.duration.map { "\($0) \(String(localized: "Tage"))" }
+            deal.duration.map { String(localized: "\($0) Tage") }
         ]
         .compactMap { $0 }
         .filter { !$0.isEmpty }
@@ -279,7 +279,7 @@ struct DealRowView: View {
                         }
                         
                         if let duration = deal.duration {
-                            Text("\(duration) \(String(localized: "Tage"))")
+                            Text(String(localized: "\(duration) Tage"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

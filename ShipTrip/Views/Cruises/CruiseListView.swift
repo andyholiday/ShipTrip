@@ -66,15 +66,22 @@ struct CruiseListView: View {
     }
 
     private var appSubline: String {
+        // Teil-Strings, damit jeder Zähler seine eigene Pluralform bekommt
+        var parts = [
+            String(localized: "\(cruises.count) Reisen"),
+            String(localized: "\(cruises.uniqueCountryCount) Länder")
+        ]
         if let nextUpcomingCruise {
             let days = Calendar.current.dateComponents(
                 [.day],
                 from: Calendar.current.startOfDay(for: .now),
                 to: Calendar.current.startOfDay(for: nextUpcomingCruise.startDate)
             ).day ?? 0
-            return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · nächste Reise in \(days) Tagen")
+            parts.append(String(localized: "nächste Reise in \(days) Tagen"))
+        } else {
+            parts.append(String(localized: "Reiselogbuch"))
         }
-        return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · Reiselogbuch")
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Body
