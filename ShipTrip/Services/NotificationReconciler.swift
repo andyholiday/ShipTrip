@@ -168,16 +168,21 @@ enum ReminderPlanner {
 
     /// Reiner Abgleich Ist ↔ Soll. Nur von ShipTrip verwaltete Identifier werden entfernt;
     /// Legacy-Requests (`cruise-…`) sind nie Teil des Solls und fallen damit automatisch weg.
+    ///
+    /// **Replace statt Diff:** `add` enthält immer das komplette Soll, nicht nur die fehlenden
+    /// Identifier. `UNUserNotificationCenter.add` ersetzt eine Pending Request mit gleichem
+    /// Identifier, damit werden auch veraltete Trigger überschrieben – etwa wenn Startdatum
+    /// oder `daysBefore` sich auf einem Zweitgerät geändert haben und per CloudKit ankommen.
+    /// Ein Identifier-Vergleich allein würde solche Requests unangetastet stehen lassen.
+    /// Der Abgleich bleibt idempotent: ein zweiter Lauf schreibt dieselben Requests erneut
+    /// und entfernt nichts.
     static func plan(
         existing: Set<String>,
         desired: [String: ReminderRequest]
     ) -> (remove: [String], add: [ReminderRequest]) {
         let managed: Set<String> = existing.filter(ReminderIdentifier.isManaged)
         let remove = managed.subtracting(desired.keys).sorted()
-        let add = desired
-            .filter { !managed.contains($0.key) }
-            .values
-            .sorted { $0.identifier < $1.identifier }
+        let add = desired.values.sorted { $0.identifier < $1.identifier }
         return (remove, add)
     }
 }
@@ -292,16 +297,18 @@ enum NotificationReconciler {
             : [:]
         let plan = ReminderPlanner.plan(existing: existing, desired: desired)
 
-        if !plan.remove.isEmpty {
-            await center.removePending(identifiers: plan.remove)
-        }
-
+        // Erst anlegen, dann entfernen: schlägt ein `add` fehl, ist die bestehende Erinnerung
+        // noch da. Umgekehrt stünde der Nutzer nach einem Fehler ganz ohne Erinnerung da.
         for request in plan.add {
             do {
                 try await center.add(request)
             } catch {
                 logAddFailure(identifier: request.identifier, error: error)
             }
+        }
+
+        if !plan.remove.isEmpty {
+            await center.removePending(identifiers: plan.remove)
         }
     }
 

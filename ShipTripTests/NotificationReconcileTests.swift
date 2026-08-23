@@ -17,10 +17,21 @@ import SwiftData
 
 /// Test-Double für das Notification-Center. Actor, weil der Abgleich asynchron zugreift.
 private actor FakeNotificationCenter: NotificationScheduling {
-    private var pending: Set<String>
+    /// Protokollierter Aufruf – für Assertions über die Reihenfolge.
+    enum Call: Equatable {
+        case add(String)
+        case remove([String])
+    }
 
-    init(pending: Set<String> = []) {
+    struct AddFailure: Error {}
+
+    private var pending: Set<String>
+    private let failsAdd: Bool
+    private var calls: [Call] = []
+
+    init(pending: Set<String> = [], failsAdd: Bool = false) {
         self.pending = pending
+        self.failsAdd = failsAdd
     }
 
     func pendingIdentifiers() async -> [String] {
@@ -28,16 +39,24 @@ private actor FakeNotificationCenter: NotificationScheduling {
     }
 
     func add(_ request: ReminderRequest) async throws {
+        calls.append(.add(request.identifier))
+        if failsAdd { throw AddFailure() }
         pending.insert(request.identifier)
     }
 
     func removePending(identifiers: [String]) async {
+        calls.append(.remove(identifiers))
         pending.subtract(identifiers)
     }
 
     /// Aktueller Bestand für Assertions.
     func snapshot() -> Set<String> {
         pending
+    }
+
+    /// Protokollierte Aufrufe für Assertions.
+    func callLog() -> [Call] {
+        calls
     }
 }
 
@@ -100,7 +119,11 @@ struct NotificationReconcileTests {
 
     // MARK: Planner
 
-    @Test("Abgleich ist idempotent: passender Bestand erzeugt keine Aktion")
+    /// Replace-Semantik: das Soll wird immer komplett geschrieben – `add` ersetzt Requests mit
+    /// gleichem Identifier und überschreibt damit auch veraltete Trigger (geändertes Startdatum
+    /// oder `daysBefore` von einem Zweitgerät). Idempotent heißt hier: identische Adds, keine
+    /// Removes – nicht „gar keine Aktion".
+    @Test("Abgleich ist idempotent: passender Bestand wird unverändert erneut geschrieben")
     func planIsIdempotent() {
         let now = Date()
         let desired = ReminderPlanner.desiredRequests(
@@ -113,7 +136,7 @@ struct NotificationReconcileTests {
 
         #expect(desired.count == 2)
         #expect(plan.remove.isEmpty)
-        #expect(plan.add.isEmpty)
+        #expect(plan.add == desired.values.sorted { $0.identifier < $1.identifier })
     }
 
     @Test("Legacy-Requests werden entfernt, fremde Identifier bleiben unangetastet")
@@ -188,5 +211,29 @@ struct NotificationReconcileTests {
         )
         let remaining = await center.snapshot()
         #expect(remaining == expected)
+    }
+
+    /// Create-before-delete: scheitern die Adds, darf der bestehende Bestand nicht schon
+    /// abgeräumt sein. Der Fake protokolliert die Aufrufe; alle Adds liegen vor dem Remove.
+    @Test("Erst anlegen, dann entfernen – auch wenn ein Add fehlschlägt")
+    func addsRunBeforeRemovals() async {
+        let now = Date()
+        let cruise = input(startsInDays: 30, now: now)
+        let center = FakeNotificationCenter(pending: ["cruise-p1-7days"], failsAdd: true)
+
+        await NotificationReconciler.reconcile(
+            cruises: [cruise],
+            settings: allEnabled,
+            isAuthorized: true,
+            now: now,
+            center: center
+        )
+
+        let calls = await center.callLog()
+        #expect(calls == [
+            .add(ReminderIdentifier.make(cruiseKey: cruise.key, kind: .before)),
+            .add(ReminderIdentifier.make(cruiseKey: cruise.key, kind: .departure)),
+            .remove(["cruise-p1-7days"])
+        ])
     }
 }
