@@ -299,13 +299,21 @@ enum NotificationReconciler {
 
         // Erst anlegen, dann entfernen: schlägt ein `add` fehl, ist die bestehende Erinnerung
         // noch da. Umgekehrt stünde der Nutzer nach einem Fehler ganz ohne Erinnerung da.
+        var addFailed = false
         for request in plan.add {
             do {
                 try await center.add(request)
             } catch {
+                addFailed = true
                 logAddFailure(identifier: request.identifier, error: error)
             }
         }
+
+        // Entfernt wird nur, wenn das komplette Soll steht. Die zu löschenden Legacy-Requests
+        // (`cruise-…`) werden von den neuen Erinnerungen semantisch ersetzt – fehlt eine davon,
+        // nähme der Remove dem Nutzer seine bestehende Erinnerung ersatzlos weg. Der Abgleich
+        // ist idempotent: der nächste App-Start wiederholt den Lauf und räumt dann auf.
+        guard !addFailed else { return }
 
         if !plan.remove.isEmpty {
             await center.removePending(identifiers: plan.remove)

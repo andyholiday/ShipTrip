@@ -213,13 +213,13 @@ struct NotificationReconcileTests {
         #expect(remaining == expected)
     }
 
-    /// Create-before-delete: scheitern die Adds, darf der bestehende Bestand nicht schon
-    /// abgeräumt sein. Der Fake protokolliert die Aufrufe; alle Adds liegen vor dem Remove.
-    @Test("Erst anlegen, dann entfernen – auch wenn ein Add fehlschlägt")
+    /// Create-before-delete: der Remove läuft erst, wenn das Soll vollständig geschrieben ist.
+    /// Der Fake protokolliert die Aufrufe; alle Adds liegen vor dem Remove.
+    @Test("Erst anlegen, dann entfernen")
     func addsRunBeforeRemovals() async {
         let now = Date()
         let cruise = input(startsInDays: 30, now: now)
-        let center = FakeNotificationCenter(pending: ["cruise-p1-7days"], failsAdd: true)
+        let center = FakeNotificationCenter(pending: ["cruise-p1-7days"])
 
         await NotificationReconciler.reconcile(
             cruises: [cruise],
@@ -235,5 +235,30 @@ struct NotificationReconcileTests {
             .add(ReminderIdentifier.make(cruiseKey: cruise.key, kind: .departure)),
             .remove(["cruise-p1-7days"])
         ])
+    }
+
+    /// Scheitert ein Add, bleibt der Legacy-Bestand stehen: die Removes würden Erinnerungen
+    /// löschen, für die kein Ersatz geschrieben wurde. Der nächste App-Start holt es nach.
+    @Test("Fehlgeschlagenes Add stoppt die Removes in diesem Lauf")
+    func failedAddSkipsRemovals() async {
+        let now = Date()
+        let cruise = input(startsInDays: 30, now: now)
+        let center = FakeNotificationCenter(pending: ["cruise-p1-7days"], failsAdd: true)
+
+        await NotificationReconciler.reconcile(
+            cruises: [cruise],
+            settings: allEnabled,
+            isAuthorized: true,
+            now: now,
+            center: center
+        )
+
+        let calls = await center.callLog()
+        #expect(calls == [
+            .add(ReminderIdentifier.make(cruiseKey: cruise.key, kind: .before)),
+            .add(ReminderIdentifier.make(cruiseKey: cruise.key, kind: .departure))
+        ])
+        let remaining = await center.snapshot()
+        #expect(remaining == ["cruise-p1-7days"])
     }
 }
