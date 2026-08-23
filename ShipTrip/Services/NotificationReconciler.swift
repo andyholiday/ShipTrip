@@ -36,7 +36,7 @@ enum ReminderIdentifier {
 
     /// Stabiler Reise-Schlüssel für alle Erinnerungs-Identifier.
     static func key(for cruise: Cruise) -> String {
-        String(describing: cruise.persistentModelID)
+        cruise.id.uuidString
     }
 
     /// Reiner Identifier-Bau: `reminder.<key>.before` bzw. `reminder.<key>.departure`.
