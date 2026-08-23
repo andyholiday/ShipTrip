@@ -224,6 +224,7 @@ Dieses ADR treibt folgende Task-Kategorien, die in Phase 1 umgesetzt werden:
 - ADR-001 — `isDemo`-Attribut im Release-Schema (geteilte Schema-Stabilitaets-Motivation)
 - `docs/features/phase-0-fixes-und-demo-modus.md` — Ausgangslage und Audit-Befunde
 - `docs/features/phase-1-vertrauen-und-substanz.md` — Implementiert durch Phase 1
+- `docs/features/erinnerungen.md` — Notification-Identifier nutzen seit 1.7.1 die stabile `Cruise.id`
 - `ShipTrip/Models/Cruise.swift`, `Deal.swift`, `Photo.swift`, `Port.swift`,
   `Expense.swift` — betroffene Modelle
 - `ShipTrip/Services/ShipTripCloudSync.swift` — aktive Store-Konfiguration

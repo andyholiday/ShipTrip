@@ -14,6 +14,57 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.7.1] - 2026-08-23
+
+### Hinzugefuegt
+
+- **Hinweis vor der KI-Erfassung**: Das Sheet zur KI-gestützten Reise-Erfassung
+  weist in DE und EN darauf hin, dass der eingefügte Text zur Auswertung an
+  Google Gemini übertragen wird.
+- **Datenschutzerklärung und Support in den Einstellungen**: Der Info-Bereich
+  verlinkt jetzt die Datenschutzerklärung (sprachabhängig DE/EN) und den
+  Support-Kontakt.
+
+### Geaendert
+
+- **Erinnerungs-Einstellungen gelten jetzt auch für bereits gespeicherte und
+  importierte Reisen**: Beim App-Start werden die Erinnerungen aller
+  zukünftigen Reisen anhand der aktuellen Einstellungen (Erinnerungen aktiv,
+  Tage vorher, Abreise-Erinnerung) neu geplant. Bisher wirkten Änderungen an
+  den Einstellungen nur auf Reisen, die danach gespeichert wurden.
+  ([Feature-Doku](docs/features/erinnerungen.md))
+
+### Behoben
+
+- **Erinnerung kam mehrfach gleichzeitig**: Der Kennzeichner einer geplanten
+  Mitteilung stammte aus der SwiftData-internen Objekt-ID, die sich beim
+  Speichern und nach dem iCloud-Abgleich ändert; iOS ersetzte die vorhandene
+  Mitteilung deshalb nicht, sondern legte eine weitere an. Erinnerungen hängen
+  jetzt an der stabilen Reise-ID (`Cruise.id`) und werden vor jedem Planen
+  entfernt. Beim App-Start räumt ein Abgleich zusätzlich bereits gespeicherte
+  Doppel und Alt-Einträge früherer Versionen auf; Demo-Reisen bleiben
+  ausgenommen.
+  ([Feature-Doku](docs/features/erinnerungen.md),
+  [ADR-002](docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
+- **Hafen bearbeiten verwarf selbst gesetzte Koordinaten**: Beim Speichern
+  eines Hafens im Reise-Formular lief die Katalogsuche auch dann erneut, wenn
+  nur andere Felder geändert wurden — bei katalogfremden Hafennamen verschwand
+  der Pin danach wortlos von der Karte. Der Katalog wird jetzt nur noch bei
+  geändertem Namen oder Land befragt; Leerzeichen und Groß-/Kleinschreibung
+  zählen dabei nicht als Änderung, und ohne Treffer bleiben vorhandene
+  Koordinaten erhalten.
+- **„1 Reisen" und „In 1 Tagen"**: Zähl-Texte in Reiseliste, Hero-Karte,
+  Statistik, Karte, Reise-Detail, Deals und Einstellungen tragen jetzt echte
+  Pluralformen in DE und EN. Ein Tag vor Reisebeginn steht „Morgen" statt
+  „In 1 Tagen".
+
+---
+
+
+## [1.7.0] - 2026-07-10
+
 ### Hinzugefuegt
 
 - **CloudKit-Production-Schema (08.08.2026)**: Die acht ShipTrip-Record-Types,
@@ -51,67 +102,6 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Hafen-Editor- und Export/Import-Texte, Gemini-Disclosure) sowie ein
   EN-UI-Smoke-Test über die Kernbildschirme.
   ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h6--unvollständige-lokalisierung-tasks-s21a-s22s24-anteile-s21b-1-2))
-
-### Behoben
-
-- **Zielkalender-Wechsel ließ bestehende Termine im alten Kalender zurück
-  (Build 23)**: Wählt der Nutzer bei aktivem Kalender-Sync einen anderen Zielkalender,
-  erscheint jetzt ein Bestätigungsdialog; „Abbrechen" lässt die Auswahl und
-  beide Kalender unverändert. Nach der Bestätigung werden alle von ShipTrip
-  verwalteten Termine im neuen Kalender angelegt und im alten entfernt;
-  scheitert der Umzug, wird der bisherige Zielkalender wiederhergestellt und
-  der Fehler angezeigt. Die Termine werden dabei gelöscht und neu angelegt
-  statt verschoben, weil EventKit einen Kalenderwechsel über Source-Grenzen
-  hinweg (iCloud, lokal, Google) nicht zuverlässig zusichert.
-
-- **Fotografische Reise-Cover statt Illustrationen (Build 22)**: Die in Build 21
-  versehentlich freigeschalteten 111 stilisierten `cover_ship_*`-Assets sind aus
-  allen großen Hero-Covern ausgeschlossen. Die Auswahl verwendet nur noch 73
-  visuell geprüfte Fotos und verdrahtet Reisetitel und Route mit kuratierten
-  Regions-Pools für Norwegen, Kanaren, Karibik, Ostsee und Mittelmeer.
-  ([Feature-Doku](docs/features/testflight-cover-hotfix-build-22.md))
-
-- **Passendere und abwechslungsreichere Fallback-Cover (Build 21,
-  TestFlight-Feedback vom 13.07.2026)**: Vorhandene schiffsspezifische Assets
-  haben Vorrang vor generischen Bildern; der Stock-Pool nutzt zusätzlich
-  vorhandene Schiffs-Cover und bezieht Reise-/Zielkontext in die stabile Auswahl
-  ein, um Wiederholungen zwischen verschiedenen Reisen zu reduzieren.
-  ([Feature-Doku](docs/features/testflight-feedback-build-21.md))
-
-- **Reiseliste: Filter ohne sichtbaren Reset-Weg**: Der Empty-State bei einem
-  Jahres-/Reederei-Filter ohne Treffer zeigt jetzt einen
-  „Filter zurücksetzen"-Button.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h1--filter-dead-end-in-der-reiseliste-task-s11))
-- **Reise löschen ohne Bestätigung/Rollback**: Löschen einer Reise (Liste und
-  Detail) lief bisher ohne Bestätigungsdialog und ohne Rollback bei
-  fehlgeschlagenem Speichern; die neue `CruiseDeletionSequence` bestätigt,
-  speichert und macht bei Fehler den Löschvorgang rückgängig, bevor
-  Erinnerungen entfernt werden.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h5--löschen-ohne-bestätigungrollback-task-s11))
-- **Hafen-Editor: instabiler Modus-Switch Suche/manuell**: Expliziter
-  Modus-Switch inkl. Rückweg „Zur Suche"; Bestands-Häfen sind jetzt in beiden
-  Modi editierbar; locale-toleranter Komma-/Punkt-Parser für Koordinaten.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h2--instabiler-modus-switch-im-hafen-editor-task-s12-inkl-m5))
-- **Hero-Deal nicht löschbar**: Löschen mit Bestätigungsdialog jetzt sowohl
-  aus der Kartenansicht als auch aus dem Formular möglich.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h4--hero-deal-nicht-löschbar-task-s13))
-- **ZIP-Import klassifizierte koordinatenlose Häfen fälschlich als Seetag**
-  und überschrieb dabei den echten Hafennamen; `isSeaDay` ist jetzt ein
-  optionales, explizites Flag mit Namens-Fallback nur für Alt-Formate ohne
-  das Feld.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h3--seetag-fehlklassifikation-beim-import-task-s14))
-- **ZIP-Restore ungehärtet**: CRC-32-Verifikation pro Eintrag,
-  Local-Header-Signatur- und Namenskonsistenz-Checks, beidseitige
-  Entry-Count-Validierung und Bildvalidierung via ImageIO verhindern jetzt
-  stille Teil-Importe; ungültige/fehlende Medien werden gezählt und im
-  Import-Alert ausgewiesen.
-  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h8--ungehärteter-zip-restore-task-s22))
-
----
-
-## [1.7.0] - 2026-07-10
-
-### Hinzugefuegt
 
 - **Karte: Bottom-Sheet mit Stop-Timeline**: Tap auf eine Route (Linie oder
   Marker) öffnet ein Sheet mit Peek-/Medium-/Large-Detents — Peek zeigt
@@ -172,6 +162,59 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   ([Feature-Doku](docs/features/eigene-reedereien-b5.md#d1--stock-cover-für-eigene-reedereienschiffe))
 
 ### Behoben
+
+- **Zielkalender-Wechsel ließ bestehende Termine im alten Kalender zurück
+  (Build 23)**: Wählt der Nutzer bei aktivem Kalender-Sync einen anderen Zielkalender,
+  erscheint jetzt ein Bestätigungsdialog; „Abbrechen" lässt die Auswahl und
+  beide Kalender unverändert. Nach der Bestätigung werden alle von ShipTrip
+  verwalteten Termine im neuen Kalender angelegt und im alten entfernt;
+  scheitert der Umzug, wird der bisherige Zielkalender wiederhergestellt und
+  der Fehler angezeigt. Die Termine werden dabei gelöscht und neu angelegt
+  statt verschoben, weil EventKit einen Kalenderwechsel über Source-Grenzen
+  hinweg (iCloud, lokal, Google) nicht zuverlässig zusichert.
+
+- **Fotografische Reise-Cover statt Illustrationen (Build 22)**: Die in Build 21
+  versehentlich freigeschalteten 111 stilisierten `cover_ship_*`-Assets sind aus
+  allen großen Hero-Covern ausgeschlossen. Die Auswahl verwendet nur noch 73
+  visuell geprüfte Fotos und verdrahtet Reisetitel und Route mit kuratierten
+  Regions-Pools für Norwegen, Kanaren, Karibik, Ostsee und Mittelmeer.
+  ([Feature-Doku](docs/features/testflight-cover-hotfix-build-22.md))
+
+- **Passendere und abwechslungsreichere Fallback-Cover (Build 21,
+  TestFlight-Feedback vom 13.07.2026)**: Vorhandene schiffsspezifische Assets
+  haben Vorrang vor generischen Bildern; der Stock-Pool nutzt zusätzlich
+  vorhandene Schiffs-Cover und bezieht Reise-/Zielkontext in die stabile Auswahl
+  ein, um Wiederholungen zwischen verschiedenen Reisen zu reduzieren.
+  ([Feature-Doku](docs/features/testflight-feedback-build-21.md))
+
+- **Reiseliste: Filter ohne sichtbaren Reset-Weg**: Der Empty-State bei einem
+  Jahres-/Reederei-Filter ohne Treffer zeigt jetzt einen
+  „Filter zurücksetzen"-Button.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h1--filter-dead-end-in-der-reiseliste-task-s11))
+- **Reise löschen ohne Bestätigung/Rollback**: Löschen einer Reise (Liste und
+  Detail) lief bisher ohne Bestätigungsdialog und ohne Rollback bei
+  fehlgeschlagenem Speichern; die neue `CruiseDeletionSequence` bestätigt,
+  speichert und macht bei Fehler den Löschvorgang rückgängig, bevor
+  Erinnerungen entfernt werden.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h5--löschen-ohne-bestätigungrollback-task-s11))
+- **Hafen-Editor: instabiler Modus-Switch Suche/manuell**: Expliziter
+  Modus-Switch inkl. Rückweg „Zur Suche"; Bestands-Häfen sind jetzt in beiden
+  Modi editierbar; locale-toleranter Komma-/Punkt-Parser für Koordinaten.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h2--instabiler-modus-switch-im-hafen-editor-task-s12-inkl-m5))
+- **Hero-Deal nicht löschbar**: Löschen mit Bestätigungsdialog jetzt sowohl
+  aus der Kartenansicht als auch aus dem Formular möglich.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h4--hero-deal-nicht-löschbar-task-s13))
+- **ZIP-Import klassifizierte koordinatenlose Häfen fälschlich als Seetag**
+  und überschrieb dabei den echten Hafennamen; `isSeaDay` ist jetzt ein
+  optionales, explizites Flag mit Namens-Fallback nur für Alt-Formate ohne
+  das Feld.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h3--seetag-fehlklassifikation-beim-import-task-s14))
+- **ZIP-Restore ungehärtet**: CRC-32-Verifikation pro Eintrag,
+  Local-Header-Signatur- und Namenskonsistenz-Checks, beidseitige
+  Entry-Count-Validierung und Bildvalidierung via ImageIO verhindern jetzt
+  stille Teil-Importe; ungültige/fehlende Medien werden gezählt und im
+  Import-Alert ausgewiesen.
+  ([Feature-Doku](docs/features/audit-highs-2026-07-10.md#h8--ungehärteter-zip-restore-task-s22))
 
 - **Karte: weiße Karte nach „Alle anzeigen/ausblenden"** (Build 17,
   Tester-Feedback): das Burger-Menü blieb nach dem Umschalten aller Routen
@@ -731,7 +774,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/andyholiday/ShipTrip/compare/v1.7.0...v1.7.1
+[1.7.0]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/andyholiday/ShipTrip/compare/v1.6.2...v1.6.3
 [1.6.2]: https://github.com/andyholiday/ShipTrip/compare/v1.6.1...v1.6.2
 [1.6.0]: https://github.com/andyholiday/ShipTrip/compare/v1.5.1...v1.6.0
