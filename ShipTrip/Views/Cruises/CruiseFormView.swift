@@ -1135,6 +1135,18 @@ struct TempPortFormSheet: View {
         }
     }
 
+    /// Vergleicht ein Formularfeld mit seinem Ausgangswert – ohne umgebende Leerzeichen
+    /// und ohne Groß-/Kleinschreibung. Reine Tipp-Kosmetik („Kiel " statt „kiel") darf
+    /// die Katalogsuche nicht anstoßen, weil ein unscharfer Treffer sonst manuell
+    /// gesetzte Koordinaten überschreibt. Ohne `original` – also beim Neuanlegen –
+    /// gilt das Feld als geändert, damit der Katalog wie bisher greift.
+    static func fieldChanged(original: String?, current: String) -> Bool {
+        guard let original else { return true }
+        let trimmedOriginal = original.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCurrent = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedOriginal.caseInsensitiveCompare(trimmedCurrent) != .orderedSame
+    }
+
     /// Ermittelt die Koordinaten des zu speichernden Hafens (Audit-Finding 1.2/H-A).
     /// Der Katalog überschreibt nur, wenn Name oder Land geändert wurden und es dafür
     /// tatsächlich einen Treffer gibt. Sonst bleiben die vorhandenen – ggf. selbst
@@ -1153,8 +1165,8 @@ struct TempPortFormSheet: View {
         // Katalog-Abgleich (verbesserte Suche mit Land-Prüfung) nur, wenn sich Name oder
         // Land gegenüber dem bearbeiteten Hafen geändert haben – sonst bleiben dessen
         // Koordinaten unangetastet (1.2/H-A).
-        let nameChanged = originalPort?.name != name
-        let countryChanged = originalPort?.country != country
+        let nameChanged = Self.fieldChanged(original: originalPort?.name, current: name)
+        let countryChanged = Self.fieldChanged(original: originalPort?.country, current: country)
         let catalogMatch = (nameChanged || countryChanged)
             ? PortSuggestion.findBestMatch(name: name, country: country)
             : nil

@@ -58,4 +58,64 @@ struct TempPortCoordinatesTests {
         #expect(result.latitude == 53.5)
         #expect(result.longitude == 9.9)
     }
+
+    @Test("Neuanlage ohne Original: Katalog-Koordinaten werden übernommen")
+    func adoptsCatalogCoordinatesForNewPort() {
+        let nameChanged = TempPortFormSheet.fieldChanged(original: nil, current: "Hamburg")
+        let countryChanged = TempPortFormSheet.fieldChanged(original: nil, current: "Deutschland")
+        #expect(nameChanged)
+        #expect(countryChanged)
+
+        let result = TempPortFormSheet.resolvedCoordinates(
+            existing: (latitude: nil, longitude: nil),
+            nameChanged: nameChanged,
+            countryChanged: countryChanged,
+            catalogMatch: Self.katalogTreffer
+        )
+
+        #expect(result.latitude == 53.5)
+        #expect(result.longitude == 9.9)
+    }
+
+    @Test("Nur Land geändert: Katalog-Treffer überschreibt die Koordinaten")
+    func adoptsCatalogCoordinatesWhenOnlyCountryChanged() {
+        let nameChanged = TempPortFormSheet.fieldChanged(original: "Hamburg", current: "Hamburg")
+        let countryChanged = TempPortFormSheet.fieldChanged(
+            original: "Österreich",
+            current: "Deutschland"
+        )
+        #expect(!nameChanged)
+        #expect(countryChanged)
+
+        let result = TempPortFormSheet.resolvedCoordinates(
+            existing: (latitude: 12.34, longitude: 56.78),
+            nameChanged: nameChanged,
+            countryChanged: countryChanged,
+            catalogMatch: Self.katalogTreffer
+        )
+
+        #expect(result.latitude == 53.5)
+        #expect(result.longitude == 9.9)
+    }
+
+    @Test("Name nur in Leerzeichen/Schreibweise geändert: keine Katalogsuche, Koordinaten bleiben")
+    func ignoresWhitespaceAndCaseOnlyEdits() {
+        let nameChanged = TempPortFormSheet.fieldChanged(original: "Kiel", current: " kiel ")
+        let countryChanged = TempPortFormSheet.fieldChanged(
+            original: "Deutschland",
+            current: "DEUTSCHLAND"
+        )
+        #expect(!nameChanged)
+        #expect(!countryChanged)
+
+        let result = TempPortFormSheet.resolvedCoordinates(
+            existing: (latitude: 12.34, longitude: 56.78),
+            nameChanged: nameChanged,
+            countryChanged: countryChanged,
+            catalogMatch: Self.katalogTreffer
+        )
+
+        #expect(result.latitude == 12.34)
+        #expect(result.longitude == 56.78)
+    }
 }
