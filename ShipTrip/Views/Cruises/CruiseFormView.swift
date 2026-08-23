@@ -1135,6 +1135,18 @@ struct TempPortFormSheet: View {
         }
     }
 
+    /// Ermittelt die Koordinaten des zu speichernden Hafens.
+    /// Aktuelles Verhalten: allein der Katalog-Treffer entscheidet – ohne Treffer bleibt der
+    /// Hafen ohne Koordinaten, auch wenn zuvor welche gesetzt waren (Audit-Finding 1.2/H-A).
+    static func resolvedCoordinates(
+        existing: (latitude: Double?, longitude: Double?),
+        nameChanged: Bool,
+        countryChanged: Bool,
+        catalogMatch: PortSuggestion?
+    ) -> (latitude: Double?, longitude: Double?) {
+        (catalogMatch?.latitude, catalogMatch?.longitude)
+    }
+
     private func savePort() {
         // Verwende verbesserte Suche mit Land-Prüfung
         var lat: Double? = nil
