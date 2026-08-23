@@ -114,6 +114,16 @@ struct CruiseDetailView: View {
     
     // MARK: - Sections
     
+    /// Schiff, Dauer und Hafenzahl – Teil-Strings, damit jeder Zähler seine eigene Pluralform bekommt.
+    private var heroMetaLine: String {
+        let portCount = cruise.route.filter { !$0.isSeaDay }.count
+        return [
+            cruise.ship,
+            String(localized: "\(cruise.duration) Tage"),
+            String(localized: "\(portCount) Häfen")
+        ].joined(separator: " · ")
+    }
+
     /// Titeloverlay (unten-links) – wird sowohl im Foto- als auch im Platzhalter-Hero verwendet.
     private var heroTitleOverlay: some View {
         LinearGradient(
@@ -137,7 +147,7 @@ struct CruiseDetailView: View {
                     .foregroundStyle(.white)
                     .lineLimit(2)
 
-                Text("\(cruise.ship) · \(cruise.duration) \(String(localized: "Tage")) · \(cruise.route.filter { !$0.isSeaDay }.count) \(String(localized: "Häfen"))")
+                Text(heroMetaLine)
                     .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.82))
                     .lineLimit(1)
@@ -257,7 +267,7 @@ struct CruiseDetailView: View {
                 InfoCard(icon: "ferry", title: "Schiff", value: cruise.ship)
                 InfoCard(icon: cruise.shippingLineLogo, title: "Reederei", value: cruise.shippingLine, isEmoji: true)
                 InfoCard(icon: "calendar", title: "Zeitraum", value: "\(dateFormatter.string(from: cruise.startDate)) - \(dateFormatter.string(from: cruise.endDate))")
-                InfoCard(icon: "clock", title: "Dauer", value: "\(cruise.duration) \(String(localized: "Tage"))")
+                InfoCard(icon: "clock", title: "Dauer", value: String(localized: "\(cruise.duration) Tage"))
                 
                 if !cruise.cabinType.isEmpty || !cruise.cabinNumber.isEmpty {
                     let cabinValue = [cruise.cabinType, cruise.cabinNumber]
@@ -439,7 +449,7 @@ struct CruiseDetailView: View {
     
     private func deleteCruise() {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: cruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: cruise)
         let succeeded = CruiseDeletionSequence.run(
             delete: { modelContext.delete(cruise) },
             save: { try modelContext.save() },

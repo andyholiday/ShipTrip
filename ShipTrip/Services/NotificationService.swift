@@ -52,94 +52,52 @@ final class NotificationService: Sendable {
     /// Ob der Nutzer Erinnerungen überhaupt möchte (Settings-Toggles), unabhängig von der
     /// System-Berechtigung. Gleiche Defaults/Keys wie `scheduleAllReminders`.
     var remindersEnabledInSettings: Bool {
-        let notifyBefore = UserDefaults.standard.object(forKey: "notifyBeforeCruise") as? Bool ?? true
-        let notifyOnDay = UserDefaults.standard.object(forKey: "notifyOnCruiseDay") as? Bool ?? true
-        return notifyBefore || notifyOnDay
+        let settings = ReminderSettings.current()
+        return settings.notifyBefore || settings.notifyOnDay
     }
 
     // MARK: - Cruise Reminders
 
-    /// Plant Erinnerung anhand reiner Wertdaten (kein @Model-Objekt über Aktorgrenzen)
+    /// Plant Erinnerung anhand reiner Wertdaten (kein @Model-Objekt über Aktorgrenzen).
+    /// `cruiseID` ist der stabile Reise-Schlüssel aus `ReminderIdentifier.key(for:)`.
     func scheduleCruiseReminder(cruiseID: String, title: String, startDate: Date, daysBefore: Int) async {
         guard await isAuthorized() else { return }
 
-        // Berechne Erinnerungsdatum
-        let reminderDate = Calendar.current.date(
-            byAdding: .day,
-            value: -daysBefore,
-            to: startDate
-        )
+        let input = CruiseReminderInput(key: cruiseID, title: title, startDate: startDate)
+        guard let request = ReminderPlanner.beforeRequest(
+            for: input,
+            daysBefore: daysBefore,
+            now: Date()
+        ) else { return }
 
-        guard let date = reminderDate, date > Date() else { return }
-
-        let content = UNMutableNotificationContent()
-        content.title = "Kreuzfahrt in \(daysBefore) Tagen! 🚢"
-        content.body = "\(title) startet am \(startDate.formatted(date: .abbreviated, time: .omitted))"
-        content.sound = .default
-        content.categoryIdentifier = "CRUISE_REMINDER"
-
-        // Erstelle Trigger für das Datum
-        let components = Calendar.current.dateComponents(
-            [.year, .month, .day, .hour, .minute],
-            from: date
-        )
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-
-        // Eindeutige ID pro Kreuzfahrt und Erinnerungstyp
-        let identifier = "cruise-\(cruiseID)-\(daysBefore)days"
-
-        let request = UNNotificationRequest(
-            identifier: identifier,
-            content: content,
-            trigger: trigger
-        )
-
-        do {
-            try await UNUserNotificationCenter.current().add(request)
-            logger.info("Scheduled reminder for \(title, privacy: .private) on \(date, privacy: .private)")
-        } catch {
-            logger.error("Failed to schedule notification: \(error, privacy: .private)")
-        }
+        await add(request)
     }
 
     /// Plant Erinnerung am Abreisetag anhand reiner Wertdaten
     func scheduleDepartureReminder(cruiseID: String, title: String, startDate: Date) async {
         guard await isAuthorized() else { return }
-        guard startDate > Date() else { return }
 
-        let content = UNMutableNotificationContent()
-        content.title = "Heute geht's los! ⚓️"
-        content.body = "Deine Kreuzfahrt \"\(title)\" beginnt heute. Gute Reise!"
-        content.sound = .default
-        content.categoryIdentifier = "CRUISE_DEPARTURE"
+        let input = CruiseReminderInput(key: cruiseID, title: title, startDate: startDate)
+        guard let request = ReminderPlanner.departureRequest(for: input, now: Date()) else {
+            return
+        }
 
-        // 8 Uhr morgens am Abreisetag
-        var components = Calendar.current.dateComponents(
-            [.year, .month, .day],
-            from: startDate
-        )
-        components.hour = 8
-        components.minute = 0
+        await add(request)
+    }
 
-        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-        let identifier = "cruise-\(cruiseID)-departure"
-
-        let request = UNNotificationRequest(
-            identifier: identifier,
-            content: content,
-            trigger: trigger
-        )
-
+    /// Übergibt eine geplante Erinnerung an das System-Center; Fehler werden geloggt.
+    private func add(_ request: ReminderRequest) async {
         do {
-            try await UNUserNotificationCenter.current().add(request)
+            try await SystemNotificationCenter().add(request)
+            logger.info("Scheduled reminder \(request.identifier, privacy: .public)")
         } catch {
-            logger.error("Failed to schedule departure notification: \(error, privacy: .private)")
+            logger.error("Failed to schedule notification: \(error, privacy: .private)")
         }
     }
 
     /// Entfernt alle Erinnerungen für eine Kreuzfahrt (prefix-basiert, nur Sendable-Werte)
     func removeReminders(cruiseID: String) async {
-        let prefix = "cruise-\(cruiseID)-"
+        let prefix = ReminderIdentifier.prefix(forCruiseKey: cruiseID)
         let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
         let toRemove = pending.map { $0.identifier }.filter { $0.hasPrefix(prefix) }
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: toRemove)
@@ -147,14 +105,17 @@ final class NotificationService: Sendable {
 
     /// Plant Erinnerungen gemäß Nutzer-Einstellungen aus UserDefaults (nur Sendable-Werte)
     func scheduleAllReminders(cruiseID: String, title: String, startDate: Date) async {
-        let notifyBefore = UserDefaults.standard.object(forKey: "notifyBeforeCruise") as? Bool ?? true
-        let notifyOnDay = UserDefaults.standard.object(forKey: "notifyOnCruiseDay") as? Bool ?? true
-        let daysBefore = UserDefaults.standard.object(forKey: "reminderDaysBefore") as? Int ?? 7
+        let settings = ReminderSettings.current()
 
-        if notifyBefore {
-            await scheduleCruiseReminder(cruiseID: cruiseID, title: title, startDate: startDate, daysBefore: daysBefore)
+        if settings.notifyBefore {
+            await scheduleCruiseReminder(
+                cruiseID: cruiseID,
+                title: title,
+                startDate: startDate,
+                daysBefore: settings.daysBefore
+            )
         }
-        if notifyOnDay {
+        if settings.notifyOnDay {
             await scheduleDepartureReminder(cruiseID: cruiseID, title: title, startDate: startDate)
         }
     }

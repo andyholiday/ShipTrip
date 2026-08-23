@@ -840,15 +840,15 @@ struct CruiseFormView: View {
         }
 
         // Wertdaten synchron auf dem MainActor lesen – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: targetCruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: targetCruise)
         let cruiseTitle = targetCruise.title
         let cruiseStart = targetCruise.startDate
-        let wasEditing = cruise != nil
 
         Task {
-            if wasEditing {
-                await NotificationService.shared.removeReminders(cruiseID: cruiseID)
-            }
+            // Immer erst abräumen – auch bei Neuanlage. Sonst bleibt eine Erinnerung stehen,
+            // wenn die Einstellungen sie inzwischen abwählen oder das Startdatum in die
+            // Vergangenheit rutscht.
+            await NotificationService.shared.removeReminders(cruiseID: cruiseID)
 
             // Ohne gewünschte Erinnerung oder bei bereits vergangenem Startdatum gibt es
             // nichts zu planen und nichts zu erfragen – Formular wie bisher schließen.
@@ -1135,14 +1135,47 @@ struct TempPortFormSheet: View {
         }
     }
 
+    /// Vergleicht ein Formularfeld mit seinem Ausgangswert – ohne umgebende Leerzeichen
+    /// und ohne Groß-/Kleinschreibung. Reine Tipp-Kosmetik („Kiel " statt „kiel") darf
+    /// die Katalogsuche nicht anstoßen, weil ein unscharfer Treffer sonst manuell
+    /// gesetzte Koordinaten überschreibt. Ohne `original` – also beim Neuanlegen –
+    /// gilt das Feld als geändert, damit der Katalog wie bisher greift.
+    static func fieldChanged(original: String?, current: String) -> Bool {
+        guard let original else { return true }
+        let trimmedOriginal = original.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedCurrent = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedOriginal.caseInsensitiveCompare(trimmedCurrent) != .orderedSame
+    }
+
+    /// Ermittelt die Koordinaten des zu speichernden Hafens (Audit-Finding 1.2/H-A).
+    /// Der Katalog überschreibt nur, wenn Name oder Land geändert wurden und es dafür
+    /// tatsächlich einen Treffer gibt. Sonst bleiben die vorhandenen – ggf. selbst
+    /// gesetzten – Koordinaten erhalten, statt wortlos zu verschwinden.
+    static func resolvedCoordinates(
+        existing: (latitude: Double?, longitude: Double?),
+        nameChanged: Bool,
+        countryChanged: Bool,
+        catalogMatch: PortSuggestion?
+    ) -> (latitude: Double?, longitude: Double?) {
+        guard nameChanged || countryChanged, let catalogMatch else { return existing }
+        return (catalogMatch.latitude, catalogMatch.longitude)
+    }
+
     private func savePort() {
-        // Verwende verbesserte Suche mit Land-Prüfung
-        var lat: Double? = nil
-        var lon: Double? = nil
-        if let suggestion = PortSuggestion.findBestMatch(name: name, country: country) {
-            lat = suggestion.latitude
-            lon = suggestion.longitude
-        }
+        // Katalog-Abgleich (verbesserte Suche mit Land-Prüfung) nur, wenn sich Name oder
+        // Land gegenüber dem bearbeiteten Hafen geändert haben – sonst bleiben dessen
+        // Koordinaten unangetastet (1.2/H-A).
+        let nameChanged = Self.fieldChanged(original: originalPort?.name, current: name)
+        let countryChanged = Self.fieldChanged(original: originalPort?.country, current: country)
+        let catalogMatch = (nameChanged || countryChanged)
+            ? PortSuggestion.findBestMatch(name: name, country: country)
+            : nil
+        let coordinates = Self.resolvedCoordinates(
+            existing: (latitude: originalPort?.latitude, longitude: originalPort?.longitude),
+            nameChanged: nameChanged,
+            countryChanged: countryChanged,
+            catalogMatch: catalogMatch
+        )
 
         // Abfahrt ≥ Ankunft erzwingen (M5 Teil 2) – Sicherheitsnetz zum DatePicker-Constraint
         // oben, falls arrivalDate sich änderte, nachdem departureDate schon gesetzt war.
@@ -1155,15 +1188,15 @@ struct TempPortFormSheet: View {
             country: country,
             arrival: arrivalDate,
             departure: safeDepartureDate,
-            latitude: lat,
-            longitude: lon
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude
         )
         port.name = name
         port.country = country
         port.arrival = arrivalDate
         port.departure = safeDepartureDate
-        port.latitude = lat
-        port.longitude = lon
+        port.latitude = coordinates.latitude
+        port.longitude = coordinates.longitude
         port.imageData = imageData
         port.excursions = excursions
 
@@ -1423,7 +1456,13 @@ struct AIImportSheet: View {
                         RoundedRectangle(cornerRadius: DesignRadius.sm)
                             .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
                     )
-                
+
+                // Hinweis auf die Datenübertragung an den KI-Dienst – vor dem Senden sichtbar
+                Text("Der eingefügte Text wird zur Auswertung an Google Gemini übertragen.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                 if isProcessing {
                     HStack {
                         ProgressView()

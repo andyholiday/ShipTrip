@@ -66,15 +66,22 @@ struct CruiseListView: View {
     }
 
     private var appSubline: String {
+        // Teil-Strings, damit jeder Zähler seine eigene Pluralform bekommt
+        var parts = [
+            String(localized: "\(cruises.count) Reisen"),
+            String(localized: "\(cruises.uniqueCountryCount) Länder")
+        ]
         if let nextUpcomingCruise {
             let days = Calendar.current.dateComponents(
                 [.day],
                 from: Calendar.current.startOfDay(for: .now),
                 to: Calendar.current.startOfDay(for: nextUpcomingCruise.startDate)
             ).day ?? 0
-            return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · nächste Reise in \(days) Tagen")
+            parts.append(String(localized: "nächste Reise in \(days) Tagen"))
+        } else {
+            parts.append(String(localized: "Reiselogbuch"))
         }
-        return String(localized: "\(cruises.count) Reisen · \(cruises.uniqueCountryCount) Länder · Reiselogbuch")
+        return parts.joined(separator: " · ")
     }
 
     // MARK: - Body
@@ -106,8 +113,12 @@ struct CruiseListView: View {
             // 2. ThumbnailBackfill: setzt thumbnailData für Fotos ohne Vorschaubild
             // 3. ShippingLineCatalogDedup: räumt Cross-Device-Duplikate eigener Reedereien/Schiffe
             //    und Hidden-Einträge auf (ADR-006)
+            // Dazu bei jedem Start der idempotente Erinnerungs-Abgleich (kein Migrationsflag) –
+            // zwingend NACH IdBackfill, weil er die Identifier aus der Cruise.id bildet und die
+            // erst danach garantiert eindeutig ist.
             .task {
                 IdBackfill.run(context: modelContext)
+                await NotificationReconciler.run(context: modelContext)
                 await ThumbnailBackfill.run(context: modelContext)
                 ShippingLineCatalogDedup.run(context: modelContext)
             }
@@ -349,7 +360,7 @@ struct CruiseListView: View {
     
     private func deleteCruise(_ cruise: Cruise) {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: cruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: cruise)
         CruiseDeletionSequence.run(
             delete: { modelContext.delete(cruise) },
             save: { try modelContext.save() },

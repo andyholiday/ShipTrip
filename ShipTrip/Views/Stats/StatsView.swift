@@ -54,7 +54,7 @@ struct StatsView: View {
 
             Spacer(minLength: 22)
 
-            Text("\(totalTravelDays) \(String(localized: "Tage"))")
+            Text(String(localized: "\(totalTravelDays) Tage"))
                 .font(.system(size: 44, weight: .heavy, design: .rounded))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.75)
@@ -215,7 +215,7 @@ struct StatsView: View {
                     Text(item.name)
                         .font(.subheadline)
                     Spacer()
-                    Text("\(item.count) \(String(localized: "Reisen"))")
+                    Text(String(localized: "\(item.count) Reisen"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
