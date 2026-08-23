@@ -840,15 +840,15 @@ struct CruiseFormView: View {
         }
 
         // Wertdaten synchron auf dem MainActor lesen – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: targetCruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: targetCruise)
         let cruiseTitle = targetCruise.title
         let cruiseStart = targetCruise.startDate
-        let wasEditing = cruise != nil
 
         Task {
-            if wasEditing {
-                await NotificationService.shared.removeReminders(cruiseID: cruiseID)
-            }
+            // Immer erst abräumen – auch bei Neuanlage. Sonst bleibt eine Erinnerung stehen,
+            // wenn die Einstellungen sie inzwischen abwählen oder das Startdatum in die
+            // Vergangenheit rutscht.
+            await NotificationService.shared.removeReminders(cruiseID: cruiseID)
 
             // Ohne gewünschte Erinnerung oder bei bereits vergangenem Startdatum gibt es
             // nichts zu planen und nichts zu erfragen – Formular wie bisher schließen.

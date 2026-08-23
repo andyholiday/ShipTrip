@@ -439,7 +439,7 @@ struct CruiseDetailView: View {
     
     private func deleteCruise() {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: cruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: cruise)
         let succeeded = CruiseDeletionSequence.run(
             delete: { modelContext.delete(cruise) },
             save: { try modelContext.save() },

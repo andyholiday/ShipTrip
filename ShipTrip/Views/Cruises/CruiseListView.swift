@@ -106,8 +106,12 @@ struct CruiseListView: View {
             // 2. ThumbnailBackfill: setzt thumbnailData für Fotos ohne Vorschaubild
             // 3. ShippingLineCatalogDedup: räumt Cross-Device-Duplikate eigener Reedereien/Schiffe
             //    und Hidden-Einträge auf (ADR-006)
+            // Dazu bei jedem Start der idempotente Erinnerungs-Abgleich (kein Migrationsflag) –
+            // zwingend NACH IdBackfill, weil er die Identifier aus der Cruise.id bildet und die
+            // erst danach garantiert eindeutig ist.
             .task {
                 IdBackfill.run(context: modelContext)
+                await NotificationReconciler.run(context: modelContext)
                 await ThumbnailBackfill.run(context: modelContext)
                 ShippingLineCatalogDedup.run(context: modelContext)
             }
@@ -349,7 +353,7 @@ struct CruiseListView: View {
     
     private func deleteCruise(_ cruise: Cruise) {
         // ID synchron lesen bevor das Objekt gelöscht wird – kein @Model über Aktorgrenzen
-        let cruiseID = String(describing: cruise.persistentModelID)
+        let cruiseID = ReminderIdentifier.key(for: cruise)
         CruiseDeletionSequence.run(
             delete: { modelContext.delete(cruise) },
             save: { try modelContext.save() },
