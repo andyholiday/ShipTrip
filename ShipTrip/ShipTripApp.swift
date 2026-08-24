@@ -83,11 +83,32 @@ struct ShipTripApp: App {
 
     @State private var showTemporaryStoreAlert = true
 
+    /// Erststart-Flow (B2). `false`/fehlend heisst: das Onboarding steht noch aus.
+    /// „Intro erneut zeigen" in den Einstellungen setzt den Schalter zurueck —
+    /// deshalb steuert er die Praesentation direkt statt ueber einen
+    /// abgeleiteten `@State`.
+    @AppStorage(OnboardingPresentation.hasCompletedKey) private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
             if let container = modelContainer {
                 MainTabView()
                     .modelContainer(container)
+                    // Das Cover haengt am **montierten** Hauptbaum: `MainTabView`
+                    // bleibt aufgebaut, `CruiseListView` ebenso, und dessen
+                    // `.task`-Kette (IdBackfill → NotificationReconciler →
+                    // ThumbnailBackfill → ShippingLineCatalogDedup) laeuft
+                    // unveraendert weiter, waehrend das Onboarding sichtbar ist.
+                    //
+                    // Nach `.modelContainer`, damit der Flow den `modelContext`
+                    // fuer die Beispielreise aus der Umgebung erbt.
+                    .fullScreenCover(
+                        isPresented: OnboardingPresentation.coverBinding(
+                            hasCompleted: $hasCompletedOnboarding
+                        )
+                    ) {
+                        OnboardingFlowView { hasCompletedOnboarding = true }
+                    }
                     .alert(
                         "Daten nicht verfügbar",
                         isPresented: Binding(
