@@ -80,6 +80,16 @@ extension ExportImportService {
         // mit zwei Cruises gleicher id): nur die erste wird importiert.
         var seenCruiseIDs: Set<UUID> = []
 
+        // Foto-IDs müssen ARCHIVWEIT eindeutig bleiben, nicht nur pro Kreuzfahrt: dieselbe id in
+        // zwei Reisen derselben Datei — oder eine id, die schon an einem Foto in der Datenbank
+        // hängt — erzeugte sonst zwei Photo-Objekte mit identischer stabiler ID, über die der
+        // CloudKit-Dedup läuft (ADR-002). Deshalb ist das Set mit den bestehenden Foto-IDs
+        // vorbelegt. Bei Kollision wird der Import NICHT abgebrochen: das Foto behält die frische
+        // UUID aus dem Init und wird ganz normal importiert — nur seine Datei-Identität geht
+        // verloren, was harmloser ist als ein verworfenes Foto oder ein Duplikat-Konflikt.
+        let existingPhotos = (try? modelContext.fetch(FetchDescriptor<Photo>())) ?? []
+        var seenPhotoIDs: Set<UUID> = Set(existingPhotos.map(\.id))
+
         for exportCruise in exportCruises {
             // Datumsvalidierung
             guard let startDate = dateFormatter.date(from: exportCruise.startDate),
@@ -196,9 +206,8 @@ extension ExportImportService {
             }
 
             // Fotos importieren (Base64 oder Dateipfad).
-            // Gleiches ID-Duplikat-Muster wie bei Ports: nur das erste Vorkommen einer id in
-            // dieser Cruise übernimmt die Datei-ID.
-            var seenPhotoIDs: Set<UUID> = []
+            // Gleiches ID-Duplikat-Muster wie bei Ports, aber archivweit statt pro Cruise —
+            // `seenPhotoIDs` ist oben deklariert und mit den bestehenden DB-Foto-IDs vorbelegt.
             for (index, exportPhoto) in exportCruise.photos.enumerated() {
                 guard let imageData = resolvePhotoData(exportPhoto.ref, imagesDir: imagesDir) else {
                     // Referenz nicht auflösbar oder inhaltlich kein gültiges Bild: Photo wird

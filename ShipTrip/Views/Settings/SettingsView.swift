@@ -755,7 +755,22 @@ struct DataManagementView: View {
     @State private var exportURL: URL?
     @State private var alertMessage = ""
     @State private var showingAlert = false
-    
+
+    /// Ist überhaupt etwas da, das ein Backup sichern würde? Der Export umfasst neben
+    /// Kreuzfahrten und Wunschreisen auch eigene Reedereien, eigene Schiffe und ausgeblendete
+    /// Katalog-Einträge (ADR-006) — der Button darf deshalb erst sperren, wenn ALLE fünf
+    /// Sammlungen leer sind, sonst lässt sich ein reines Katalog-Overlay nicht sichern.
+    /// Als `static` ausgelagert, damit die Bedingung ohne View-Aufbau testbar bleibt.
+    static func hasExportableData(
+        cruises: Int,
+        deals: Int,
+        customLines: Int,
+        customShips: Int,
+        hiddenCatalogItems: Int
+    ) -> Bool {
+        cruises + deals + customLines + customShips + hiddenCatalogItems > 0
+    }
+
     var body: some View {
         Form {
             Section("Übersicht") {
@@ -788,7 +803,13 @@ struct DataManagementView: View {
                         }
                     }
                 }
-                .disabled((cruises.isEmpty && deals.isEmpty) || isExporting)
+                .disabled(!Self.hasExportableData(
+                    cruises: cruises.count,
+                    deals: deals.count,
+                    customLines: customShippingLines.count,
+                    customShips: customShips.count,
+                    hiddenCatalogItems: hiddenCatalogItems.count
+                ) || isExporting)
             }
 
             // Import
