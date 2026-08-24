@@ -45,10 +45,8 @@ struct SettingsView: View {
     @State private var hasApiKey = false
     @State private var cloudSyncStatus: ShipTripCloudSync.AccountStatus = .loading
 
-    #if DEBUG
     @Environment(\.modelContext) private var modelContext
     @State private var hasDemoData = false
-    #endif
     
     var body: some View {
         NavigationStack {
@@ -153,9 +151,9 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Demo (nur Debug)
-                #if DEBUG
-                Section("Demo (nur Debug)") {
+                // Beispielreise – auch im Release verfügbar, jederzeit entfernbar
+                Section(header: Text(String(localized: "Beispielreise")),
+                        footer: Text(demoSectionFooter)) {
                     if hasDemoData {
                         Button(role: .destructive) {
                             DemoDataService.removeDemoData(from: modelContext)
@@ -172,7 +170,6 @@ struct SettingsView: View {
                         }
                     }
                 }
-                #endif
 
                 // Info
                 Section("Info") {
@@ -208,15 +205,22 @@ struct SettingsView: View {
             }
             .onAppear {
                 hasApiKey = GeminiService.shared.isConfigured
-                #if DEBUG
                 hasDemoData = DemoDataService.hasDemoData(in: modelContext)
-                #endif
             }
             .task {
                 cloudSyncStatus = await ShipTripCloudSync.accountStatus()
             }
             .preferredColorScheme(colorSchemeValue)
         }
+    }
+
+    /// Erklärt, dass Beispielinhalte markiert, export-frei und entfernbar sind.
+    private var demoSectionFooter: String {
+        String(localized: """
+            Beispielinhalte zum Ausprobieren. Sie sind als Demo markiert, landen \
+            nie in Export- oder Backup-Dateien und lassen sich jederzeit wieder \
+            entfernen.
+            """)
     }
 
     /// Datenschutzerklärung – deutsche Fassung nur bei deutscher Gerätesprache.

@@ -263,5 +263,53 @@ struct DemoDataServiceTests {
         #expect(cruises.allSatisfy { $0.isDemo }, "Alle Demo-Kreuzfahrten müssen isDemo == true haben")
         #expect(deals.allSatisfy { $0.isDemo }, "Alle Demo-Angebote müssen isDemo == true haben")
     }
+
+    /// Kernversprechen der Beispielreise im Release: Ein-Klick-Entfernen räumt
+    /// ausschließlich die Demo-Objekte ab und lässt echte Nutzerdaten stehen.
+    @Test("removeDemoData deletes only isDemo objects and keeps user data")
+    @MainActor
+    func removeDemoDataKeepsUserData() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let userCruise = Cruise(title: "Eigene Reise", startDate: Date(),
+                                endDate: Date().addingTimeInterval(86_400),
+                                shippingLine: "AIDA Cruises", ship: "AIDAnova")
+        context.insert(userCruise)
+        let userPort = CruisePort(name: "Kiel", country: "DE", latitude: 54.32, longitude: 10.14)
+        userPort.cruise = userCruise
+        context.insert(userPort)
+        userCruise.route.append(userPort)
+        context.insert(Deal(title: "Eigenes Angebot"))
+
+        let userExpense = Expense(category: .onboard, amount: 42.50, description: "Eigene Ausgabe")
+        userExpense.cruise = userCruise
+        context.insert(userExpense)
+        userCruise.expenses.append(userExpense)
+
+        let userPhoto = Photo(imageData: Data([0x01, 0x02, 0x03]))
+        userPhoto.cruise = userCruise
+        context.insert(userPhoto)
+        userCruise.photos.append(userPhoto)
+
+        DemoDataService.loadDemoData(into: context)
+        DemoDataService.removeDemoData(from: context)
+
+        let cruises = try context.fetch(FetchDescriptor<Cruise>())
+        let deals = try context.fetch(FetchDescriptor<Deal>())
+        let ports = try context.fetch(FetchDescriptor<CruisePort>())
+        let expenses = try context.fetch(FetchDescriptor<Expense>())
+        let photos = try context.fetch(FetchDescriptor<Photo>())
+
+        #expect(cruises.map(\.title) == ["Eigene Reise"], "Nur die Nutzer-Reise darf übrig bleiben")
+        #expect(deals.map(\.title) == ["Eigenes Angebot"], "Nur das Nutzer-Angebot bleibt übrig")
+        #expect(ports.map(\.name) == ["Kiel"], "Demo-Häfen weg (Cascade), Nutzer-Hafen bleibt")
+        #expect(
+            expenses.map(\.descriptionText) == ["Eigene Ausgabe"],
+            "Demo-Ausgaben weg (Cascade), Nutzer-Ausgabe bleibt"
+        )
+        #expect(photos.count == 1, "Demo-Fotos weg, Nutzer-Foto bleibt")
+        #expect(photos.first?.cruise?.title == "Eigene Reise", "Nutzer-Foto bleibt an der Reise")
+    }
 }
 #endif
