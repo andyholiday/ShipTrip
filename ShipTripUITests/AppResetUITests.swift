@@ -41,6 +41,7 @@ final class AppResetUITests: XCTestCase {
             scrollUntilHittable(resetButton, in: app),
             "„App zurücksetzen“ fehlt im Daten-Bereich"
         )
+        try writeScreenshotIfRequested(name: "settings-daten", resetButton: resetButton, in: app)
         resetButton.tap()
 
         let confirm = app.alerts.buttons["Zurücksetzen"]
@@ -80,6 +81,27 @@ final class AppResetUITests: XCTestCase {
     }
 
     // MARK: - Helper
+
+    /// Abnahme-Screenshot, nur wenn `SHIPTRIP_SCREENSHOT_DIR` gesetzt ist —
+    /// dasselbe Muster wie in `OnboardingScreenshotTests`. Ohne die Variable
+    /// passiert nichts und der Test laeuft unveraendert.
+    private func writeScreenshotIfRequested(
+        name: String,
+        resetButton: XCUIElement,
+        in app: XCUIApplication
+    ) throws {
+        let path = ProcessInfo.processInfo.environment["SHIPTRIP_SCREENSHOT_DIR"] ?? ""
+        guard !path.isEmpty else { return }
+        // Ans Listenende scrollen, damit der Daten-Bereich vollstaendig im Bild
+        // steht, danach zurueck in die antippbare Lage.
+        app.collectionViews.firstMatch.swipeUp()
+        RunLoop.current.run(until: Date().addingTimeInterval(1.0))
+        defer { _ = scrollUntilHittable(resetButton, in: app) }
+        let dir = URL(filePath: path)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try XCUIScreen.main.screenshot().pngRepresentation
+            .write(to: dir.appending(component: "\(name).png"))
+    }
 
     /// „Mehr" → „Daten verwalten" (gleicher Weg wie `ReedereiAnlegenUITests`).
     private func navigateToDataManagement(_ app: XCUIApplication) {
