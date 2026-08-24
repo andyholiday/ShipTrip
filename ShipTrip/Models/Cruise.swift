@@ -170,9 +170,17 @@ extension Array where Element == Cruise {
         flatMap { $0.route }.filter { $0.isSeaDay }.count
     }
 
-    /// Gesamtanzahl Hafenanlaufpunkte (keine Seetage) über alle Kreuzfahrten
+    /// Gesamtanzahl Hafen-Anläufe (keine Seetage) über alle Kreuzfahrten.
+    /// Mehrfachbesuche desselben Hafens zählen mehrfach — UI-Beschriftung „Anläufe".
+    /// Für die Anzahl *unterschiedlicher* Häfen siehe `uniquePortCount`.
     var totalPortStops: Int {
         flatMap { $0.route }.filter { !$0.isSeaDay }.count
+    }
+
+    /// Anzahl eindeutiger Häfen (nach Name, keine Seetage) über alle Kreuzfahrten.
+    /// Mehrfachbesuche desselben Hafens zählen einmal — UI-Beschriftung „Häfen".
+    var uniquePortCount: Int {
+        Set(flatMap { $0.route }.filter { !$0.isSeaDay }.map { $0.name }).count
     }
 
     /// Gesamtanzahl Reisetage (Reisedauer) über alle Kreuzfahrten

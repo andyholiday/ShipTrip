@@ -232,8 +232,11 @@ struct StatsView: View {
         cruises.totalTravelDays
     }
     
+    /// Eindeutige Häfen (Mehrfachbesuche zählen einmal) — Beschriftung „Häfen".
+    /// Der Stats-Streifen auf „Meine Reisen" zeigt bewusst die andere Metrik
+    /// (`totalPortStops`, Beschriftung „Anläufe").
     private var uniquePorts: Int {
-        Set(cruises.flatMap { $0.route.filter { !$0.isSeaDay }.map { $0.name } }).count
+        cruises.uniquePortCount
     }
     
     private var uniqueCountries: Int {
