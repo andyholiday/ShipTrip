@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "release/**"
+  pull_request:
+
+# Build + Tests brauchen keinen Schreibzugriff; kein Signing, keine Secrets.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build + Unit-Tests
+    runs-on: macos-26
+    timeout-minutes: 30
+    env:
+      XCODE_APP: /Applications/Xcode_26.6.app
+      SCHEME: ShipTrip
+      TEST_PLAN: ShipTrip
+      APP_BUNDLE_ID: com.andre.ShipTrip
+      DERIVED_DATA: build/DerivedData
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode-Version wählen
+        run: |
+          if [ -d "$XCODE_APP" ]; then
+            sudo xcode-select -s "$XCODE_APP"
+          else
+            echo "::warning::$XCODE_APP fehlt im Runner-Image – nutze Standard-Xcode."
+          fi
+          xcodebuild -version
+
+      # Wegwerf-Simulator statt eines vorgebooteten Geräts: eindeutiges
+      # -destination, kein Fremd-App-State, sauber löschbar (siehe xctest-ios).
+      - name: Wegwerf-Simulator erzeugen
+        id: sim
+        run: |
+          python3 - > sim-target.txt <<'PY'
+          import json
+          import re
+          import subprocess
+
+          raw = subprocess.run(
+              ["xcrun", "simctl", "list", "-j", "runtimes"],
+              capture_output=True, text=True, check=True,
+          ).stdout
+          runtimes = [
+              r for r in json.loads(raw)["runtimes"]
+              if r.get("isAvailable") and r.get("platform") == "iOS"
+          ]
+          newest = max(runtimes, key=lambda r: [int(p) for p in r["version"].split(".")])
+          phones = [
+              d for d in newest["supportedDeviceTypes"]
+              if d.get("productFamily") == "iPhone"
+          ]
+
+          def rank(device):
+              digits = re.findall(r"iPhone (\d+)", device["name"])
+              return (int(digits[0]) if digits else 0, -len(device["name"]))
+
+          print(max(phones, key=rank)["identifier"])
+          print(newest["identifier"])
+          PY
+          DEVICE_TYPE=$(sed -n 1p sim-target.txt)
+          RUNTIME=$(sed -n 2p sim-target.txt)
+          echo "Simulator: $DEVICE_TYPE auf $RUNTIME"
+          UDID=$(xcrun simctl create "ci-shiptrip-$GITHUB_RUN_ID" "$DEVICE_TYPE" "$RUNTIME")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      # CalendarSyncServiceMigrationTests laufen nur bei .fullAccess, sonst skippen sie.
+      - name: Kalender-Berechtigung erteilen
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: xcrun simctl privacy "$SIM_UDID" grant calendar "$APP_BUNDLE_ID"
+
+      # build-for-testing + test-without-building getrennt: `xcodebuild test`
+      # hängt sich auf diesem Projekt in LLDB-VersionStore-Schleifen fest.
+      - name: Build for testing
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          xcodebuild build-for-testing \
+            -project ShipTrip.xcodeproj \
+            -scheme "$SCHEME" \
+            -testPlan "$TEST_PLAN" \
+            -destination "id=$SIM_UDID" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -resultBundlePath build/build.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      # Nur die Unit-Suite: ShipTripUITests bleibt bewusst außerhalb der CI.
+      - name: Unit-Tests
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          XCTESTRUN=$(ls "$DERIVED_DATA"/Build/Products/*.xctestrun | head -n 1)
+          echo "xctestrun: $XCTESTRUN"
+          xcodebuild test-without-building \
+            -xctestrun "$XCTESTRUN" \
+            -destination "id=$SIM_UDID" \
+            -resultBundlePath build/test.xcresult \
+            -only-testing:ShipTripTests
+
+      - name: xcresult sichern
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcresult-${{ github.run_id }}
+          path: build/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Simulator aufräumen
+        if: always()
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          if [ -n "$SIM_UDID" ]; then
+            xcrun simctl shutdown "$SIM_UDID" || true
+            xcrun simctl delete "$SIM_UDID" || true
+          fi
