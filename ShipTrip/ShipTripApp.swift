@@ -20,6 +20,10 @@ struct ShipTripApp: App {
     private let usingTemporaryStore: Bool
 
     init() {
+#if DEBUG
+        Self.resetOnboardingIfNeeded()
+#endif
+
         let schema = Schema([
             Cruise.self,
             Port.self,
@@ -64,6 +68,16 @@ struct ShipTripApp: App {
         let context = ModelContext(container)
         DemoDataService.removeDemoCruisePhotos(in: context)
         try? context.save()
+    }
+
+    /// UI-Test-Naht (B5): setzt den Erststart-Schalter zurueck, bevor die Views
+    /// aufgebaut werden. Nur so laesst sich der Onboarding-Flow deterministisch
+    /// starten, statt vom Restzustand des Simulators abzuhaengen.
+    /// Ohne das Argument bleibt der Schalter unangetastet — genau das braucht
+    /// der Persistenz-Test beim zweiten Start.
+    private static func resetOnboardingIfNeeded() {
+        guard ProcessInfo.processInfo.arguments.contains("-uiTestingResetOnboarding") else { return }
+        UserDefaults.standard.removeObject(forKey: OnboardingPresentation.hasCompletedKey)
     }
 
     private static func prepareUITestDataIfNeeded(in container: ModelContainer) {
