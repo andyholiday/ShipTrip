@@ -136,3 +136,162 @@ struct ExportRoundtripDataLossTests {
         #expect(importedPorts.first?.longitude == -6.25)
     }
 }
+
+// MARK: - Wunschreisen & Katalog-Overlay
+
+@Suite("Export-Roundtrip: Wunschreisen und Katalog-Overlay")
+struct ExportRoundtripCatalogTests {
+
+    @Test("Deals, eigene Reedereien/Schiffe und Ausblendungen überleben den ZIP-Roundtrip; Re-Import bleibt idempotent")
+    @MainActor
+    func catalogAndDealsSurviveZipRoundtrip() throws {
+        let source = try makeFullContainer()
+        let context = source.mainContext
+
+        let cruise = makeCruise(title: "Mit Katalog-Daten", in: context)
+
+        let deal = Deal(title: "Karibik 2027")
+        deal.shippingLine = "MSC"
+        deal.ship = "MSC World Europa"
+        deal.destination = "Karibik"
+        deal.price = 1299
+        deal.originalPrice = 1799
+        deal.startDate = makeDate("2027-01-10")
+        deal.endDate = makeDate("2027-01-20")
+        deal.url = "https://example.com/deal"
+        deal.notes = "Balkon noch frei"
+        context.insert(deal)
+
+        let line = CustomShippingLine(name: "Andrés Reederei", logo: "⚓️")
+        context.insert(line)
+        let ship = CustomShip(name: "Andrés Schiff", lineOptionID: "custom:\(line.id.uuidString)")
+        context.insert(ship)
+        let hiddenLine = HiddenCatalogItem(lineID: "aida")
+        context.insert(hiddenLine)
+        let hiddenShip = HiddenCatalogItem(
+            lineID: "tui", shipKey: ShippingLine.normalizedShipKey("Mein Schiff 1")
+        )
+        context.insert(hiddenShip)
+        try context.save()
+
+        let url = try ExportImportService.shared.exportToZip(
+            cruises: [cruise],
+            deals: [deal],
+            customLines: [line],
+            customShips: [ship],
+            hiddenCatalogItems: [hiddenLine, hiddenShip]
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let target = try makeFullContainer()
+        _ = try ExportImportService.shared.importFromZip(url: url, modelContext: target.mainContext)
+
+        let importedDeals = try target.mainContext.fetch(FetchDescriptor<Deal>())
+        #expect(importedDeals.count == 1)
+        let importedDeal = try #require(importedDeals.first)
+        #expect(importedDeal.id == deal.id)
+        #expect(importedDeal.price == 1299)
+        #expect(importedDeal.originalPrice == 1799)
+        #expect(importedDeal.ship == "MSC World Europa")
+        #expect(importedDeal.destination == "Karibik")
+        #expect(importedDeal.url == "https://example.com/deal")
+        #expect(importedDeal.startDate.map {
+            Calendar.current.isDate($0, inSameDayAs: makeDate("2027-01-10"))
+        } == true)
+
+        let importedLines = try target.mainContext.fetch(FetchDescriptor<CustomShippingLine>())
+        #expect(importedLines.count == 1)
+        let importedLine = try #require(importedLines.first)
+        // Die UUID muss stabil bleiben, sonst zeigt lineOptionID ins Leere.
+        #expect(importedLine.id == line.id)
+        #expect(importedLine.name == "Andrés Reederei")
+        #expect(importedLine.logo == "⚓️")
+
+        let importedShips = try target.mainContext.fetch(FetchDescriptor<CustomShip>())
+        #expect(importedShips.count == 1)
+        let importedShip = try #require(importedShips.first)
+        #expect(importedShip.id == ship.id)
+        // Das Schiff hängt nach dem Import an genau der importierten Reederei — kein Waisenkind.
+        #expect(importedShip.lineOptionID == "custom:\(importedLine.id.uuidString)")
+
+        let importedHidden = try target.mainContext.fetch(FetchDescriptor<HiddenCatalogItem>())
+        #expect(importedHidden.count == 2)
+        #expect(importedHidden.contains { $0.lineID == "aida" && $0.shipKey == nil })
+        #expect(importedHidden.contains { $0.lineID == "tui" && $0.shipKey != nil })
+
+        // Re-Import derselben Datei: keine Dubletten.
+        _ = try ExportImportService.shared.importFromZip(url: url, modelContext: target.mainContext)
+        #expect(try target.mainContext.fetch(FetchDescriptor<Deal>()).count == 1)
+        #expect(try target.mainContext.fetch(FetchDescriptor<CustomShippingLine>()).count == 1)
+        #expect(try target.mainContext.fetch(FetchDescriptor<CustomShip>()).count == 1)
+        #expect(try target.mainContext.fetch(FetchDescriptor<HiddenCatalogItem>()).count == 2)
+    }
+
+    @Test("Eigenes Schiff ohne auflösbare eigene Reederei wird nicht importiert (keine Waisen)")
+    @MainActor
+    func orphanedCustomShipIsSkipped() throws {
+        let orphan = ExportCustomShip(
+            id: UUID().uuidString,
+            name: "Waisenschiff",
+            lineOptionID: "custom:\(UUID().uuidString)",
+            createdAt: nil,
+            updatedAt: nil
+        )
+        // Katalog-Reedereien sind hartkodiert und damit immer auflösbar.
+        let catalogShip = ExportCustomShip(
+            id: UUID().uuidString,
+            name: "Eigene AIDA-Yacht",
+            lineOptionID: "aida",
+            createdAt: nil,
+            updatedAt: nil
+        )
+
+        let archive = ExportArchive(customShips: [orphan, catalogShip])
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("orphan-\(UUID().uuidString).json")
+        try JSONEncoder().encode(archive).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let target = try makeFullContainer()
+        _ = try ExportImportService.shared.importFromJSON(url: url, modelContext: target.mainContext)
+
+        let ships = try target.mainContext.fetch(FetchDescriptor<CustomShip>())
+        #expect(ships.count == 1)
+        #expect(ships.first?.name == "Eigene AIDA-Yacht")
+    }
+
+    @Test("Demo-Kreuzfahrten UND Demo-Wunschreisen werden nicht exportiert")
+    @MainActor
+    func demoDataIsExcludedFromExport() throws {
+        let source = try makeFullContainer()
+        let context = source.mainContext
+
+        let realCruise = makeCruise(title: "Echte Reise", in: context)
+        let demoCruise = makeCruise(title: "Demo-Reise", in: context)
+        demoCruise.isDemo = true
+
+        let realDeal = Deal(title: "Echtes Angebot")
+        context.insert(realDeal)
+        let demoDeal = Deal(title: "Demo-Angebot")
+        demoDeal.isDemo = true
+        context.insert(demoDeal)
+        try context.save()
+
+        let url = try ExportImportService.shared.exportToZip(
+            cruises: [realCruise, demoCruise],
+            deals: [realDeal, demoDeal]
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let target = try makeFullContainer()
+        let result = try ExportImportService.shared.importFromZip(
+            url: url, modelContext: target.mainContext
+        )
+
+        #expect(result.imported == 1)
+        let cruises = try target.mainContext.fetch(FetchDescriptor<Cruise>())
+        #expect(cruises.map(\.title) == ["Echte Reise"])
+        let deals = try target.mainContext.fetch(FetchDescriptor<Deal>())
+        #expect(deals.map(\.title) == ["Echtes Angebot"])
+    }
+}
