@@ -1,0 +1,35 @@
+{
+  "configurations" : [
+    {
+      "id" : "DDB8803A-66CB-4AF6-A8E5-8F96DFA40945",
+      "name" : "Standard",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:ShipTrip.xcodeproj",
+      "identifier" : "BF1F28092EF411EA006C7F7D",
+      "name" : "ShipTrip"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:ShipTrip.xcodeproj",
+        "identifier" : "BF1F28192EF411EB006C7F7D",
+        "name" : "ShipTripTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:ShipTrip.xcodeproj",
+        "identifier" : "BF1F28232EF411EB006C7F7D",
+        "name" : "ShipTripUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

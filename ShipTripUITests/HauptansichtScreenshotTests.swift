@@ -3,7 +3,9 @@
 //  ShipTripUITests
 //
 //  Nimmt Screenshots der redesignten "Meine Reisen"-Ansicht mit Demo-Daten.
-//  Ausgabe: /Users/andreja/Documents/0.Projekte/ShipTrip/audit/screenshots/
+//  Ausgabe-Ordner kommt aus der Umgebungsvariable SHIPTRIP_SCREENSHOT_DIR
+//  (z. B. <repo>/audit/screenshots). Ist sie nicht gesetzt — etwa in CI —
+//  werden alle Tests dieser Suite per XCTSkip übersprungen statt zu scheitern.
 //
 //  Erscheinungsbild (light/dark) wird per Launch-Argument gesetzt,
 //  das der Test-Runner via xcrun simctl ui vor dem Start setzt.
@@ -13,11 +15,27 @@ import XCTest
 
 final class HauptansichtScreenshotTests: XCTestCase {
 
-    private let outputDir = URL(filePath: "/Users/andreja/Documents/0.Projekte/ShipTrip/audit/screenshots")
+    /// Name der Umgebungsvariable, die den Ziel-Ordner für die PNGs vorgibt.
+    private static let outputDirEnvKey = "SHIPTRIP_SCREENSHOT_DIR"
+
+    /// Ziel-Ordner für die Screenshots. Ohne gesetzte Umgebungsvariable wird
+    /// der Test übersprungen (kein Fail) — Screenshot-Läufe sind lokal, nicht CI.
+    private var outputDir: URL {
+        get throws {
+            let path = ProcessInfo.processInfo.environment[Self.outputDirEnvKey] ?? ""
+            guard !path.isEmpty else {
+                throw XCTSkip(
+                    "\(Self.outputDirEnvKey) nicht gesetzt — Screenshot-Suite übersprungen."
+                )
+            }
+            return URL(filePath: path)
+        }
+    }
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
+        let dir = try outputDir
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
     }
 
     // MARK: - Light Mode
@@ -88,7 +106,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
 
         // 7. Screenshot als hero-photo-clean speichern
         let screenshot = XCUIScreen.main.screenshot()
-        let outURL = outputDir.appending(component: "meine-reisen-hero-photo-clean.png")
+        let outURL = try outputDir.appending(component: "meine-reisen-hero-photo-clean.png")
         try screenshot.pngRepresentation.write(to: outURL)
         print("[Screenshot-HeroClean] \(outURL.path)")
     }
@@ -282,7 +300,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
 
     @MainActor
     private func write(screenshot: XCUIScreenshot, name: String) throws {
-        let url = outputDir.appending(component: "\(name).png")
+        let url = try outputDir.appending(component: "\(name).png")
         try screenshot.pngRepresentation.write(to: url)
         print("[Screenshot] \(url.path)")
     }
