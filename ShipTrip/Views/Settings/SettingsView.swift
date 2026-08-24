@@ -180,6 +180,14 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    // Setzt nur den Erststart-Schalter zurueck; praesentiert wird
+                    // das Onboarding vom `fullScreenCover` in `ShipTripApp`.
+                    Button {
+                        OnboardingPresentation.requestReplay(in: .standard)
+                    } label: {
+                        Label(String(localized: "Intro erneut zeigen"), systemImage: "sparkles")
+                    }
+
                     Link(destination: URL(string: "https://github.com/andyholiday/ShipTrip")!) {
                         Label("GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
