@@ -29,6 +29,15 @@ struct ExportArchive: Codable {
     let customShips: [ExportCustomShip]
     let hiddenCatalogItems: [ExportHiddenCatalogItem]
 
+    enum CodingKeys: String, CodingKey {
+        case formatVersion
+        case cruises
+        case deals
+        case customShippingLines
+        case customShips
+        case hiddenCatalogItems
+    }
+
     init(
         formatVersion: Int = ExportArchive.currentFormatVersion,
         cruises: [ExportCruise] = [],
@@ -124,20 +133,27 @@ struct ExportPhoto: Codable {
     /// Base64-Data-URL (`data:image/png;base64,…`) oder ZIP-Pfad (`images/<cruiseId>/<index>`).
     let ref: String
 
+    enum CodingKeys: String, CodingKey {
+        case id
+        case ref
+    }
+
     init(id: String?, ref: String) {
         self.id = id
         self.ref = ref
     }
 
     init(from decoder: any Decoder) throws {
+        // 1.7: nackter String statt Objekt.
         if let single = try? decoder.singleValueContainer(),
            let legacyReference = try? single.decode(String.self) {
-            self.init(id: nil, ref: legacyReference)
+            id = nil
+            ref = legacyReference
             return
         }
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.id = try container.decodeIfPresent(String.self, forKey: .id)
-        self.ref = try container.decode(String.self, forKey: .ref)
+        id = try container.decodeIfPresent(String.self, forKey: .id)
+        ref = try container.decode(String.self, forKey: .ref)
     }
 }
 
