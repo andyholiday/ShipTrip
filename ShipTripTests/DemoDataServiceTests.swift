@@ -263,5 +263,36 @@ struct DemoDataServiceTests {
         #expect(cruises.allSatisfy { $0.isDemo }, "Alle Demo-Kreuzfahrten müssen isDemo == true haben")
         #expect(deals.allSatisfy { $0.isDemo }, "Alle Demo-Angebote müssen isDemo == true haben")
     }
+
+    /// Kernversprechen der Beispielreise im Release: Ein-Klick-Entfernen räumt
+    /// ausschließlich die Demo-Objekte ab und lässt echte Nutzerdaten stehen.
+    @Test("removeDemoData deletes only isDemo objects and keeps user data")
+    @MainActor
+    func removeDemoDataKeepsUserData() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let userCruise = Cruise(title: "Eigene Reise", startDate: Date(),
+                                endDate: Date().addingTimeInterval(86_400),
+                                shippingLine: "AIDA Cruises", ship: "AIDAnova")
+        context.insert(userCruise)
+        let userPort = CruisePort(name: "Kiel", country: "DE", latitude: 54.32, longitude: 10.14)
+        userPort.cruise = userCruise
+        context.insert(userPort)
+        userCruise.route.append(userPort)
+        context.insert(Deal(title: "Eigenes Angebot"))
+
+        DemoDataService.loadDemoData(into: context)
+        DemoDataService.removeDemoData(from: context)
+
+        let cruises = try context.fetch(FetchDescriptor<Cruise>())
+        let deals = try context.fetch(FetchDescriptor<Deal>())
+        let ports = try context.fetch(FetchDescriptor<CruisePort>())
+
+        #expect(cruises.map(\.title) == ["Eigene Reise"], "Nur die Nutzer-Reise darf übrig bleiben")
+        #expect(deals.map(\.title) == ["Eigenes Angebot"], "Nur das Nutzer-Angebot bleibt übrig")
+        #expect(ports.map(\.name) == ["Kiel"], "Demo-Häfen weg (Cascade), Nutzer-Hafen bleibt")
+        #expect(try context.fetch(FetchDescriptor<Expense>()).isEmpty, "Demo-Ausgaben weg")
+    }
 }
 #endif

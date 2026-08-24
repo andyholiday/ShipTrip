@@ -2,11 +2,12 @@
 //  DemoDataService.swift
 //  ShipTrip
 //
-//  Nur in Debug-Builds vorhanden. In Release-Builds wird diese Datei
-//  vollständig wegkompiliert.
+//  Auch in Release-Builds vorhanden: die Beispielreise ist ein Produkt-Feature
+//  (Onboarding „Beispielreise ansehen", Einstellungen → Beispielreise).
+//  Alle erzeugten Objekte tragen `isDemo` und lassen sich mit einer Aktion
+//  wieder entfernen. Nur der destruktive UI-Test-Reset bleibt Debug-only.
 //
 
-#if DEBUG
 import SwiftData
 import Foundation
 import UIKit
@@ -41,8 +42,9 @@ enum DemoDataService {
         try? context.save()
     }
 
+    #if DEBUG
     /// Setzt den persistenten Store nur für deterministische UI-Tests vollständig zurück.
-    /// Der Launch-Parameter dafür wird ausschließlich im DEBUG-Build ausgewertet.
+    /// Bleibt Debug-only: der Aufruf löscht auch echte Nutzerdaten.
     static func resetAndLoadDemoDataForUITesting(in context: ModelContext) throws {
         try deleteAll(Cruise.self, in: context)
         try deleteAll(Port.self, in: context)
@@ -56,6 +58,7 @@ enum DemoDataService {
 
         loadDemoData(into: context)
     }
+    #endif
 
     /// True wenn mindestens eine Demo-Kreuzfahrt oder ein Demo-Angebot vorhanden ist.
     static func hasDemoData(in context: ModelContext) -> Bool {
@@ -84,6 +87,7 @@ enum DemoDataService {
         return all.filter { $0[keyPath: keyPath] }
     }
 
+    #if DEBUG
     private static func deleteAll<T: PersistentModel>(
         _ type: T.Type,
         in context: ModelContext
@@ -91,6 +95,7 @@ enum DemoDataService {
         let objects = try context.fetch(FetchDescriptor<T>())
         objects.forEach(context.delete)
     }
+    #endif
 
     // MARK: - Demo-Kreuzfahrten
 
@@ -323,4 +328,3 @@ enum DemoDataService {
         cruise.expenses.append(expense)
     }
 }
-#endif
