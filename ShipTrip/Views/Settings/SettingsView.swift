@@ -771,6 +771,14 @@ struct DataManagementView: View {
         cruises + deals + customLines + customShips + hiddenCatalogItems > 0
     }
 
+    /// Export, Import und „Alle Daten löschen" arbeiten auf demselben Datenbestand und dürfen sich
+    /// nicht überlappen — ein Löschen während eines laufenden Exports würde dem Export die Modelle
+    /// unter den Händen wegziehen. Solange eine der Aktionen läuft, sind die anderen gesperrt.
+    /// Als `static` ausgelagert, damit die Bedingung ohne View-Aufbau testbar bleibt.
+    static func isDataActionBlocked(isExporting: Bool, isImporting: Bool) -> Bool {
+        isExporting || isImporting
+    }
+
     var body: some View {
         Form {
             Section("Übersicht") {
@@ -809,7 +817,7 @@ struct DataManagementView: View {
                     customLines: customShippingLines.count,
                     customShips: customShips.count,
                     hiddenCatalogItems: hiddenCatalogItems.count
-                ) || isExporting)
+                ) || Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
             }
 
             // Import
@@ -826,14 +834,15 @@ struct DataManagementView: View {
                         }
                     }
                 }
-                .disabled(isImporting)
+                .disabled(Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
             }
-            
+
             // Löschen
             Section {
                 Button("Alle Daten löschen", role: .destructive) {
                     showingDeleteAlert = true
                 }
+                .disabled(Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
             }
         }
         .navigationTitle("Daten verwalten")
@@ -884,14 +893,20 @@ struct DataManagementView: View {
     }
     
     private func exportData() {
+        // Der `.disabled`-Modifier ist nur die sichtbare Sperre; ein zweiter Tap kann ihn bei
+        // schnellem Tippen unterlaufen. Der harte Riegel steht hier.
+        guard !Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting) else {
+            return
+        }
         isExporting = true
 
         Task {
             do {
                 // Demo-Daten filtert der Service selbst — hier bewusst die vollständigen
-                // Query-Ergebnisse übergeben. Der Aufruf ist `await`: nur der Snapshot läuft
-                // auf dem MainActor, das Serialisieren und Schreiben des Archivs off-main —
-                // der Spinner bleibt währenddessen flüssig (C4).
+                // Query-Ergebnisse übergeben. Der Aufruf ist `await`: Snapshot, Grenzprüfung und
+                // JSON-Serialisierung (`encodeArchive`) laufen auf dem MainActor, das Schreiben
+                // des Archivs samt CRC-32 off-main — der Spinner bleibt währenddessen
+                // flüssig (C4).
                 let url = try await ExportImportService.shared.exportToZip(
                     cruises: cruises,
                     deals: deals,
@@ -918,7 +933,10 @@ struct DataManagementView: View {
         switch result {
         case .success(let urls):
             guard let url = urls.first else { return }
-            
+            guard !Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting) else {
+                return
+            }
+
             isImporting = true
             
             // Security-scoped resource access

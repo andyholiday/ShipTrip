@@ -4,7 +4,8 @@
 **Code:** `ShipTrip/Services/ExportImportService+Export.swift`,
 `ShipTrip/Services/ZipArchiveWriter.swift`, `ShipTrip/Services/ZipArchiveReader.swift`
 **Tests:** `ExportRoundtripTests`, `ExportLegacyCompatibilityTests`,
-`ExportImportHardeningTests`, `ExportPhotoIdentityTests`, `ExportStreamingTests`
+`ExportImportHardeningTests`, `ExportPhotoIdentityTests`, `ExportStreamingTests`,
+`ExportGuardTests`
 
 ## Format
 
@@ -26,25 +27,57 @@ er bettet Bilder Base64-kodiert inline ein und hat keine UI-Aufrufstelle mehr.
 
 `exportToZip` läuft in zwei Phasen:
 
-1. **MainActor, synchron:** Aus den SwiftData-`@Model`-Objekten entsteht der
-   Sendable-Snapshot — `data.json` als fertige Bytes plus eine
-   `ExportImageSource`, die nur die Eintragsnamen kennt. Bild-Bytes werden hier
-   bewusst *nicht* eingesammelt. Das ist die harte SwiftData-Regel: `@Model`-
-   Objekte dürfen die Aktorgrenze nicht überqueren.
+1. **MainActor, synchron:** `buildArchive` und `encodeArchive` laufen auf dem
+   MainActor und liefern `data.json` als fertige Bytes — die JSON-Serialisierung
+   ist also ausdrücklich *nicht* off-main. Dazu entsteht eine
+   `ExportImageSource`. Sie hält **Referenzen auf die `@Model`-Objekte** (Photo
+   bzw. Port) und kennt vorab nur deren Eintragsnamen; die Bild-Bytes liest sie
+   erst auf Anforderung. Genau deshalb ist sie `@MainActor`-isoliert: `@Model`-
+   Objekte dürfen die Aktorgrenze nicht überqueren, ihr Zugriff bleibt auf dem
+   MainActor. Über die Aktorgrenze gehen nur die JSON-Bytes und die Referenz auf
+   die isolierte Quelle.
 2. **Off-main:** `ZipArchiveStreamWriter` (ein `actor`) schreibt das Archiv
    Eintrag für Eintrag über einen `FileHandle` in die Zieldatei und fordert jedes
    Bild einzeln über einen kurzen MainActor-Hop an.
 
-Ergebnis: JSON-Serialisierung, CRC-32 und Dateischreiben blockieren die UI nicht
-mehr, und der Spitzenverbrauch liegt bei O(größtes Bild) statt O(Bibliothek) —
-vorher lagen erst alle Bilder als Eintragsliste und dann das gesamte Archiv
-gleichzeitig im Speicher (~2× Bibliothek).
+Ergebnis: CRC-32 und Dateischreiben blockieren die UI nicht mehr, und der
+Spitzenverbrauch liegt bei O(größtes Bild) statt O(Bibliothek) — vorher lagen
+erst alle Bilder als Eintragsliste und dann das gesamte Archiv gleichzeitig im
+Speicher (~2× Bibliothek).
 
 `ExportStreamingTests` fixiert das beobachtbar: die Zieldatei wächst zwischen
 zwei Eintrags-Anforderungen, und `ExportImageSource` gibt Bytes ausschließlich
 einzeln und auf Anforderung heraus.
 
-## Importgrenzen
+## Alles oder nichts
+
+Der Export meldet nur dann Erfolg, wenn das Archiv vollständig und
+wiederherstellbar ist. Drei Abbruchgründe, alle in `ExportGuardTests` fixiert:
+
+- **Zu groß für den eigenen Import** — `validateArchiveSize` prüft *vor* dem
+  Schreiben gegen die Grenzen unten und wirft `ExportError.entryTooLarge` /
+  `.payloadTooLarge` / `.archiveTooLarge`. Preis: ein zusätzlicher Lesedurchlauf
+  über die Bilder; das Speicherprofil bleibt bei O(größtes Bild), weil auch dabei
+  immer nur ein Bild angefasst wird.
+- **Fehlendes Medium** — liefert ein referenziertes Bild keine Bytes mehr (Modell
+  geleert, externer Speicher unlesbar), wirft `ExportError.missingMedia`. Früher
+  entstand daraus ein leerer, CRC-konsistenter Eintrag und der Export meldete
+  Erfolg — ein stilles Loch im Backup.
+- **Abbruch** — `ZipArchiveStreamWriter` prüft `Task.checkCancellation()` vor und
+  nach jedem Bild-Abruf sowie vor dem Central Directory und propagiert
+  `CancellationError`.
+
+In allen drei Fällen wird eine bereits angefangene Zieldatei gelöscht: eine halbe
+ZIP wäre von einem vollständigen Backup nicht zu unterscheiden. Auch der
+abschließende `close()` des `FileHandle` propagiert seinen Fehler — nur der
+`close()` im Fehlerpfad ist best-effort.
+
+## Grenzen (binden Export *und* Import)
+
+Die drei Konstanten in `ZipArchiveReader` sind die eine Quelle für beide
+Richtungen. Der Lesepfad weist Archive darüber ab, der Schreibpfad erzeugt sie
+gar nicht erst — vorher kannte der Writer nur die ZIP32-Grenze (4 GB) und konnte
+Backups schreiben, die die App selbst nicht mehr importiert.
 
 | Grenze | Wert | Ort |
 |---|---|---|
