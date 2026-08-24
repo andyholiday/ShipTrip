@@ -17,6 +17,7 @@ final class Build19MigrationUITests: XCTestCase {
         }
 
         let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
         app.launch()
 
         XCTAssertTrue(app.tabBars.buttons["Reisen"].waitForExistence(timeout: 10))

@@ -61,7 +61,7 @@ final class HauptansichtScreenshotTests: XCTestCase {
     @MainActor
     func testScreenshot_HeroPhotoClean() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-colorScheme", "light"]
+        app.launchArguments += ["-colorScheme", "light", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         // 1. Einstellungs-Tab öffnen
@@ -116,7 +116,11 @@ final class HauptansichtScreenshotTests: XCTestCase {
     @MainActor
     private func captureMainView(suffix: String) throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-colorScheme", suffix, "-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += [
+            "-colorScheme", suffix,
+            "-uiTestingResetAndLoadDemoData",
+            "-uiTestingCompleteOnboarding"
+        ]
         app.launch()
 
         // 1. Zum Reisen-Tab wechseln
@@ -192,7 +196,11 @@ final class HauptansichtScreenshotTests: XCTestCase {
     @MainActor
     private func captureDetailView(suffix: String) throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-colorScheme", suffix, "-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += [
+            "-colorScheme", suffix,
+            "-uiTestingResetAndLoadDemoData",
+            "-uiTestingCompleteOnboarding"
+        ]
         app.launch()
 
         // 1. Zum Reisen-Tab wechseln
@@ -235,7 +243,11 @@ final class HauptansichtScreenshotTests: XCTestCase {
     @MainActor
     private func captureGeoHero(suffix: String) throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-colorScheme", suffix, "-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += [
+            "-colorScheme", suffix,
+            "-uiTestingResetAndLoadDemoData",
+            "-uiTestingCompleteOnboarding"
+        ]
         app.launch()
 
         let reisenTab = app.tabBars.buttons["Reisen"]
@@ -253,7 +265,11 @@ final class HauptansichtScreenshotTests: XCTestCase {
     @MainActor
     private func captureMapAllTrips(suffix: String) throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-colorScheme", suffix, "-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += [
+            "-colorScheme", suffix,
+            "-uiTestingResetAndLoadDemoData",
+            "-uiTestingCompleteOnboarding"
+        ]
         app.launch()
 
         let mapTab = app.tabBars.buttons["Karte"]

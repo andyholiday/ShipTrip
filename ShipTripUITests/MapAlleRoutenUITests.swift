@@ -20,7 +20,7 @@ final class MapAlleRoutenUITests: XCTestCase {
     @MainActor
     func testAlleAusblendenUndWiederAnzeigenSchliesstMenuUndZeigtRoutenWieder() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let mapTab = app.tabBars.buttons["Karte"]

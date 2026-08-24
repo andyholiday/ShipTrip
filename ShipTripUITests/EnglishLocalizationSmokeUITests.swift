@@ -57,7 +57,8 @@ final class EnglishLocalizationSmokeUITests: XCTestCase {
         app.launchArguments += [
             "-AppleLanguages", "(en)",
             "-AppleLocale", "en_US",
-            "-uiTestingResetAndLoadDemoData"
+            "-uiTestingResetAndLoadDemoData",
+            "-uiTestingCompleteOnboarding"
         ]
         app.launch()
 

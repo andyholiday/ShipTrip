@@ -22,7 +22,7 @@ final class PortMemoryCardUITests: XCTestCase {
     @MainActor
     func testZeroStateSichtbarBeiHafenOhneMomente() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let cruiseTitle = "UI-Test-PortMemoryCard-B7"
