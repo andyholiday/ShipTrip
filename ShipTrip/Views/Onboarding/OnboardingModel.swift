@@ -13,6 +13,7 @@
 
 import Foundation
 import Observation
+import SwiftData
 import SwiftUI
 
 // MARK: - Sichtbarkeit / Persistenz
@@ -29,10 +30,15 @@ enum OnboardingPresentation {
     /// haengt. Beim ersten Start ist der Schluessel nicht gesetzt, das
     /// Onboarding erscheint; wird das Cover geschlossen, gilt der Flow als
     /// abgeschlossen und es bleibt weg, bis `requestReplay` es zurueckholt.
-    static func coverBinding(hasCompleted: Binding<Bool>) -> Binding<Bool> {
+    ///
+    /// `isSuppressed` haelt das Cover unabhaengig vom Schalter zurueck und
+    /// laesst ihn dabei unangetastet — der Fall `.postpone` aus
+    /// `startupDecision`.
+    static func coverBinding(hasCompleted: Binding<Bool>, isSuppressed: Bool) -> Binding<Bool> {
         Binding(
-            get: { !hasCompleted.wrappedValue },
+            get: { !isSuppressed && !hasCompleted.wrappedValue },
             set: { isPresented in
+                guard !isSuppressed else { return }
                 if !isPresented { hasCompleted.wrappedValue = true }
             }
         )
@@ -41,6 +47,46 @@ enum OnboardingPresentation {
     /// „Intro erneut zeigen" aus den Einstellungen.
     static func requestReplay(in defaults: UserDefaults) {
         defaults.set(false, forKey: hasCompletedKey)
+    }
+
+    // MARK: - Erststart-Entscheidung beim App-Start
+
+    /// Wie der Start mit dem Erststart-Flow umgeht.
+    enum StartupDecision: Equatable {
+
+        /// Frische Installation — das Cover darf erscheinen.
+        case present
+
+        /// Bestandsinstallation ohne Schalter (Update von 1.7.x): still
+        /// abhaken, kein Cover. Wer bereits Reisen hat, hat die App nicht
+        /// zum ersten Mal in der Hand.
+        case migrateSilently
+
+        /// Kein gesunder Store (In-Memory-Fallback): weder zeigen noch
+        /// abhaken. Die Datenverlust-Warnung hat Vorrang; beim naechsten
+        /// gesunden Start steht der Erststart unveraendert an.
+        case postpone
+
+        /// Der Schalter steht bereits.
+        case alreadyCompleted
+    }
+
+    /// Reine Entscheidung — ohne Store und ohne `UserDefaults`, damit sie ohne
+    /// UI pruefbar bleibt.
+    ///
+    /// `hasCompletedFlag` ist bewusst dreiwertig: `nil` (Schluessel fehlt)
+    /// heisst „nie durchlaufen", `false` heisst „ueber die Einstellungen
+    /// zurueckgeholt". Nur der erste Fall darf still migriert werden — ein
+    /// angefordertes Wiedersehen bleibt eines, auch mit vorhandenen Reisen.
+    static func startupDecision(
+        hasCompletedFlag: Bool?,
+        storeIsHealthy: Bool,
+        hasExistingCruises: Bool
+    ) -> StartupDecision {
+        if hasCompletedFlag == true { return .alreadyCompleted }
+        guard storeIsHealthy else { return .postpone }
+        if hasCompletedFlag == nil, hasExistingCruises { return .migrateSilently }
+        return .present
     }
 }
 
@@ -66,15 +112,29 @@ final class OnboardingModel {
     /// bliebe genau der erste Einlauf aus, den der Nutzer sieht.
     private(set) var seen: Set<Int> = []
 
-    /// Naht fuer den System-Dialog. Nur `enableReminders()` ruft sie.
-    private let requestNotificationPermission: @MainActor () async -> Void
+    /// Laeuft gerade eine Berechtigungs-Abfrage? Solange sie laeuft, sind beide
+    /// Soft-Ask-Aktionen gesperrt — ein zweiter Tipp darf keinen zweiten
+    /// System-Dialog anfordern.
+    private(set) var isRequestingPermission = false
+
+    /// Naht fuer den System-Dialog. Nur `enableReminders(in:)` ruft sie.
+    /// Der Rueckgabewert ist die Antwort des Nutzers im System-Dialog.
+    private let requestNotificationPermission: @MainActor () async -> Bool
+
+    /// Naht fuer den Erinnerungs-Abgleich nach erteilter Berechtigung —
+    /// dieselbe Aufruf-Semantik wie die Start-Kette in `CruiseListView`.
+    private let reconcileReminders: @MainActor (ModelContext) async -> Void
 
     init(
-        requestNotificationPermission: @escaping @MainActor () async -> Void = {
-            _ = await NotificationService.shared.requestAuthorization()
+        requestNotificationPermission: @escaping @MainActor () async -> Bool = {
+            await NotificationService.shared.requestAuthorization()
+        },
+        reconcileReminders: @escaping @MainActor (ModelContext) async -> Void = { context in
+            await NotificationReconciler.run(context: context)
         }
     ) {
         self.requestNotificationPermission = requestNotificationPermission
+        self.reconcileReminders = reconcileReminders
         self.selection = 0
     }
 
@@ -121,8 +181,23 @@ final class OnboardingModel {
     /// Aktive Zustimmung: **erst hier** darf der System-Dialog erscheinen.
     /// Danach geht es weiter, unabhaengig davon, wie der Nutzer im System-
     /// Dialog entscheidet.
-    func enableReminders() async {
-        await requestNotificationPermission()
+    ///
+    /// Der Vertrag der Taste ist „Berechtigung + Replan", nicht
+    /// „Toggle umlegen": die App-Schalter in `NotificationSettingsView` stehen
+    /// ohnehin auf an und bleiben unangetastet. Nach **erteilter** Berechtigung
+    /// laeuft der Abgleich sofort, damit bereits vorhandene Reisen ihre
+    /// Erinnerungen nicht erst beim naechsten App-Start bekommen.
+    ///
+    /// Der `context` kommt aus der Umgebung des Flows und bleibt auf dem
+    /// MainActor — es wandert kein `@Model` ueber eine Aktorgrenze.
+    func enableReminders(in context: ModelContext) async {
+        guard !isRequestingPermission else { return }
+        isRequestingPermission = true
+        defer { isRequestingPermission = false }
+
+        if await requestNotificationPermission() {
+            await reconcileReminders(context)
+        }
         advance(from: 2)
     }
 
@@ -132,6 +207,7 @@ final class OnboardingModel {
     /// selbst den `authorizationStatus` und findet ihn hier unveraendert
     /// `.notDetermined` vor.
     func skipReminders() {
+        guard !isRequestingPermission else { return }
         advance(from: 2)
     }
 }

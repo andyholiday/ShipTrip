@@ -132,15 +132,19 @@ struct OnboardingFlowView: View {
 
         case 2:
             // B4-Soft-Ask: **nur** diese Taste darf den Systemdialog ausloesen.
+            // Waehrend die Abfrage laeuft, sind beide Aktionen gesperrt —
+            // sonst fordert ein zweiter Tipp einen zweiten Dialog an.
             OnboardingPrimaryButton(title: String(localized: "Erinnerungen aktivieren")) {
-                Task { await model.enableReminders() }
+                Task { await model.enableReminders(in: modelContext) }
             }
+            .disabled(model.isRequestingPermission)
             .onboardingCascadeIn(4, appeared: appeared)
 
             // „Spaeter" blaettert nur weiter — kein Systemdialog, kein Flag.
             OnboardingSecondaryButton(title: String(localized: "Später")) {
                 model.skipReminders()
             }
+            .disabled(model.isRequestingPermission)
             .onboardingCascadeIn(5, appeared: appeared)
 
             footnote(String(localized: "Beides lässt sich jederzeit in den Einstellungen ändern."))
