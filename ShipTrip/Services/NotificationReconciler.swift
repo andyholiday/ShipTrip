@@ -138,8 +138,8 @@ enum ReminderPlanner {
         let startText = cruise.startDate.formatted(date: .abbreviated, time: .omitted)
         return ReminderRequest(
             identifier: ReminderIdentifier.make(cruiseKey: cruise.key, kind: .before),
-            title: "Kreuzfahrt in \(daysBefore) Tagen! 🚢",
-            body: "\(cruise.title) startet am \(startText)",
+            title: String(localized: "Kreuzfahrt in \(daysBefore) Tagen! 🚢"),
+            body: String(localized: "\(cruise.title) startet am \(startText)"),
             categoryIdentifier: "CRUISE_REMINDER",
             fireDate: fireDate
         )
@@ -159,8 +159,10 @@ enum ReminderPlanner {
 
         return ReminderRequest(
             identifier: ReminderIdentifier.make(cruiseKey: cruise.key, kind: .departure),
-            title: "Heute geht's los! ⚓️",
-            body: "Deine Kreuzfahrt \"\(cruise.title)\" beginnt heute. Gute Reise!",
+            title: String(localized: "Heute geht's los! ⚓️"),
+            body: String(
+                localized: "Deine Kreuzfahrt \"\(cruise.title)\" beginnt heute. Gute Reise!"
+            ),
             categoryIdentifier: "CRUISE_DEPARTURE",
             fireDate: fireDate
         )

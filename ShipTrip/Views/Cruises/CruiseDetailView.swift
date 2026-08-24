@@ -619,7 +619,8 @@ private struct StatCell: View {
 /// Info-Karte für die Detailansicht
 struct InfoCard: View {
     let icon: String
-    let title: String
+    /// Lokalisierbar: `String` würde `Text(title)` unübersetzt durchreichen.
+    let title: LocalizedStringKey
     let value: String
     var isEmoji: Bool = false
     

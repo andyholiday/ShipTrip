@@ -16,6 +16,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Rein statische Katalog-Prüfung: kein Xcode, kein Simulator, kein Signing.
+  # Läuft parallel zum teuren macOS-Job und meldet L10n-Lücken in Sekunden.
+  l10n:
+    name: L10n-Gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: String Catalog auf fehlende Übersetzungen prüfen
+        run: |
+          set -euo pipefail
+          python3 scripts/check-l10n.py
+
   build-and-test:
     name: Build + Unit-Tests
     runs-on: macos-26
