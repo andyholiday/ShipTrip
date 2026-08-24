@@ -257,6 +257,11 @@ actor ZipArchiveStreamWriter {
         let body: @Sendable () async throws -> Data
     }
 
+    /// Schreibt das Archiv oder hinterlässt nichts.
+    ///
+    /// Jeder Fehler — ein werfender `Entry.body`, ein Schreibfehler, ein Abbruch
+    /// (`CancellationError`) — räumt die angefangene Zieldatei weg und wird propagiert. Eine
+    /// halbe ZIP darf nicht liegen bleiben: sie sähe aus wie ein gültiges Backup.
     func write(entries: [Entry], to url: URL) async throws {
         guard entries.count <= Int(UInt16.max) else {
             throw ZipWriterError.tooManyEntries(entries.count)
@@ -264,8 +269,20 @@ actor ZipArchiveStreamWriter {
 
         try Data().write(to: url)
         let handle = try FileHandle(forWritingTo: url)
-        defer { try? handle.close() }
+        do {
+            try await appendArchive(entries: entries, using: handle)
+            // Abschlussfehler (Flush/Close) propagieren statt schlucken — ein `try?` hier könnte
+            // ein unvollständig geschriebenes Archiv als Erfolg melden.
+            try handle.close()
+        } catch {
+            try? handle.close()                 // nur der Fehlerpfad ist best-effort
+            try? FileManager.default.removeItem(at: url)
+            throw error
+        }
+    }
 
+    /// Der eigentliche Schreibdurchlauf. Kennt keine Aufräumlogik — die liegt in `write`.
+    private func appendArchive(entries: [Entry], using handle: FileHandle) async throws {
         let (dosDate, dosTime) = ZipArchiveWriter.currentDosDateTime()
 
         var offset = 0
@@ -273,7 +290,11 @@ actor ZipArchiveStreamWriter {
         metas.reserveCapacity(entries.count)
 
         for entry in entries {
+            try Task.checkCancellation()
             let fileData = try await entry.body()
+            // Zweiter Check: `body` ist der einzige Suspensionspunkt der Schleife, ein Abbruch
+            // während des Bild-Hops darf nicht noch einen Eintrag schreiben.
+            try Task.checkCancellation()
             let meta = try ZipArchiveWriter.makeEntryMeta(
                 name: entry.name, data: fileData, localHeaderOffset: offset
             )
@@ -298,6 +319,10 @@ actor ZipArchiveStreamWriter {
         guard centralDirectory.count <= Int(UInt32.max) else {
             throw ZipWriterError.archiveTooLarge(offset + centralDirectory.count)
         }
+
+        // Letzter Check vor dem Abschluss: ab hier wäre die Datei ein gültiges Archiv, ein danach
+        // erkannter Abbruch würde also ein „fertiges" Backup zurücklassen.
+        try Task.checkCancellation()
 
         try handle.write(contentsOf: centralDirectory)
         try handle.write(contentsOf: ZipArchiveWriter.endOfCentralDirectory(
