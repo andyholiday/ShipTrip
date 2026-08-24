@@ -3,11 +3,15 @@
 
 Prüft alle `*.xcstrings` im Repo rein statisch über die JSON-Struktur — kein
 Xcode, kein Simulator, keine Fremd-Tools. Ein Key gilt als gedeckt, wenn er für
-jede Zielsprache einen nicht-leeren `stringUnit`-Wert hat; bei Plural-/Device-
-Variationen muss jeder Zweig einen Wert haben.
+jede Zielsprache einen nicht-leeren Wert hat. `stringUnit`, `variations` und
+`substitutions` werden dabei **unabhängig voneinander** geprüft: ein gültiger
+übergeordneter `stringUnit` deckt eine kaputte Substitution nicht zu. Jeder
+`plural`-Block braucht mindestens `one` und `other`.
 
 Bewusst ausgenommen:
-  * `"shouldTranslate": false` — reine Format-/Interpolationsketten.
+  * `"shouldTranslate": false`, aber nur für die Keys aus `UNTRANSLATED_ALLOWLIST`
+    — reine Format-/Interpolationsketten. Jeder andere Key mit dem Flag ist ein
+    Fund, damit das Flag kein stiller Bypass für nutzersichtbaren Text wird.
   * die `sourceLanguage` des Katalogs — dort ist der Key selbst der Wert.
 
 Aufruf: python3 scripts/check-l10n.py [pfad ...]
@@ -22,29 +26,82 @@ import sys
 # Neue Sprache im Projekt? Hier eintragen.
 TARGET_LANGUAGES = ("en",)
 
+# Plural-Zweige, die jede Zielsprache mindestens braucht (en: one/other).
+REQUIRED_PLURAL_CASES = ("one", "other")
+
+# Reine Format-/Interpolationsketten ohne übersetzbaren Text. Nur diese Keys
+# dürfen `shouldTranslate: false` tragen — neue Ausnahme heisst: hier eintragen
+# und im Review begründen.
+UNTRANSLATED_ALLOWLIST = frozenset(
+    {
+        "%@ %@",
+        "%@ - %@",
+        "%@ · %@",
+        "%lld",
+        "%lld %@",
+        "+%lld",
+        "-%lld%%",
+        "🌊",
+    }
+)
+
+
+def missing_variations(variations: object, path: str) -> list[str]:
+    """Prüft einen `variations`-Block inklusive der Pflicht-Plural-Zweige."""
+    if not isinstance(variations, dict) or not variations:
+        return [f"{path}/variations"]
+
+    gaps: list[str] = []
+    for kind, cases in variations.items():
+        if not isinstance(cases, dict) or not cases:
+            gaps.append(f"{path}/{kind}")
+            continue
+        if kind == "plural":
+            gaps.extend(
+                f"{path}/{kind}.{case}"
+                for case in REQUIRED_PLURAL_CASES
+                if case not in cases
+            )
+        for case, branch in cases.items():
+            gaps.extend(missing_branches(branch, f"{path}/{kind}.{case}"))
+    return gaps
+
 
 def missing_branches(node: object, path: str) -> list[str]:
-    """Sammelt Pfade von Variations-Zweigen ohne nutzbaren Wert."""
+    """Sammelt Pfade von Zweigen ohne nutzbaren Wert.
+
+    `stringUnit`, `variations` und `substitutions` werden unabhängig geprüft;
+    ein Knoten ohne jede dieser drei Angaben gilt selbst als Lücke.
+    """
     if not isinstance(node, dict):
         return [path or "<root>"]
 
+    gaps: list[str] = []
+    checked = False
+
     if "stringUnit" in node:
+        checked = True
         unit = node["stringUnit"]
         value = unit.get("value") if isinstance(unit, dict) else None
-        return [] if isinstance(value, str) and value.strip() else [path or "<root>"]
+        if not (isinstance(value, str) and value.strip()):
+            gaps.append(path or "<root>")
 
-    variations = node.get("variations")
-    if isinstance(variations, dict):
-        gaps: list[str] = []
-        for kind, cases in variations.items():
-            if not isinstance(cases, dict) or not cases:
-                gaps.append(f"{path}/{kind}")
-                continue
-            for case, branch in cases.items():
-                gaps.extend(missing_branches(branch, f"{path}/{kind}.{case}"))
-        return gaps
+    if "variations" in node:
+        checked = True
+        gaps.extend(missing_variations(node["variations"], path))
 
-    return [path or "<root>"]
+    if "substitutions" in node:
+        checked = True
+        substitutions = node["substitutions"]
+        if not isinstance(substitutions, dict) or not substitutions:
+            gaps.append(f"{path}/substitutions")
+        else:
+            for name, substitution in substitutions.items():
+                gaps.extend(
+                    missing_branches(substitution, f"{path}/substitutions.{name}")
+                )
+
+    return gaps if checked else [path or "<root>"]
 
 
 def check_catalog(catalog: pathlib.Path) -> list[str]:
@@ -54,6 +111,10 @@ def check_catalog(catalog: pathlib.Path) -> list[str]:
 
     for key, entry in sorted(data.get("strings", {}).items()):
         if entry.get("shouldTranslate") is False:
+            if key not in UNTRANSLATED_ALLOWLIST:
+                findings.append(
+                    f"{catalog}: shouldTranslate=false ohne Allowlist-Eintrag — {key!r}"
+                )
             continue
         localizations = entry.get("localizations", {})
         for language in TARGET_LANGUAGES:
