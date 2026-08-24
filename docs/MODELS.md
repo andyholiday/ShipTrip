@@ -2,11 +2,16 @@
 
 Dokumentation aller SwiftData-Models in ShipTrip. Quelle: `ShipTrip/Models/`.
 
-Alle persistenten Modelle tragen ein app-seitiges `id: UUID` (kein
-`@Attribute(.unique)`, siehe [ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md))
-sowie — mit Ausnahme von `Cruise.createdAt`/`isDemo` — ein `updatedAt: Date`-Feld
-für App-Level Last-Writer-Wins. `updatedAt` wird von SwiftData **nicht** automatisch
-gebumpt; das muss jeder Schreibpfad manuell tun.
+Es gibt acht `@Model`-Klassen. Genau diese acht registriert `ShipTripApp.swift`
+im `Schema([...])`-Array des `ModelContainer`.
+
+Alle acht tragen ein app-seitiges `id: UUID` (kein `@Attribute(.unique)`, siehe
+[ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md)). Sieben führen zusätzlich
+ein `updatedAt: Date` für App-Level Last-Writer-Wins; einzige Ausnahme ist
+`HiddenCatalogItem`, das laut
+[ADR-006](adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md) nur
+`createdAt` besitzt. `updatedAt` wird von SwiftData **nicht** automatisch gebumpt;
+das muss jeder Schreibpfad manuell tun.
 
 ## Übersicht
 
@@ -17,6 +22,9 @@ gebumpt; das muss jeder Schreibpfad manuell tun.
 | `Expense` | Ausgabe | → `Cruise` (Inverse) |
 | `Photo` | Foto | → `Cruise` (Inverse) |
 | `Deal` | Gespeichertes Angebot | keine |
+| `CustomShippingLine` | Eigene Reederei (Katalog-Overlay) | keine |
+| `CustomShip` | Eigenes Schiff (Katalog-Overlay) | keine, String-Referenz `lineOptionID` |
+| `HiddenCatalogItem` | Ausgeblendeter Katalog-Eintrag | keine |
 
 ---
 
@@ -246,13 +254,83 @@ var imageData: Data = Data()
 
 ---
 
+## Katalog-Overlay-Modelle
+
+Die folgenden drei Modelle legen eigene Reedereien/Schiffe **über** den
+hartkodierten `ShippingLine`-Katalog, ohne diesen zu verändern. Sie sind flach
+(keine `@Relationship` untereinander und keine zu `Cruise`/`Deal`), weil
+`ShippingLine` kein `PersistentModel` ist und `Cruise.shippingLine`/`Cruise.ship`
+reine Strings bleiben. Entscheidung und Randbedingungen:
+[ADR-006](adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md).
+
+Merge, Sortierung und Schreibpfade liegen in
+`ShipTrip/Services/ShippingLineCatalogService.swift`; Views verwenden dessen
+reine Funktionen `shippingLineOptions(...)` / `shipOptions(...)` und die DTOs
+`ShippingLineOption` / `ShipOption` (`ShipTrip/Models/ShippingLineOption.swift`,
+kein `@Model`).
+
+### CustomShippingLine
+
+`ShipTrip/Models/CustomShippingLine.swift` — eine vom Nutzer angelegte Reederei.
+
+| Property | Typ | Default | Beschreibung |
+|----------|-----|---------|--------------|
+| `id` | `UUID` | `UUID()` | Stabile App-seitige ID; alleiniges Ziel für `updateCustomLine`/`deleteCustomLine` |
+| `name` | `String` | `""` | Name der Reederei |
+| `logo` | `String` | `"🚢"` | Emoji-Logo, analog `ShippingLine.logo` (kein Logo-Upload) |
+| `createdAt` | `Date` | `Date()` | Erstellungsdatum, zugleich Dedup-Kriterium |
+| `updatedAt` | `Date` | `Date()` | Letztes Änderungsdatum (LWW) |
+
+### CustomShip
+
+`ShipTrip/Models/CustomShip.swift` — ein vom Nutzer angelegtes Schiff.
+
+| Property | Typ | Default | Beschreibung |
+|----------|-----|---------|--------------|
+| `id` | `UUID` | `UUID()` | Stabile App-seitige ID; alleiniges Ziel für `updateCustomShip`/`deleteCustomShip` |
+| `name` | `String` | `""` | Schiffsname |
+| `lineOptionID` | `String` | `""` | Referenz auf die Reederei: Katalog-ID (z. B. `"aida"`) oder `"custom:<UUID>"` |
+| `createdAt` | `Date` | `Date()` | Erstellungsdatum, zugleich Dedup-Kriterium |
+| `updatedAt` | `Date` | `Date()` | Letztes Änderungsdatum (LWW) |
+
+### HiddenCatalogItem
+
+`ShipTrip/Models/HiddenCatalogItem.swift` — ein ausgeblendeter Katalog-Eintrag.
+Gilt nur für Katalog-Einträge; eigene Einträge werden gelöscht statt versteckt.
+
+| Property | Typ | Default | Beschreibung |
+|----------|-----|---------|--------------|
+| `id` | `UUID` | `UUID()` | Stabile App-seitige ID |
+| `lineID` | `String` | `""` | `ShippingLine.id` der betroffenen Katalog-Reederei |
+| `shipKey` | `String?` | `nil` | `ShippingLine.normalizedShipKey(name)`; `nil` blendet die ganze Reederei aus |
+| `createdAt` | `Date` | `Date()` | Erstellungsdatum, zugleich Dedup-Kriterium |
+
+### Dedup ohne Unique-Constraints
+
+Da CloudKit keine `@Attribute(.unique)` erlaubt (ADR-002), können zwei Geräte
+offline kollidierende Zeilen anlegen. `ShippingLineCatalogDedup.run(context:)`
+(`ShipTrip/Utilities/ShippingLineCatalogDedup.swift`) räumt das beim App-Start
+auf — aufgerufen im `.task`-Block von `ShipTrip/Views/Cruises/CruiseListView.swift`,
+mit eigenem Completed-Flag `"shippingLineCatalogDedupCompleted.v1"`.
+Gewinner-Regel für alle drei Modelle: ältestes `createdAt`, bei Gleichstand die
+lexikographisch kleinere `id.uuidString`. Kollisions-Kriterien:
+
+- `CustomShippingLine`: gleicher `ShippingLineNameMatching.collisionKey(name)`;
+  `CustomShip`-Zeilen der Verlierer werden vor dem Löschen auf den Gewinner
+  umgeschrieben.
+- `CustomShip`: gleiche `lineOptionID` **und** gleicher
+  `ShippingLine.normalizedShipKey(name)`.
+- `HiddenCatalogItem`: gleiche `lineID` **und** gleicher `shipKey` (inkl. beide `nil`).
+
+---
+
 ## Hilfs-Strukturen (kein `@Model`, kein Storage)
 
 ### PortSuggestion
 
 `ShipTrip/Models/PortSuggestion.swift` — statische Hafen-Datenbank für
-Autocomplete, per Wikidata-Import befüllt (aktuell rund 1.900 Einträge, Stand
-dieser Doku: 1.933 `PortSuggestion`-Literale in `popular`).
+Autocomplete, per Wikidata-Import befüllt (Stand dieser Doku: 1.956
+`PortSuggestion`-Literale in `popular`).
 
 ```swift
 struct PortSuggestion: Identifiable, Hashable {
@@ -335,6 +413,20 @@ struct ShippingLine: Identifiable, Hashable {
 │ id, title, shippingLine, price, originalPrice,          │
 │ startDate, endDate, destination, ship, url, notes, isDemo│
 └─────────────┘
+
+Katalog-Overlay — flach, keine Relationships, nur String-Referenzen:
+
+┌────────────────────┐        ┌──────────────────────┐        ┌───────────────────┐
+│ CustomShippingLine │        │      CustomShip      │        │ HiddenCatalogItem │
+│ id, name, logo     │        │ id, name,            │        │ id, lineID,       │
+└────────────────────┘        │ lineOptionID         │        │ shipKey?          │
+                              └──────────────────────┘        └───────────────────┘
+         ▲                               │                              │
+         │ lineOptionID = "custom:<UUID>"│                              │
+         └───────────────────────────────┤                              │
+                                         │ oder Katalog-ID ("aida")     │ lineID/shipKey
+                                         ▼                              ▼
+                          ShippingLine.all (statischer Katalog, kein @Model)
 ```
 
 ## CloudKit-Status (projektweit)
@@ -344,9 +436,10 @@ CloudKit ist im Release-Build konfiguriert:
 - `ShipTripCloudSync.persistentConfiguration` bindet den persistenten SwiftData-
   Store an die private Datenbank von `iCloud.com.andre.ShipTrip`; XCTest-Läufe
   verwenden bewusst `.none` und bleiben unabhängig von einem iCloud-Account.
-- Alle Modelle besitzen Default-Werte, stabile app-seitige IDs ohne
+- Alle acht Modelle besitzen Default-Werte, stabile app-seitige IDs ohne
   `@Attribute(.unique)` und optionale Beziehungen. `Cruise` kapselt seine drei
-  optionalen Storage-Beziehungen hinter nicht-optionalen App-Properties.
+  optionalen Storage-Beziehungen hinter nicht-optionalen App-Properties; die
+  drei Katalog-Overlay-Modelle sind vollständig beziehungsfrei.
 - `docs/cloudkit/ShipTrip.ckdb` dokumentiert das installierte Development-Schema.
 - Das Schema wurde am 08.08.2026 nach Production promotet. Der anschließende
   Export unter `docs/cloudkit/ShipTrip-production.ckdb` entspricht semantisch
