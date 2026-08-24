@@ -2,7 +2,8 @@
 //  CruiseAggregateTests.swift
 //  ShipTripTests
 //
-//  Tests für Array<Cruise>-Aggregat-Helfer (uniqueCountryCount, totalSeaDays, totalPortStops)
+//  Tests für Array<Cruise>-Aggregat-Helfer (uniqueCountryCount, totalSeaDays, totalPortStops,
+//  uniquePortCount)
 //  und Hero-Auswahl-Priorität (laufend > nächste bevorstehende > zuletzt vergangene).
 //
 
@@ -276,6 +277,42 @@ struct CruiseAggregateTests {
         let cruises = [cruise1, cruise2]
         #expect(cruises.totalPortStops == 4)
         #expect(cruises.totalSeaDays == 3)
+    }
+
+    // MARK: uniquePortCount vs. totalPortStops
+
+    /// Regression zum Häfen-Zähler-Bug (Home-Streifen 57 vs. Bilanz 43): beide Kennzahlen
+    /// bleiben bestehen, tragen aber getrennte Beschriftungen („Anläufe" vs. „Häfen").
+    /// Fixture: Rundreise Hamburg → Seetag → Kopenhagen → Hamburg.
+    @Test("totalPortStops zählt Mehrfachbesuche, uniquePortCount eindeutige Häfen ohne Seetage")
+    @MainActor
+    func portStopsVersusUniquePorts() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+
+        let cruise = Cruise(
+            title: "Nordsee",
+            startDate: makeDate("2025-07-01"),
+            endDate: makeDate("2025-07-08"),
+            shippingLine: "AIDA",
+            ship: "AIDAperla"
+        )
+        context.insert(cruise)
+
+        let hh1 = CruisePort(name: "Hamburg", country: "DE", latitude: 53.5, longitude: 9.9)
+        hh1.isSeaDay = false; hh1.cruise = cruise; context.insert(hh1)
+        let sea = CruisePort(name: "Seetag", country: "", latitude: 0, longitude: 0)
+        sea.isSeaDay = true; sea.cruise = cruise; context.insert(sea)
+        let cph = CruisePort(name: "Kopenhagen", country: "DK", latitude: 55.7, longitude: 12.6)
+        cph.isSeaDay = false; cph.cruise = cruise; context.insert(cph)
+        let hh2 = CruisePort(name: "Hamburg", country: "DE", latitude: 53.5, longitude: 9.9)
+        hh2.isSeaDay = false; hh2.cruise = cruise; context.insert(hh2)
+
+        try context.save()
+
+        let cruises = [cruise]
+        #expect(cruises.totalPortStops == 3)   // 2× Hamburg + Kopenhagen, ohne Seetag
+        #expect(cruises.uniquePortCount == 2)  // Hamburg + Kopenhagen, ohne Seetag
     }
 }
 

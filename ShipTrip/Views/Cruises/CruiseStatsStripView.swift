@@ -6,7 +6,9 @@
 import SwiftUI
 
 /// Horizontaler Stats-Streifen mit 4 aggregierten Kennzahlen über alle Kreuzfahrten.
-/// Zellen in fester Reihenfolge: Reisen · Tage · Länder · Häfen.
+/// Zellen in fester Reihenfolge: Reisen · Tage · Länder · Anläufe.
+/// „Anläufe" = `totalPortStops` (Mehrfachbesuche zählen mehrfach) und ist bewusst
+/// eine andere Kennzahl als die „Häfen"-Kachel in der Bilanz (`uniquePortCount`).
 struct CruiseStatsStripView: View {
     let cruises: [Cruise]
 
@@ -15,7 +17,7 @@ struct CruiseStatsStripView: View {
         let reisen = cruises.count
         let tage = cruises.totalTravelDays
         let laender = cruises.uniqueCountryCount
-        let haefen = cruises.totalPortStops
+        let anlaeufe = cruises.totalPortStops
 
         HStack(spacing: 8) {
             StatCell(
@@ -34,8 +36,8 @@ struct CruiseStatsStripView: View {
                 color: .seaGreen
             )
             StatCell(
-                value: haefen,
-                label: String(localized: "Häfen"),
+                value: anlaeufe,
+                label: String(localized: "Anläufe"),
                 color: .sunsetOrange
             )
         }
