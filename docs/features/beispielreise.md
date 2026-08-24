@@ -8,10 +8,10 @@ echten Inhalten erleben, statt vor leeren Screens zu stehen.
 
 ## Verhalten
 
-- **Laden:** Einstellungen → *Beispielreise* → „Beispieldaten laden" ist heute
-  der einzige Einstieg. Ein zusaetzlicher Onboarding-Einstieg („Beispielreise
-  ansehen") ist geplant (Task B2, noch nicht gebaut) und wird dieselbe API
-  `DemoDataService.loadDemoData(into:)` nutzen.
+- **Laden:** zwei Einstiege, beide ueber `DemoDataService.loadDemoData(into:)` —
+  Einstellungen → *Beispielreise* → „Beispieldaten laden" sowie seit Task B2
+  „Beispielreise ansehen" auf der letzten Onboarding-Karte
+  ([Onboarding](onboarding.md)).
 - **Inhalt:** 3 Kreuzfahrten (Mittelmeer 2025, Norwegische Fjorde, Karibik 2025)
   mit Route, Hafen-Erinnerungen und Ausgaben sowie 2 Wunschreisen/Angebote.
   Vergangene und kommende Reisen, damit Statistik und Hero-Karte gefuellt sind.

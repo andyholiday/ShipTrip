@@ -7,6 +7,20 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Erststart-Onboarding (vier Karten)**: Beim ersten Start führt ein Flow über
+  Wertversprechen, die drei Kern-Features, eine Frage nach den Erinnerungen und
+  die Startentscheidung. Die Erlaubnis-Frage sagt vorher, was danach passiert:
+  der System-Dialog erscheint ausschließlich nach „Erinnerungen aktivieren";
+  „Später" und „Überspringen" lösen keinen aus und lassen die bestehende
+  Nachfrage beim ersten Speichern einer Reise unberührt. Am Ende stehen zwei
+  gleich große Wege — „Erste Reise anlegen" oder „Beispielreise ansehen", das
+  lädt die als Demo markierten Beispieldaten. Der Flow läuft einmal und lässt
+  sich über Einstellungen → *Info* → „Intro erneut zeigen" zurückholen.
+  ([Feature-Doku](docs/features/onboarding.md),
+  [Design-Spec](docs/design/design-spec-onboarding.md))
+
 ### Geplant
 
 - ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung

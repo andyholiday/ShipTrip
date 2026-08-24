@@ -87,7 +87,8 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 - `ShipTrip/Models/` — SwiftData-Modelle (Cruise, Port, Expense, Deal, Photo) +
   Referenzdaten (PortSuggestion ~1.800 Häfen, ShippingLine)
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
-  KeychainService, NotificationService, DemoDataService (nur `#if DEBUG`)
+  KeychainService, NotificationService, DemoDataService (Beispielreise, auch im
+  Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
 - `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Stats, Settings)
 - `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
@@ -98,7 +99,10 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 - **Sprache:** UI war ursprünglich rein Deutsch; ab Phase 1 zweisprachig (DE/EN) über
   String Catalog. Neue user-sichtbare Strings als `String(localized:)`.
 - **Währung:** an die Geräte-Locale gebunden (kein hartkodiertes EUR mehr).
-- **Demo-Daten:** mit `isDemo`-Tag, sauber entfernbar; Demo-Schalter nur in Debug-Builds.
+- **Demo-Daten:** Die Beispielreise ist seit 1.8.0 echte Release-Nutzlast (Einstellungen
+  und Onboarding). Alle erzeugten Objekte tragen `isDemo`, lassen sich mit einer Aktion
+  wieder entfernen und bleiben aus Export, Kalender-Sync und Erinnerungen ausgefiltert.
+  Siehe `docs/features/beispielreise.md`.
 - **Codestil:** bestehenden Stil spiegeln (deutsche Doc-Kommentare, `// MARK:`-Gliederung).
 
 ## Build & Test
