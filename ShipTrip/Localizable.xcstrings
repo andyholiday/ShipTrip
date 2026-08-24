@@ -474,17 +474,6 @@
       }
     },
 
-    "Demo (nur Debug)" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demo (Debug only)"
-          }
-        }
-      }
-    },
-
     "Deaktiviert" : {
       "localizations" : {
         "en" : {
@@ -513,17 +502,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This action cannot be undone."
-          }
-        }
-      }
-    },
-
-    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Merkliste-Einträge werden gelöscht." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This action cannot be undone. All cruises and watchlist entries will be deleted."
           }
         }
       }
@@ -678,17 +656,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Export"
-          }
-        }
-      }
-    },
-
-    "Exportiert alle Kreuzfahrten als ZIP-Archiv mit externalen Bilddateien." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exports all cruises as a ZIP archive with image files."
           }
         }
       }
@@ -966,17 +933,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Import"
-          }
-        }
-      }
-    },
-
-    "Importiert Kreuzfahrten aus einer ZIP-Datei (Web-App kompatibel)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Imports cruises from a ZIP file (web app compatible)."
           }
         }
       }
@@ -1815,17 +1771,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Year"
-          }
-        }
-      }
-    },
-
-    "Speichere interessante Kreuzfahrten auf deiner Merkliste" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save interesting cruises to your watchlist"
           }
         }
       }
@@ -3179,34 +3124,12 @@
       }
     },
 
-    "ZIP-Archiv zu groß (%lld Bytes); Maximum ohne ZIP64 ist %lld Bytes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ZIP archive too large (%lld bytes); maximum without ZIP64 is %lld bytes"
-          }
-        }
-      }
-    },
-
     "ZIP-Archiv überschreitet das kumulierte Größenlimit (%lld Bytes; Maximum %lld Bytes)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "ZIP archive exceeds the cumulative size limit (%lld bytes; maximum %lld bytes)"
-          }
-        }
-      }
-    },
-
-    "ZIP-Eintrag '%@' ist zu groß (%lld Bytes); Maximum ohne ZIP64 ist %lld Bytes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ZIP entry '%@' is too large (%lld bytes); maximum without ZIP64 is %lld bytes"
           }
         }
       }
@@ -3284,17 +3207,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ZIP entry name could not be encoded as UTF-8: %@"
-          }
-        }
-      }
-    },
-
-    "Zu viele ZIP-Einträge (%lld); Maximum ist %lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Too many ZIP entries (%lld); maximum is %lld"
           }
         }
       }
@@ -3761,8 +3673,776 @@
     },
     "iCloud-Anmeldung nötig" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "iCloud Sign-In Required" } } }
-    }
+    },
 
+    "%@ %@" : {
+      "shouldTranslate" : false
+    },
+
+    "%@ - %@" : {
+      "shouldTranslate" : false
+    },
+
+    "%@ · %@" : {
+      "shouldTranslate" : false
+    },
+
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+
+    "%lld %@" : {
+      "shouldTranslate" : false
+    },
+
+    "+%lld" : {
+      "shouldTranslate" : false
+    },
+
+    "-%lld%%" : {
+      "shouldTranslate" : false
+    },
+
+    "🌊" : {
+      "shouldTranslate" : false
+    },
+
+    "%@ startet am %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ starts on %@"
+          }
+        }
+      }
+    },
+
+    "Anläufe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Port Calls"
+          }
+        }
+      }
+    },
+
+    "App kann nicht gestartet werden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to Start App"
+          }
+        }
+      }
+    },
+
+    "Ausgeblendet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hidden"
+          }
+        }
+      }
+    },
+
+    "Backup abgebrochen: Das Bild '%@' ist nicht mehr lesbar. Es wäre als leerer Eintrag im Archiv gelandet." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup cancelled: the image '%@' is no longer readable. It would have ended up as an empty entry in the archive."
+          }
+        }
+      }
+    },
+
+    "Backup wäre nicht wiederherstellbar: Das Bild '%@' ist zu groß (%lld Bytes; Maximum %lld Bytes)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup would not be restorable: the image '%@' is too large (%lld bytes; maximum %lld bytes)."
+          }
+        }
+      }
+    },
+
+    "Backup wäre zu groß: Die Daten belegen %lld Bytes; Maximum sind %lld Bytes. Bitte in kleineren Teilen sichern." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup would be too large: the data takes up %lld bytes; the maximum is %lld bytes. Please back up in smaller parts."
+          }
+        }
+      }
+    },
+
+    "Backup wäre zu groß: Die ZIP-Datei würde %lld Bytes belegen; Maximum sind %lld Bytes. Bitte in kleineren Teilen sichern." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backup would be too large: the ZIP file would take up %lld bytes; the maximum is %lld bytes. Please back up in smaller parts."
+          }
+        }
+      }
+    },
+
+    "Behalten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep"
+          }
+        }
+      }
+    },
+
+    "Beides lässt sich jederzeit in den Einstellungen ändern." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can change both at any time in Settings."
+          }
+        }
+      }
+    },
+
+    "Beispielinhalte zum Ausprobieren. Sie sind als Demo markiert, landen nie in Export- oder Backup-Dateien und lassen sich jederzeit wieder entfernen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample content to try things out. It is marked as demo data, never ends up in export or backup files, and can be removed again at any time."
+          }
+        }
+      }
+    },
+
+    "Beispielreise" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sample Trip"
+          }
+        }
+      }
+    },
+
+    "Beispielreise ansehen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View Sample Trip"
+          }
+        }
+      }
+    },
+
+    "Beispielreise ansehen: %@, %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View sample trip: %@, %@, %@"
+          }
+        }
+      }
+    },
+
+    "Benachrichtigungen sind für ShipTrip deaktiviert. Aktiviere sie in den Systemeinstellungen, um Reise-Erinnerungen zu erhalten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are disabled for ShipTrip. Enable them in System Settings to receive trip reminders."
+          }
+        }
+      }
+    },
+
+    "Bereit für deine erste Reise" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ready for your first trip"
+          }
+        }
+      }
+    },
+
+    "Bestehende Reisen mit diesem Schiff bleiben unverändert erhalten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Existing trips with this ship are kept unchanged."
+          }
+        }
+      }
+    },
+
+    "Bestehende Reisen mit dieser Reederei bleiben unverändert erhalten. Zugehörige eigene Schiffe werden mitgelöscht." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Existing trips with this cruise line are kept unchanged. Associated custom ships are deleted as well."
+          }
+        }
+      }
+    },
+
+    "Bilder und Notizen landen direkt beim richtigen Anlauf — mit Datum und Ort." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos and notes are saved with the correct port call — including date and location."
+          }
+        }
+      }
+    },
+
+    "Daten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data"
+          }
+        }
+      }
+    },
+
+    "Daten nicht verfügbar" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Data unavailable"
+          }
+        }
+      }
+    },
+
+    "Dein Gemini-API-Key ist separat in der Keychain gespeichert und bleibt sonst erhalten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your Gemini API key is stored separately in Keychain and will remain untouched."
+          }
+        }
+      }
+    },
+
+    "Dein Logbuch für jede Kreuzfahrt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your logbook for every cruise"
+          }
+        }
+      }
+    },
+
+    "Deine Kreuzfahrt \"%@\" beginnt heute. Gute Reise!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your cruise \"%@\" starts today. Have a great trip!"
+          }
+        }
+      }
+    },
+
+    "Die Beispieldaten sind als Demo markiert und lassen sich mit einem Tipp wieder entfernen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sample data is marked as demo and can be removed again with a single tap."
+          }
+        }
+      }
+    },
+
+    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action cannot be undone. All cruises and deals will be deleted."
+          }
+        }
+      }
+    },
+
+    "Drei Dinge, die ShipTrip für dich mitschreibt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Three things ShipTrip records for you"
+          }
+        }
+      }
+    },
+
+    "Eigene Reederei anlegen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Custom Cruise Line"
+          }
+        }
+      }
+    },
+
+    "Eigene Reedereien & Schiffe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom Cruise Lines & Ships"
+          }
+        }
+      }
+    },
+
+    "Eigenes Schiff hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Custom Ship"
+          }
+        }
+      }
+    },
+
+    "Ein Hinweis ein paar Tage vor dem Auslaufen, damit nichts untergeht." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A heads-up a few days before departure, so nothing slips through."
+          }
+        }
+      }
+    },
+
+    "Ein paar Tage vor dem Auslaufen bekommst du einen Hinweis auf deine nächste Reise. Mehr nicht — keine Werbung, keine täglichen Meldungen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few days before departure you get a heads-up about your next trip. Nothing more — no ads, no daily notifications."
+          }
+        }
+      }
+    },
+
+    "Erinnerung aktivieren?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Reminder?"
+          }
+        }
+      }
+    },
+
+    "Erinnerungen aktivieren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable Reminders"
+          }
+        }
+      }
+    },
+
+    "Erinnerungen deaktiviert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminders disabled"
+          }
+        }
+      }
+    },
+
+    "Erste Reise anlegen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create First Trip"
+          }
+        }
+      }
+    },
+
+    "Foto & Ausflüge erfassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add Photo & Excursions"
+          }
+        }
+      }
+    },
+
+    "Fotos & Ausflüge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photos & Excursions"
+          }
+        }
+      }
+    },
+
+    "Geirangerfjord · Norwegen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geirangerfjord · Norway"
+          }
+        }
+      }
+    },
+
+    "Heute geht's los! ⚓️" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today is the day! ⚓️"
+          }
+        }
+      }
+    },
+
+    "Intro erneut zeigen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Intro Again"
+          }
+        }
+      }
+    },
+
+    "Jeder Hafen wird zum Pin, deine Reise zur Linie auf der Weltkarte." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Every port becomes a pin, your trip a line on the world map."
+          }
+        }
+      }
+    },
+
+    "KI-API-Key auch löschen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete AI API Key as Well?"
+          }
+        }
+      }
+    },
+
+    "Karte & Route" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map & Route"
+          }
+        }
+      }
+    },
+
+    "Kreuzfahrt in %lld Tagen! 🚢" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cruise in %lld days! 🚢"
+          }
+        }
+      }
+    },
+
+    "Leg deine Reise an — Schiff, Termin, Häfen. Oder sieh dir erst an, wie eine fertige Reise in ShipTrip aussieht." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create your trip — ship, dates, ports. Or take a look first at how a finished trip looks in ShipTrip."
+          }
+        }
+      }
+    },
+
+    "Liest ZIP- und JSON-Backups: Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie Ausblendungen. Ältere Backups (bis Version 1.7) bleiben lesbar." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reads ZIP and JSON backups: cruises, deals, custom cruise lines and ships, and hidden entries. Older backups (up to version 1.7) remain readable."
+          }
+        }
+      }
+    },
+
+    "Mehr musst du nicht einrichten — der Rest passiert beim Reisen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That is all you need to set up — the rest happens while you travel."
+          }
+        }
+      }
+    },
+
+    "Name" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+
+    "Norwegen · 9 Tage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Norway · 9 days"
+          }
+        }
+      }
+    },
+
+    "Norwegische Fjorde" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Norwegian Fjords"
+          }
+        }
+      }
+    },
+
+    "Reederei löschen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Cruise Line?"
+          }
+        }
+      }
+    },
+
+    "Reedereien & Schiffe" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cruise Lines & Ships"
+          }
+        }
+      }
+    },
+
+    "Route (%lld %@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route (%lld %@)"
+          }
+        }
+      }
+    },
+
+    "Route, Häfen, Fotos und Ausgaben — jede Reise an einem Ort, auch ohne Netz. Alles bleibt auf deinem Gerät." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Route, ports, photos and expenses — every trip in one place, even offline. Everything stays on your device."
+          }
+        }
+      }
+    },
+
+    "Schiff löschen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete Ship?"
+          }
+        }
+      }
+    },
+
+    "Schritt %lld von %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Step %lld of %lld"
+          }
+        }
+      }
+    },
+
+    "Sichert Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie ausgeblendete Katalog-Einträge als ZIP-Archiv mit externen Bilddateien. Demo-Daten werden nicht mitexportiert." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Backs up cruises, deals, custom cruise lines and ships, and hidden catalog entries as a ZIP archive with external image files. Demo data is not exported."
+          }
+        }
+      }
+    },
+
+    "Sollen wir dich an die Abreise erinnern?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Should we remind you about departure?"
+          }
+        }
+      }
+    },
+
+    "Später" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Later"
+          }
+        }
+      }
+    },
+
+    "Weiter" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+
+    "Wir erinnern dich rechtzeitig vor der Abreise – dafür brauchen wir deine Erlaubnis für Benachrichtigungen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We will remind you in good time before departure — for that we need your permission for notifications."
+          }
+        }
+      }
+    },
+
+    "ZIP-Archiv zu groß (%lld Bytes); Maximum ohne ZIP64 ist %u Bytes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP archive too large (%lld bytes); maximum without ZIP64 is %u bytes"
+          }
+        }
+      }
+    },
+
+    "ZIP-Eintrag '%@' ist zu groß (%lld Bytes); Maximum ohne ZIP64 ist %u Bytes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ZIP entry '%@' is too large (%lld bytes); maximum without ZIP64 is %u bytes"
+          }
+        }
+      }
+    },
+
+    "Zu viele ZIP-Einträge (%lld); Maximum ist %u" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many ZIP entries (%lld); maximum is %u"
+          }
+        }
+      }
+    },
+
+    "iOS fragt dich anschließend selbst um Erlaubnis — aber erst, wenn du hier auf „Erinnerungen aktivieren“ tippst." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iOS will then ask for permission itself — but only once you tap “Enable Reminders” here."
+          }
+        }
+      }
+    },
+
+    "Überspringen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
