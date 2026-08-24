@@ -47,14 +47,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Fail-closed: ohne den gepinnten Xcode ist der grüne Lauf nichts wert.
       - name: Xcode-Version wählen
+        env:
+          XCODE_VERSION: "26.6"
         run: |
-          if [ -d "$XCODE_APP" ]; then
-            sudo xcode-select -s "$XCODE_APP"
-          else
-            echo "::warning::$XCODE_APP fehlt im Runner-Image – nutze Standard-Xcode."
+          set -euo pipefail
+          if [ ! -d "$XCODE_APP" ]; then
+            echo "::error::$XCODE_APP fehlt im Runner-Image – Pin nicht erfüllbar."
+            exit 1
           fi
+          sudo xcode-select -s "$XCODE_APP"
           xcodebuild -version
+          ACTIVE=$(xcodebuild -version | sed -n '1s/^Xcode //p')
+          if [ "$ACTIVE" != "$XCODE_VERSION" ]; then
+            echo "::error::Xcode $ACTIVE aktiv, erwartet $XCODE_VERSION."
+            exit 1
+          fi
 
       # Wegwerf-Simulator statt eines vorgebooteten Geräts: eindeutiges
       # -destination, kein Fremd-App-State, sauber löschbar (siehe xctest-ios).

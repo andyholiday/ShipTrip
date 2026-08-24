@@ -14,6 +14,10 @@ Bewusst ausgenommen:
     Fund, damit das Flag kein stiller Bypass für nutzersichtbaren Text wird.
   * die `sourceLanguage` des Katalogs — dort ist der Key selbst der Wert.
 
+Das Gate fällt geschlossen aus: ein Katalog, dessen Grundstruktur nicht stimmt
+(kein JSON-Objekt, `strings` fehlt oder ist kein Objekt, `sourceLanguage` leer),
+ist ein Fund — kein stiller Durchmarsch.
+
 Aufruf: python3 scripts/check-l10n.py [pfad ...]
 Exit-Code 1, sobald ein Key ohne Übersetzung existiert.
 """
@@ -104,12 +108,36 @@ def missing_branches(node: object, path: str) -> list[str]:
     return gaps if checked else [path or "<root>"]
 
 
-def check_catalog(catalog: pathlib.Path) -> list[str]:
-    data = json.loads(catalog.read_text(encoding="utf-8"))
+class CatalogError(Exception):
+    """Der Katalog ist strukturell unbrauchbar — geprüft werden kann er nicht."""
+
+
+def load_catalog(catalog: pathlib.Path) -> dict:
+    """Liest den Katalog und erzwingt die Struktur, auf der das Gate aufbaut."""
+    try:
+        data = json.loads(catalog.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise CatalogError(f"nicht lesbar oder kein gültiges JSON — {error}") from error
+
+    if not isinstance(data, dict):
+        raise CatalogError("kein JSON-Objekt auf oberster Ebene")
+
     source = data.get("sourceLanguage")
+    if not (isinstance(source, str) and source.strip()):
+        raise CatalogError("'sourceLanguage' fehlt oder ist leer")
+
+    if not isinstance(data.get("strings"), dict):
+        raise CatalogError("'strings' fehlt oder ist kein Objekt")
+
+    return data
+
+
+def check_catalog(catalog: pathlib.Path) -> list[str]:
+    data = load_catalog(catalog)
+    source = data["sourceLanguage"]
     findings: list[str] = []
 
-    for key, entry in sorted(data.get("strings", {}).items()):
+    for key, entry in sorted(data["strings"].items()):
         if entry.get("shouldTranslate") is False:
             if key not in UNTRANSLATED_ALLOWLIST:
                 findings.append(
@@ -141,7 +169,10 @@ def main(argv: list[str]) -> int:
 
     findings: list[str] = []
     for catalog in catalogs:
-        findings.extend(check_catalog(catalog))
+        try:
+            findings.extend(check_catalog(catalog))
+        except CatalogError as error:
+            findings.append(f"{catalog}: unbrauchbarer Katalog — {error}")
 
     if findings:
         print(f"L10n-Gate fehlgeschlagen: {len(findings)} Lücke(n).", file=sys.stderr)
