@@ -34,7 +34,7 @@ final class CruiseLoeschenFilterUITests: XCTestCase {
 
     func testFilterOhneTrefferBietetResetUndListeKehrtZurueck() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let reisenTab = app.tabBars.buttons["Reisen"]
@@ -79,7 +79,7 @@ final class CruiseLoeschenFilterUITests: XCTestCase {
 
     func testKreuzfahrtLoeschenZeigtDialogAbbrechenUndBestaetigen() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let reisenTab = app.tabBars.buttons["Reisen"]

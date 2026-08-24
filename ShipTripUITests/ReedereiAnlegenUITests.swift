@@ -45,6 +45,7 @@ final class ReedereiAnlegenUITests: XCTestCase {
     @MainActor
     func testEigeneReedereiAnlegenOeffnetSchiffFormularAutomatisch() throws {
         let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
         app.launch()
 
         // Eindeutiger Name pro Testlauf: CustomShippingLine-Namen werden app-seitig auf
@@ -108,6 +109,7 @@ final class ReedereiAnlegenUITests: XCTestCase {
     @MainActor
     func testReedereiFormularAbbrechenLoestKeineAutoNavigationAus() throws {
         let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
         app.launch()
 
         navigateToShippingLineManagement(app)

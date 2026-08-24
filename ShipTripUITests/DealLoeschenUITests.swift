@@ -25,7 +25,7 @@ final class DealLoeschenUITests: XCTestCase {
     @MainActor
     func testNeuesterWunschreiseEintragIstAlsHeroLoeschbar() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let dealTitle = "UI-Test-Wunschreise-S1.3"

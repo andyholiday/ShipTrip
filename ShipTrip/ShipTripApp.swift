@@ -20,6 +20,11 @@ struct ShipTripApp: App {
     private let usingTemporaryStore: Bool
 
     init() {
+#if DEBUG
+        Self.resetOnboardingIfNeeded()
+        Self.completeOnboardingIfNeeded()
+#endif
+
         let schema = Schema([
             Cruise.self,
             Port.self,
@@ -64,6 +69,29 @@ struct ShipTripApp: App {
         let context = ModelContext(container)
         DemoDataService.removeDemoCruisePhotos(in: context)
         try? context.save()
+    }
+
+    /// UI-Test-Naht (B5): setzt den Erststart-Schalter zurueck, bevor die Views
+    /// aufgebaut werden. Nur so laesst sich der Onboarding-Flow deterministisch
+    /// starten, statt vom Restzustand des Simulators abzuhaengen.
+    /// Ohne das Argument bleibt der Schalter unangetastet — genau das braucht
+    /// der Persistenz-Test beim zweiten Start.
+    private static func resetOnboardingIfNeeded() {
+        guard ProcessInfo.processInfo.arguments.contains("-uiTestingResetOnboarding") else { return }
+        UserDefaults.standard.removeObject(forKey: OnboardingPresentation.hasCompletedKey)
+    }
+
+    /// Gegenstueck zur Reset-Naht (B5): markiert den Erststart als erledigt,
+    /// bevor die Views aufgebaut werden. Alle bestehenden UI-Tests zielen direkt
+    /// auf die Hauptansicht und wuerden auf einem frisch installierten Simulator
+    /// sonst am Onboarding-Cover haengenbleiben.
+    /// Bewusst ueber `UserDefaults.standard` statt ueber die NSArgumentDomain:
+    /// ein Argument der Form `-hasCompletedOnboarding YES` wuerde jeden spaeteren
+    /// Schreibvorgang auf den Schluessel ueberschatten.
+    private static func completeOnboardingIfNeeded() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("-uiTestingCompleteOnboarding") else { return }
+        UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
     }
 
     private static func prepareUITestDataIfNeeded(in container: ModelContainer) {

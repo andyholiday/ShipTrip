@@ -28,7 +28,7 @@ final class AusflugLoeschenUITests: XCTestCase {
     @MainActor
     func testAusflugLoeschenUeberSichtbareSchaltflaeche() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let cruiseTitle = "UI-Test-Ausflug-B6"
@@ -152,7 +152,7 @@ final class AusflugLoeschenUITests: XCTestCase {
     @MainActor
     func testAusflugReihenfolgeAendernZeigtReorderAffordance() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingResetAndLoadDemoData"]
+        app.launchArguments += ["-uiTestingResetAndLoadDemoData", "-uiTestingCompleteOnboarding"]
         app.launch()
 
         let cruiseTitle = "UI-Test-Reorder-B7"
@@ -271,6 +271,7 @@ final class AusflugLoeschenUITests: XCTestCase {
     @MainActor
     func testEinstellungenHinweisSichtbar() throws {
         let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
         app.launch()
 
         let moreTab = app.tabBars.buttons["Mehr"]
