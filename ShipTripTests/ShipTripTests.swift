@@ -395,7 +395,7 @@ struct ExportImportZIPTests {
     /// (a) ZIP export→import roundtrip: Cruise-Anzahl und stabile ID bleiben erhalten.
     @Test("ZIP export–import roundtrip preserves cruise count and stable id")
     @MainActor
-    func zipRoundtripPreservesStableID() throws {
+    func zipRoundtripPreservesStableID() async throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
 
@@ -412,7 +412,7 @@ struct ExportImportZIPTests {
         let originalID = cruise.id
 
         // ZIP exportieren
-        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        let zipURL = try await ExportImportService.shared.exportToZip(cruises: [cruise])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         // Frischer Container für Import
@@ -436,7 +436,7 @@ struct ExportImportZIPTests {
     /// (b) Re-Import desselben ZIP ist idempotent: 0 neue, alles Duplikate (via stable id).
     @Test("Re-importing the same ZIP is idempotent: 0 new, all duplicates by id")
     @MainActor
-    func zipReimportIsIdempotent() throws {
+    func zipReimportIsIdempotent() async throws {
         // Quell-Container: Kreuzfahrt anlegen und ZIP exportieren
         let sourceContainer = try makeInMemoryContainer()
         let sourceContext = sourceContainer.mainContext
@@ -451,7 +451,7 @@ struct ExportImportZIPTests {
         sourceContext.insert(cruise)
         try sourceContext.save()
 
-        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        let zipURL = try await ExportImportService.shared.exportToZip(cruises: [cruise])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         // Ziel-Container: frisch, leer
@@ -530,7 +530,7 @@ struct ExportImportZIPTests {
     /// (d) ZIP-Export mit Foto: imageData round-trippt verlustfrei; thumbnailData ist nach Import nicht nil.
     @Test("ZIP export with photo: imageData is lossless and thumbnailData is set after import")
     @MainActor
-    func zipPhotoRoundtripLosslessAndThumbnail() throws {
+    func zipPhotoRoundtripLosslessAndThumbnail() async throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
 
@@ -556,7 +556,7 @@ struct ExportImportZIPTests {
         try context.save()
 
         // ZIP exportieren
-        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        let zipURL = try await ExportImportService.shared.exportToZip(cruises: [cruise])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         // Frischer Container für Import

@@ -889,8 +889,10 @@ struct DataManagementView: View {
         Task {
             do {
                 // Demo-Daten filtert der Service selbst — hier bewusst die vollständigen
-                // Query-Ergebnisse übergeben.
-                let url = try ExportImportService.shared.exportToZip(
+                // Query-Ergebnisse übergeben. Der Aufruf ist `await`: nur der Snapshot läuft
+                // auf dem MainActor, das Serialisieren und Schreiben des Archivs off-main —
+                // der Spinner bleibt währenddessen flüssig (C4).
+                let url = try await ExportImportService.shared.exportToZip(
                     cruises: cruises,
                     deals: deals,
                     customLines: customShippingLines,
