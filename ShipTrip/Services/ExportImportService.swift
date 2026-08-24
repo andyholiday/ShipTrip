@@ -6,55 +6,10 @@
 //
 
 import Foundation
-import ImageIO
 import SwiftData
 import UniformTypeIdentifiers
 
-// MARK: - Export/Import Data Structures
-
-/// Exportierbare Kreuzfahrt-Daten (kompatibel mit Web-App)
-struct ExportCruise: Codable {
-    let id: String
-    let title: String
-    let startDate: String
-    let endDate: String
-    let shippingLine: String
-    let ship: String
-    let cabinType: String?
-    let cabinNumber: String?
-    let bookingNumber: String?
-    let notes: String?
-    let rating: Int
-    let route: [ExportPort]
-    let photos: [String]
-    let expenses: [ExportExpense]
-}
-
-struct ExportPort: Codable {
-    let id: String
-    let name: String
-    let country: String?
-    let lat: String?
-    let lng: String?
-    let arrival: String
-    let departure: String
-    let imageUrl: String?
-    let excursions: [String]
-    /// Explizites Seetag-Flag (H3-Fix). Optional + `var` statt `let`, damit Swifts Codable-Synthese
-    /// die fehlende Property in Alt-ZIPs/Legacy-JSON per `decodeIfPresent` zu `nil` auflöst, statt den
-    /// Decode abzubrechen; der Import fällt für `nil` auf die Namens-Heuristik zurück.
-    var isSeaDay: Bool? = nil
-}
-
-struct ExportExpense: Codable {
-    let id: String
-    let cruiseId: String
-    let category: String
-    let description: String?
-    let amount: Double
-    let expenseDate: String?
-    let createdAt: String
-}
+// Die Codable-Datenstrukturen des Backup-Formats liegen in `ExportImportDTOs.swift`.
 
 // MARK: - Import Result
 
@@ -74,41 +29,55 @@ struct ImportResult {
 class ExportImportService {
     static let shared = ExportImportService()
 
-    private let dateFormatter: DateFormatter = {
+    // Die drei Formatter sind bewusst `internal` statt `private`: der Import-Pfad liegt in
+    // `ExportImportService+Import.swift` / `+CatalogImport.swift` und braucht exakt dieselben
+    // Formate wie der Export.
+    let dateFormatter: DateFormatter = {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd"
         return df
     }()
 
-    private let dateTimeFormatter: DateFormatter = {
+    let dateTimeFormatter: DateFormatter = {
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
         return df
     }()
 
-    private let isoFormatter: ISO8601DateFormatter = {
+    let isoFormatter: ISO8601DateFormatter = {
         let df = ISO8601DateFormatter()
         df.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return df
     }()
 
-    // MARK: - Export (JSON, stablie IDs)
+    // MARK: - Export (JSON, stabile IDs)
 
-    /// Exportiert alle Kreuzfahrten als JSON-Datei mit stabilen IDs (kein frisches UUID())
-    func exportToJSON(cruises: [Cruise]) throws -> URL {
-        let exportCruises = buildExportCruises(cruises: cruises, photoEncoder: { cruise, _ in
-            // Base64-kodierte Fotos (legacy-Format)
-            cruise.photos.sorted { $0.sortOrder < $1.sortOrder }.map { photo in
-                let base64 = photo.imageData.base64EncodedString()
-                return "data:image/png;base64,\(base64)"
+    /// Exportiert Kreuzfahrten samt Wunschreisen und Katalog-Overlay als JSON-Datei mit stabilen
+    /// IDs (kein frisches UUID()). Fotos stecken Base64-kodiert inline in der Datei.
+    func exportToJSON(
+        cruises: [Cruise],
+        deals: [Deal] = [],
+        customLines: [CustomShippingLine] = [],
+        customShips: [CustomShip] = [],
+        hiddenCatalogItems: [HiddenCatalogItem] = []
+    ) throws -> URL {
+        let archive = buildArchive(
+            cruises: Self.nonDemo(cruises),
+            deals: Self.nonDemo(deals),
+            customLines: customLines,
+            customShips: customShips,
+            hiddenCatalogItems: hiddenCatalogItems,
+            photoEncoder: { _, sortedPhotos in
+                sortedPhotos.map { photo in
+                    let base64 = photo.imageData.base64EncodedString()
+                    return ExportPhoto(id: photo.id.uuidString, ref: "data:image/png;base64,\(base64)")
+                }
             }
-        })
+        )
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let jsonData = try encoder.encode(exportCruises)
+        let jsonData = try encodeArchive(archive)
 
         let jsonPath = FileManager.default.temporaryDirectory
             .appendingPathComponent("kreuzfahrten-export-\(UUID().uuidString).json")
@@ -125,16 +94,30 @@ class ExportImportService {
     ///
     /// Das ZIP wird mit Compression Method 0 (STORED) geschrieben; kein Deflate.
     /// CRC-32 wird korrekt berechnet (IEEE 802.3 Polynom).
-    func exportToZip(cruises: [Cruise]) throws -> URL {
+    func exportToZip(
+        cruises: [Cruise],
+        deals: [Deal] = [],
+        customLines: [CustomShippingLine] = [],
+        customShips: [CustomShip] = [],
+        hiddenCatalogItems: [HiddenCatalogItem] = []
+    ) throws -> URL {
         // Baue ZIP-Einträge: name -> data
         var zipEntries: [(name: String, data: Data)] = []
 
+        // Demo-Daten gehören nie in ein Backup. Der Filter liegt bewusst hier im Service und
+        // nicht an der Aufrufstelle, damit ihn jeder Export-Pfad zwangsläufig durchläuft.
+        let exportableCruises = Self.nonDemo(cruises)
+
         // Baue JSON mit Pfadreferenzen (Dateiname ohne Extension; Erweiterung ist kosmetisch)
-        let exportCruises = buildExportCruises(
-            cruises: cruises,
+        let archive = buildArchive(
+            cruises: exportableCruises,
+            deals: Self.nonDemo(deals),
+            customLines: customLines,
+            customShips: customShips,
+            hiddenCatalogItems: hiddenCatalogItems,
             photoEncoder: { cruise, sortedPhotos in
-                sortedPhotos.enumerated().map { index, _ in
-                    "images/\(cruise.id.uuidString)/\(index)"
+                sortedPhotos.enumerated().map { index, photo in
+                    ExportPhoto(id: photo.id.uuidString, ref: "images/\(cruise.id.uuidString)/\(index)")
                 }
             },
             portImageURL: { cruise, port, index in
@@ -142,13 +125,11 @@ class ExportImportService {
             }
         )
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let jsonData = try encoder.encode(exportCruises)
+        let jsonData = try encodeArchive(archive)
         zipEntries.append(("data.json", jsonData))
 
         // Füge Bilddateien als Rohdaten ein (verlustfrei, kein UIImage-Re-Encoding)
-        for cruise in cruises {
+        for cruise in exportableCruises {
             let sortedRoute = cruise.route.sorted { $0.sortOrder < $1.sortOrder }
             for (index, port) in sortedRoute.enumerated() {
                 if let imageData = port.imageData {
@@ -173,12 +154,89 @@ class ExportImportService {
         return zipPath
     }
 
-    /// Gemeinsame Logik zum Aufbau des ExportCruise-Arrays.
-    /// `photoEncoder` gibt pro Kreuzfahrt die Foto-Strings zurück (Base64 oder Pfadreferenzen).
-    /// `portImageURL` gibt pro Hafen die Bild-Pfadreferenz zurück (nil im Legacy-JSON-Format).
+    /// Kreuzfahrten/Wunschreisen ohne Demo-Daten. Demo-Inhalte (`isDemo`) dürfen nie in einem
+    /// Backup landen — weder Kreuzfahrten noch Wunschreisen (`DemoDataService` erzeugt beides).
+    private static func nonDemo(_ cruises: [Cruise]) -> [Cruise] {
+        cruises.filter { !$0.isDemo }
+    }
+
+    private static func nonDemo(_ deals: [Deal]) -> [Deal] {
+        deals.filter { !$0.isDemo }
+    }
+
+    private func encodeArchive(_ archive: ExportArchive) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return try encoder.encode(archive)
+    }
+
+    /// Baut den Export-Envelope. Erwartet bereits demo-gefilterte Eingaben (siehe `nonDemo`).
+    /// `photoEncoder` gibt pro Kreuzfahrt die Foto-Referenzen zurück (Base64 oder ZIP-Pfad).
+    /// `portImageURL` gibt pro Hafen die Bild-Pfadreferenz zurück (nil im JSON-Format).
+    private func buildArchive(
+        cruises: [Cruise],
+        deals: [Deal],
+        customLines: [CustomShippingLine],
+        customShips: [CustomShip],
+        hiddenCatalogItems: [HiddenCatalogItem],
+        photoEncoder: (Cruise, [Photo]) -> [ExportPhoto],
+        portImageURL: (Cruise, Port, Int) -> String? = { _, _, _ in nil }
+    ) -> ExportArchive {
+        ExportArchive(
+            cruises: buildExportCruises(
+                cruises: cruises, photoEncoder: photoEncoder, portImageURL: portImageURL
+            ),
+            deals: deals.map(buildExportDeal),
+            customShippingLines: customLines.map { line in
+                ExportCustomShippingLine(
+                    id: line.id.uuidString,
+                    name: line.name,
+                    logo: line.logo,
+                    createdAt: isoFormatter.string(from: line.createdAt),
+                    updatedAt: isoFormatter.string(from: line.updatedAt)
+                )
+            },
+            customShips: customShips.map { ship in
+                ExportCustomShip(
+                    id: ship.id.uuidString,
+                    name: ship.name,
+                    lineOptionID: ship.lineOptionID,
+                    createdAt: isoFormatter.string(from: ship.createdAt),
+                    updatedAt: isoFormatter.string(from: ship.updatedAt)
+                )
+            },
+            hiddenCatalogItems: hiddenCatalogItems.map { item in
+                ExportHiddenCatalogItem(
+                    id: item.id.uuidString,
+                    lineID: item.lineID,
+                    shipKey: item.shipKey,
+                    createdAt: isoFormatter.string(from: item.createdAt)
+                )
+            }
+        )
+    }
+
+    private func buildExportDeal(_ deal: Deal) -> ExportDeal {
+        ExportDeal(
+            id: deal.id.uuidString,
+            title: deal.title,
+            shippingLine: deal.shippingLine,
+            ship: deal.ship,
+            destination: deal.destination,
+            price: deal.price,
+            originalPrice: deal.originalPrice,
+            startDate: deal.startDate.map { dateFormatter.string(from: $0) },
+            endDate: deal.endDate.map { dateFormatter.string(from: $0) },
+            url: deal.url,
+            notes: deal.notes,
+            createdAt: isoFormatter.string(from: deal.createdAt),
+            updatedAt: isoFormatter.string(from: deal.updatedAt)
+        )
+    }
+
     private func buildExportCruises(
         cruises: [Cruise],
-        photoEncoder: (Cruise, [Photo]) -> [String],
+        photoEncoder: (Cruise, [Photo]) -> [ExportPhoto],
         portImageURL: (Cruise, Port, Int) -> String? = { _, _, _ in nil }
     ) -> [ExportCruise] {
         var result: [ExportCruise] = []
@@ -192,9 +250,12 @@ class ExportImportService {
                     // H3-Fix: Name nie durch "Seetag" ersetzen — isSeaDay ist ausschließlich das
                     // Klassifikations-Flag, der echte Name bleibt auch für Seetage erhalten.
                     name: port.name,
-                    country: port.isSeaDay ? nil : port.country,
-                    lat: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.latitude),
-                    lng: port.isSeaDay ? nil : String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.longitude),
+                    // Land und Koordinaten werden für Seetage NICHT mehr genullt: `isSeaDay` ist
+                    // das alleinige Klassifikations-Flag, und ein Seetag mit erfassten
+                    // Koordinaten trägt die Routenlinie auf der Karte.
+                    country: port.country,
+                    lat: String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.latitude),
+                    lng: String(format: "%.8f", locale: Locale(identifier: "en_US_POSIX"), port.longitude),
                     arrival: dateTimeFormatter.string(from: port.arrival),
                     departure: dateTimeFormatter.string(from: port.departure),
                     imageUrl: portImageURL(cruise, port, index),
@@ -216,7 +277,7 @@ class ExportImportService {
             }
 
             let sortedPhotos = cruise.photos.sorted { $0.sortOrder < $1.sortOrder }
-            let photoStrings = photoEncoder(cruise, sortedPhotos)
+            let photoRefs = photoEncoder(cruise, sortedPhotos)
 
             let exportCruise = ExportCruise(
                 id: cruise.id.uuidString,
@@ -229,295 +290,15 @@ class ExportImportService {
                 cabinNumber: cruise.cabinNumber.isEmpty ? nil : cruise.cabinNumber,
                 bookingNumber: cruise.bookingNumber.isEmpty ? nil : cruise.bookingNumber,
                 notes: cruise.notes.isEmpty ? nil : cruise.notes,
-                rating: Int(cruise.rating),
+                rating: cruise.rating,
                 route: exportPorts,
-                photos: photoStrings,
+                photos: photoRefs,
                 expenses: exportExpenses
             )
             result.append(exportCruise)
         }
 
         return result
-    }
-
-    // MARK: - Import
-
-    /// Importiert Kreuzfahrten aus einer ZIP-Datei (neues Format oder Web-App-Format)
-    func importFromZip(url: URL, modelContext: ModelContext) throws -> ImportResult {
-        let tempDir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("shiptrip-import-\(UUID().uuidString)")
-
-        defer {
-            try? FileManager.default.removeItem(at: tempDir)
-        }
-
-        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-        try ZipArchiveReader.extract(from: url, to: tempDir)
-
-        // data.json suchen (im Root oder in einem Unterordner)
-        var dataJsonPath = tempDir.appendingPathComponent("data.json")
-        var imagesDir = tempDir
-
-        if !FileManager.default.fileExists(atPath: dataJsonPath.path) {
-            let contents = try FileManager.default.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: nil)
-            for item in contents {
-                var isDir: ObjCBool = false
-                if FileManager.default.fileExists(atPath: item.path, isDirectory: &isDir), isDir.boolValue {
-                    let nestedPath = item.appendingPathComponent("data.json")
-                    if FileManager.default.fileExists(atPath: nestedPath.path) {
-                        dataJsonPath = nestedPath
-                        imagesDir = item
-                        break
-                    }
-                }
-            }
-        }
-
-        guard FileManager.default.fileExists(atPath: dataJsonPath.path) else {
-            throw ImportError.noDataFile
-        }
-
-        let jsonData = try Data(contentsOf: dataJsonPath)
-        return try importFromJSONData(data: jsonData, imagesDir: imagesDir, modelContext: modelContext)
-    }
-
-    /// Importiert Kreuzfahrten aus einer JSON-Datei (Base64-Legacy-Format)
-    func importFromJSON(url: URL, modelContext: ModelContext) throws -> ImportResult {
-        let jsonData = try Data(contentsOf: url)
-        return try importFromJSONData(data: jsonData, imagesDir: nil, modelContext: modelContext)
-    }
-
-    private func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
-        let decoder = JSONDecoder()
-        let exportCruises = try decoder.decode([ExportCruise].self, from: data)
-
-        // Hole existierende Kreuzfahrten für Duplikat-Check
-        let descriptor = FetchDescriptor<Cruise>()
-        let existingCruises = (try? modelContext.fetch(descriptor)) ?? []
-
-        var importedCount = 0
-        var skippedDuplicates = 0
-        var skippedInvalid = 0
-        var invalidMediaCount = 0
-
-        // ID-basierte Duplikate INNERHALB derselben Import-Datei (z.B. manipuliertes data.json
-        // mit zwei Cruises gleicher id): nur die erste wird importiert.
-        var seenCruiseIDs: Set<UUID> = []
-
-        for exportCruise in exportCruises {
-            // Datumsvalidierung
-            guard let startDate = dateFormatter.date(from: exportCruise.startDate),
-                  let endDate = dateFormatter.date(from: exportCruise.endDate) else {
-                skippedInvalid += 1
-                continue
-            }
-
-            guard endDate >= startDate else {
-                skippedInvalid += 1
-                continue
-            }
-
-            // Duplikat-Check: primär via stabiler ID, Fallback via Titel+Datum+Schiff
-            let exportUUID = UUID(uuidString: exportCruise.id)
-            let isDuplicate: Bool
-            if let exportUUID = exportUUID {
-                // Primär: ID-basierter Vergleich (stabile IDs, ZIP-Format) + Duplikate im selben Import
-                isDuplicate = existingCruises.contains { $0.id == exportUUID } || seenCruiseIDs.contains(exportUUID)
-            } else {
-                // Fallback für Legacy-Exporte ohne gültige UUID
-                isDuplicate = existingCruises.contains { existing in
-                    existing.title == exportCruise.title &&
-                    Calendar.current.isDate(existing.startDate, inSameDayAs: startDate) &&
-                    existing.ship.lowercased() == exportCruise.ship.lowercased()
-                }
-            }
-
-            if isDuplicate {
-                skippedDuplicates += 1
-                continue
-            }
-
-            // Kreuzfahrt anlegen; stabile ID aus Export übernehmen (idempotenter Re-Import)
-            let cruise = Cruise(
-                title: exportCruise.title,
-                startDate: startDate,
-                endDate: endDate,
-                shippingLine: exportCruise.shippingLine,
-                ship: exportCruise.ship
-            )
-            if let exportUUID = exportUUID {
-                cruise.id = exportUUID
-                seenCruiseIDs.insert(exportUUID)
-            }
-            cruise.cabinType = exportCruise.cabinType ?? ""
-            cruise.cabinNumber = exportCruise.cabinNumber ?? ""
-            cruise.bookingNumber = exportCruise.bookingNumber ?? ""
-            cruise.notes = exportCruise.notes ?? ""
-            cruise.rating = Double(exportCruise.rating)
-
-            modelContext.insert(cruise)
-
-            // ID-basierte Duplikate INNERHALB derselben Cruise (z.B. manipulierte Datei mit zwei
-            // Ports gleicher id): nur das erste Vorkommen übernimmt die Datei-ID, jedes weitere
-            // behält seine frische Auto-UUID aus dem Init — sonst würde die spätere
-            // Edit-Reconciliation (siehe IdBackfill) die Ports auf einen einzigen kollabieren und
-            // die Route verstümmeln.
-            var seenPortIDs: Set<UUID> = []
-
-            // Häfen importieren
-            for (index, exportPort) in exportCruise.route.enumerated() {
-                // H3-Fix: explizites Flag hat Vorrang; nur Alt-Formate ohne das Feld (exportPort.isSeaDay
-                // == nil) fallen auf die Namens-Heuristik zurück. `lat == nil` klassifiziert nicht mehr
-                // als Seetag — ein benannter Hafen ohne (noch) aufgelöste Koordinaten bleibt ein Hafen.
-                let isSeaDay = exportPort.isSeaDay ?? (
-                    exportPort.name.lowercased() == "seetag" ||
-                    exportPort.name.lowercased() == "sea day"
-                )
-
-                let lat = Double(exportPort.lat ?? "0") ?? 0
-                let lng = Double(exportPort.lng ?? "0") ?? 0
-
-                let port = Port(
-                    name: exportPort.name,
-                    country: exportPort.country ?? "",
-                    latitude: lat,
-                    longitude: lng
-                )
-
-                if let arrivalDate = dateTimeFormatter.date(from: exportPort.arrival) ?? dateFormatter.date(from: exportPort.arrival) {
-                    port.arrival = arrivalDate
-                }
-                if let departureDate = dateTimeFormatter.date(from: exportPort.departure) ?? dateFormatter.date(from: exportPort.departure) {
-                    port.departure = departureDate
-                }
-
-                port.sortOrder = index
-                port.isSeaDay = isSeaDay
-                port.excursions = exportPort.excursions
-
-                // Stabiele Port-ID übernehmen — nur beim ersten Vorkommen dieser ID in der Cruise
-                if let portUUID = UUID(uuidString: exportPort.id), !seenPortIDs.contains(portUUID) {
-                    port.id = portUUID
-                    seenPortIDs.insert(portUUID)
-                }
-
-                // Hafen-Bild importieren (Pfadreferenz aus data.json: ../-Traversal/absolute Pfade abgelehnt)
-                if let imagesDir = imagesDir, let imageUrlString = exportPort.imageUrl {
-                    if let imagePath = try? ZipArchiveReader.resolveSafePath(imageUrlString, in: imagesDir),
-                       let imageData = try? Data(contentsOf: imagePath),
-                       isValidImageData(imageData) {
-                        port.imageData = imageData
-                    } else {
-                        // Referenzierte Bilddatei fehlt im Archiv, ist unlesbar, inhaltlich kein
-                        // gültiges Bild, oder der Pfad wurde abgelehnt: Hafen bleibt erhalten, nur das
-                        // Bild fehlt (H8).
-                        invalidMediaCount += 1
-                    }
-                }
-
-                port.cruise = cruise
-                modelContext.insert(port)
-            }
-
-            // Fotos importieren (Base64 oder Dateipfad)
-            for (index, photoRef) in exportCruise.photos.enumerated() {
-                if photoRef.hasPrefix("data:image") {
-                    // Legacy Base64-Format
-                    if let base64Data = photoRef.components(separatedBy: ",").last,
-                       let imageData = Data(base64Encoded: base64Data),
-                       isValidImageData(imageData) {
-                        let photo = Photo(imageData: imageData, sortOrder: index)
-                        photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
-                        photo.cruise = cruise
-                        modelContext.insert(photo)
-                    } else {
-                        // Fehlendes, nicht dekodierbares Base64 oder inhaltlich kein gültiges Bild:
-                        // Photo-Objekt wird übersprungen, Cruise wird trotzdem importiert (H8).
-                        invalidMediaCount += 1
-                    }
-                } else if let imagesDir = imagesDir {
-                    // ZIP-Pfadreferenz: fehlende Datei tolerieren (nur Photo überspringen);
-                    // ../-Traversal/absolute Pfade werden von resolveSafePath abgelehnt
-                    if let imagePath = try? ZipArchiveReader.resolveSafePath(photoRef, in: imagesDir),
-                       let imageData = try? Data(contentsOf: imagePath),
-                       isValidImageData(imageData) {
-                        let photo = Photo(imageData: imageData, sortOrder: index)
-                        photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
-                        photo.cruise = cruise
-                        modelContext.insert(photo)
-                    } else {
-                        // Fehlende oder inhaltlich ungültige Bilddatei: Photo wird übersprungen,
-                        // Cruise bleibt erhalten (H8).
-                        invalidMediaCount += 1
-                    }
-                } else {
-                    // Weder Base64 noch ZIP-Kontext (Legacy-JSON-Import ohne Bilder): Referenz kann
-                    // nicht aufgelöst werden.
-                    invalidMediaCount += 1
-                }
-            }
-
-            // Ausgaben importieren
-            // Gleiches Duplikat-Muster wie bei Ports: nur das erste Vorkommen einer id in dieser
-            // Cruise übernimmt die Datei-ID, jedes weitere behält seine frische Auto-UUID.
-            var seenExpenseIDs: Set<UUID> = []
-            for exportExpense in exportCruise.expenses {
-                let category = mapCategory(exportExpense.category)
-                let expense = Expense(
-                    category: category,
-                    amount: exportExpense.amount,
-                    description: exportExpense.description ?? ""
-                )
-                if let dateString = exportExpense.expenseDate,
-                   let date = dateFormatter.date(from: dateString) {
-                    expense.expenseDate = date
-                }
-                // Stabile Expense-ID übernehmen — nur beim ersten Vorkommen dieser ID in der Cruise
-                if let expenseUUID = UUID(uuidString: exportExpense.id), !seenExpenseIDs.contains(expenseUUID) {
-                    expense.id = expenseUUID
-                    seenExpenseIDs.insert(expenseUUID)
-                }
-                expense.cruise = cruise
-                modelContext.insert(expense)
-            }
-
-            importedCount += 1
-        }
-
-        do {
-            try modelContext.save()
-        } catch {
-            // Save fehlgeschlagen: bereits gestagte Import-Objekte (Cruises/Ports/Photos/Expenses)
-            // dürfen nicht im Context verbleiben — Rollback, dann Fehler weiterreichen.
-            modelContext.rollback()
-            throw error
-        }
-        return ImportResult(imported: importedCount, skippedDuplicates: skippedDuplicates, skippedInvalid: skippedInvalid, invalidMedia: invalidMediaCount)
-    }
-
-    /// Prüft, ob `data` von ImageIO als Bild dekodiert werden kann (Signatur-/Struktur-Check ohne
-    /// vollständiges Decodieren). Verhindert, dass beliebige Bytes mit `.png`/`.jpg`-Namen (z. B. eine
-    /// Textdatei) unvalidiert als Foto/Hafenbild übernommen werden.
-    /// WICHTIG: `CGImageSourceCreateWithData` allein validiert nichts — die Quelle wird lazy erzeugt
-    /// und ist auch für Nicht-Bild-Daten non-nil. Erst `CGImageSourceGetCount` liest die Bytes
-    /// tatsächlich und liefert 0, wenn kein Bild erkannt wurde.
-    private func isValidImageData(_ data: Data) -> Bool {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else {
-            return false
-        }
-        return CGImageSourceGetCount(source) > 0
-    }
-
-    private func mapCategory(_ rawCategory: String) -> ExpenseCategory {
-        switch rawCategory.lowercased() {
-        case "excursion", "ausflug": return .excursion
-        case "cruise", "kreuzfahrt": return .cruise
-        case "flight", "flug": return .flight
-        case "hotel": return .hotel
-        case "onboard", "an bord": return .onboard
-        default: return .other
-        }
     }
 
     enum ImportError: LocalizedError {

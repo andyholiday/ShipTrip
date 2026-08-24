@@ -776,7 +776,7 @@ struct DataManagementView: View {
             
             // Export
             Section(header: Text("Export"),
-                    footer: Text("Exportiert alle Kreuzfahrten als ZIP-Archiv mit externalen Bilddateien.")) {
+                    footer: Text(String(localized: "Sichert Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie ausgeblendete Katalog-Einträge als ZIP-Archiv mit externen Bilddateien. Demo-Daten werden nicht mitexportiert."))) {
                 Button {
                     exportData()
                 } label: {
@@ -788,12 +788,12 @@ struct DataManagementView: View {
                         }
                     }
                 }
-                .disabled(cruises.isEmpty || isExporting)
+                .disabled((cruises.isEmpty && deals.isEmpty) || isExporting)
             }
-            
+
             // Import
             Section(header: Text("Import"),
-                    footer: Text("Importiert Kreuzfahrten aus einer ZIP-Datei (Web-App kompatibel).")) {
+                    footer: Text(String(localized: "Liest ZIP- und JSON-Backups: Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie Ausblendungen. Ältere Backups (bis Version 1.7) bleiben lesbar."))) {
                 Button {
                     showingImportPicker = true
                 } label: {
@@ -867,7 +867,15 @@ struct DataManagementView: View {
 
         Task {
             do {
-                let url = try ExportImportService.shared.exportToZip(cruises: cruises)
+                // Demo-Daten filtert der Service selbst — hier bewusst die vollständigen
+                // Query-Ergebnisse übergeben.
+                let url = try ExportImportService.shared.exportToZip(
+                    cruises: cruises,
+                    deals: deals,
+                    customLines: customShippingLines,
+                    customShips: customShips,
+                    hiddenCatalogItems: hiddenCatalogItems
+                )
                 await MainActor.run {
                     isExporting = false
                     exportURL = url

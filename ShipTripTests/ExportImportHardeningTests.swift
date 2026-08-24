@@ -405,7 +405,7 @@ struct ZipSlipHardeningTests {
             notes: nil,
             rating: 4,
             route: [],
-            photos: ["../../evil.jpg"],
+            photos: [ExportPhoto(id: nil, ref: "../../evil.jpg")],
             expenses: []
         )
 
@@ -679,7 +679,7 @@ struct PortImageRoundtripTests {
             Issue.record("data.json nicht im exportierten ZIP gefunden")
             return
         }
-        let exportedCruises = try JSONDecoder().decode([ExportCruise].self, from: dataJSON)
+        let exportedCruises = try ExportArchive.decode(from: dataJSON).cruises
         #expect(exportedCruises.first?.route.first?.imageUrl == "images/\(cruise.id.uuidString)/ports/0")
 
         let targetContainer = try makeInMemoryContainer()
@@ -720,7 +720,7 @@ struct PortImageRoundtripTests {
         defer { try? FileManager.default.removeItem(at: jsonURL) }
 
         let jsonData = try Data(contentsOf: jsonURL)
-        let decoded = try JSONDecoder().decode([ExportCruise].self, from: jsonData)
+        let decoded = try ExportArchive.decode(from: jsonData).cruises
 
         #expect(decoded.first?.route.first?.imageUrl == nil)
     }
@@ -789,7 +789,7 @@ struct SeaDayClassificationHardeningTests {
         defer { try? FileManager.default.removeItem(at: reExportedURL) }
 
         let reExportedData = try Data(contentsOf: reExportedURL)
-        let reExported = try JSONDecoder().decode([ExportCruise].self, from: reExportedData)
+        let reExported = try ExportArchive.decode(from: reExportedData).cruises
         let reExportedPort = try #require(reExported.first?.route.first)
         #expect(reExportedPort.name == "Kotor")
         #expect(reExportedPort.country == "Montenegro")
@@ -953,7 +953,7 @@ struct SeaDayClassificationHardeningTests {
         defer { try? FileManager.default.removeItem(at: reExportedURL) }
 
         let reExportedData = try Data(contentsOf: reExportedURL)
-        let reExported = try JSONDecoder().decode([ExportCruise].self, from: reExportedData)
+        let reExported = try ExportArchive.decode(from: reExportedData).cruises
         let reExportedPort = try #require(reExported.first?.route.first)
         #expect(reExportedPort.name == "Tag auf See")
         #expect(reExportedPort.isSeaDay == true)
@@ -1125,7 +1125,7 @@ struct ZipIntegrityHardeningTests {
             notes: nil,
             rating: 4,
             route: [portWithMissingImage],
-            photos: ["images/missing/photo.png"],
+            photos: [ExportPhoto(id: nil, ref: "images/missing/photo.png")],
             expenses: []
         )
 
@@ -1366,7 +1366,7 @@ struct MediaContentValidationHardeningTests {
             notes: nil,
             rating: 4,
             route: [portWithBogusImage],
-            photos: ["images/bogus.png"],
+            photos: [ExportPhoto(id: nil, ref: "images/bogus.png")],
             expenses: []
         )
 
@@ -1415,7 +1415,7 @@ struct MediaContentValidationHardeningTests {
             notes: nil,
             rating: 4,
             route: [],
-            photos: ["data:image/png;base64,\(bogusBase64)"],
+            photos: [ExportPhoto(id: nil, ref: "data:image/png;base64,\(bogusBase64)")],
             expenses: []
         )
 
