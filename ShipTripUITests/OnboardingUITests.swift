@@ -28,7 +28,10 @@ final class OnboardingUITests: XCTestCase {
         static let start = "Bereit für deine erste Reise"
     }
 
-    private let mainListTitle = "Meine Reisen"
+    /// Anker hinter dem Onboarding: auf frischer Installation ist der Store leer,
+    /// dort steht der Empty-State der Reise-Liste. Der Listentitel „Meine Reisen“
+    /// existiert nur im gefüllten Zweig und taugt deshalb nicht als Anker.
+    private let mainListAnchor = "Keine Kreuzfahrten"
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -82,9 +85,18 @@ final class OnboardingUITests: XCTestCase {
             "Das Onboarding-Cover ist nach der Startentscheidung noch sichtbar"
         )
         XCTAssertTrue(
-            app.staticTexts[mainListTitle].waitForExistence(timeout: 10),
-            "Hauptliste „\(mainListTitle)“ nach dem Onboarding nicht erreicht"
+            mainListElement(in: app).waitForExistence(timeout: 10),
+            "Reise-Liste („\(mainListAnchor)“) nach dem Onboarding nicht erreicht"
         )
+    }
+
+    /// Der Empty-State ist eine `ContentUnavailableView` — ob ihr Titel als
+    /// eigener StaticText oder als zusammengefasstes Element im Baum landet,
+    /// entscheidet SwiftUI. Deshalb über das Label suchen statt über den Typ.
+    private func mainListElement(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", mainListAnchor))
+            .firstMatch
     }
 
     /// Der Berechtigungsdialog gehört Springboard, nicht der App — deshalb dort
@@ -172,8 +184,8 @@ final class OnboardingUITests: XCTestCase {
         relaunched.launch()
 
         XCTAssertTrue(
-            relaunched.staticTexts[mainListTitle].waitForExistence(timeout: 15),
-            "Hauptliste beim zweiten Start nicht erreicht"
+            mainListElement(in: relaunched).waitForExistence(timeout: 15),
+            "Reise-Liste beim zweiten Start nicht erreicht"
         )
         XCTAssertFalse(
             relaunched.staticTexts[Card.welcome].exists,

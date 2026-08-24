@@ -69,27 +69,25 @@ final class HauptansichtScreenshotTests: XCTestCase {
         XCTAssertTrue(moreTab.waitForExistence(timeout: 10), "Tab 'Mehr' nicht gefunden")
         moreTab.tap()
 
-        // 2. Liste nach unten scrollen um die Demo-Sektion sichtbar zu machen
-        //    (sie steht unterhalb von KI-Funktionen, iCloud, Benachrichtigungen, Daten)
+        // 2. Demo-Sektion ansteuern: sie steht weit unten und wird von der List
+        //    erst beim Scrollen materialisiert. Wie tief sie liegt, hängt an der
+        //    Zahl der Einstellungs-Zeilen — deshalb schrittweise scrollen, bis
+        //    eine der beiden Tasten der Sektion greifbar ist.
         // SwiftUI List rendert auf iOS 18+ als UICollectionView, nicht als UITableView
-        let settingsList = app.collectionViews.firstMatch
-        if settingsList.waitForExistence(timeout: 5) {
-            settingsList.swipeUp()
-        } else {
-            // Fallback: einfach die App nach oben swipen
-            app.swipeUp()
-        }
+        _ = app.collectionViews.firstMatch.waitForExistence(timeout: 5)
 
-        // 3. Falls Demo-Daten vorhanden (Restbestand), erst entfernen
         let removeButton = app.buttons["Beispieldaten entfernen"]
-        if removeButton.waitForExistence(timeout: 5) {
+        let loadButton = app.buttons["Beispieldaten laden"]
+        XCTAssertTrue(scrollUntilVisible([removeButton, loadButton], in: app),
+                      "Demo-Sektion nicht erreicht – weder Lade- noch Entfernen-Taste sichtbar")
+
+        // 3. Falls Demo-Daten vorhanden (Restbestand), erst entfernen. Die
+        //    Sektion tauscht die Taste an Ort und Stelle, ohne erneutes Scrollen.
+        if removeButton.isHittable {
             removeButton.tap()
-            // Nach dem Entfernen warten bis Lade-Button erscheint
-            if settingsList.exists { settingsList.swipeUp() } else { app.swipeUp() }
         }
 
         // 4. Lade-Button muss jetzt sichtbar sein (leerer Store)
-        let loadButton = app.buttons["Beispieldaten laden"]
         XCTAssertTrue(loadButton.waitForExistence(timeout: 15),
                       "Lade-Button 'Beispieldaten laden' nicht erschienen – Demo-Sektion fehlt oder nicht sichtbar?")
         loadButton.tap()
@@ -313,6 +311,24 @@ final class HauptansichtScreenshotTests: XCTestCase {
     }
 
     // MARK: - Hilfsfunktion
+
+    /// Scrollt die Liste schrittweise weiter, bis eines der Elemente sichtbar und
+    /// tippbar ist. Abbruch nach `maxSwipes` Wischern (Rückgabe `false`) statt
+    /// Endlosschleife — und statt genau eines Wischers, der bei längeren Listen
+    /// nicht mehr reicht.
+    @MainActor
+    private func scrollUntilVisible(
+        _ elements: [XCUIElement],
+        in app: XCUIApplication,
+        maxSwipes: Int = 8
+    ) -> Bool {
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<maxSwipes {
+            if elements.contains(where: { $0.exists && $0.isHittable }) { return true }
+            if list.exists { list.swipeUp() } else { app.swipeUp() }
+        }
+        return elements.contains { $0.exists && $0.isHittable }
+    }
 
     @MainActor
     private func write(screenshot: XCUIScreenshot, name: String) throws {
