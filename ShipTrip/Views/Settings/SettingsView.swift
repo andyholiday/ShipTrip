@@ -214,11 +214,12 @@ struct SettingsView: View {
         }
     }
 
-    /// Erklärt, dass Beispielinhalte markiert, backup-frei und entfernbar sind.
+    /// Erklärt, dass Beispielinhalte markiert, export-frei und entfernbar sind.
     private var demoSectionFooter: String {
         String(localized: """
             Beispielinhalte zum Ausprobieren. Sie sind als Demo markiert, landen \
-            nie in einem Backup und lassen sich jederzeit wieder entfernen.
+            nie in Export- oder Backup-Dateien und lassen sich jederzeit wieder \
+            entfernen.
             """)
     }
 

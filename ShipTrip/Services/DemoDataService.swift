@@ -2,15 +2,20 @@
 //  DemoDataService.swift
 //  ShipTrip
 //
-//  Auch in Release-Builds vorhanden: die Beispielreise ist ein Produkt-Feature
-//  (Onboarding „Beispielreise ansehen", Einstellungen → Beispielreise).
+//  Auch in Release-Builds vorhanden: die Beispielreise ist ein Produkt-Feature.
+//  Heutiger Einstieg: Einstellungen → Beispielreise. Ein zusaetzlicher
+//  Onboarding-Einstieg („Beispielreise ansehen") ist geplant (Task B2) und
+//  nutzt dann dieselbe API.
 //  Alle erzeugten Objekte tragen `isDemo` und lassen sich mit einer Aktion
 //  wieder entfernen. Nur der destruktive UI-Test-Reset bleibt Debug-only.
 //
 
 import SwiftData
 import Foundation
+import OSLog
 import UIKit
+
+private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "demoData")
 
 /// Verwaltet realistische Demo-Daten für manuelle Tests.
 /// Alle Aktionen sind idempotent.
@@ -22,13 +27,13 @@ enum DemoDataService {
     static func loadDemoData(into context: ModelContext) {
         guard !hasDemoData(in: context) else {
             removeDemoCruisePhotos(in: context)
-            try? context.save()
+            save(context, step: "Demo-Fotos aufräumen")
             return
         }
 
         insertCruises(into: context)
         insertDeals(into: context)
-        try? context.save()
+        save(context, step: "Beispieldaten laden")
     }
 
     /// Löscht alle Objekte mit isDemo == true (Ports/Expenses/Photos via Cascade).
@@ -39,7 +44,7 @@ enum DemoDataService {
         let demoDeals = fetch(Deal.self, where: \.isDemo, in: context)
         demoDeals.forEach { context.delete($0) }
 
-        try? context.save()
+        save(context, step: "Beispieldaten entfernen")
     }
 
     #if DEBUG
@@ -76,6 +81,20 @@ enum DemoDataService {
     }
 
     // MARK: - Private Helpers
+
+    /// Speichert und protokolliert Fehler, statt sie stillschweigend zu verwerfen.
+    /// Die Aufrufer leiten ihren Zustand ohnehin aus `hasDemoData(in:)` ab, das
+    /// nach einem fehlgeschlagenen Save den unveränderten Store spiegelt.
+    private static func save(_ context: ModelContext, step: String) {
+        do {
+            try context.save()
+        } catch {
+            let reason = error.localizedDescription
+            logger.error(
+                "\(step, privacy: .public) fehlgeschlagen – \(reason, privacy: .private)"
+            )
+        }
+    }
 
     private static func fetch<T: PersistentModel>(
         _ type: T.Type,

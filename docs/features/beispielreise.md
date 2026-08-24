@@ -8,9 +8,10 @@ echten Inhalten erleben, statt vor leeren Screens zu stehen.
 
 ## Verhalten
 
-- **Laden:** Einstellungen → *Beispielreise* → „Beispieldaten laden". Denselben
-  Einstiegspunkt nutzt das Onboarding („Beispielreise ansehen", Task B2) ueber
-  dieselbe API `DemoDataService.loadDemoData(into:)`.
+- **Laden:** Einstellungen → *Beispielreise* → „Beispieldaten laden" ist heute
+  der einzige Einstieg. Ein zusaetzlicher Onboarding-Einstieg („Beispielreise
+  ansehen") ist geplant (Task B2, noch nicht gebaut) und wird dieselbe API
+  `DemoDataService.loadDemoData(into:)` nutzen.
 - **Inhalt:** 3 Kreuzfahrten (Mittelmeer 2025, Norwegische Fjorde, Karibik 2025)
   mit Route, Hafen-Erinnerungen und Ausgaben sowie 2 Wunschreisen/Angebote.
   Vergangene und kommende Reisen, damit Statistik und Hero-Karte gefuellt sind.
@@ -26,8 +27,13 @@ echten Inhalten erleben, statt vor leeren Screens zu stehen.
   abgesichert durch `ShipTripTests/DemoDataServiceTests.swift`.
 - Demo-Inhalte werden ausserdem systemweit ausgefiltert: Export/Backup
   (`ExportImportService`), Kalender-Sync und Erinnerungen ignorieren
-  `isDemo`-Objekte. Eine Beispielreise landet also nie in einem Backup und
-  erzeugt keine Termine oder Push-Nachrichten.
+  `isDemo`-Objekte. Eine Beispielreise landet also nie in einer Export- oder
+  Backup-Datei und erzeugt keine Termine oder Push-Nachrichten.
+- **iCloud dagegen schon:** Demo-Objekte sind normale SwiftData-Objekte und
+  synchronisieren wie Nutzerdaten ueber CloudKit in die private Datenbank —
+  eine geladene Beispielreise taucht damit auf allen Geraeten desselben
+  iCloud-Accounts auf. Das Entfernen propagiert denselben Weg zurueck: nach
+  dem Sync sind die Demo-Objekte auch auf den anderen Geraeten weg.
 - Debug-only bleibt einzig `resetAndLoadDemoDataForUITesting(in:)`: Der Aufruf
   loescht den kompletten Store fuer deterministische UI-Tests und darf im
   Release nicht existieren.
