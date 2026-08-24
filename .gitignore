@@ -77,3 +77,24 @@ Testexport/
 
 # Gate-Evidenz (Test-/Build-Belege der Orchestrierung)
 .winston-evidence/
+
+# Node-Abhaengigkeiten (Video-Toolchain unter videos/) - nie committen,
+# enthaelt plattform-spezifische Binaries (ffmpeg ~43 MB, ffprobe ~17 MB)
+node_modules/
+
+# Video-Renderprojekte: generierte Artefakte (Quellen wie index.html,
+# meta.json, package.json und assets/ bleiben bewusst trackbar)
+videos/*/renders/
+videos/*/snapshots/
+videos/*/qa-final/
+videos/*/.bin-tools/
+videos/*/.thumbnails/
+
+# Videodateien - Renderausgaben gehoeren nicht ins Repo.
+# Hinweis: die zwei bereits getrackten App-Store-Previews unter
+# marketing/release-1.7.0/app-store-connect/previews/ bleiben getrackt,
+# .gitignore wirkt nicht auf bereits versionierte Dateien.
+*.mp4
+*.mov
+*.m4v
+*.webm
