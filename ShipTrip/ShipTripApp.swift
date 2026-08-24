@@ -19,6 +19,10 @@ struct ShipTripApp: App {
     private let modelContainer: ModelContainer?
     private let usingTemporaryStore: Bool
 
+    /// Erststart-Entscheidung, einmal beim Start getroffen — also **vor** der
+    /// ersten Praesentation des Covers.
+    private let onboardingStartupDecision: OnboardingPresentation.StartupDecision
+
     init() {
 #if DEBUG
         Self.resetOnboardingIfNeeded()
@@ -62,6 +66,59 @@ struct ShipTripApp: App {
                 usingTemporaryStore = false
             }
         }
+
+        onboardingStartupDecision = Self.resolveOnboardingStartupDecision(
+            container: modelContainer,
+            usingTemporaryStore: usingTemporaryStore
+        )
+        // Noch in `init`, damit das `@AppStorage` des Covers den migrierten
+        // Wert schon beim ersten Auswerten sieht.
+        if onboardingStartupDecision == .migrateSilently {
+            UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
+        }
+    }
+
+    // MARK: - Erststart-Entscheidung
+
+    /// Frische Installation, Bestandsinstallation oder ungesunder Store?
+    private static func resolveOnboardingStartupDecision(
+        container: ModelContainer?,
+        usingTemporaryStore: Bool
+    ) -> OnboardingPresentation.StartupDecision {
+        let flag = UserDefaults.standard
+            .object(forKey: OnboardingPresentation.hasCompletedKey) as? Bool
+
+        guard let container, !usingTemporaryStore else {
+            return OnboardingPresentation.startupDecision(
+                hasCompletedFlag: flag,
+                storeIsHealthy: false,
+                hasExistingCruises: false
+            )
+        }
+
+        // Der Store wird nur befragt, wenn der Schalter ueberhaupt fehlt —
+        // der normale Start kostet damit keine zusaetzliche Abfrage.
+        return OnboardingPresentation.startupDecision(
+            hasCompletedFlag: flag,
+            storeIsHealthy: true,
+            hasExistingCruises: flag == nil && hasExistingCruises(in: container)
+        )
+    }
+
+    /// Billige Ja/Nein-Abfrage: hoechstens ein Objekt verlaesst den Store.
+    private static func hasExistingCruises(in container: ModelContainer) -> Bool {
+#if DEBUG
+        // `-uiTestingResetOnboarding` stellt eine frische Installation nach.
+        // Restbestaende im Simulator-Store duerfen die Bestands-Migration
+        // dann nicht ausloesen, sonst haengt der Onboarding-UI-Test am Zufall.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestingResetOnboarding") {
+            return false
+        }
+#endif
+        let context = ModelContext(container)
+        var descriptor = FetchDescriptor<Cruise>()
+        descriptor.fetchLimit = 1
+        return (try? context.fetch(descriptor))?.isEmpty == false
     }
 
 #if DEBUG
@@ -130,9 +187,15 @@ struct ShipTripApp: App {
                     //
                     // Nach `.modelContainer`, damit der Flow den `modelContext`
                     // fuer die Beispielreise aus der Umgebung erbt.
+                    //
+                    // `.postpone` (In-Memory-Fallback) haelt das Cover zurueck,
+                    // damit die Datenverlust-Warnung allein steht — ohne den
+                    // Schalter anzufassen: beim naechsten gesunden Start steht
+                    // der Erststart unveraendert an.
                     .fullScreenCover(
                         isPresented: OnboardingPresentation.coverBinding(
-                            hasCompleted: $hasCompletedOnboarding
+                            hasCompleted: $hasCompletedOnboarding,
+                            isSuppressed: onboardingStartupDecision == .postpone
                         )
                     ) {
                         OnboardingFlowView { hasCompletedOnboarding = true }
