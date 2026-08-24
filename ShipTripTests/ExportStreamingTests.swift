@@ -116,8 +116,8 @@ struct ExportStreamingTests {
             "images/\(cruiseID)/0",
             "images/\(cruiseID)/1"
         ])
-        #expect(source.data(at: 0) == portImage)
-        #expect(source.data(at: 1) == firstPhotoBytes)
-        #expect(source.data(at: 2) == secondPhotoBytes)
+        #expect(try source.data(at: 0) == portImage)
+        #expect(try source.data(at: 1) == firstPhotoBytes)
+        #expect(try source.data(at: 2) == secondPhotoBytes)
     }
 }

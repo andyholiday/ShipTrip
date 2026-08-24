@@ -9,6 +9,37 @@
 import Foundation
 import SwiftData
 
+// MARK: - Export-Fehler
+
+/// Fehler, die den Export abbrechen, *bevor* eine Datei entsteht bzw. die eine angefangene Datei
+/// verwerfen. Alle drei Fälle hätten sonst ein Backup ergeben, das entweder unvollständig ist oder
+/// vom eigenen Import abgelehnt würde.
+enum ExportError: LocalizedError {
+    /// Ein referenziertes Bild liefert keine Bytes mehr (Modell zwischenzeitlich geleert, externer
+    /// Speicher nicht lesbar). Ein leerer ZIP-Eintrag wäre CRC-konsistent und damit unsichtbar
+    /// kaputt — deshalb bricht der Export ab.
+    case missingMedia(entryName: String)
+    /// Ein einzelner Eintrag überschreitet `ZipArchiveReader.maxEntryUncompressedSize`.
+    case entryTooLarge(name: String, size: Int)
+    /// Die Nutzlast überschreitet `ZipArchiveReader.maxTotalUncompressedSize`.
+    case payloadTooLarge(Int)
+    /// Die resultierende ZIP-Datei überschreitet `ZipArchiveReader.maxArchiveFileSize`.
+    case archiveTooLarge(Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingMedia(let entryName):
+            return String(localized: "Backup abgebrochen: Das Bild '\(entryName)' ist nicht mehr lesbar. Es wäre als leerer Eintrag im Archiv gelandet.")
+        case .entryTooLarge(let name, let size):
+            return String(localized: "Backup wäre nicht wiederherstellbar: Das Bild '\(name)' ist zu groß (\(size) Bytes; Maximum \(ZipArchiveReader.maxEntryUncompressedSize) Bytes).")
+        case .payloadTooLarge(let size):
+            return String(localized: "Backup wäre zu groß: Die Daten belegen \(size) Bytes; Maximum sind \(ZipArchiveReader.maxTotalUncompressedSize) Bytes. Bitte in kleineren Teilen sichern.")
+        case .archiveTooLarge(let size):
+            return String(localized: "Backup wäre zu groß: Die ZIP-Datei würde \(size) Bytes belegen; Maximum sind \(ZipArchiveReader.maxArchiveFileSize) Bytes. Bitte in kleineren Teilen sichern.")
+        }
+    }
+}
+
 // MARK: - Bildquelle für den strömenden Export
 
 /// Liefert die Roh-Bytes der Export-Bilder einzeln nach — in exakt der Reihenfolge, in der
@@ -19,6 +50,10 @@ import SwiftData
 /// MainActor. Weil die Klasse `@MainActor`-isoliert (und damit `Sendable`) ist, kann der
 /// off-main laufende ZIP-Writer sie halten und pro Eintrag genau ein Bild anfordern. Der
 /// Spitzenverbrauch liegt damit bei O(größtes Bild) statt bei O(Bibliothek).
+///
+/// Die Klasse hält bewusst Referenzen auf die `@Model`-Objekte (nicht bloß deren Namen) und liest
+/// die Bytes erst bei `data(at:)` — genau das ist der Grund, warum der Zugriff MainActor-isoliert
+/// bleiben muss.
 @MainActor
 final class ExportImageSource {
     private enum Source {
@@ -56,15 +91,29 @@ final class ExportImageSource {
     }
 
     /// Bytes des Eintrags `index` — genau ein Bild, nicht die Bibliothek.
-    func data(at index: Int) -> Data {
+    ///
+    /// Wirft, wenn die Quelle keine Bytes mehr liefert (Modell zwischenzeitlich geleert, externer
+    /// Speicher nicht lesbar). Früher entstand daraus ein leerer, CRC-konsistenter ZIP-Eintrag und
+    /// der Export meldete Erfolg — ein stilles Datenloch im Backup. Ein Abbruch ist die
+    /// Konsistenzgarantie: entweder das Archiv enthält alle Medien, oder es entsteht keines.
+    func data(at index: Int) throws -> Data {
+        let bytes: Data?
         switch sources[index] {
         case .photo(let photo):
-            return photo.imageData
+            bytes = photo.imageData
         case .portImage(let port):
-            // `imageData` wurde beim Aufbau als non-nil geprüft; ein leerer Eintrag ist
-            // trotzdem besser als ein Absturz, falls das Modell zwischenzeitlich geleert wurde.
-            return port.imageData ?? Data()
+            bytes = port.imageData
         }
+        guard let bytes, !bytes.isEmpty else {
+            throw ExportError.missingMedia(entryName: entryNames[index])
+        }
+        return bytes
+    }
+
+    /// Bytegröße des Eintrags `index` für die Vorabprüfung der Archivgrenzen. Fasst wie `data(at:)`
+    /// immer nur ein Bild an.
+    func byteCount(at index: Int) throws -> Int {
+        try data(at: index).count
     }
 }
 
@@ -127,6 +176,10 @@ extension ExportImportService {
     ///
     /// Damit blockiert der Export weder den Main-Thread (CRC-32, Dateischreiben laufen off-main)
     /// noch hält er mehr als ein Bild gleichzeitig im Speicher.
+    ///
+    /// Alles-oder-nichts: Überschreitet das geplante Archiv die Importgrenzen, fehlt ein Bild oder
+    /// wird der Task abgebrochen, wirft der Export und lässt keine Datei zurück. Ein teilweise
+    /// geschriebenes Backup wäre von einem vollständigen nicht zu unterscheiden.
     func exportToZip(
         cruises: [Cruise],
         deals: [Deal] = [],
@@ -160,14 +213,20 @@ extension ExportImportService {
         let jsonData = try encodeArchive(archive)
         let imageSource = ExportImageSource(cruises: exportableCruises)
 
+        // Grenzen prüfen, BEVOR eine Datei entsteht (siehe `validateArchiveSize`).
+        try Self.validateArchiveSize(jsonByteCount: jsonData.count, imageSource: imageSource)
+
         var entries: [ZipArchiveStreamWriter.Entry] = [
             ZipArchiveStreamWriter.Entry(name: "data.json", body: { jsonData })
         ]
         entries.append(contentsOf: imageSource.entryNames.enumerated().map { index, name in
-            ZipArchiveStreamWriter.Entry(name: name, body: { await imageSource.data(at: index) })
+            ZipArchiveStreamWriter.Entry(name: name, body: { try await imageSource.data(at: index) })
         })
 
         // --- Phase 2: strömendes Schreiben außerhalb des MainActors ---
+
+        // Ein Abbruch während Phase 1 soll gar nicht erst eine Datei anlegen.
+        try Task.checkCancellation()
 
         let zipPath = FileManager.default.temporaryDirectory
             .appendingPathComponent("kreuzfahrten-export-\(UUID().uuidString).zip")
@@ -175,12 +234,57 @@ extension ExportImportService {
         do {
             try await ZipArchiveStreamWriter().write(entries: entries, to: zipPath)
         } catch {
-            // Kein halbfertiges Archiv im Temp-Verzeichnis zurücklassen — es sähe aus wie ein
-            // gültiges Backup.
+            // Der Writer räumt bereits selbst auf; dieser zweite Griff kostet nichts und hält die
+            // Zusage „kein halbfertiges Archiv im Temp-Verzeichnis" auch dann, wenn der Fehler
+            // erst nach dem Schreiben auftritt.
             try? FileManager.default.removeItem(at: zipPath)
             throw error
         }
 
         return zipPath
+    }
+
+    // MARK: - Vorabprüfung der Archivgrenzen
+
+    /// Prüft die geplante Archivgröße gegen dieselben Grenzen, die `importFromZip` beim Lesen
+    /// anlegt (`ZipArchiveReader.max*` — die eine Quelle für beide Richtungen).
+    ///
+    /// Ohne diese Prüfung konnte die App ein Backup schreiben, das ihr eigener Import anschließend
+    /// ablehnt: der Writer kennt nur die ZIP32-Grenze (4 GB), der Reader steigt schon bei 50 MB je
+    /// Bild bzw. 500 MB Nutzlast aus.
+    ///
+    /// Der Preis ist ein zusätzlicher Lesedurchlauf über die Bilder. Das Speicherprofil bleibt
+    /// davon unberührt — es wird immer nur ein Bild angefasst, nie die Bibliothek gehalten.
+    static func validateArchiveSize(jsonByteCount: Int, imageSource: ExportImageSource) throws {
+        guard jsonByteCount <= ZipArchiveReader.maxEntryUncompressedSize else {
+            throw ExportError.entryTooLarge(name: "data.json", size: jsonByteCount)
+        }
+
+        var payload = jsonByteCount
+        var structureBytes = zipStructureBytes(forEntryName: "data.json")
+
+        for (index, name) in imageSource.entryNames.enumerated() {
+            let size = try imageSource.byteCount(at: index)
+            guard size <= ZipArchiveReader.maxEntryUncompressedSize else {
+                throw ExportError.entryTooLarge(name: name, size: size)
+            }
+            payload += size
+            structureBytes += zipStructureBytes(forEntryName: name)
+            guard payload <= ZipArchiveReader.maxTotalUncompressedSize else {
+                throw ExportError.payloadTooLarge(payload)
+            }
+        }
+
+        // 22 Bytes End of Central Directory. Damit ist die Dateigröße exakt vorhergesagt, nicht
+        // geschätzt — STORED schreibt unkomprimiert.
+        let fileSize = payload + structureBytes + 22
+        guard fileSize <= ZipArchiveReader.maxArchiveFileSize else {
+            throw ExportError.archiveTooLarge(fileSize)
+        }
+    }
+
+    /// Local File Header (30 B + Name) + Central-Directory-Eintrag (46 B + Name) eines Eintrags.
+    private static func zipStructureBytes(forEntryName name: String) -> Int {
+        30 + 46 + 2 * name.utf8.count
     }
 }

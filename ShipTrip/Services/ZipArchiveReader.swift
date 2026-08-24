@@ -13,6 +13,11 @@ import Compression
 /// Extrahiert ZIP-Archive für `ExportImportService.importFromZip` (STORED + Deflate, gehärtet
 /// gegen Zip-Slip und Dekompressionsbomben).
 enum ZipArchiveReader {
+    /// Die drei Konstanten sind die EINE Quelle der Archivgrenzen — sie binden den Lese- *und* den
+    /// Schreibpfad. `exportToZip` prüft vor dem Schreiben gegen exakt diese Werte
+    /// (`ExportImportService.validateArchiveSize`), damit die App kein Backup erzeugen kann, das
+    /// ihr eigener Import anschließend ablehnt. Wer eine Grenze ändert, ändert beide Richtungen.
+    ///
     /// Maximale unkomprimierte Größe eines einzelnen ZIP-Eintrags (Dekompressionsbomben-Schutz).
     static let maxEntryUncompressedSize = 50 * 1024 * 1024
 
