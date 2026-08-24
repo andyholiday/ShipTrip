@@ -28,10 +28,12 @@ final class OnboardingUITests: XCTestCase {
         static let start = "Bereit für deine erste Reise"
     }
 
-    /// Anker hinter dem Onboarding: auf frischer Installation ist der Store leer,
-    /// dort steht der Empty-State der Reise-Liste. Der Listentitel „Meine Reisen“
-    /// existiert nur im gefüllten Zweig und taugt deshalb nicht als Anker.
-    private let mainListAnchor = "Keine Kreuzfahrten"
+    /// Anker hinter dem Onboarding: der Reisen-Tab aus `MainTabView`. Er steht
+    /// unabhaengig davon, ob der Store leer oder gefuellt ist — anders als der
+    /// Empty-State-Titel „Keine Kreuzfahrten“, den ein Suite-Lauf mit zuvor
+    /// geladenen Demo-Daten wegzieht. Unter dem `fullScreenCover` ist die
+    /// Tab-Leiste nicht erreichbar, nach dem Schliessen wieder.
+    private let mainTabAnchor = "Reisen"
 
     override func setUpWithError() throws {
         continueAfterFailure = false
@@ -74,7 +76,7 @@ final class OnboardingUITests: XCTestCase {
     }
 
     /// Beendet den Flow über die Startentscheidung und prüft, dass das Cover weg
-    /// ist und die Hauptliste darunter steht.
+    /// ist und die Haupt-Tab-Ansicht darunter steht.
     private func finishOnStartCardAndAssertMainList(in app: XCUIApplication) {
         let firstTrip = app.buttons["Erste Reise anlegen"].firstMatch
         XCTAssertTrue(firstTrip.waitForExistence(timeout: 10), "Primär-Taste auf Karte 4 fehlt")
@@ -85,18 +87,15 @@ final class OnboardingUITests: XCTestCase {
             "Das Onboarding-Cover ist nach der Startentscheidung noch sichtbar"
         )
         XCTAssertTrue(
-            mainListElement(in: app).waitForExistence(timeout: 10),
-            "Reise-Liste („\(mainListAnchor)“) nach dem Onboarding nicht erreicht"
+            mainTabElement(in: app).waitForExistence(timeout: 10),
+            "Haupt-Tab-Ansicht („\(mainTabAnchor)“) nach dem Onboarding nicht erreicht"
         )
     }
 
-    /// Der Empty-State ist eine `ContentUnavailableView` — ob ihr Titel als
-    /// eigener StaticText oder als zusammengefasstes Element im Baum landet,
-    /// entscheidet SwiftUI. Deshalb über das Label suchen statt über den Typ.
-    private func mainListElement(in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", mainListAnchor))
-            .firstMatch
+    /// Der Reisen-Tab der `MainTabView` — store-unabhaengiger Anker dafuer, dass
+    /// der Hauptbaum wieder bedienbar ist.
+    private func mainTabElement(in app: XCUIApplication) -> XCUIElement {
+        app.tabBars.buttons[mainTabAnchor].firstMatch
     }
 
     /// Der Berechtigungsdialog gehört Springboard, nicht der App — deshalb dort
@@ -184,8 +183,8 @@ final class OnboardingUITests: XCTestCase {
         relaunched.launch()
 
         XCTAssertTrue(
-            mainListElement(in: relaunched).waitForExistence(timeout: 15),
-            "Reise-Liste beim zweiten Start nicht erreicht"
+            mainTabElement(in: relaunched).waitForExistence(timeout: 15),
+            "Haupt-Tab-Ansicht beim zweiten Start nicht erreicht"
         )
         XCTAssertFalse(
             relaunched.staticTexts[Card.welcome].exists,
