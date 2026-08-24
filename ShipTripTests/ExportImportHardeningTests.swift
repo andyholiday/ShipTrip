@@ -648,7 +648,7 @@ struct PortImageRoundtripTests {
 
     @Test("Hafen-Bild überlebt Export→Import im ZIP verlustfrei, Port-UUID bleibt stabil, DTO trägt die erwartete imageUrl")
     @MainActor
-    func portImageRoundtripsLosslessInZipExport() throws {
+    func portImageRoundtripsLosslessInZipExport() async throws {
         let sourceContainer = try makeInMemoryContainer()
         let sourceContext = sourceContainer.mainContext
 
@@ -670,7 +670,7 @@ struct PortImageRoundtripTests {
 
         try sourceContext.save()
 
-        let zipURL = try ExportImportService.shared.exportToZip(cruises: [cruise])
+        let zipURL = try await ExportImportService.shared.exportToZip(cruises: [cruise])
         defer { try? FileManager.default.removeItem(at: zipURL) }
 
         // DTO direkt aus dem ZIP verifizieren: exakter Pfad "images/<cruiseId>/ports/<index>".

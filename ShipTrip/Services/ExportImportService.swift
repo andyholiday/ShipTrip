@@ -52,119 +52,22 @@ class ExportImportService {
         return df
     }()
 
-    // MARK: - Export (JSON, stabile IDs)
-
-    /// Exportiert Kreuzfahrten samt Wunschreisen und Katalog-Overlay als JSON-Datei mit stabilen
-    /// IDs (kein frisches UUID()). Fotos stecken Base64-kodiert inline in der Datei.
-    func exportToJSON(
-        cruises: [Cruise],
-        deals: [Deal] = [],
-        customLines: [CustomShippingLine] = [],
-        customShips: [CustomShip] = [],
-        hiddenCatalogItems: [HiddenCatalogItem] = []
-    ) throws -> URL {
-        let archive = buildArchive(
-            cruises: Self.nonDemo(cruises),
-            deals: Self.nonDemo(deals),
-            customLines: customLines,
-            customShips: customShips,
-            hiddenCatalogItems: hiddenCatalogItems,
-            photoEncoder: { _, sortedPhotos in
-                sortedPhotos.map { photo in
-                    let base64 = photo.imageData.base64EncodedString()
-                    return ExportPhoto(id: photo.id.uuidString, ref: "data:image/png;base64,\(base64)")
-                }
-            }
-        )
-
-        let jsonData = try encodeArchive(archive)
-
-        let jsonPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kreuzfahrten-export-\(UUID().uuidString).json")
-        try jsonData.write(to: jsonPath)
-
-        return jsonPath
-    }
-
-    /// Exportiert alle Kreuzfahrten als ZIP-Archiv mit externalen Bilddateien.
-    ///
-    /// ZIP-Inhalt:
-    /// - `data.json` – strukturierte Daten; Fotos als Pfadreferenzen `images/<cruiseId>/<index>`
-    /// - `images/<cruiseId>/<index>` – Rohdaten aus `Photo.imageData` (verlustfrei, kein Re-Encoding)
-    ///
-    /// Das ZIP wird mit Compression Method 0 (STORED) geschrieben; kein Deflate.
-    /// CRC-32 wird korrekt berechnet (IEEE 802.3 Polynom).
-    func exportToZip(
-        cruises: [Cruise],
-        deals: [Deal] = [],
-        customLines: [CustomShippingLine] = [],
-        customShips: [CustomShip] = [],
-        hiddenCatalogItems: [HiddenCatalogItem] = []
-    ) throws -> URL {
-        // Baue ZIP-Einträge: name -> data
-        var zipEntries: [(name: String, data: Data)] = []
-
-        // Demo-Daten gehören nie in ein Backup. Der Filter liegt bewusst hier im Service und
-        // nicht an der Aufrufstelle, damit ihn jeder Export-Pfad zwangsläufig durchläuft.
-        let exportableCruises = Self.nonDemo(cruises)
-
-        // Baue JSON mit Pfadreferenzen (Dateiname ohne Extension; Erweiterung ist kosmetisch)
-        let archive = buildArchive(
-            cruises: exportableCruises,
-            deals: Self.nonDemo(deals),
-            customLines: customLines,
-            customShips: customShips,
-            hiddenCatalogItems: hiddenCatalogItems,
-            photoEncoder: { cruise, sortedPhotos in
-                sortedPhotos.enumerated().map { index, photo in
-                    ExportPhoto(id: photo.id.uuidString, ref: "images/\(cruise.id.uuidString)/\(index)")
-                }
-            },
-            portImageURL: { cruise, port, index in
-                port.imageData != nil ? "images/\(cruise.id.uuidString)/ports/\(index)" : nil
-            }
-        )
-
-        let jsonData = try encodeArchive(archive)
-        zipEntries.append(("data.json", jsonData))
-
-        // Füge Bilddateien als Rohdaten ein (verlustfrei, kein UIImage-Re-Encoding)
-        for cruise in exportableCruises {
-            let sortedRoute = cruise.route.sorted { $0.sortOrder < $1.sortOrder }
-            for (index, port) in sortedRoute.enumerated() {
-                if let imageData = port.imageData {
-                    let entryName = "images/\(cruise.id.uuidString)/ports/\(index)"
-                    zipEntries.append((entryName, imageData))
-                }
-            }
-
-            let sortedPhotos = cruise.photos.sorted { $0.sortOrder < $1.sortOrder }
-            for (index, photo) in sortedPhotos.enumerated() {
-                let entryName = "images/\(cruise.id.uuidString)/\(index)"
-                zipEntries.append((entryName, photo.imageData))
-            }
-        }
-
-        let zipData = try ZipArchiveWriter.build(entries: zipEntries)
-
-        let zipPath = FileManager.default.temporaryDirectory
-            .appendingPathComponent("kreuzfahrten-export-\(UUID().uuidString).zip")
-        try zipData.write(to: zipPath)
-
-        return zipPath
-    }
+    // MARK: - Export-Bausteine
+    //
+    // Die Export-Einstiegspunkte (`exportToJSON`, `exportToZip`) liegen in
+    // `ExportImportService+Export.swift`; hier steht nur der gemeinsame Envelope-Bau.
 
     /// Kreuzfahrten/Wunschreisen ohne Demo-Daten. Demo-Inhalte (`isDemo`) dürfen nie in einem
     /// Backup landen — weder Kreuzfahrten noch Wunschreisen (`DemoDataService` erzeugt beides).
-    private static func nonDemo(_ cruises: [Cruise]) -> [Cruise] {
+    static func nonDemo(_ cruises: [Cruise]) -> [Cruise] {
         cruises.filter { !$0.isDemo }
     }
 
-    private static func nonDemo(_ deals: [Deal]) -> [Deal] {
+    static func nonDemo(_ deals: [Deal]) -> [Deal] {
         deals.filter { !$0.isDemo }
     }
 
-    private func encodeArchive(_ archive: ExportArchive) throws -> Data {
+    func encodeArchive(_ archive: ExportArchive) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         return try encoder.encode(archive)
@@ -173,7 +76,7 @@ class ExportImportService {
     /// Baut den Export-Envelope. Erwartet bereits demo-gefilterte Eingaben (siehe `nonDemo`).
     /// `photoEncoder` gibt pro Kreuzfahrt die Foto-Referenzen zurück (Base64 oder ZIP-Pfad).
     /// `portImageURL` gibt pro Hafen die Bild-Pfadreferenz zurück (nil im JSON-Format).
-    private func buildArchive(
+    func buildArchive(
         cruises: [Cruise],
         deals: [Deal],
         customLines: [CustomShippingLine],

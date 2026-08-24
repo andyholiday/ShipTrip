@@ -33,4 +33,20 @@ struct ExportButtonStateTests {
         #expect(hasData((0, 0, 0, 0, 1)), "Ausblendung allein muss exportierbar bleiben")
         #expect(hasData((0, 0, 0, 0, 0)) == false)
     }
+
+    /// REPRO (rot vor dem Fix): Export, Import und „Alle Daten löschen" sperrten sich nicht
+    /// gegenseitig — ein Import oder ein Löschen konnte einem laufenden Export die Modelle unter
+    /// den Händen wegziehen. Jetzt sperrt jede laufende Aktion die anderen beiden.
+    @Test("Jede laufende Datenaktion sperrt die anderen")
+    @MainActor
+    func runningActionBlocksTheOthers() {
+        func blocked(_ isExporting: Bool, _ isImporting: Bool) -> Bool {
+            DataManagementView.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting)
+        }
+
+        #expect(blocked(false, false) == false, "Im Ruhezustand ist nichts gesperrt")
+        #expect(blocked(true, false), "Laufender Export sperrt Import und Löschen")
+        #expect(blocked(false, true), "Laufender Import sperrt Export und Löschen")
+        #expect(blocked(true, true))
+    }
 }

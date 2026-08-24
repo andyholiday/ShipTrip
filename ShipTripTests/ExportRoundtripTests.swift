@@ -144,7 +144,7 @@ struct ExportRoundtripCatalogTests {
 
     @Test("Deals, eigene Reedereien/Schiffe und Ausblendungen überleben den ZIP-Roundtrip; Re-Import bleibt idempotent")
     @MainActor
-    func catalogAndDealsSurviveZipRoundtrip() throws {
+    func catalogAndDealsSurviveZipRoundtrip() async throws {
         let source = try makeFullContainer()
         let context = source.mainContext
 
@@ -174,7 +174,7 @@ struct ExportRoundtripCatalogTests {
         context.insert(hiddenShip)
         try context.save()
 
-        let url = try ExportImportService.shared.exportToZip(
+        let url = try await ExportImportService.shared.exportToZip(
             cruises: [cruise],
             deals: [deal],
             customLines: [line],
@@ -262,7 +262,7 @@ struct ExportRoundtripCatalogTests {
 
     @Test("Demo-Kreuzfahrten UND Demo-Wunschreisen werden nicht exportiert")
     @MainActor
-    func demoDataIsExcludedFromExport() throws {
+    func demoDataIsExcludedFromExport() async throws {
         let source = try makeFullContainer()
         let context = source.mainContext
 
@@ -277,7 +277,7 @@ struct ExportRoundtripCatalogTests {
         context.insert(demoDeal)
         try context.save()
 
-        let url = try ExportImportService.shared.exportToZip(
+        let url = try await ExportImportService.shared.exportToZip(
             cruises: [realCruise, demoCruise],
             deals: [realDeal, demoDeal]
         )

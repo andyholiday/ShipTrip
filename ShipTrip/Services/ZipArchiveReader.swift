@@ -13,14 +13,34 @@ import Compression
 /// Extrahiert ZIP-Archive für `ExportImportService.importFromZip` (STORED + Deflate, gehärtet
 /// gegen Zip-Slip und Dekompressionsbomben).
 enum ZipArchiveReader {
+    /// Die drei Konstanten sind die EINE Quelle der Archivgrenzen — sie binden den Lese- *und* den
+    /// Schreibpfad. `exportToZip` prüft vor dem Schreiben gegen exakt diese Werte
+    /// (`ExportImportService.validateArchiveSize`), damit die App kein Backup erzeugen kann, das
+    /// ihr eigener Import anschließend ablehnt. Wer eine Grenze ändert, ändert beide Richtungen.
+    ///
     /// Maximale unkomprimierte Größe eines einzelnen ZIP-Eintrags (Dekompressionsbomben-Schutz).
     static let maxEntryUncompressedSize = 50 * 1024 * 1024
 
     /// Maximale kumulierte unkomprimierte Größe aller Einträge eines Archivs.
     static let maxTotalUncompressedSize = 500 * 1024 * 1024
 
-    /// Maximale Größe der ZIP-Datei selbst (konsistent zum 500-MB-Gesamtlimit + Overhead).
-    /// Wird geprüft, BEVOR das Archiv überhaupt in den Speicher gelesen wird.
+    /// Maximale Größe der ZIP-Datei selbst. Wird geprüft, BEVOR das Archiv überhaupt in den
+    /// Speicher gelesen wird.
+    ///
+    /// Herleitung der 550 MB (C4, bewusst bestätigt statt geerbt):
+    /// - Nutzlast: `maxTotalUncompressedSize` = 500 MB. Das ist die Obergrenze dessen, was ein
+    ///   Backup an Bildern tragen darf; bei ~3 MB pro Foto sind das rund 160 000 Bilder, also
+    ///   weit jenseits einer realistischen Reise-Fotobibliothek.
+    /// - Overhead: Der Export schreibt STORED (Methode 0), also unkomprimiert. Dazu kommen
+    ///   Local Header (30 B + Name), Central Directory (46 B + Name) und `data.json`. 10 %
+    ///   Aufschlag decken das mit Reserve ab → 550 MB.
+    /// - Speicherprofil: `extract` liest die Datei genau EINMAL vollständig in den Speicher
+    ///   (`parseAndExtractZip`); der Import-Spitzenverbrauch entspricht damit ungefähr der
+    ///   Archivgröße. 550 MB bleiben auf iOS-18-Geräten im Rahmen — höher zu gehen wäre ein
+    ///   Jetsam-Risiko, niedriger würde legitime Backups beim Wiederherstellen abweisen, und
+    ///   genau dort ist Großzügigkeit wichtiger als Sparsamkeit.
+    /// Wird die Grenze angehoben, muss zuerst der Lesepfad strömend werden (siehe
+    /// `docs/features/export-backup.md`).
     static let maxArchiveFileSize = 550 * 1024 * 1024
 
     /// Löst einen aus dem Archiv bzw. aus `data.json` stammenden, nicht vertrauenswürdigen
@@ -72,9 +92,12 @@ enum ZipArchiveReader {
             throw ExportImportService.ImportError.archiveTooLarge(fileSize)
         }
 
-        let zipData = try Data(contentsOf: sourceURL)
+        // Die Arbeitskopie entsteht auf Dateiebene, nicht über den Speicher: ein
+        // `Data(contentsOf:)` + `write(to:)` hätte das komplette Archiv ein zweites Mal
+        // resident gehalten und den Import-Spitzenverbrauch verdoppelt (C4).
         let tempZipPath = destinationURL.appendingPathComponent("temp.zip")
-        try zipData.write(to: tempZipPath)
+        try? FileManager.default.removeItem(at: tempZipPath)
+        try FileManager.default.copyItem(at: sourceURL, to: tempZipPath)
 
         try parseAndExtractZip(from: tempZipPath, to: destinationURL)
 
