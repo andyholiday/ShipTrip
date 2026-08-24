@@ -755,7 +755,22 @@ struct DataManagementView: View {
     @State private var exportURL: URL?
     @State private var alertMessage = ""
     @State private var showingAlert = false
-    
+
+    /// Ist überhaupt etwas da, das ein Backup sichern würde? Der Export umfasst neben
+    /// Kreuzfahrten und Wunschreisen auch eigene Reedereien, eigene Schiffe und ausgeblendete
+    /// Katalog-Einträge (ADR-006) — der Button darf deshalb erst sperren, wenn ALLE fünf
+    /// Sammlungen leer sind, sonst lässt sich ein reines Katalog-Overlay nicht sichern.
+    /// Als `static` ausgelagert, damit die Bedingung ohne View-Aufbau testbar bleibt.
+    static func hasExportableData(
+        cruises: Int,
+        deals: Int,
+        customLines: Int,
+        customShips: Int,
+        hiddenCatalogItems: Int
+    ) -> Bool {
+        cruises + deals + customLines + customShips + hiddenCatalogItems > 0
+    }
+
     var body: some View {
         Form {
             Section("Übersicht") {
@@ -776,7 +791,7 @@ struct DataManagementView: View {
             
             // Export
             Section(header: Text("Export"),
-                    footer: Text("Exportiert alle Kreuzfahrten als ZIP-Archiv mit externalen Bilddateien.")) {
+                    footer: Text(String(localized: "Sichert Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie ausgeblendete Katalog-Einträge als ZIP-Archiv mit externen Bilddateien. Demo-Daten werden nicht mitexportiert."))) {
                 Button {
                     exportData()
                 } label: {
@@ -788,12 +803,18 @@ struct DataManagementView: View {
                         }
                     }
                 }
-                .disabled(cruises.isEmpty || isExporting)
+                .disabled(!Self.hasExportableData(
+                    cruises: cruises.count,
+                    deals: deals.count,
+                    customLines: customShippingLines.count,
+                    customShips: customShips.count,
+                    hiddenCatalogItems: hiddenCatalogItems.count
+                ) || isExporting)
             }
-            
+
             // Import
             Section(header: Text("Import"),
-                    footer: Text("Importiert Kreuzfahrten aus einer ZIP-Datei (Web-App kompatibel).")) {
+                    footer: Text(String(localized: "Liest ZIP- und JSON-Backups: Kreuzfahrten, Wunschreisen, eigene Reedereien und Schiffe sowie Ausblendungen. Ältere Backups (bis Version 1.7) bleiben lesbar."))) {
                 Button {
                     showingImportPicker = true
                 } label: {
@@ -867,7 +888,15 @@ struct DataManagementView: View {
 
         Task {
             do {
-                let url = try ExportImportService.shared.exportToZip(cruises: cruises)
+                // Demo-Daten filtert der Service selbst — hier bewusst die vollständigen
+                // Query-Ergebnisse übergeben.
+                let url = try ExportImportService.shared.exportToZip(
+                    cruises: cruises,
+                    deals: deals,
+                    customLines: customShippingLines,
+                    customShips: customShips,
+                    hiddenCatalogItems: hiddenCatalogItems
+                )
                 await MainActor.run {
                     isExporting = false
                     exportURL = url
