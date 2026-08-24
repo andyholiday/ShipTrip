@@ -152,35 +152,77 @@ Views/
 
 ### Testing
 
-#### Unit Tests
+Zwei Frameworks, klar getrennt:
+
+| Ziel | Framework | Ordner |
+|------|-----------|--------|
+| Unit-Tests | Swift Testing (`import Testing`, `@Test`, `#expect`) | `ShipTripTests/` |
+| UI-Tests | XCTest (`XCTestCase`, `XCUIApplication`) | `ShipTripUITests/` |
+
+Neue Unit-Tests werden ausschließlich mit Swift Testing geschrieben; in
+`ShipTripTests/` gibt es kein `XCTestCase` mehr. UI-Tests bleiben bei XCTest,
+weil `XCUIApplication` nur dort verfügbar ist.
+
+#### Unit Tests (Swift Testing)
 
 ```swift
-import XCTest
+import Testing
+import Foundation
 @testable import ShipTrip
 
-final class CruiseTests: XCTestCase {
-    func testDurationCalculation() {
-        let cruise = Cruise(/*...*/)
-        XCTAssertEqual(cruise.duration, 7)
-    }
+@Test
+func kreuzfahrtDauerZaehltStartUndEndtag() {
+    let start = Date(timeIntervalSince1970: 0)
+    let cruise = Cruise(
+        title: "Mittelmeer",
+        startDate: start,
+        endDate: start.addingTimeInterval(6 * 24 * 60 * 60),
+        shippingLine: "AIDA Cruises",
+        ship: "AIDAnova"
+    )
+    #expect(cruise.duration == 7)
 }
 ```
 
-#### UI Tests
+Tests gegen SwiftData bauen einen eigenen In-Memory-Container
+(`ModelConfiguration(isStoredInMemoryOnly: true)`) — nie den App-Container.
+
+#### UI Tests (XCTest)
 
 ```swift
 import XCTest
 
 final class CruiseListUITests: XCTestCase {
+    @MainActor
     func testAddNewCruise() {
         let app = XCUIApplication()
         app.launch()
-        
+
         app.buttons["addCruise"].tap()
         // ...
     }
 }
 ```
+
+Für reproduzierbare Daten startet die App im UI-Test mit dem Launch-Argument
+`-uiTestingResetAndLoadDemoData` (nur in Debug-Builds ausgewertet).
+
+#### Build & Test ausführen
+
+Bevorzugt über die Xcode-MCP-Tools (`BuildProject`, `RunAllTests`), alternativ
+über die Kommandozeile:
+
+```bash
+# Build
+xcodebuild -scheme ShipTrip build
+
+# Alle Tests
+xcodebuild -scheme ShipTrip test
+```
+
+Test-Builds laufen strikt seriell. Vor einem Release-Lauf empfiehlt sich ein
+sauberer Ausgangszustand (`xcodebuild clean`, DerivedData leeren,
+`xcrun simctl --set testing delete all`).
 
 ## Review-Prozess
 

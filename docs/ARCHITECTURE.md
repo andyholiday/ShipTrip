@@ -134,6 +134,7 @@ Deal — keine Relationships
 | `ShipTripCloudSync` | Privaten SwiftData-CloudKit-Store konfigurieren und iCloud-Accountstatus lesen |
 | `CalendarEventPlanner` | Stabile Event-Entwürfe für Reise, Häfen und Seetage erzeugen |
 | `CalendarSyncService` | EventKit-Zugriff, Zielkalender und verwaltete Termine synchronisieren |
+| `ShippingLineCatalogService` | Katalog + eigene Reedereien/Schiffe mischen, Picker-Optionen und Schreibpfade (ADR-006) |
 
 Vollständige API-Signaturen: [API.md](API.md).
 
@@ -146,6 +147,7 @@ Vollständige API-Signaturen: [API.md](API.md).
 | `IdBackfill.swift` | Einmalige Start-Reparatur für Legacy-Datensätze ohne stabile `id` (siehe [ADR-002](adr/ADR-002-cloudkit-sync-und-stabile-ids.md)); läuft nur einmal (`idBackfillCompleted.v1`-Flag) |
 | `ImageDownsampler.swift` | Thumbnail-Erzeugung aus `Photo.imageData` |
 | `ThumbnailBackfill.swift` | Nachträgliches Befüllen von `thumbnailData` für Bestandsfotos |
+| `ShippingLineCatalogDedup.swift` | Einmaliger Dedup-Pass für eigene Reedereien/Schiffe und Ausblendungen (siehe [ADR-006](adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md)) |
 
 ### 5. Components
 
@@ -157,19 +159,28 @@ Vollständige API-Signaturen: [API.md](API.md).
 
 ### 1. Kreuzfahrt erstellen
 
-```
+```text
 User Input → CruiseFormView → Cruise Model → SwiftData → SQLite
                     │
                     ├── KI-Import (optional)
                     │      │
                     │      └── GeminiService → Gemini API
                     │
-                    └── Port Suggestions → PortSuggestion.swift (statisch, indexiert)
+                    ├── Port Suggestions → PortSuggestion.swift (statisch, indexiert)
+                    │
+                    └── Reederei/Schiff → ShippingLineCatalogService
+                           │
+                           ├── ShippingLine.all (statischer Katalog)
+                           └── @Query CustomShippingLine / CustomShip / HiddenCatalogItem
 ```
+
+Gespeichert werden in `Cruise.shippingLine`/`Cruise.ship` weiterhin nur Namens-Strings,
+kein Fremdschlüssel auf ein Modell — siehe
+[ADR-006](adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md).
 
 ### 2. Karten-Visualisierung
 
-```
+```text
 SwiftData Query → [Cruise] → MapView
                               │
                               ├── Filter: hasValidCoordinates
@@ -181,29 +192,7 @@ SwiftData Query → [Cruise] → MapView
 
 ### 3. Export/Import
 
-```
-
-### 4. CloudKit-Sync
-
-```
-SwiftData-Änderung → lokaler Store → private CloudKit-Datenbank
-App-Start → ShipTripCloudSync.accountStatus → Statuszeile unter „Mehr"
-```
-
-Tests deaktivieren CloudKit über die XCTest-Umgebung, damit Unit-Tests weder
-iCloud-Login noch Netzwerkzugriff benötigen. Das Schemakontrakt-Artefakt liegt in
-`docs/cloudkit/ShipTrip.ckdb`.
-
-### 5. Optionaler Kalender-Sync
-
-```
-Cruises + Modus → CalendarEventPlanner → CalendarSyncService → Zielkalender
-       ↑                                      │
-CalendarSyncObserver ← App-/Datenänderung     └─ stabile Marker + Event-ID-Mapping
-```
-
-Die Funktion ist Opt-in. Sie benötigt vollständigen Kalenderzugriff, spiegelt
-keine Demo-Reisen und entfernt bei Deaktivierung ihre verwalteten Events.
+```text
 [Cruise] → ExportImportService.exportToZip
               │
               ├── data.json (Struktur, Bild-Pfadreferenzen)
@@ -217,6 +206,49 @@ ZIP-Datei → ExportImportService.importFromZip
                      │
                      └── importFromJSONData (Duplikat-Check via id, Rollback bei Save-Fehler)
 ```
+
+Exportiert werden `Cruise` samt `Port`, `Expense` und Fotos. `Deal` sowie die
+drei Katalog-Overlay-Modelle (`CustomShippingLine`, `CustomShip`,
+`HiddenCatalogItem`) sind **nicht** Teil des Export-Formats —
+`ExportImportService` kennt diese Typen nicht; sie erreichen weitere Geräte nur
+über den CloudKit-Sync.
+
+### 4. CloudKit-Sync
+
+```text
+SwiftData-Änderung → lokaler Store → private CloudKit-Datenbank
+App-Start → ShipTripCloudSync.accountStatus → Statuszeile unter „Mehr"
+```
+
+Tests deaktivieren CloudKit über die XCTest-Umgebung, damit Unit-Tests weder
+iCloud-Login noch Netzwerkzugriff benötigen. Das Schemakontrakt-Artefakt liegt in
+`docs/cloudkit/ShipTrip.ckdb` und enthält alle acht Record-Typen.
+
+### 5. Optionaler Kalender-Sync
+
+```text
+Cruises + Modus → CalendarEventPlanner → CalendarSyncService → Zielkalender
+       ↑                                      │
+CalendarSyncObserver ← App-/Datenänderung     └─ stabile Marker + Event-ID-Mapping
+```
+
+Die Funktion ist Opt-in. Sie benötigt vollständigen Kalenderzugriff, spiegelt
+keine Demo-Reisen und entfernt bei Deaktivierung ihre verwalteten Events.
+
+### 6. Start-Routinen
+
+`CruiseListView` führt in seinem `.task`-Block vier Routinen in fester
+Reihenfolge aus:
+
+```text
+IdBackfill.run               → stabile IDs für Altdaten  (idBackfillCompleted.v1)
+NotificationReconciler.run   → Erinnerungs-Abgleich       (idempotent, kein Flag)
+ThumbnailBackfill.run        → thumbnailData nachziehen   (kein Flag)
+ShippingLineCatalogDedup.run → Overlay-Duplikate räumen   (shippingLineCatalogDedupCompleted.v1)
+```
+
+Die Reihenfolge ist bindend: Der Erinnerungs-Abgleich bildet seine Identifier aus
+`Cruise.id` und darf erst nach `IdBackfill` laufen.
 
 ## Technologie-Stack
 
