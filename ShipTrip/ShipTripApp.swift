@@ -178,15 +178,11 @@ struct ShipTripApp: App {
         WindowGroup {
             if let container = modelContainer {
                 MainTabView()
-                    .modelContainer(container)
                     // Das Cover haengt am **montierten** Hauptbaum: `MainTabView`
                     // bleibt aufgebaut, `CruiseListView` ebenso, und dessen
                     // `.task`-Kette (IdBackfill → NotificationReconciler →
                     // ThumbnailBackfill → ShippingLineCatalogDedup) laeuft
                     // unveraendert weiter, waehrend das Onboarding sichtbar ist.
-                    //
-                    // Nach `.modelContainer`, damit der Flow den `modelContext`
-                    // fuer die Beispielreise aus der Umgebung erbt.
                     //
                     // `.postpone` (In-Memory-Fallback) haelt das Cover zurueck,
                     // damit die Datenverlust-Warnung allein steht — ohne den
@@ -214,6 +210,17 @@ struct ShipTripApp: App {
                             "Bitte starte die App neu; stelle bei Bedarf aus einem Backup (Export/Import) wieder her."
                         )
                     }
+                    // Bewusst **nach** dem Cover: eine Praesentation erbt die
+                    // Umgebung an der Stelle ihres Modifiers, nicht die der
+                    // modifizierten Ansicht. Stand `.modelContainer` darueber,
+                    // bekam der Onboarding-Flow einen Ersatz-Kontext ohne Store
+                    // — „Beispielreise ansehen" schrieb die Beispieldaten ins
+                    // Leere (kein Fehler, keine Reise in der Liste) und der
+                    // Soft-Ask glich Erinnerungen gegen einen leeren Kontext ab.
+                    // Hier unten liegt der Container ueber allem, was darueber
+                    // haengt: Hauptbaum, Cover und Alert teilen denselben
+                    // `mainContext`.
+                    .modelContainer(container)
             } else {
                 StoreUnavailableView()
             }

@@ -264,6 +264,28 @@
       }
     },
 
+    "App zurücksetzen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App"
+          }
+        }
+      }
+    },
+
+    "App zurücksetzen?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset App?"
+          }
+        }
+      }
+    },
+
     "Ausflug" : {
       "comment" : "ExpenseCategory display name",
       "localizations" : {
@@ -502,6 +524,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "This action cannot be undone."
+          }
+        }
+      }
+    },
+
+    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This action cannot be undone. All cruises and wish trips will be deleted and the intro will start again."
           }
         }
       }
@@ -900,6 +933,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hotel"
+          }
+        }
+      }
+    },
+
+    "Löscht alle Daten und zeigt das Intro wieder wie beim ersten Öffnen. Dein KI-API-Key bleibt erhalten — den entfernst du über „Alle Daten löschen“." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deletes all data and shows the intro again, just like on first launch. Your AI API key is kept — remove it via “Delete All Data”."
+          }
+        }
+      }
+    },
+
+    "Zurücksetzen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset"
           }
         }
       }

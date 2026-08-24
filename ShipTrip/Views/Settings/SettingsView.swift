@@ -759,6 +759,7 @@ struct DataManagementView: View {
     @Query private var hiddenCatalogItems: [HiddenCatalogItem]
 
     @State private var showingDeleteAlert = false
+    @State private var showingResetAlert = false
     @State private var showingApiKeyDeleteConfirm = false
     @State private var showingExportSheet = false
     @State private var showingImportPicker = false
@@ -856,6 +857,16 @@ struct DataManagementView: View {
                 }
                 .disabled(Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
             }
+
+            // App zurücksetzen: dasselbe Löschen wie oben, zusätzlich den
+            // Erststart-Schalter — die App steht danach wieder wie beim ersten
+            // Öffnen da. Dieselbe gegenseitige Sperre gegen Export/Import.
+            Section(footer: Text(String(localized: "Löscht alle Daten und zeigt das Intro wieder wie beim ersten Öffnen. Dein KI-API-Key bleibt erhalten — den entfernst du über „Alle Daten löschen“."))) {
+                Button("App zurücksetzen", role: .destructive) {
+                    showingResetAlert = true
+                }
+                .disabled(Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
+            }
         }
         .navigationTitle("Daten verwalten")
         .alert("Alle Daten löschen?", isPresented: $showingDeleteAlert) {
@@ -869,6 +880,14 @@ struct DataManagementView: View {
             }
         } message: {
             Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht.")
+        }
+        .alert("App zurücksetzen?", isPresented: $showingResetAlert) {
+            Button("Abbrechen", role: .cancel) { }
+            Button("Zurücksetzen", role: .destructive) {
+                resetApp()
+            }
+        } message: {
+            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu.")
         }
         .alert("KI-API-Key auch löschen?", isPresented: $showingApiKeyDeleteConfirm) {
             Button("Behalten", role: .cancel) {
@@ -1013,7 +1032,11 @@ struct DataManagementView: View {
     /// Katalog-Einträge (ADR-006). Erst nach erfolgreichem Speichern werden
     /// geplante Erinnerungen entfernt und optional der KI-API-Key gelöscht, damit bei einem
     /// fehlgeschlagenen Save keine Seiteneffekte ausgeführt werden.
-    private func deleteAllData(alsoDeleteApiKey: Bool) {
+    /// Gibt zurück, ob gespeichert werden konnte — „App zurücksetzen" hängt den
+    /// Erststart-Schalter daran, damit ein fehlgeschlagenes Löschen nicht in
+    /// einer frisch wirkenden App mit alten Daten endet.
+    @discardableResult
+    private func deleteAllData(alsoDeleteApiKey: Bool) -> Bool {
         for cruise in cruises {
             modelContext.delete(cruise)
         }
@@ -1038,13 +1061,25 @@ struct DataManagementView: View {
             modelContext.rollback()
             alertMessage = String(localized: "Löschen fehlgeschlagen: ") + error.localizedDescription
             showingAlert = true
-            return
+            return false
         }
 
         NotificationService.shared.removeAllPendingNotifications()
         if alsoDeleteApiKey {
             GeminiService.shared.clearApiKey()
         }
+        return true
+    }
+
+    /// „App zurücksetzen": derselbe Lösch-Pfad wie „Alle Daten löschen", danach
+    /// der Erststart-Schalter auf „zurückgesetzt" — dieselbe Semantik wie
+    /// „Intro erneut zeigen". Bewusst `false` statt Schlüssel entfernen: ein
+    /// fehlender Schlüssel gilt als Bestandsinstallation und würde beim
+    /// nächsten Start still abgehakt (siehe `OnboardingPresentation`).
+    /// Der KI-API-Key liegt separat in der Keychain und bleibt unberührt.
+    private func resetApp() {
+        guard deleteAllData(alsoDeleteApiKey: false) else { return }
+        OnboardingPresentation.requestReplay(in: .standard)
     }
 }
 
