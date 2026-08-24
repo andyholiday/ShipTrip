@@ -206,8 +206,21 @@ Dateien: [`CRC32.swift`](#crc32), [`ZipArchiveWriter.swift`](#ziparchivewriter),
 class ExportImportService {
     static let shared = ExportImportService()
 
-    func exportToJSON(cruises: [Cruise]) throws -> URL
-    func exportToZip(cruises: [Cruise]) throws -> URL
+    func exportToJSON(
+        cruises: [Cruise],
+        deals: [Deal] = [],
+        customLines: [CustomShippingLine] = [],
+        customShips: [CustomShip] = [],
+        hiddenCatalogItems: [HiddenCatalogItem] = []
+    ) throws -> URL
+
+    func exportToZip(
+        cruises: [Cruise],
+        deals: [Deal] = [],
+        customLines: [CustomShippingLine] = [],
+        customShips: [CustomShip] = [],
+        hiddenCatalogItems: [HiddenCatalogItem] = []
+    ) async throws -> URL
 
     func importFromZip(url: URL, modelContext: ModelContext) throws -> ImportResult
     func importFromJSON(url: URL, modelContext: ModelContext) throws -> ImportResult
@@ -225,6 +238,11 @@ struct ImportResult {
 `Sendable` ist.
 
 ### Export-Formate
+
+Beide Formate schreiben denselben Envelope: Kreuzfahrten mit Route, Ausgaben und
+Foto-Referenzen, Wunschreisen (`Deal`) sowie das Katalog-Overlay
+(`CustomShippingLine`, `CustomShip`, `HiddenCatalogItem`). Objekte mit `isDemo`
+filtert der Service selbst heraus, auf jedem Export-Pfad.
 
 - **`exportToJSON`** — Legacy-Format: Fotos als `"data:image/png;base64,..."`
   direkt in `data.json` eingebettet. Skaliert nicht für viele/große Fotos.

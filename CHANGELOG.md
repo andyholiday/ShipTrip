@@ -21,6 +21,147 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   ([Feature-Doku](docs/features/onboarding.md),
   [Design-Spec](docs/design/design-spec-onboarding.md))
 
+- **Beispielreise auch außerhalb des Debug-Builds**: Die Beispieldaten waren
+  bisher komplett in `#if DEBUG` gekapselt und damit in der ausgelieferten App
+  nicht vorhanden. Sie stehen jetzt in den Einstellungen unter *Beispielreise*
+  und am Ende des Erststart-Flows bereit. Alles Erzeugte ist als Demo markiert,
+  lässt sich mit einer Aktion wieder entfernen — Nutzerdaten bleiben dabei
+  unberührt — und bleibt aus Export, Kalender-Sync und Erinnerungen
+  ausgefiltert. Der Store-weite Reset bleibt Debug-only.
+  ([Feature-Doku](docs/features/beispielreise.md),
+  [ADR-001](docs/adr/ADR-001-isdemo-in-release-schema.md))
+
+- **Vollständige englische Fassung (396 Schlüssel DE/EN)**: Der String Catalog
+  ist auf den Stand nach Onboarding, Beispielreise und erweitertem Export
+  gezogen — 75 neue Schlüssel mit EN-Übersetzung, acht verwaiste entfernt. Reine
+  Interpolationsketten sind als nicht zu übersetzen markiert statt mit einer
+  Schein-Übersetzung versehen.
+
+- **Lokalisierungs-Gate in der CI**: `scripts/check-l10n.py` liest den
+  String Catalog und schlägt fehl, sobald ein Schlüssel ohne englischen Wert
+  existiert — inklusive leerer Werte, einzelner Plural-Zweige und einzelner
+  Substitutionen. Der Job läuft ohne Xcode und Simulator parallel zum Build.
+
+- **UI-Tests für den Erststart**: Drei Szenarien decken den Durchlauf über alle
+  vier Karten, den Überspringen-Pfad auf die Startentscheidung und die
+  Persistenz über einen Neustart ab. Der Erststart-Zustand kommt dabei über
+  Debug-only-Startargumente statt aus dem Restzustand des Simulators; ein
+  Gegenstück davon hält das Cover in der bestehenden UI-Suite geschlossen.
+  ([Feature-Doku](docs/features/onboarding.md))
+
+- **Backup sichert jetzt den ganzen Bestand**: Bisher schrieb der Export nur
+  die Kreuzfahrten. Wunschreisen, eigene Reedereien, eigene Schiffe und
+  ausgeblendete Katalog-Einträge liegen jetzt mit im Archiv und kommen beim
+  Import zurück; die Fußnoten unter *Export* und *Import* benennen den Umfang.
+  Ältere Backups bis Version 1.7 bleiben lesbar.
+  ([Feature-Doku](docs/features/export-backup.md),
+  [ADR-006](docs/adr/ADR-006-eigene-reedereien-und-schiffe-overlay-modell.md))
+
+- **Automatischer Build in der CI**: Ein GitHub-Actions-Workflow baut das
+  Projekt auf macOS mit gepinntem Xcode 26.6 und fährt die Unit-Tests gegen
+  einen Wegwerf-Simulator, dem die Kalender-Berechtigung vorab erteilt wird.
+  Build und Test laufen getrennt; bei Fehlschlag hängen die xcresult-Bundles
+  als Artefakt am Lauf. Fastlane ist über ein `Gemfile` exakt auf 2.237.0
+  festgelegt. Die UI-Suite bleibt vorerst außerhalb des Laufs.
+
+- **Reproduzierbares Schema und Testplan im Repository**: Das geteilte
+  Xcode-Schema `ShipTrip` und `ShipTrip.xctestplan` sind eingecheckt, damit
+  `xcodebuild -scheme ShipTrip` überall dieselbe Konfiguration auflöst statt
+  auf Xcodes automatisch erzeugtes Schema zu treffen.
+
+### Geaendert
+
+- **Reise-Übersicht zählt „Anläufe", die Bilanz „Häfen"**: Beide Ansichten
+  trugen dieselbe Beschriftung für zwei verschiedene Kennzahlen — die
+  Übersicht zählt jeden Anlauf inklusive Mehrfachbesuchen, die Bilanz nur
+  eindeutige Häfen. Die Zahlen (etwa 57 gegenüber 43) widersprechen sich
+  dadurch nicht mehr; beide Kennzahlen bleiben erhalten.
+
+- **Export läuft strömend und außerhalb des Hauptthreads**: Das Archiv wurde
+  bisher vollständig im Speicher aufgebaut — rund zwei Kopien der
+  Bildbibliothek. Jetzt schreibt der Export Bild für Bild direkt in die
+  Zieldatei; der Spitzenverbrauch richtet sich nach dem größten Einzelbild
+  statt nach der Gesamtgröße. Ein laufender Export lässt sich abbrechen.
+  ([Feature-Doku](docs/features/export-backup.md))
+
+- **Doku zu Modellen, Datenfluss und Test-Setup nachgezogen**: `docs/MODELS.md`
+  beschreibt alle acht SwiftData-Modelle samt Katalog-Overlay und
+  Dedup-Regeln, `docs/ARCHITECTURE.md` den Export-/Import-Datenfluss mit
+  seinen Grenzen, `docs/CONTRIBUTING.md` die Trennung von Swift Testing für
+  Unit- und XCTest für UI-Tests.
+
+- **`.gitignore` deckt die Video-Renderprojekte ab**: Generierte Render-,
+  Snapshot- und Thumbnail-Ordner sowie Video-Dateiendungen werden nicht mehr
+  als unversionierte Änderungen angeboten; die Quelldateien der Projekte
+  bleiben versionierbar. Es wurde nichts gelöscht und keine Historie
+  umgeschrieben.
+
+### Behoben
+
+- **Erinnerungen nach dem Soft-Ask erst beim nächsten Start**: „Erinnerungen
+  aktivieren" im Erststart fragte nur die Berechtigung ab und plante nichts;
+  bereits vorhandene Reisen bekamen ihre Erinnerungen deshalb verspätet. Nach
+  erteilter Berechtigung läuft jetzt sofort derselbe Abgleich wie beim
+  App-Start. Die Schalter in den Erinnerungs-Einstellungen bleiben unangetastet.
+  ([Feature-Doku](docs/features/onboarding.md))
+- **Erststart-Flow wäre beim Update aus 1.7.x erschienen**: Ein fehlender
+  Schalter galt als „noch nie durchlaufen". Der Start unterscheidet jetzt
+  dreiwertig zwischen fehlendem, zurückgesetztem und gesetztem Schalter und hakt
+  eine Bestandsinstallation mit vorhandenen Reisen still ab. Ein über die
+  Einstellungen angefordertes Wiedersehen bleibt davon unberührt.
+  ([Feature-Doku](docs/features/onboarding.md))
+- **Erststart-Flow über der Datenverlust-Warnung**: Fällt der Start auf den
+  In-Memory-Store zurück, standen Warnung und Erststart-Cover gleichzeitig
+  bereit. Die Warnung hat jetzt Vorrang; das Cover bleibt zurück, ohne den
+  Schalter zu setzen, und der Erststart steht beim nächsten gesunden Start
+  unverändert an.
+  ([Feature-Doku](docs/features/onboarding.md))
+- **Mehrfach-Tap auf „Erinnerungen aktivieren"** forderte mehrere
+  System-Dialoge an; beide Aktionen der Karte sind während der laufenden Abfrage
+  gesperrt.
+- **Sechs Eckdaten-Titel und vier Push-Texte blieben immer deutsch**: Die
+  Titel *Schiff*, *Reederei*, *Zeitraum*, *Dauer*, *Kabine* und *Buchung* im
+  Reise-Detail wurden als einfacher String durchgereicht, die vier
+  Erinnerungs-Texte als rohe Interpolation zusammengesetzt — beide konnten den
+  String Catalog nie erreichen. Sie sind jetzt übersetzbar und in EN vorhanden.
+- **Lokalisierungs-Gate meldete einen kaputten Katalog als vollständig**: Ein
+  Katalog ohne `strings`-Feld lief durch eine leere Schleife und galt als grün;
+  ungültiges JSON platzte als Traceback. Das Gate prüft jetzt die Grundstruktur
+  vorab und meldet den Bruch als regulären Fund.
+- **CI baute ohne die gepinnte Xcode-Version weiter**: Ein fehlendes
+  `Xcode_26.6.app` war nur eine Warnung, der Lauf ging mit einem beliebigen
+  Standard-Xcode grün durch. Der Schritt bricht jetzt ab und verifiziert
+  zusätzlich die tatsächlich aktive Version.
+- **Halbe Sterne gingen im Backup verloren**: Die Bewertung wurde als ganze
+  Zahl exportiert, 4,5 Sterne kamen als 4 zurück. Sie wird jetzt in voller
+  Auflösung gesichert.
+- **Fotos wurden beim Import zu Dubletten**: Die Foto-Identität stand nicht im
+  Archiv, jeder Import legte neue Objekte an. Die Kennung wird jetzt
+  mitgeschrieben und übernommen; innerhalb eines Archivs oder gegen bereits
+  vorhandene Fotos doppelte Kennungen werden erkannt, ohne den Import
+  abzubrechen.
+- **Seetage verloren Land und Koordinaten**: Der Export leerte beide Felder für
+  Seetage, nach dem Import fehlten sie. Sie bleiben jetzt erhalten.
+- **Export-Knopf war ohne Reisen gesperrt**: Wer nur Wunschreisen, eigene
+  Reedereien, eigene Schiffe oder Ausblendungen gepflegt hatte, kam nicht an
+  ein Backup. Der Knopf sperrt erst, wenn nichts Exportierbares vorhanden ist.
+- **Export konnte Archive erzeugen, die der eigene Import ablehnt**: Schreiben
+  und Lesen kannten unterschiedliche Größengrenzen. Beide Richtungen prüfen
+  jetzt gegen dieselben Grenzen, und zwar vor dem Schreiben.
+  ([Feature-Doku](docs/features/export-backup.md))
+- **Unvollständige Backups meldeten Erfolg**: Ein zwischenzeitlich geleertes
+  Hafenbild landete als leerer Eintrag im Archiv, ein Abbruch oder ein
+  Schreibfehler ließ eine halbe Datei zurück, die von einem vollständigen
+  Backup nicht zu unterscheiden war. Jetzt gilt: entweder das Archiv enthält
+  alle Medien, oder es entsteht keine Datei.
+- **Löschen während eines laufenden Exports**: Export, Import und „Alle Daten
+  löschen" waren nur einzeln gegen sich selbst gesperrt. Die drei Aktionen
+  sperren sich jetzt gegenseitig.
+- **Screenshot-Tests scheiterten auf fremden Rechnern**: Die neun
+  Screenshot-UI-Tests schrieben auf einen fest verdrahteten Pfad. Das
+  Zielverzeichnis kommt jetzt aus `SHIPTRIP_SCREENSHOT_DIR`; fehlt die
+  Variable, werden die Tests übersprungen statt zu scheitern.
+
 ### Geplant
 
 - ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung

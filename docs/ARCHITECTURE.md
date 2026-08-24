@@ -129,8 +129,8 @@ Deal — keine Relationships
 | `KeychainService` | Sichere, geräte-gebundene Speicherung des Gemini-API-Keys |
 | `NotificationService` | **Lokale** Erinnerungen vor Reisestart (kein APNs) |
 | `ExportImportService` | Export/Import als JSON (Legacy) oder ZIP; Orchestrierung, keine ZIP-Bytes selbst |
-| `ZipArchiveWriter` / `ZipArchiveReader` / `CRC32` | ZIP-Unterbau (STORED-Writer, STORED+Deflate-Reader, CRC-32) — seit Welle A3.11 eigene Dateien |
-| `DemoDataService` | Demo-Daten seeden/entfernen (nur `#if DEBUG`) |
+| `ZipArchiveWriter` / `ZipArchiveStreamWriter` / `ZipArchiveReader` / `CRC32` | ZIP-Unterbau (STORED-Writer, strömender Off-main-Writer, STORED+Deflate-Reader, CRC-32) — seit Welle A3.11 eigene Dateien |
+| `DemoDataService` | Beispielreise seeden/entfernen (auch im Release; nur der Store-weite Reset bleibt `#if DEBUG`) |
 | `ShipTripCloudSync` | Privaten SwiftData-CloudKit-Store konfigurieren und iCloud-Accountstatus lesen |
 | `CalendarEventPlanner` | Stabile Event-Entwürfe für Reise, Häfen und Seetage erzeugen |
 | `CalendarSyncService` | EventKit-Zugriff, Zielkalender und verwaltete Termine synchronisieren |
@@ -193,12 +193,12 @@ SwiftData Query → [Cruise] → MapView
 ### 3. Export/Import
 
 ```text
-[Cruise] → ExportImportService.exportToZip
+[Cruise] + [Deal] + Katalog-Overlay → ExportImportService.exportToZip
               │
               ├── data.json (Struktur, Bild-Pfadreferenzen)
               └── images/<cruiseId>/... (rohe Bild-Bytes)
                      │
-                     └── ZipArchiveWriter.build(entries:) → Data (STORED)
+                     └── ZipArchiveStreamWriter (actor, STORED) → Zieldatei
 
 ZIP-Datei → ExportImportService.importFromZip
               │
@@ -207,11 +207,12 @@ ZIP-Datei → ExportImportService.importFromZip
                      └── importFromJSONData (Duplikat-Check via id, Rollback bei Save-Fehler)
 ```
 
-Exportiert werden `Cruise` samt `Port`, `Expense` und Fotos. `Deal` sowie die
+Exportiert werden `Cruise` samt `Port`, `Expense` und Fotos, `Deal` sowie die
 drei Katalog-Overlay-Modelle (`CustomShippingLine`, `CustomShip`,
-`HiddenCatalogItem`) sind **nicht** Teil des Export-Formats —
-`ExportImportService` kennt diese Typen nicht; sie erreichen weitere Geräte nur
-über den CloudKit-Sync.
+`HiddenCatalogItem`) — ein Backup enthält damit den vollständigen Bestand und
+nicht nur die Reisen. Objekte mit `isDemo` filtert der Service selbst heraus.
+Der Envelope, das Speicher- und Nebenläufigkeitsprofil und die Alles-oder-nichts-
+Semantik stehen in der [Feature-Doku Export & Backup](features/export-backup.md).
 
 ### 4. CloudKit-Sync
 
