@@ -294,4 +294,35 @@ struct ExportRoundtripCatalogTests {
         let deals = try target.mainContext.fetch(FetchDescriptor<Deal>())
         #expect(deals.map(\.title) == ["Echtes Angebot"])
     }
+
+    /// Der Demo-Filter sitzt im Service, nicht an der Aufrufstelle — er muss deshalb auch für den
+    /// zweiten Export-Pfad (JSON statt ZIP) greifen, für Kreuzfahrten wie für Wunschreisen.
+    @Test("Auch der JSON-Export filtert Demo-Kreuzfahrten UND Demo-Wunschreisen")
+    @MainActor
+    func demoDataIsExcludedFromJSONExport() throws {
+        let source = try makeFullContainer()
+        let context = source.mainContext
+
+        let realCruise = makeCruise(title: "Echte Reise", in: context)
+        let demoCruise = makeCruise(title: "Demo-Reise", in: context)
+        demoCruise.isDemo = true
+
+        let realDeal = Deal(title: "Echtes Angebot")
+        context.insert(realDeal)
+        let demoDeal = Deal(title: "Demo-Angebot")
+        demoDeal.isDemo = true
+        context.insert(demoDeal)
+        try context.save()
+
+        let url = try ExportImportService.shared.exportToJSON(
+            cruises: [realCruise, demoCruise],
+            deals: [realDeal, demoDeal]
+        )
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        // Direkt am Archiv geprüft: die Demo-Datensätze stehen gar nicht erst in der Datei.
+        let archive = try ExportArchive.decode(from: Data(contentsOf: url))
+        #expect(archive.cruises.map(\.title) == ["Echte Reise"])
+        #expect(archive.deals.map(\.title) == ["Echtes Angebot"])
+    }
 }

@@ -37,6 +37,9 @@ private let legacyCruiseID = "6E8B1F52-2C4D-4C2F-9E3B-1A2B3C4D5E6F"
 /// Ganzzahl, `photos` als nackte String-Referenzen, Seetage ohne `country`/`lat`/`lng`, Datums-
 /// formate `yyyy-MM-dd` bzw. `yyyy-MM-dd'T'HH:mm:ss` und ISO-8601 mit Millisekunden für
 /// `createdAt`. Nil-Optionals fehlen als Schlüssel, weil Swifts Codable-Synthese sie auslässt.
+/// Auch die Ausgaben-Kategorie ist original: 1.7 schrieb `expense.category.rawValue.lowercased()`,
+/// und die rawValues von `ExpenseCategory` sind deutsch — im Backup steht deshalb `"ausflug"`,
+/// nicht `"excursion"`.
 /// Das Fixture wurde aus diesem Stand nachgebaut (in der Test-Lane steht kein 1.7-Binary zur
 /// Verfügung); der ZIP-Container darum herum entsteht im ZIP-Test mit dem unveränderten
 /// `ZipArchiveWriter`, der in 1.7 und 1.8 identisch ist.
@@ -51,7 +54,7 @@ private func legacy17JSON(photoReference: String) -> String {
         "expenses" : [
           {
             "amount" : 89.9,
-            "category" : "excursion",
+            "category" : "ausflug",
             "createdAt" : "2025-06-03T10:15:00.000Z",
             "cruiseId" : "\(legacyCruiseID)",
             "description" : "Stadtrundfahrt Bergen",
@@ -137,6 +140,9 @@ struct ExportLegacyCompatibilityTests {
         let expenses = try context.fetch(FetchDescriptor<Expense>())
         #expect(expenses.count == 1)
         #expect(expenses.first?.amount == 89.9)
+        // Ist-Verhalten festgeschrieben: der deutsche 1.7-rawValue "ausflug" wird von
+        // `mapCategory` auf `.excursion` abgebildet — die Kategorie überlebt das Alt-Format.
+        #expect(expenses.first?.category == .excursion)
 
         // Legacy-Foto-Referenz ohne Photo.id: importierbar, id wird frisch vergeben.
         let photos = try context.fetch(FetchDescriptor<Photo>())
@@ -181,5 +187,27 @@ struct ExportLegacyCompatibilityTests {
         #expect(photos.count == 1)
         #expect(photos.first?.imageData == onePixelPNG)
         #expect(photos.first?.thumbnailData != nil)
+    }
+
+    /// Grenzfall der Kompat-Matrix: ein 1.7-Backup einer leeren Datenbank ist ein nacktes `[]`.
+    /// Das muss als „nichts importiert" durchlaufen — kein Fehler, keine Objekte.
+    @Test("Leeres 1.7-Top-Level-Array importiert fehlerfrei als „nichts“")
+    @MainActor
+    func emptyLegacyArrayImportsAsNothing() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("legacy17-empty-\(UUID().uuidString).json")
+        try Data("[]".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        let container = try makeFullContainer()
+        let context = container.mainContext
+
+        let result = try ExportImportService.shared.importFromJSON(url: url, modelContext: context)
+        #expect(result.imported == 0)
+        #expect(result.skippedDuplicates == 0)
+        #expect(result.skippedInvalid == 0)
+        #expect(result.invalidMedia == 0)
+        #expect(try context.fetch(FetchDescriptor<Cruise>()).isEmpty)
+        #expect(try context.fetch(FetchDescriptor<Deal>()).isEmpty)
     }
 }
