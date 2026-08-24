@@ -13,6 +13,7 @@
 
 import Foundation
 import Observation
+import SwiftUI
 
 // MARK: - Sichtbarkeit / Persistenz
 
@@ -23,16 +24,18 @@ enum OnboardingPresentation {
     /// Persistenz-Schluessel. `false`/fehlend heisst: noch nicht abgeschlossen.
     static let hasCompletedKey = "hasCompletedOnboarding"
 
-    /// Beim ersten Start ist der Schluessel nicht gesetzt — das Onboarding
-    /// erscheint. Nach Abschluss bleibt es weg, bis es aus den Einstellungen
-    /// erneut angefordert wird.
-    static func shouldPresent(defaults: UserDefaults) -> Bool {
-        !defaults.bool(forKey: hasCompletedKey)
-    }
-
-    /// Flow beendet — kein automatischer Wiedereinstieg mehr.
-    static func markCompleted(in defaults: UserDefaults) {
-        defaults.set(true, forKey: hasCompletedKey)
+    /// Uebersetzt den persistenten Schalter in die Sichtbarkeit des Covers —
+    /// genau die Naht, die `ShipTripApp` an `fullScreenCover(isPresented:)`
+    /// haengt. Beim ersten Start ist der Schluessel nicht gesetzt, das
+    /// Onboarding erscheint; wird das Cover geschlossen, gilt der Flow als
+    /// abgeschlossen und es bleibt weg, bis `requestReplay` es zurueckholt.
+    static func coverBinding(hasCompleted: Binding<Bool>) -> Binding<Bool> {
+        Binding(
+            get: { !hasCompleted.wrappedValue },
+            set: { isPresented in
+                if !isPresented { hasCompleted.wrappedValue = true }
+            }
+        )
     }
 
     /// „Intro erneut zeigen" aus den Einstellungen.

@@ -13,12 +13,14 @@
 //
 
 import Foundation
+import SwiftUI
 import Testing
 @testable import ShipTrip
 
 // MARK: - Sichtbarkeit / Persistenz
 
 @Suite("Onboarding – Sichtbarkeit")
+@MainActor
 struct OnboardingPresentationTests {
 
     /// Frischer, isolierter Defaults-Bereich pro Test — `UserDefaults.standard`
@@ -30,12 +32,25 @@ struct OnboardingPresentationTests {
         return (defaults, suiteName)
     }
 
+    /// Genau die Naht, die `ShipTripApp` an `fullScreenCover(isPresented:)`
+    /// haengt — nur mit einer isolierten `UserDefaults`-Suite unter dem
+    /// Schluessel statt `@AppStorage`. `@AppStorage` liest denselben
+    /// Schluessel mit demselben Default (`false`).
+    private func makeCoverBinding(on defaults: UserDefaults) -> Binding<Bool> {
+        OnboardingPresentation.coverBinding(
+            hasCompleted: Binding(
+                get: { defaults.bool(forKey: OnboardingPresentation.hasCompletedKey) },
+                set: { defaults.set($0, forKey: OnboardingPresentation.hasCompletedKey) }
+            )
+        )
+    }
+
     @Test("Beim ersten Start erscheint das Onboarding")
     func presentsOnFirstLaunch() throws {
         let (defaults, suiteName) = try makeDefaults(#function)
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        #expect(OnboardingPresentation.shouldPresent(defaults: defaults))
+        #expect(makeCoverBinding(on: defaults).wrappedValue)
     }
 
     @Test("Nach Abschluss erscheint es bei den folgenden Starts nicht mehr")
@@ -43,9 +58,11 @@ struct OnboardingPresentationTests {
         let (defaults, suiteName) = try makeDefaults(#function)
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        OnboardingPresentation.markCompleted(in: defaults)
+        // Das Schliessen des Covers ist der Abschluss — es gibt keinen zweiten Weg.
+        makeCoverBinding(on: defaults).wrappedValue = false
 
-        #expect(!OnboardingPresentation.shouldPresent(defaults: defaults))
+        #expect(defaults.bool(forKey: OnboardingPresentation.hasCompletedKey))
+        #expect(!makeCoverBinding(on: defaults).wrappedValue)
     }
 
     @Test("„Intro erneut zeigen“ holt es zurueck")
@@ -53,10 +70,11 @@ struct OnboardingPresentationTests {
         let (defaults, suiteName) = try makeDefaults(#function)
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        OnboardingPresentation.markCompleted(in: defaults)
+        makeCoverBinding(on: defaults).wrappedValue = false
+        // Was der Knopf in den Einstellungen ruft (SettingsView).
         OnboardingPresentation.requestReplay(in: defaults)
 
-        #expect(OnboardingPresentation.shouldPresent(defaults: defaults))
+        #expect(makeCoverBinding(on: defaults).wrappedValue)
     }
 }
 

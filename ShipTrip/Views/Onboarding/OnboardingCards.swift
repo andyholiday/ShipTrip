@@ -239,7 +239,10 @@ struct OnboardingStartCard: View {
                 asset: "cover_ship_aidanova",
                 badge: String(localized: "Beispielreise"),
                 title: String(localized: "Norwegische Fjorde"),
-                meta: String(localized: "Norwegen · 7 Tage"),
+                // 9 statt 7: `insertNorwegen` setzt +21 d bis +29 d, und
+                // `Cruise.duration` zaehlt Start- und Endtag mit — genau die
+                // Zahl, die Detailansicht und Routen-Sheet danach zeigen.
+                meta: String(localized: "Norwegen · 9 Tage"),
                 action: onSample
             )
             .onboardingCascadeIn(2, appeared: appeared)

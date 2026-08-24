@@ -160,7 +160,9 @@ struct OnboardingFlowView: View {
             )
             .onboardingCascadeIn(4, appeared: appeared)
 
-            footnote(String(localized: "Die Beispielreise ist als Demo markiert und lässt sich mit einem Tipp wieder entfernen."))
+            // Plural mit Absicht: `loadDemoData` legt drei Reisen und zwei
+            // Wunschreisen an, nicht nur die gezeigte Norwegen-Reise.
+            footnote(String(localized: "Die Beispieldaten sind als Demo markiert und lassen sich mit einem Tipp wieder entfernen."))
                 .onboardingCascadeIn(5, appeared: appeared)
         }
     }

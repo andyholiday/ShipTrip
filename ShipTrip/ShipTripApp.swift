@@ -103,11 +103,8 @@ struct ShipTripApp: App {
                     // Nach `.modelContainer`, damit der Flow den `modelContext`
                     // fuer die Beispielreise aus der Umgebung erbt.
                     .fullScreenCover(
-                        isPresented: Binding(
-                            get: { !hasCompletedOnboarding },
-                            set: { isPresented in
-                                if !isPresented { hasCompletedOnboarding = true }
-                            }
+                        isPresented: OnboardingPresentation.coverBinding(
+                            hasCompleted: $hasCompletedOnboarding
                         )
                     ) {
                         OnboardingFlowView { hasCompletedOnboarding = true }
