@@ -31,6 +31,13 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   ([Feature-Doku](docs/features/beispielreise.md),
   [ADR-001](docs/adr/ADR-001-isdemo-in-release-schema.md))
 
+- **„App zurücksetzen" unter Einstellungen → *Daten verwalten***: Bringt die App
+  ohne Neuinstallation in den Auslieferungszustand. Gelöscht werden alle Reisen
+  und Wunschreisen, der hinterlegte KI-API-Key, sämtliche Einstellungen
+  (Erscheinungsbild, Erinnerungs-Vorlauf, Kalender-Sync) sowie die von der App
+  im Kalender angelegten Termine; danach startet das Intro wie beim ersten
+  Öffnen. Bestätigungsdialog und Fußnote nennen genau diesen Umfang.
+
 - **Vollständige englische Fassung (396 Schlüssel DE/EN)**: Der String Catalog
   ist auf den Stand nach Onboarding, Beispielreise und erweitertem Export
   gezogen — 75 neue Schlüssel mit EN-Übersetzung, acht verwaiste entfernt. Reine
