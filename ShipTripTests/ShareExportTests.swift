@@ -182,6 +182,7 @@ struct ShareExportEnvelopeTests {
     }
 
     @Test("Slug transliteriert Umlaute und fängt leere Titel ab")
+    @MainActor
     func slugRules() {
         #expect(ExportImportService.shareFileSlug(for: "Grönland & Färöer") == "Gronland-Faroer")
         #expect(ExportImportService.shareFileSlug(for: "Größe").allSatisfy(\.isASCII))
