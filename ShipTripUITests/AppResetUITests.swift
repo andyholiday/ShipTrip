@@ -36,33 +36,11 @@ final class AppResetUITests: XCTestCase {
 
         navigateToDataManagement(app)
 
-        let resetButton = app.buttons["App zurücksetzen"]
-        XCTAssertTrue(
-            scrollUntilHittable(resetButton, in: app),
-            "„App zurücksetzen“ fehlt im Daten-Bereich"
-        )
-        try writeScreenshotIfRequested(name: "settings-daten", resetButton: resetButton, in: app)
-        resetButton.tap()
-
-        let confirm = app.alerts.buttons["Zurücksetzen"]
-        XCTAssertTrue(
-            confirm.waitForExistence(timeout: 5),
-            "Der Reset laeuft ohne Bestaetigungs-Dialog"
-        )
-        confirm.tap()
-
         // 1) Das Onboarding steht wieder — der Erststart-Schalter ist zurueck.
-        XCTAssertTrue(
-            app.staticTexts[welcomeCard].waitForExistence(timeout: 10),
-            "Nach dem Reset erscheint das Onboarding nicht"
-        )
-
         // 2) Und dahinter ist der Store leer. Der Flow wird ueber die
         //    Startentscheidung beendet, ohne die Beispielreise zu laden.
-        app.buttons["Überspringen"].firstMatch.tap()
-        let firstTrip = app.buttons["Erste Reise anlegen"].firstMatch
-        XCTAssertTrue(firstTrip.waitForExistence(timeout: 10), "Startentscheidung nicht erreicht")
-        firstTrip.tap()
+        try performReset(in: app, screenshotName: "settings-daten")
+        dismissOnboarding(in: app)
 
         // Das Cover lag ueber der Datenverwaltung — die Reise-Liste steht im
         // Reisen-Tab, nicht darunter.
@@ -100,7 +78,7 @@ final class AppResetUITests: XCTestCase {
         )
 
         navigateToDataManagement(app)
-        performReset(in: app)
+        try performReset(in: app)
         dismissOnboarding(in: app)
 
         moreTab.tap()
@@ -116,12 +94,16 @@ final class AppResetUITests: XCTestCase {
     // MARK: - Helper
 
     /// „App zuruecksetzen" antippen und den Bestaetigungs-Dialog quittieren.
-    private func performReset(in app: XCUIApplication) {
+    /// `screenshotName` haengt den Abnahme-Screenshot davor.
+    private func performReset(in app: XCUIApplication, screenshotName: String? = nil) throws {
         let resetButton = app.buttons["App zurücksetzen"]
         XCTAssertTrue(
             scrollUntilHittable(resetButton, in: app),
             "„App zurücksetzen“ fehlt im Daten-Bereich"
         )
+        if let screenshotName {
+            try writeScreenshotIfRequested(name: screenshotName, resetButton: resetButton, in: app)
+        }
         resetButton.tap()
 
         let confirm = app.alerts.buttons["Zurücksetzen"]
