@@ -62,7 +62,7 @@ extension ExportImportService {
         return try importFromJSONData(data: jsonData, imagesDir: nil, modelContext: modelContext)
     }
 
-    private func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
+    func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
         // Dual-Decoder: 1.8-Envelope oder 1.7-Top-Level-Array (siehe ExportArchive.decode)
         let archive = try ExportArchive.decode(from: data)
         let exportCruises = archive.cruises

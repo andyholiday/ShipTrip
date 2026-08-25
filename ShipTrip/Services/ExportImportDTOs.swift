@@ -17,7 +17,7 @@ import Foundation
 /// Alle Sammlungen werden beim Dekodieren per `decodeIfPresent` aufgelöst und fehlen sie,
 /// bleiben sie leer — ältere Dateien (und Dateien künftiger Versionen mit unbekannten Feldern)
 /// bleiben damit lesbar.
-struct ExportArchive: Codable {
+struct ExportArchive: Codable, Sendable {
     /// Version des Backup-Formats. 1 = 1.7-Top-Level-Array, 2 = Envelope ab 1.8.
     static let currentFormatVersion = 2
     static let legacyFormatVersion = 1
@@ -28,6 +28,9 @@ struct ExportArchive: Codable {
     let customShippingLines: [ExportCustomShippingLine]
     let customShips: [ExportCustomShip]
     let hiddenCatalogItems: [ExportHiddenCatalogItem]
+    /// Nur in geteilten Reisen (`.shiptrip`) gesetzt; in Backups `nil` und damit beim
+    /// Encoden weggelassen — Backup-Dateien bleiben byte-identisch (ADR-007 / Contract C1).
+    let share: ExportShareInfo?
 
     enum CodingKeys: String, CodingKey {
         case formatVersion
@@ -36,6 +39,7 @@ struct ExportArchive: Codable {
         case customShippingLines
         case customShips
         case hiddenCatalogItems
+        case share
     }
 
     init(
@@ -44,7 +48,8 @@ struct ExportArchive: Codable {
         deals: [ExportDeal] = [],
         customShippingLines: [ExportCustomShippingLine] = [],
         customShips: [ExportCustomShip] = [],
-        hiddenCatalogItems: [ExportHiddenCatalogItem] = []
+        hiddenCatalogItems: [ExportHiddenCatalogItem] = [],
+        share: ExportShareInfo? = nil
     ) {
         self.formatVersion = formatVersion
         self.cruises = cruises
@@ -52,6 +57,7 @@ struct ExportArchive: Codable {
         self.customShippingLines = customShippingLines
         self.customShips = customShips
         self.hiddenCatalogItems = hiddenCatalogItems
+        self.share = share
     }
 
     init(from decoder: any Decoder) throws {
@@ -65,6 +71,7 @@ struct ExportArchive: Codable {
         customShips = try container.decodeIfPresent([ExportCustomShip].self, forKey: .customShips) ?? []
         hiddenCatalogItems = try container
             .decodeIfPresent([ExportHiddenCatalogItem].self, forKey: .hiddenCatalogItems) ?? []
+        share = try container.decodeIfPresent(ExportShareInfo.self, forKey: .share)
     }
 
     /// Dual-Decoder: 1.8-Envelope (JSON-Objekt) ODER 1.7-Top-Level-Array `[ExportCruise]`.
@@ -83,10 +90,26 @@ struct ExportArchive: Codable {
     }
 }
 
+// MARK: - Share-Block
+
+/// Kennzeichnet ein Archiv als geteilte Kreuzfahrt (`.shiptrip`, Contract C1).
+///
+/// Alle vier Felder sind in einer Share-Datei v1 Pflicht; in Backups fehlt der ganze Block.
+struct ExportShareInfo: Codable, Sendable {
+    /// Version des Share-Blocks (v1).
+    let shareFormatVersion: Int
+    /// Zeitpunkt des Teilens, String des Export-`dateFormatter`.
+    let sharedAt: String
+    /// App-Version des Senders.
+    let appVersion: String
+    /// SHA-256-Hex der geteilten Kreuzfahrt, sender-berechnet (`ShareFingerprint`).
+    let contentFingerprint: String
+}
+
 // MARK: - Kreuzfahrt
 
 /// Exportierbare Kreuzfahrt-Daten
-struct ExportCruise: Codable {
+struct ExportCruise: Codable, Sendable {
     let id: String
     let title: String
     let startDate: String
@@ -105,7 +128,7 @@ struct ExportCruise: Codable {
     let expenses: [ExportExpense]
 }
 
-struct ExportPort: Codable {
+struct ExportPort: Codable, Sendable {
     let id: String
     let name: String
     let country: String?
@@ -127,7 +150,7 @@ struct ExportPort: Codable {
 /// überlebt und zwei Geräte, die dasselbe Backup einspielen, keine Dubletten erzeugen
 /// (CloudKit-Dedup läuft über die stabile `id`, ADR-002). 1.7 schrieb an dieser Stelle einen
 /// nackten String — `init(from:)` akzeptiert beides.
-struct ExportPhoto: Codable {
+struct ExportPhoto: Codable, Sendable {
     /// `Photo.id`; `nil` in 1.7-Dateien.
     let id: String?
     /// Base64-Data-URL (`data:image/png;base64,…`) oder ZIP-Pfad (`images/<cruiseId>/<index>`).
@@ -157,7 +180,7 @@ struct ExportPhoto: Codable {
     }
 }
 
-struct ExportExpense: Codable {
+struct ExportExpense: Codable, Sendable {
     let id: String
     let cruiseId: String
     let category: String
@@ -171,7 +194,7 @@ struct ExportExpense: Codable {
 
 /// Exportierbares Angebot (`Deal`). Bis auf `id` und `title` alles optional — fehlende Felder
 /// dekodieren zu `nil`, statt den Import abzubrechen.
-struct ExportDeal: Codable {
+struct ExportDeal: Codable, Sendable {
     let id: String
     let title: String
     let shippingLine: String?
@@ -191,7 +214,7 @@ struct ExportDeal: Codable {
 
 /// Eigene Reederei. Die `id` ist Teil des Vertrags: `ExportCustomShip.lineOptionID` referenziert
 /// sie als `"custom:<UUID>"` — beim Import wird die UUID deshalb übernommen, nicht neu vergeben.
-struct ExportCustomShippingLine: Codable {
+struct ExportCustomShippingLine: Codable, Sendable {
     let id: String
     let name: String
     let logo: String?
@@ -199,7 +222,7 @@ struct ExportCustomShippingLine: Codable {
     let updatedAt: String?
 }
 
-struct ExportCustomShip: Codable {
+struct ExportCustomShip: Codable, Sendable {
     let id: String
     let name: String
     /// Katalog-Reederei (`"aida"`) oder eigene Reederei (`"custom:<UUID>"`).
@@ -209,7 +232,7 @@ struct ExportCustomShip: Codable {
 }
 
 /// Ausgeblendeter Katalog-Eintrag (`shipKey == nil` = ganze Reederei ausgeblendet).
-struct ExportHiddenCatalogItem: Codable {
+struct ExportHiddenCatalogItem: Codable, Sendable {
     let id: String
     let lineID: String
     let shipKey: String?
