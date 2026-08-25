@@ -441,6 +441,16 @@
       }
     },
 
+    "Das Bild '%@' ließ sich nicht für den Versand aufbereiten." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The image '%@' could not be prepared for sending."
+          }
+        }
+      }
+    },
     "Daten exportieren" : {
       "localizations" : {
         "en" : {
@@ -518,12 +528,32 @@
       }
     },
 
+    "Die Beispielreise kann nicht geteilt werden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sample trip cannot be shared."
+          }
+        }
+      }
+    },
     "Die Datei überschreitet die Grenzen für geteilte Reisen." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "The file exceeds the limits for shared trips."
+          }
+        }
+      }
+    },
+    "Die Reise überschreitet die Grenzen für geteilte Reisen: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The trip exceeds the limits for shared trips: %@"
           }
         }
       }
@@ -988,6 +1018,16 @@
       }
     },
 
+    "Ich habe dir eine Kreuzfahrt aus ShipTrip geschickt — komplett mit Route, Ausgaben und Fotos. Öffne die angehängte .shiptrip-Datei, um sie zu übernehmen: shiptrip://import" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I've sent you a cruise from ShipTrip — complete with route, expenses and photos. Open the attached .shiptrip file to import it: shiptrip://import"
+          }
+        }
+      }
+    },
     "Import fehlgeschlagen: %@" : {
       "localizations" : {
         "en" : {
@@ -1015,6 +1055,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trip imported"
+          }
+        }
+      }
+    },
+    "Reise teilen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share trip"
+          }
+        }
+      }
+    },
+    "Teilen fehlgeschlagen: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sharing failed: %@"
           }
         }
       }

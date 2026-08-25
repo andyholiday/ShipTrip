@@ -24,6 +24,8 @@ struct CruiseDetailView: View {
     @State private var zoomedPhoto: Photo?
     @State private var alertMessage = ""
     @State private var showingAlert = false
+    /// Teilen-Aktion (C7) — Dateibau, Share-Sheet und Aufräumen liegen in `CruiseShareAction`.
+    @State private var shareModel = CruiseShareModel()
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -68,7 +70,19 @@ struct CruiseDetailView: View {
                     } label: {
                         Label("Bearbeiten", systemImage: "pencil")
                     }
-                    
+
+                    // Die Beispielreise wird nicht geteilt (C1/C7) — der Eintrag fehlt dort
+                    // ganz, statt deaktiviert dazustehen.
+                    if !cruise.isDemo {
+                        Button {
+                            shareModel.share(cruise)
+                        } label: {
+                            Label("Reise teilen", systemImage: "square.and.arrow.up")
+                        }
+                        .disabled(shareModel.isPreparing)
+                        .accessibilityIdentifier("cruiseDetail.shareButton")
+                    }
+
                     Button(role: .destructive) {
                         showingDeleteAlert = true
                     } label: {
@@ -97,6 +111,7 @@ struct CruiseDetailView: View {
         .fullScreenCover(item: $zoomedPhoto) { photo in
             PhotoZoomView(photos: cruise.sortedPhotos, initialPhoto: photo)
         }
+        .cruiseSharePresentation(shareModel)
         .alert("Kreuzfahrt löschen?", isPresented: $showingDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
