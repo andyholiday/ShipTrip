@@ -12,6 +12,7 @@ werden als neue ADR mit `Ersetzt ADR-NNN` erfasst, nicht als Edit.
 | ADR-004 | *reserviert* — Welle C2 StoreKit-2-Freemium (siehe `docs/umsetzungsplan-audit-2026-07.md`) | — | — |
 | ADR-005 | *reserviert* — Welle D1 KI-Proxy (siehe `docs/umsetzungsplan-audit-2026-07.md`) | — | — |
 | ADR-006 | Eigene Reedereien & Schiffe als Overlay über dem statischen Katalog | Accepted  | 2026-07-04 |
+| ADR-007 | Kreuzfahrt-Teilen als `.shiptrip`-Datei auf Basis des Backup-Envelopes | Accepted  | 2026-08-25 |
 
 **Hinweis für neue ADRs:** Der Umsetzungsplan (`docs/umsetzungsplan-audit-2026-07.md`)
 reserviert ADR-Nummern pro Welle im Voraus (B2→003, C2→004, D1→005, B5→006).

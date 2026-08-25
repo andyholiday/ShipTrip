@@ -9,6 +9,23 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Kreuzfahrt teilen — Fundament für Datei und Import**: Eine einzelne Reise
+  lässt sich als `.shiptrip`-Datei ausgeben — dieselbe Archivstruktur wie das
+  Backup, aber auf genau eine Reise beschränkt und mit Fotos, die auf 2048 px
+  verkleinert, als JPEG neu gespeichert und von allen Metadaten inklusive GPS
+  befreit werden; Originale und das Voll-Backup bleiben unverändert. Auf der
+  Gegenseite öffnet eine angetippte `.shiptrip`-Datei die App und wird
+  automatisch importiert, mit sichtbarer Ergebnis-Meldung: Vor der ersten
+  Änderung am Bestand prüft die App Version, Umfang und Größe der Datei, eine
+  bereits vorhandene Reise wird nicht doppelt angelegt, und eine seit dem Teilen
+  geänderte Fassung des Absenders weist die Meldung als Versionskonflikt aus
+  (kein Zusammenführen). Der Link `shiptrip://import` öffnet die App mit dem
+  Hinweis auf die angehängte Datei. **Die Teilen-Aktion in der
+  Reise-Detailansicht folgt noch** — bis dahin ist das Teilen aus der Oberfläche
+  heraus nicht erreichbar.
+  ([Feature-Doku](docs/features/kreuzfahrt-teilen.md),
+  [ADR-007](docs/adr/ADR-007-kreuzfahrt-teilen.md))
+
 - **Erststart-Onboarding (vier Karten)**: Beim ersten Start führt ein Flow über
   Wertversprechen, die drei Kern-Features, eine Frage nach den Erinnerungen und
   die Startentscheidung. Die Erlaubnis-Frage sagt vorher, was danach passiert:
