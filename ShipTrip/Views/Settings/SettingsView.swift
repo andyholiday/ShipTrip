@@ -792,6 +792,16 @@ struct DataManagementView: View {
         isExporting || isImporting
     }
 
+    /// Welchen Container-Leser die manuell ausgewählte Datei braucht: ZIP-Archiv oder
+    /// Base64-JSON. Eine `.shiptrip`-Datei **ist** ein ZIP-Archiv (Contract C1) und gehört
+    /// deshalb hierher — nur das Base64-Legacy-Format ist kein ZIP. Ob das Archiv
+    /// anschließend Share- oder Backup-Semantik hat, entscheidet allein der `share`-Block
+    /// darin (C1/C10), nicht diese Zuordnung und nicht die Endung.
+    /// Als `static` ausgelagert, damit die Zuordnung ohne View-Aufbau testbar bleibt.
+    static func usesZipContainer(_ url: URL) -> Bool {
+        ["zip", "shiptrip"].contains(url.pathExtension.lowercased())
+    }
+
     var body: some View {
         Form {
             Section("Übersicht") {
@@ -917,7 +927,7 @@ struct DataManagementView: View {
         }
         .fileImporter(
             isPresented: $showingImportPicker,
-            allowedContentTypes: [.zip, .json],
+            allowedContentTypes: [.zip, .json, .shipTripCruise],
             allowsMultipleSelection: false
         ) { result in
             handleImport(result: result)
@@ -979,7 +989,7 @@ struct DataManagementView: View {
                 return
             }
             
-            let isZip = url.pathExtension.lowercased() == "zip"
+            let isZip = Self.usesZipContainer(url)
             
             Task {
                 defer {

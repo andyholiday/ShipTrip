@@ -518,6 +518,16 @@
       }
     },
 
+    "Die Datei überschreitet die Grenzen für geteilte Reisen." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The file exceeds the limits for shared trips."
+          }
+        }
+      }
+    },
     "Diese Aktion kann nicht rückgängig gemacht werden." : {
       "localizations" : {
         "en" : {
@@ -540,6 +550,46 @@
       }
     },
 
+    "Diese Datei benötigt eine neuere Version von ShipTrip." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file requires a newer version of ShipTrip."
+          }
+        }
+      }
+    },
+    "Diese Datei ist keine gültige geteilte Reise." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This file is not a valid shared trip."
+          }
+        }
+      }
+    },
+    "Diese Reise ist bereits vorhanden — die geteilte Fassung weicht von deiner ab." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This trip is already in your library — the shared version differs from yours."
+          }
+        }
+      }
+    },
+    "Diese Reise ist bereits vorhanden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This trip is already in your library."
+          }
+        }
+      }
+    },
     "Dunkel" : {
       "localizations" : {
         "en" : {
@@ -938,6 +988,16 @@
       }
     },
 
+    "Import fehlgeschlagen: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import failed: %@"
+          }
+        }
+      }
+    },
     "Löscht alle Daten, deinen KI-API-Key und alle Einstellungen und zeigt das Intro wieder wie beim ersten Öffnen — die App steht danach wie frisch installiert da." : {
       "localizations" : {
         "en" : {
@@ -949,6 +1009,16 @@
       }
     },
 
+    "Reise importiert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip imported"
+          }
+        }
+      }
+    },
     "Zurücksetzen" : {
       "localizations" : {
         "en" : {
@@ -1644,6 +1714,16 @@
       }
     },
 
+    "Öffne die angehängte .shiptrip-Datei, um die Reise zu importieren." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the attached .shiptrip file to import the trip."
+          }
+        }
+      }
+    },
     "Übertragen" : {
       "localizations" : {
         "en" : {

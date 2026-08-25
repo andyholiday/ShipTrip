@@ -65,6 +65,15 @@ extension ExportImportService {
     func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
         // Dual-Decoder: 1.8-Envelope oder 1.7-Top-Level-Array (siehe ExportArchive.decode)
         let archive = try ExportArchive.decode(from: data)
+
+        // Archiv-Preflight (Contract C10): Ob eine Datei Share- oder Backup-Semantik hat,
+        // entscheidet ihr Inhalt, nicht der Einstiegspfad. Traegt das Archiv einen
+        // `share`-Block, gelten Versionsmatrix, Invarianten und Zaehlgrenzen — und zwar
+        // hier, vor jeder Mutation, damit onOpenURL, der manuelle fileImporter und der
+        // Legacy-JSON-Import automatisch dieselbe Tuer benutzen. Ohne `share`-Block tut
+        // der Aufruf nichts, der Backup-Import bleibt unveraendert.
+        try SharePreflight.validateArchive(archive)
+
         let exportCruises = archive.cruises
 
         // Hole existierende Kreuzfahrten für Duplikat-Check
@@ -140,6 +149,14 @@ extension ExportImportService {
             cruise.bookingNumber = exportCruise.bookingNumber ?? ""
             cruise.notes = exportCruise.notes ?? ""
             cruise.rating = exportCruise.rating
+            // Share-Fingerabdruck (C1): sender-berechnet, empfänger-persistiert — hier im
+            // Import-Kern und damit in JEDEM Einstiegspfad, vor dem atomaren Save unten.
+            // Nur an einer frisch angelegten Kreuzfahrt; Duplikate haben oben schon
+            // `continue` gemacht und bleiben unangetastet (kein Merge, kein Überschreiben).
+            // Ohne `share`-Block (Backup) bleibt das Feld leer.
+            if let fingerprint = archive.share?.contentFingerprint {
+                cruise.shareContentFingerprint = fingerprint
+            }
 
             modelContext.insert(cruise)
 

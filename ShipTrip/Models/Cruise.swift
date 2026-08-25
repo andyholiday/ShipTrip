@@ -55,6 +55,14 @@ final class Cruise {
     /// Markiert Demo-Daten für sauberes Entfernen
     var isDemo: Bool = false
 
+    /// Inhalts-Fingerabdruck der Fassung, die per „Reise teilen" empfangen wurde
+    /// (SHA-256-Hex, vom Sender berechnet — siehe `ShareFingerprint`, ADR-007/C1).
+    /// `nil` = diese Reise kam nie über einen Share-Import (eigene Reise, Backup).
+    /// Wird beim Share-Import einmal gesetzt und nie neu berechnet; ein späterer
+    /// Import derselben Reise vergleicht ausschließlich gespeicherte Werte.
+    /// Optional und damit CloudKit-konform (additive Lightweight-Migration).
+    var shareContentFingerprint: String?
+
     // MARK: - Relationships
 
     /// Route mit allen besuchten Häfen

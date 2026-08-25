@@ -174,6 +174,10 @@ struct ShipTripApp: App {
     /// abgeleiteten `@State`.
     @AppStorage(OnboardingPresentation.hasCompletedKey) private var hasCompletedOnboarding = false
 
+    /// Automatischer Import geteilter Reisen (ADR-007). Haelt den Zustand des
+    /// laufenden/abgeschlossenen Imports; Single-Flight steckt im Coordinator.
+    @State private var shareImportCoordinator = ShareImportCoordinator()
+
     var body: some Scene {
         WindowGroup {
             if let container = modelContainer {
@@ -208,6 +212,28 @@ struct ShipTripApp: App {
                         Text(
                             "⚠️ Deine Daten konnten nicht geladen werden und werden in dieser Sitzung nicht gespeichert. " +
                             "Bitte starte die App neu; stelle bei Bedarf aus einem Backup (Export/Import) wieder her."
+                        )
+                    }
+                    // Share-Import (ADR-007/C6): Einstieg und Ergebnis-Sheet haengen
+                    // ebenfalls **oberhalb** von `.modelContainer` — aus demselben
+                    // Grund wie das Cover darueber. Der Kontext wird dem Coordinator
+                    // ausdruecklich als `container.mainContext` mitgegeben, damit die
+                    // Mutation im selben Store landet wie der Hauptbaum.
+                    .sheet(
+                        item: Binding(
+                            get: { ShareImportPresentation(state: shareImportCoordinator.state) },
+                            set: { if $0 == nil { shareImportCoordinator.dismiss() } }
+                        )
+                    ) { presentation in
+                        ShareImportResultSheet(presentation: presentation) {
+                            shareImportCoordinator.dismiss()
+                        }
+                    }
+                    // Datei-Oeffnen (.shiptrip) und `shiptrip://import` laufen beide
+                    // hierdurch — Kalt- und Warmstart identisch (C3).
+                    .onOpenURL { url in
+                        shareImportCoordinator.handleIncomingURL(
+                            url, modelContext: container.mainContext
                         )
                     }
                     // Bewusst **nach** dem Cover: eine Praesentation erbt die
