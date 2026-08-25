@@ -96,6 +96,10 @@ struct ExportArchive: Codable, Sendable {
 ///
 /// Alle vier Felder sind in einer Share-Datei v1 Pflicht; in Backups fehlt der ganze Block.
 struct ExportShareInfo: Codable, Sendable {
+    /// Aktuelle Version des Share-Blocks — einzige Quelle der Share-Formatversion
+    /// (Contract C0). Schreiber setzen `shareFormatVersion` hierauf, Leser vergleichen dagegen.
+    static let currentShareFormatVersion = 1
+
     /// Version des Share-Blocks (v1).
     let shareFormatVersion: Int
     /// Zeitpunkt des Teilens, String des Export-`dateFormatter`.
