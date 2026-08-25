@@ -1,31 +1,37 @@
 # Kreuzfahrt teilen
 
-**Stand:** W1 (Share-Export, C4/C5) und W2 (Import-Flow, C3/C6/C10) sind gemergt;
-die Teilen-Aktion in der Reise-Detailansicht (W3, C7) fehlt noch.
+**Stand:** Vollständig — W1 (Share-Export, C4/C5), W2 (Import-Flow, C3/C6/C10)
+und W3 (Teilen-Aktion, C7/C8/C9) sind gemergt.
 **Code:** `ShipTrip/Services/ExportImportService+ShareExport.swift`,
 `ShipTrip/Services/ShareImageTranscoder.swift`,
 `ShipTrip/Services/ExportImportService+ShareImport.swift`,
 `ShipTrip/Utilities/IncomingLinkRouter.swift`,
-`ShipTrip/Views/Share/ShareImportCoordinator.swift`
+`ShipTrip/Views/Share/ShareImportCoordinator.swift`,
+`ShipTrip/Views/Cruises/CruiseShareAction.swift`
 **Tests:** `ShareExportTests`, `ShareImageTranscoderTests`, `IncomingLinkRouterTests`,
-`ShareImportPreflightTests`, `ShareImportResultTests`
+`ShareImportPreflightTests`, `ShareImportResultTests`, `ShareRoundtripTests`,
+`ReiseTeilenUITests` (UI)
 
 ## Acceptance-Status
 
 Kriterien aus `.planning/ZIEL.md` (Feature „Kreuzfahrt teilen"):
 
+Verifikationsstand: 412/412 Unit-Tests, `ShareRoundtripTests` 2/2 und
+`ReiseTeilenUITests` 2/2 zur Laufzeit grün.
+
 | Nr. | Kriterium (Kurzfassung) | Status |
 |---|---|---|
-| 1 | Teilen-Aktion erzeugt `.shiptrip` mit allen Reisedaten, Datei + Link ins Share-Sheet | Teilweise — Datei-Erzeugung steht, Aktion offen |
-| 2 | Fotos komprimiert, Originale und Voll-Export unverändert | Erfüllt (service-seitig verifiziert) |
-| 3 | Antippen importiert automatisch, sichtbare Bestätigung, keine Duplikate | Erfüllt (service-seitig verifiziert) |
-| 4 | `shiptrip://`-Link öffnet die App, Datei bleibt der Träger | Empfangsseite erfüllt, Beigabe im Text offen |
-| 5 | Roundtrip-Beweis Export → Import auf frischer Installation | Offen (W3) |
+| 1 | Teilen-Aktion erzeugt `.shiptrip` mit allen Reisedaten, Datei + Link ins Share-Sheet | Erfüllt |
+| 2 | Fotos komprimiert, Originale und Voll-Export unverändert | Erfüllt |
+| 3 | Antippen importiert automatisch, sichtbare Bestätigung, keine Duplikate | Erfüllt (mit Fußnote) |
+| 4 | `shiptrip://`-Link öffnet die App, Datei bleibt der Träger | Erfüllt |
+| 5 | Roundtrip-Beweis Export → Import auf frischer Installation | Erfüllt |
 
-- **1:** `exportCruiseForSharing` schreibt genau eine Reise mit Häfen, Notizen,
-  Ausgaben und Fotos in ein Archiv mit `share`-Block. Die Aktion in der
-  Detailansicht und die Übergabe von Datei plus Nachrichtentext ans System-Share-Sheet
-  kommen mit W3.
+- **1:** Das Menü der Reise-Detailansicht enthält „Reise teilen"; `CruiseShareModel`
+  ruft `exportCruiseForSharing` (genau eine Reise mit Häfen, Notizen, Ausgaben und
+  Fotos in einem Archiv mit `share`-Block) und übergibt Datei und Nachrichtentext
+  gemeinsam ans System-Share-Sheet. Bei `isDemo`-Reisen fehlt der Eintrag ganz.
+  Nach der Präsentation wird der Temp-Ordner der Datei gelöscht.
 - **2:** `ShareImageTranscoder` verkleinert auf maximal 2048 px lange Kante,
   encodiert als JPEG (Qualität 0,8) und gibt das Bild ohne EXIF-, IPTC-, XMP- und
   Maker-Note-Blöcke aus. Ein Regressionstest hält das Backup-`data.json`
@@ -33,13 +39,25 @@ Kriterien aus `.planning/ZIEL.md` (Feature „Kreuzfahrt teilen"):
 - **3:** `onOpenURL` → `IncomingLinkRouter` → `ShareImportCoordinator` →
   zweistufiger Preflight, danach der bestehende Import-Kern `importFromJSONData`
   mit Dedup über die stabile `id`. Das Ergebnis-Sheet weist eine abweichende
-  Senderfassung als Versionskonflikt aus. Nicht verifiziert ist bisher der
-  Doppeltipp auf einem echten Gerät — der Nachweis hängt am Roundtrip aus W3.
+  Senderfassung als Versionskonflikt aus. **Fußnote:** Automatischer Import und
+  Ergebnis-Sheet sind unit-verifiziert über den echten Share-Einstieg
+  (`ShareRoundtripTests`); der physische Doppeltipp auf eine Datei auf einem Gerät
+  ist nicht automatisiert getestet — die manuelle Abnahme steht aus.
 - **4:** `shiptrip://import` wird geroutet und zeigt den Hinweis auf die
-  angehängte Datei; der Link im Nachrichtentext entsteht mit dem Share-Sheet in W3.
-- **5:** Der Roundtrip-Integrationstest ist als W3-Testleitplanke geplant. Die
+  angehängte Datei. Der Link steckt im Nachrichtentext des Share-Sheets
+  (`CruiseShareModel.shareMessage`), Träger der Daten bleibt die Datei.
+- **5:** `ShareRoundtripTests` exportiert eine Reise mit Fotos, importiert sie in
+  einen frischen Container über den echten Share-Einstieg und vergleicht Felder
+  und Foto-Auflösung; ein zweiter Import legt keine zweite Reise an. Die
   Beispielreise bleibt ausgenommen: `exportCruiseForSharing` wirft für
   `isDemo`-Reisen `ShareExportError.demoCruise`.
+
+Aus W3 dazugekommen: sechs neue DE/EN-Schlüssel im String Catalog (C8) — der
+Menütitel „Reise teilen", die Fehlerhülle „Teilen fehlgeschlagen: %@", der
+Nachrichtentext und die drei nun lokalisierten `ShareExportError`-Texte; der
+technische `reason` von `limitExceeded` bleibt unlokalisiert. Für die UI-Tests
+tragen drei Elemente stabile Accessibility-IDs (C9): `cruiseDetail.shareButton`,
+`shareImport.resultSheet` und `shareImport.linkHintSheet`.
 
 ## Known Limitations
 

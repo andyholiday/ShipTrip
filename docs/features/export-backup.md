@@ -23,6 +23,11 @@ Demo-Daten (`isDemo`) filtert der Service selbst und landen nie in einem Backup.
 Der JSON-Export (`exportToJSON`) besteht als Referenz für ältere Backups fort;
 er bettet Bilder Base64-kodiert inline ein und hat keine UI-Aufrufstelle mehr.
 
+Das Teilen-Format `.shiptrip` benutzt denselben Container, ist aber ein
+eingeschränktes Backup-Archiv: genau eine Reise, Fotos neu encodiert und ein
+zusätzlicher `share`-Block im `data.json`, den ein Backup nie trägt (Contract C1).
+Details siehe [Kreuzfahrt teilen](kreuzfahrt-teilen.md).
+
 ## Speicher- und Nebenläufigkeitsprofil (C4)
 
 `exportToZip` läuft in zwei Phasen:

@@ -9,8 +9,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
-- **Kreuzfahrt teilen — Fundament für Datei und Import**: Eine einzelne Reise
-  lässt sich als `.shiptrip`-Datei ausgeben — dieselbe Archivstruktur wie das
+- **Kreuzfahrt teilen**: Eine einzelne Reise lässt sich über das Menü der
+  Reise-Detailansicht („Reise teilen") verschicken. Die Aktion erzeugt eine
+  `.shiptrip`-Datei und gibt sie zusammen mit einem Nachrichtentext ins
+  System-Share-Sheet (Nachrichten, WhatsApp, Mail); der Text nennt den Umfang
+  der Reise und trägt den `shiptrip://import`-Link. Bei der Beispielreise fehlt
+  der Eintrag. Die Datei hat dieselbe Archivstruktur wie das
   Backup, aber auf genau eine Reise beschränkt und mit Fotos, die auf 2048 px
   verkleinert, als JPEG neu gespeichert und von allen Metadaten inklusive GPS
   befreit werden; Originale und das Voll-Backup bleiben unverändert. Auf der
@@ -19,10 +23,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Änderung am Bestand prüft die App Version, Umfang und Größe der Datei, eine
   bereits vorhandene Reise wird nicht doppelt angelegt, und eine seit dem Teilen
   geänderte Fassung des Absenders weist die Meldung als Versionskonflikt aus
-  (kein Zusammenführen). Der Link `shiptrip://import` öffnet die App mit dem
-  Hinweis auf die angehängte Datei. **Die Teilen-Aktion in der
-  Reise-Detailansicht folgt noch** — bis dahin ist das Teilen aus der Oberfläche
-  heraus nicht erreichbar.
+  (kein Zusammenführen). Ein Tipp auf den Link allein öffnet die App mit dem
+  Hinweis, die angehängte Datei zu öffnen — Träger der Daten bleibt die Datei.
   ([Feature-Doku](docs/features/kreuzfahrt-teilen.md),
   [ADR-007](docs/adr/ADR-007-kreuzfahrt-teilen.md))
 
