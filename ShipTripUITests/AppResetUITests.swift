@@ -36,33 +36,11 @@ final class AppResetUITests: XCTestCase {
 
         navigateToDataManagement(app)
 
-        let resetButton = app.buttons["App zurücksetzen"]
-        XCTAssertTrue(
-            scrollUntilHittable(resetButton, in: app),
-            "„App zurücksetzen“ fehlt im Daten-Bereich"
-        )
-        try writeScreenshotIfRequested(name: "settings-daten", resetButton: resetButton, in: app)
-        resetButton.tap()
-
-        let confirm = app.alerts.buttons["Zurücksetzen"]
-        XCTAssertTrue(
-            confirm.waitForExistence(timeout: 5),
-            "Der Reset laeuft ohne Bestaetigungs-Dialog"
-        )
-        confirm.tap()
-
         // 1) Das Onboarding steht wieder — der Erststart-Schalter ist zurueck.
-        XCTAssertTrue(
-            app.staticTexts[welcomeCard].waitForExistence(timeout: 10),
-            "Nach dem Reset erscheint das Onboarding nicht"
-        )
-
         // 2) Und dahinter ist der Store leer. Der Flow wird ueber die
         //    Startentscheidung beendet, ohne die Beispielreise zu laden.
-        app.buttons["Überspringen"].firstMatch.tap()
-        let firstTrip = app.buttons["Erste Reise anlegen"].firstMatch
-        XCTAssertTrue(firstTrip.waitForExistence(timeout: 10), "Startentscheidung nicht erreicht")
-        firstTrip.tap()
+        try performReset(in: app, screenshotName: "settings-daten")
+        dismissOnboarding(in: app)
 
         // Das Cover lag ueber der Datenverwaltung — die Reise-Liste steht im
         // Reisen-Tab, nicht darunter.
@@ -80,7 +58,101 @@ final class AppResetUITests: XCTestCase {
         )
     }
 
+    /// Repro (Fix-Runde 2): „App zuruecksetzen" soll die App wie frisch
+    /// installiert hinterlassen. Das Farbschema ist die einzige Praeferenz, die
+    /// ohne System-Berechtigung ueber die UI setz- und ablesbar ist — es steht
+    /// hier stellvertretend fuer den ganzen Praeferenz-Block.
+    func testAppZuruecksetzenSetztDasFarbschemaAufSystemZurueck() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
+        app.launch()
+
+        let moreTab = app.tabBars.buttons["Mehr"]
+        XCTAssertTrue(moreTab.waitForExistence(timeout: 15), "Tab „Mehr“ nicht gefunden")
+        moreTab.tap()
+
+        selectColorScheme("Dunkel", in: app)
+        XCTAssertTrue(
+            colorSchemeShows("Dunkel", in: app),
+            "Ausgangslage fehlt: das Farbschema steht nicht auf „Dunkel“"
+        )
+
+        navigateToDataManagement(app)
+        try performReset(in: app)
+        dismissOnboarding(in: app)
+
+        moreTab.tap()
+        let back = app.navigationBars.buttons["Einstellungen"]
+        if back.waitForExistence(timeout: 3) { back.tap() }
+
+        XCTAssertTrue(
+            colorSchemeShows("System", in: app),
+            "Nach dem Reset steht das Farbschema nicht wieder auf „System“"
+        )
+    }
+
     // MARK: - Helper
+
+    /// „App zuruecksetzen" antippen und den Bestaetigungs-Dialog quittieren.
+    /// `screenshotName` haengt den Abnahme-Screenshot davor.
+    private func performReset(in app: XCUIApplication, screenshotName: String? = nil) throws {
+        let resetButton = app.buttons["App zurücksetzen"]
+        XCTAssertTrue(
+            scrollUntilHittable(resetButton, in: app),
+            "„App zurücksetzen“ fehlt im Daten-Bereich"
+        )
+        if let screenshotName {
+            try writeScreenshotIfRequested(name: screenshotName, resetButton: resetButton, in: app)
+        }
+        resetButton.tap()
+
+        let confirm = app.alerts.buttons["Zurücksetzen"]
+        XCTAssertTrue(
+            confirm.waitForExistence(timeout: 5),
+            "Der Reset laeuft ohne Bestaetigungs-Dialog"
+        )
+        confirm.tap()
+    }
+
+    /// Nach dem Reset steht das Cover — ueber „Ueberspringen" und die
+    /// Startentscheidung wieder zurueck in die App.
+    private func dismissOnboarding(in app: XCUIApplication) {
+        XCTAssertTrue(
+            app.staticTexts[welcomeCard].waitForExistence(timeout: 10),
+            "Nach dem Reset erscheint das Onboarding nicht"
+        )
+        app.buttons["Überspringen"].firstMatch.tap()
+        let firstTrip = app.buttons["Erste Reise anlegen"].firstMatch
+        XCTAssertTrue(firstTrip.waitForExistence(timeout: 10), "Startentscheidung nicht erreicht")
+        firstTrip.tap()
+    }
+
+    /// Oeffnet den Farbschema-Picker (Menue-Stil) und waehlt einen Eintrag.
+    private func selectColorScheme(_ value: String, in app: XCUIApplication) {
+        let picker = app.buttons
+            .matching(NSPredicate(format: "label BEGINSWITH %@", "Farbschema"))
+            .firstMatch
+        XCTAssertTrue(scrollUntilHittable(picker, in: app), "„Farbschema“ nicht gefunden")
+        picker.tap()
+
+        let option = app.buttons[value]
+        XCTAssertTrue(option.waitForExistence(timeout: 5), "Menue-Eintrag „\(value)“ fehlt")
+        option.tap()
+    }
+
+    /// Der Menue-Picker traegt den gewaehlten Wert in seinem eigenen Label
+    /// („Farbschema, Dunkel“) — daran laesst sich die Praeferenz ablesen.
+    /// Die Liste ist lazy: steht sie noch weiter unten, existiert die Zeile
+    /// gar nicht: deshalb nach oben wischen, bis sie auftaucht.
+    private func colorSchemeShows(_ value: String, in app: XCUIApplication) -> Bool {
+        let button = app.buttons["Farbschema, \(value)"]
+        let list = app.collectionViews.firstMatch
+        for _ in 0 ... 6 {
+            if button.waitForExistence(timeout: 2) { return true }
+            if list.exists { list.swipeDown() } else { app.swipeDown() }
+        }
+        return button.exists
+    }
 
     /// Abnahme-Screenshot, nur wenn `SHIPTRIP_SCREENSHOT_DIR` gesetzt ist —
     /// dasselbe Muster wie in `OnboardingScreenshotTests`. Ohne die Variable

@@ -529,12 +529,12 @@
       }
     },
 
-    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu." : {
+    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Reisen, dein KI-API-Key und alle Einstellungen werden gelöscht, das Intro startet neu." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This action cannot be undone. All cruises and wish trips will be deleted and the intro will start again."
+            "value" : "This action cannot be undone. All trips, your AI API key and every setting will be deleted, and the intro will start again."
           }
         }
       }
@@ -938,12 +938,12 @@
       }
     },
 
-    "Löscht alle Daten und zeigt das Intro wieder wie beim ersten Öffnen. Dein KI-API-Key bleibt erhalten — den entfernst du über „Alle Daten löschen“." : {
+    "Löscht alle Daten, deinen KI-API-Key und alle Einstellungen und zeigt das Intro wieder wie beim ersten Öffnen — die App steht danach wie frisch installiert da." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deletes all data and shows the intro again, just like on first launch. Your AI API key is kept — remove it via “Delete All Data”."
+            "value" : "Deletes all data, your AI API key and every setting, and shows the intro again just like on first launch — the app is left as if freshly installed."
           }
         }
       }

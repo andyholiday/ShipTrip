@@ -858,10 +858,11 @@ struct DataManagementView: View {
                 .disabled(Self.isDataActionBlocked(isExporting: isExporting, isImporting: isImporting))
             }
 
-            // App zurücksetzen: dasselbe Löschen wie oben, zusätzlich den
-            // Erststart-Schalter — die App steht danach wieder wie beim ersten
-            // Öffnen da. Dieselbe gegenseitige Sperre gegen Export/Import.
-            Section(footer: Text(String(localized: "Löscht alle Daten und zeigt das Intro wieder wie beim ersten Öffnen. Dein KI-API-Key bleibt erhalten — den entfernst du über „Alle Daten löschen“."))) {
+            // App zurücksetzen: dasselbe Löschen wie oben, zusätzlich KI-API-Key,
+            // Einstellungen und Erststart-Schalter — die App steht danach wieder
+            // wie frisch installiert da. Dieselbe gegenseitige Sperre gegen
+            // Export/Import.
+            Section(footer: Text(String(localized: "Löscht alle Daten, deinen KI-API-Key und alle Einstellungen und zeigt das Intro wieder wie beim ersten Öffnen — die App steht danach wie frisch installiert da."))) {
                 Button("App zurücksetzen", role: .destructive) {
                     showingResetAlert = true
                 }
@@ -887,7 +888,7 @@ struct DataManagementView: View {
                 resetApp()
             }
         } message: {
-            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu.")
+            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Reisen, dein KI-API-Key und alle Einstellungen werden gelöscht, das Intro startet neu.")
         }
         .alert("KI-API-Key auch löschen?", isPresented: $showingApiKeyDeleteConfirm) {
             Button("Behalten", role: .cancel) {
@@ -1071,15 +1072,13 @@ struct DataManagementView: View {
         return true
     }
 
-    /// „App zurücksetzen": derselbe Lösch-Pfad wie „Alle Daten löschen", danach
-    /// der Erststart-Schalter auf „zurückgesetzt" — dieselbe Semantik wie
-    /// „Intro erneut zeigen". Bewusst `false` statt Schlüssel entfernen: ein
-    /// fehlender Schlüssel gilt als Bestandsinstallation und würde beim
-    /// nächsten Start still abgehakt (siehe `OnboardingPresentation`).
-    /// Der KI-API-Key liegt separat in der Keychain und bleibt unberührt.
+    /// „App zurücksetzen": die App steht danach wie frisch installiert da.
+    /// Derselbe Lösch-Pfad wie „Alle Daten löschen" — hier immer **mit** dem
+    /// KI-API-Key aus der Keychain —, danach die Schritte ausserhalb des
+    /// Stores (`AppReset`).
     private func resetApp() {
-        guard deleteAllData(alsoDeleteApiKey: false) else { return }
-        OnboardingPresentation.requestReplay(in: .standard)
+        guard deleteAllData(alsoDeleteApiKey: true) else { return }
+        AppReset.run(calendarSync: .shared, defaults: .standard)
     }
 }
 
