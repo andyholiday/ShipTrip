@@ -91,6 +91,46 @@ final class AppResetUITests: XCTestCase {
         )
     }
 
+    /// Repro (Fix-Runde 3): Der Reset laeuft in der Datenverwaltung — also tief
+    /// im Einstellungs-Tab. Danach steht das Onboarding davor; ist es
+    /// durchlaufen, soll die Hauptseite kommen und nicht wieder die Seite, von
+    /// der der Reset ausging.
+    func testNachDemResetStehtDieHauptseiteStattDerDatenverwaltung() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTestingCompleteOnboarding"]
+        app.launch()
+
+        navigateToDataManagement(app)
+        XCTAssertTrue(
+            app.navigationBars["Daten verwalten"].waitForExistence(timeout: 15),
+            "Ausgangslage fehlt: die Datenverwaltung steht nicht offen"
+        )
+
+        try performReset(in: app)
+        dismissOnboarding(in: app)
+
+        let tripsTab = app.tabBars.buttons["Reisen"]
+        XCTAssertTrue(
+            tripsTab.waitForExistence(timeout: 10),
+            "Tab-Leiste nach dem Onboarding nicht erreichbar"
+        )
+        // Kein `sleep`: der Tab-Wechsel faellt mit der Cover-Animation zusammen,
+        // deshalb auf den Zustand warten statt ihn sofort abzulesen.
+        let onTripsTab = expectation(
+            for: NSPredicate(format: "isSelected == true"),
+            evaluatedWith: tripsTab
+        )
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [onTripsTab], timeout: 10),
+            .completed,
+            "Nach dem Reset steht nicht der Reisen-Tab vorn"
+        )
+        XCTAssertFalse(
+            app.navigationBars["Daten verwalten"].exists,
+            "Nach dem Reset liegt wieder die Datenverwaltung obenauf"
+        )
+    }
+
     // MARK: - Helper
 
     /// „App zuruecksetzen" antippen und den Bestaetigungs-Dialog quittieren.
