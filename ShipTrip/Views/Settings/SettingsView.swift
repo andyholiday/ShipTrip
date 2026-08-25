@@ -888,7 +888,7 @@ struct DataManagementView: View {
                 resetApp()
             }
         } message: {
-            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu.")
+            Text("Diese Aktion kann nicht rückgängig gemacht werden. Alle Reisen, dein KI-API-Key und alle Einstellungen werden gelöscht, das Intro startet neu.")
         }
         .alert("KI-API-Key auch löschen?", isPresented: $showingApiKeyDeleteConfirm) {
             Button("Behalten", role: .cancel) {

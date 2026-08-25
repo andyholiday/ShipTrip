@@ -529,12 +529,12 @@
       }
     },
 
-    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Kreuzfahrten und Wunschreisen werden gelöscht und das Intro startet neu." : {
+    "Diese Aktion kann nicht rückgängig gemacht werden. Alle Reisen, dein KI-API-Key und alle Einstellungen werden gelöscht, das Intro startet neu." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This action cannot be undone. All cruises and wish trips will be deleted and the intro will start again."
+            "value" : "This action cannot be undone. All trips, your AI API key and every setting will be deleted, and the intro will start again."
           }
         }
       }

@@ -14,12 +14,18 @@ import Foundation
 @MainActor
 enum AppReset {
 
-    /// Setzt die Nutzer-Präferenzen zurück (`AppPreferencesReset`).
+    /// Räumt die im Nutzer-Kalender gespiegelten Termine ab und setzt danach
+    /// die Präferenzen zurück (`AppPreferencesReset`).
     ///
-    /// `calendarSync` ist der Zugang zu den im Nutzer-Kalender gespiegelten
-    /// Terminen — abgeräumt werden sie hier **nicht**; genau das hält der
-    /// Repro-Test fest.
+    /// Die Reihenfolge ist verbindlich: Der Präferenz-Reset legt den
+    /// Sync-Schalter um, und danach räumt niemand die Termine mehr weg — sie
+    /// blieben dauerhaft im Kalender des Nutzers stehen.
+    ///
+    /// Das Löschen ist bewusst „best effort" (`try?`): Ohne Kalenderzugriff
+    /// gibt es nichts abzuräumen, und ein fehlender Zugriff darf den Reset
+    /// nicht blockieren.
     static func run(calendarSync: CalendarSyncService, defaults: UserDefaults) {
+        try? calendarSync.removeAllManagedEvents()
         AppPreferencesReset.run(in: defaults)
     }
 }
