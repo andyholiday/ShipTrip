@@ -309,6 +309,7 @@ struct ShareExportCompatibilityTests {
 
         let unpacked = FileManager.default.temporaryDirectory
             .appendingPathComponent("backup-read-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: unpacked, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: unpacked) }
         try ZipArchiveReader.extract(from: zipURL, to: unpacked)
 
