@@ -184,10 +184,18 @@ struct ShareExportEnvelopeTests {
     @Test("Slug transliteriert Umlaute und fängt leere Titel ab")
     @MainActor
     func slugRules() {
-        #expect(ExportImportService.shareFileSlug(for: "Grönland & Färöer") == "Gronland-Faroer")
-        #expect(ExportImportService.shareFileSlug(for: "Größe").allSatisfy(\.isASCII))
-        #expect(ExportImportService.shareFileSlug(for: "   ") == "Kreuzfahrt")
-        #expect(ExportImportService.shareFileSlug(for: "…") == "Kreuzfahrt")
+        // Die Slugs vorab berechnen: `#expect` bekommt nur noch fertige Werte zu sehen,
+        // keine Aufrufe, die die Makro-Expansion als potenziell werfend einstuft.
+        let umlautSlug = ExportImportService.shareFileSlug(for: "Grönland & Färöer")
+        let asciiSlug = ExportImportService.shareFileSlug(for: "Größe")
+        let blankSlug = ExportImportService.shareFileSlug(for: "   ")
+        let punctuationSlug = ExportImportService.shareFileSlug(for: "…")
+        let asciiOnly = asciiSlug.allSatisfy { $0.isASCII }
+
+        #expect(umlautSlug == "Gronland-Faroer")
+        #expect(asciiOnly)
+        #expect(blankSlug == "Kreuzfahrt")
+        #expect(punctuationSlug == "Kreuzfahrt")
     }
 }
 
