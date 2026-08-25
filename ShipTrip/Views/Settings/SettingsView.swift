@@ -792,6 +792,14 @@ struct DataManagementView: View {
         isExporting || isImporting
     }
 
+    /// Welchen Container-Leser die manuell ausgewählte Datei braucht: ZIP-Archiv oder
+    /// Base64-JSON. Ob das Archiv anschließend Share- oder Backup-Semantik hat, entscheidet
+    /// allein der `share`-Block darin (Contract C1/C10) — nicht diese Zuordnung.
+    /// Als `static` ausgelagert, damit die Zuordnung ohne View-Aufbau testbar bleibt.
+    static func usesZipContainer(_ url: URL) -> Bool {
+        url.pathExtension.lowercased() == "zip"
+    }
+
     var body: some View {
         Form {
             Section("Übersicht") {
@@ -979,7 +987,7 @@ struct DataManagementView: View {
                 return
             }
             
-            let isZip = url.pathExtension.lowercased() == "zip"
+            let isZip = Self.usesZipContainer(url)
             
             Task {
                 defer {

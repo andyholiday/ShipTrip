@@ -42,6 +42,44 @@ struct ShareImportResultTests {
         #expect(cruise.shareContentFingerprint == fingerprintA)
     }
 
+    @Test("Manuell gewaehlte .shiptrip-Datei: ZIP-Pfad persistiert den Fingerabdruck")
+    func manualZipImportPersistsFingerprint() throws {
+        let container = try makeShareImportContainer()
+        let context = ModelContext(container)
+        let cruiseID = UUID()
+        let url = try writeShareFile(archive: makeShareArchive(
+            cruises: [makeShareCruise(id: cruiseID)], contentFingerprint: fingerprintA
+        ))
+
+        // Der manuelle Einstieg liest die Datei als ZIP-Container (C1) und laeuft durch
+        // denselben Import-Kern wie der automatische Pfad — also muss auch er den
+        // Fingerabdruck persistieren (C1: empfaenger-persistiert in JEDEM Pfad).
+        let result = try ExportImportService.shared.importFromZip(
+            url: url, modelContext: context
+        )
+
+        #expect(result.imported == 1)
+        let cruise = try #require(try storedCruise(cruiseID, in: context))
+        #expect(cruise.shareContentFingerprint == fingerprintA)
+    }
+
+    @Test("Backup-Import setzt keinen Fingerabdruck")
+    func backupImportLeavesFingerprintEmpty() throws {
+        let container = try makeShareImportContainer()
+        let context = ModelContext(container)
+        let cruiseID = UUID()
+        let backupJSON = try encodeArchiveJSON(
+            makeBackupArchive(cruises: [makeShareCruise(id: cruiseID)])
+        )
+
+        let result = try ExportImportService.shared.importFromJSONData(
+            data: backupJSON, imagesDir: nil, modelContext: context
+        )
+
+        #expect(result.imported == 1)
+        #expect(try storedCruise(cruiseID, in: context)?.shareContentFingerprint == nil)
+    }
+
     @Test("Dieselbe Datei ein zweites Mal: bereits vorhanden, kein Konflikt")
     func sameFileTwiceIsDuplicateWithoutConflict() async throws {
         let container = try makeShareImportContainer()

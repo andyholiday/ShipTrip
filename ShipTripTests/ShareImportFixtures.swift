@@ -30,8 +30,11 @@ func makeShareImportContainer() throws -> ModelContainer {
 // MARK: - DTO-Fixtures
 
 /// Eine plausible geteilte Kreuzfahrt. Die Zaehlparameter dienen den C10-Grenzwert-Tests.
+/// `rawID` ueberschreibt die Kreuzfahrt-id woertlich — fuer manipulierte Dateien mit
+/// ungueltiger UUID (C10-Invariante).
 func makeShareCruise(
     id: UUID = UUID(),
+    rawID: String? = nil,
     title: String = "Nordland-Route",
     portCount: Int = 2,
     portsWithImage: Int = 0,
@@ -39,7 +42,7 @@ func makeShareCruise(
     expenseCount: Int = 0,
     notes: String? = nil
 ) -> ExportCruise {
-    let cruiseID = id.uuidString
+    let cruiseID = rawID ?? id.uuidString
 
     let route = (0..<portCount).map { index in
         ExportPort(

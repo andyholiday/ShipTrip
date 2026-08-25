@@ -110,6 +110,18 @@ struct ShareArchivePreflightTests {
         #expect(rejectionOfArchive(makeShareArchive(cruises: [])) == "notAShareFile")
     }
 
+    @Test("Kreuzfahrt ohne gueltige UUID ist keine gueltige geteilte Reise")
+    func invalidCruiseIDIsRejected() throws {
+        // Ohne gueltige UUID greift weder die Fingerabdruck-Persistenz noch die
+        // Konflikterkennung (beide arbeiten ueber die Kreuzfahrt-id) — eine solche Datei
+        // ist keine geteilte Reise, sondern eine manipulierte.
+        let archive = makeShareArchive(cruises: [makeShareCruise(rawID: "nicht-uuid")])
+        #expect(rejectionOfArchive(archive) == "notAShareFile")
+
+        let empty = makeShareArchive(cruises: [makeShareCruise(rawID: "")])
+        #expect(rejectionOfArchive(empty) == "notAShareFile")
+    }
+
     @Test("Nicht-leere Nebensammlungen verletzen die Share-Invariante")
     func sideCollectionsAreRejected() throws {
         let deal = ExportDeal(
@@ -238,6 +250,34 @@ struct ShareImportEntryPathTests {
         let context = ModelContext(container)
         let archive = makeShareArchive(cruises: [makeShareCruise(), makeShareCruise()])
 
+        #expect(try rejectionOfManualImport(archive, in: context) == "notAShareFile")
+        #expect(try context.fetch(FetchDescriptor<Cruise>()).isEmpty)
+    }
+
+    @Test("Manuelle Dateiauswahl liest .shiptrip als ZIP-Container, .json als Legacy-JSON")
+    func manualPickerRoutesShareFileThroughZipReader() throws {
+        let shareFile = try writeShareFile(archive: makeShareArchive(cruises: [makeShareCruise()]))
+        #expect(DataManagementView.usesZipContainer(shareFile))
+
+        let backupZip = URL(fileURLWithPath: "/tmp/ShipTrip-Backup.zip")
+        #expect(DataManagementView.usesZipContainer(backupZip))
+        #expect(DataManagementView.usesZipContainer(URL(fileURLWithPath: "/tmp/alt.SHIPTRIP")))
+
+        // Nur das Base64-Legacy-Format ist kein ZIP.
+        #expect(DataManagementView.usesZipContainer(URL(fileURLWithPath: "/tmp/alt.json")) == false)
+    }
+
+    @Test("Ungueltige Kreuzfahrt-UUID wird in beiden Preflight-Schichten abgewiesen")
+    func invalidCruiseIDIsRejectedInBothLayers() throws {
+        let container = try makeShareImportContainer()
+        let context = ModelContext(container)
+        let archive = makeShareArchive(cruises: [makeShareCruise(rawID: "nicht-uuid")])
+
+        // Stufe A (Share-Einstieg)
+        let url = try writeShareFile(archive: archive)
+        #expect(rejectionOfShareEntry(url) == "notAShareFile")
+
+        // Kern-Guard (manueller Pfad) — und keine Mutation
         #expect(try rejectionOfManualImport(archive, in: context) == "notAShareFile")
         #expect(try context.fetch(FetchDescriptor<Cruise>()).isEmpty)
     }
