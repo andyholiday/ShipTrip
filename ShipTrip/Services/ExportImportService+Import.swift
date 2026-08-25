@@ -65,6 +65,15 @@ extension ExportImportService {
     func importFromJSONData(data: Data, imagesDir: URL?, modelContext: ModelContext) throws -> ImportResult {
         // Dual-Decoder: 1.8-Envelope oder 1.7-Top-Level-Array (siehe ExportArchive.decode)
         let archive = try ExportArchive.decode(from: data)
+
+        // Archiv-Preflight (Contract C10): Ob eine Datei Share- oder Backup-Semantik hat,
+        // entscheidet ihr Inhalt, nicht der Einstiegspfad. Traegt das Archiv einen
+        // `share`-Block, gelten Versionsmatrix, Invarianten und Zaehlgrenzen — und zwar
+        // hier, vor jeder Mutation, damit onOpenURL, der manuelle fileImporter und der
+        // Legacy-JSON-Import automatisch dieselbe Tuer benutzen. Ohne `share`-Block tut
+        // der Aufruf nichts, der Backup-Import bleibt unveraendert.
+        try SharePreflight.validateArchive(archive)
+
         let exportCruises = archive.cruises
 
         // Hole existierende Kreuzfahrten für Duplikat-Check
