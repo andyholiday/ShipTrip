@@ -14,6 +14,15 @@ import Foundation
 @MainActor
 enum AppReset {
 
+    /// Meldung, dass ein Reset gelaufen ist.
+    ///
+    /// Der Reset wird tief im Einstellungs-Tab ausgelöst (Daten verwalten),
+    /// und weder die Tab-Auswahl noch der Navigations-Stack der Einstellungen
+    /// liegen in `UserDefaults` — beide überleben ihn. Ohne dieses Signal
+    /// stünde nach dem Onboarding wieder die Datenverwaltung obenauf statt
+    /// der Hauptseite. `MainTabView` hört darauf.
+    static let didRunNotification = Notification.Name("ShipTrip.appResetDidRun")
+
     /// Räumt die im Nutzer-Kalender gespiegelten Termine ab und setzt danach
     /// die Präferenzen zurück (`AppPreferencesReset`).
     ///
@@ -27,5 +36,6 @@ enum AppReset {
     static func run(calendarSync: CalendarSyncService, defaults: UserDefaults) {
         try? calendarSync.removeAllManagedEvents()
         AppPreferencesReset.run(in: defaults)
+        NotificationCenter.default.post(name: didRunNotification, object: nil)
     }
 }

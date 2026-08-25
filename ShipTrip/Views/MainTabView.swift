@@ -11,7 +11,12 @@ import SwiftUI
 struct MainTabView: View {
     @State private var selectedTab = 0
     @AppStorage("colorScheme") private var colorScheme = "system"
-    
+
+    /// Identität des Einstellungs-Tabs. Ein neuer Wert baut `SettingsView`
+    /// frisch auf und leert damit dessen NavigationStack — der einzige Weg,
+    /// den gepushten Pfad ohne Umbau der Navigation zurückzunehmen.
+    @State private var settingsIdentity = 0
+
     private var colorSchemeValue: ColorScheme? {
         switch colorScheme {
         case "light": return .light
@@ -47,10 +52,19 @@ struct MainTabView: View {
                 .tag(3)
             
             SettingsView()
+                .id(settingsIdentity)
                 .tabItem {
                     Label("Mehr", systemImage: "ellipsis")
                 }
                 .tag(4)
+        }
+        // „App zurücksetzen" läuft in Einstellungen → Daten verwalten. Danach
+        // soll die App wie frisch installiert dastehen: erster Tab, keine
+        // Detailseite darunter. Das Onboarding-Cover legt sich darüber, die
+        // Navigation dahinter steht damit schon richtig, wenn es schliesst.
+        .onReceive(NotificationCenter.default.publisher(for: AppReset.didRunNotification)) { _ in
+            selectedTab = 0
+            settingsIdentity += 1
         }
         .tint(.accentColor)
         .preferredColorScheme(colorSchemeValue)
