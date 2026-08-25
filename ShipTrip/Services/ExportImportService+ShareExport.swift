@@ -16,9 +16,10 @@ import SwiftData
 /// Fehler, die den Share-Export abbrechen, *bevor* eine `.shiptrip`-Datei entsteht, bzw. die
 /// eine angefangene Datei verwerfen (Alles-oder-nichts wie beim Backup).
 ///
-/// Die Texte sind bewusst nicht über `String(localized:)` geführt: Der String-Katalog ist
-/// während dieser Welle gesperrt (Contract C8). Die nutzersichtbare Hülle
-/// „Teilen fehlgeschlagen: %@" bringt die Teilen-UI mit und interpoliert diese Beschreibung.
+/// Die Texte sind nutzersichtbar: Die Teilen-UI interpoliert sie in die Hülle
+/// „Teilen fehlgeschlagen: %@" (Contract C8) und zeigt sie im Alert. Deshalb laufen sie über
+/// `String(localized:)` (DE/EN). Der technische `reason` von `limitExceeded` bleibt bewusst
+/// unlokalisiert — er trägt nur Byte-/Stückzahlen aus dem Service.
 enum ShareExportError: LocalizedError {
     /// Die Beispielreise (`isDemo`) wird nicht geteilt.
     case demoCruise
@@ -30,11 +31,15 @@ enum ShareExportError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .demoCruise:
-            return "Die Beispielreise kann nicht geteilt werden."
+            return String(localized: "Die Beispielreise kann nicht geteilt werden.")
         case .transcodeFailed(let entryName):
-            return "Das Bild '\(entryName)' ließ sich nicht für den Versand aufbereiten."
+            return String(
+                localized: "Das Bild '\(entryName)' ließ sich nicht für den Versand aufbereiten."
+            )
         case .limitExceeded(let reason):
-            return "Die Reise überschreitet die Grenzen für geteilte Reisen: \(reason)"
+            return String(
+                localized: "Die Reise überschreitet die Grenzen für geteilte Reisen: \(reason)"
+            )
         }
     }
 }
