@@ -36,7 +36,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   und Wunschreisen, der hinterlegte KI-API-Key, sämtliche Einstellungen
   (Erscheinungsbild, Erinnerungs-Vorlauf, Kalender-Sync) sowie die von der App
   im Kalender angelegten Termine; danach startet das Intro wie beim ersten
-  Öffnen. Bestätigungsdialog und Fußnote nennen genau diesen Umfang.
+  Öffnen und führt anschließend auf die Hauptseite (Reisen-Tab), nicht zurück
+  in die Einstellungen. Bestätigungsdialog und Fußnote nennen genau diesen
+  Umfang.
 
 - **Vollständige englische Fassung (396 Schlüssel DE/EN)**: Der String Catalog
   ist auf den Stand nach Onboarding, Beispielreise und erweitertem Export
