@@ -149,6 +149,14 @@ extension ExportImportService {
             cruise.bookingNumber = exportCruise.bookingNumber ?? ""
             cruise.notes = exportCruise.notes ?? ""
             cruise.rating = exportCruise.rating
+            // Share-Fingerabdruck (C1): sender-berechnet, empfänger-persistiert — hier im
+            // Import-Kern und damit in JEDEM Einstiegspfad, vor dem atomaren Save unten.
+            // Nur an einer frisch angelegten Kreuzfahrt; Duplikate haben oben schon
+            // `continue` gemacht und bleiben unangetastet (kein Merge, kein Überschreiben).
+            // Ohne `share`-Block (Backup) bleibt das Feld leer.
+            if let fingerprint = archive.share?.contentFingerprint {
+                cruise.shareContentFingerprint = fingerprint
+            }
 
             modelContext.insert(cruise)
 

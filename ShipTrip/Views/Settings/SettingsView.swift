@@ -793,11 +793,13 @@ struct DataManagementView: View {
     }
 
     /// Welchen Container-Leser die manuell ausgewählte Datei braucht: ZIP-Archiv oder
-    /// Base64-JSON. Ob das Archiv anschließend Share- oder Backup-Semantik hat, entscheidet
-    /// allein der `share`-Block darin (Contract C1/C10) — nicht diese Zuordnung.
+    /// Base64-JSON. Eine `.shiptrip`-Datei **ist** ein ZIP-Archiv (Contract C1) und gehört
+    /// deshalb hierher — nur das Base64-Legacy-Format ist kein ZIP. Ob das Archiv
+    /// anschließend Share- oder Backup-Semantik hat, entscheidet allein der `share`-Block
+    /// darin (C1/C10), nicht diese Zuordnung und nicht die Endung.
     /// Als `static` ausgelagert, damit die Zuordnung ohne View-Aufbau testbar bleibt.
     static func usesZipContainer(_ url: URL) -> Bool {
-        url.pathExtension.lowercased() == "zip"
+        ["zip", "shiptrip"].contains(url.pathExtension.lowercased())
     }
 
     var body: some View {

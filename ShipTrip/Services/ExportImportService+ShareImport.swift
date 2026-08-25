@@ -172,6 +172,12 @@ enum SharePreflight {
         guard archive.cruises.count == 1, let cruise = archive.cruises.first else {
             throw ShareImportError.notAShareFile
         }
+        // Eine gueltige Kreuzfahrt-UUID ist Teil der Invariante: ohne sie greifen weder
+        // Fingerabdruck-Persistenz noch Konflikterkennung (beide arbeiten ueber die id).
+        // Die Schreibseite erzeugt immer eine — fehlt sie, ist die Datei manipuliert.
+        guard UUID(uuidString: cruise.id) != nil else {
+            throw ShareImportError.notAShareFile
+        }
         guard archive.deals.isEmpty,
               archive.customShippingLines.isEmpty,
               archive.customShips.isEmpty,
@@ -265,20 +271,12 @@ extension ExportImportService {
             versionConflict = false
         }
 
-        // Stufe B: der bestehende Import-Kern (Dedup, Validierung, Rollback).
+        // Stufe B: der bestehende Import-Kern (Dedup, Validierung, Rollback). Er
+        // persistiert den Fingerabdruck selbst — im selben atomaren Save wie die Reise
+        // und damit in jedem Einstiegspfad gleich (C1).
         let base = try importFromJSONData(
             data: preflight.dataJSON, imagesDir: preflight.imagesDir, modelContext: modelContext
         )
-
-        // Fingerabdruck nur an einer frisch importierten Kreuzfahrt persistieren.
-        // Ein Duplikat bleibt unangetastet — kein Merge, kein Ueberschreiben (C1).
-        if base.imported > 0, let sharedCruiseID, let fileFingerprint,
-           let imported = existingCruise(id: sharedCruiseID, modelContext: modelContext) {
-            imported.shareContentFingerprint = fileFingerprint
-            // Der Import selbst ist bereits gespeichert; scheitert nur dieses Nachtragen,
-            // bleibt die Reise importiert und der Hinweis kuenftig aus.
-            try? modelContext.save()
-        }
 
         return ShareImportResult(base: base, versionConflict: versionConflict)
     }
