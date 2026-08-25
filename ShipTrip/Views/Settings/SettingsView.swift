@@ -1074,11 +1074,11 @@ struct DataManagementView: View {
 
     /// „App zurücksetzen": die App steht danach wie frisch installiert da.
     /// Derselbe Lösch-Pfad wie „Alle Daten löschen" — hier immer **mit** dem
-    /// KI-API-Key aus der Keychain —, danach die Präferenzen und der
-    /// Erststart-Schalter (`AppPreferencesReset`).
+    /// KI-API-Key aus der Keychain —, danach die Schritte ausserhalb des
+    /// Stores (`AppReset`).
     private func resetApp() {
         guard deleteAllData(alsoDeleteApiKey: true) else { return }
-        AppPreferencesReset.run(in: .standard)
+        AppReset.run(calendarSync: .shared, defaults: .standard)
     }
 }
 

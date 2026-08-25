@@ -80,6 +80,37 @@ struct CalendarSyncServiceMigrationTests {
     }
 }
 
+/// Repro (Fix-Runde 2, F01): „App zurücksetzen" verspricht „wie frisch
+/// installiert" — dann dürfen auch keine ShipTrip-Termine im Kalender des
+/// Nutzers stehen bleiben. Teilt sich die Fixture mit den Migrationstests, weil
+/// dieselbe Ausgangslage gebraucht wird: ein echter, gespiegelter Termin.
+@Suite("App-Reset — Kalender-Spiegelung", .serialized)
+@MainActor
+struct AppResetCalendarCleanupTests {
+
+    @Test("Der Reset löscht die gespiegelten Termine und leert die Zuordnung")
+    func resetRemovesManagedEvents() throws {
+        let fixture = try MigrationFixture(name: #function)
+        defer { fixture.tearDown() }
+        try fixture.syncIntoOldCalendar()
+        #expect(
+            fixture.eventCount(in: fixture.oldCalendar) == 1,
+            "Ausgangslage fehlt: es steht kein gespiegelter Termin im Kalender"
+        )
+
+        AppReset.run(calendarSync: fixture.service, defaults: fixture.defaults)
+
+        #expect(
+            fixture.eventCount(in: fixture.oldCalendar) == 0,
+            "Nach dem Reset steht der ShipTrip-Termin noch im Kalender des Nutzers"
+        )
+        #expect(
+            fixture.managedIdentifiers.isEmpty,
+            "Nach dem Reset ist die Termin-Zuordnung nicht geleert"
+        )
+    }
+}
+
 // MARK: - Fixture
 
 /// Zwei frisch angelegte Testkalender, ein isoliertes `UserDefaults`-Suite für
