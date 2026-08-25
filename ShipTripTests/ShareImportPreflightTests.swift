@@ -64,7 +64,7 @@ private func rejectionOfManualImport(
 // MARK: - Versionsmatrix
 
 /// Eine Zelle der C10-Versionsmatrix.
-private struct VersionMatrixCase: Sendable {
+fileprivate struct VersionMatrixCase: Sendable {
     let formatVersion: Int
     let shareFormatVersion: Int
     /// `nil` = akzeptieren.
