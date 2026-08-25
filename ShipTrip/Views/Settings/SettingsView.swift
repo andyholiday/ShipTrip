@@ -917,7 +917,7 @@ struct DataManagementView: View {
         }
         .fileImporter(
             isPresented: $showingImportPicker,
-            allowedContentTypes: [.zip, .json],
+            allowedContentTypes: [.zip, .json, .shipTripCruise],
             allowsMultipleSelection: false
         ) { result in
             handleImport(result: result)
