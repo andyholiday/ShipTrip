@@ -1,6 +1,6 @@
 # ADR-003: Journal-Kern — eigenes `JournalEntry`-Modell, `Photo.caption` und additive Lightweight-Migration
 
-**Status:** Proposed (Accepted nach Codex-Gate #4; Gate-GO ist Vorbedingung für die Modell-Wave T7)
+**Status:** Accepted (2026-08-27 — Codex-Gate #4 Findings eingearbeitet, unabhängig verifiziert)
 **Datum:** 2026-08-27
 **Autor:** architect (Run 1.8.5, T1) für Andre
 **Querverweis:** ADR-001 (`isDemo`-Filterung), ADR-002 (CloudKit-Regeln, stabile IDs, LWW), ADR-007 (Teilen-Format)
