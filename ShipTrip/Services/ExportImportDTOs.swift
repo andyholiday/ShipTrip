@@ -130,6 +130,37 @@ struct ExportCruise: Codable, Sendable {
     let route: [ExportPort]
     let photos: [ExportPhoto]
     let expenses: [ExportExpense]
+    /// Journal-Einträge der Reise (ADR-003, T7b-Contract). Optional + `var` wie
+    /// `ExportPort.isSeaDay`: Swifts Codable-Synthese löst die fehlende Property in
+    /// 1.8.0-Dateien per `decodeIfPresent` zu `nil` auf (Import materialisiert `?? []`)
+    /// und lässt sie beim Encoden weg, solange die Reise kein Journal hat. Damit bleiben
+    /// Dateien journalloser Reisen byte-identisch zu 1.8.0 — und ihr `contentFingerprint`
+    /// (C1) stabil, sonst meldete jeder Re-Share an einen Bestands-Empfänger einen
+    /// Versionskonflikt, obwohl sich am Inhalt nichts geändert hat.
+    var journalEntries: [ExportJournalEntry]? = nil
+}
+
+/// Ein Journal-Eintrag im Export (ADR-003 → „Export- und Teilen-Integration").
+///
+/// Die Bezüge zu Hafen und Fotos reisen als **stabile UUID-Strings** mit; der Import
+/// rekonstruiert sie innerhalb derselben Reise und verwirft nicht auflösbare IDs still.
+struct ExportJournalEntry: Codable, Sendable {
+    /// `JournalEntry.id`.
+    let id: String
+    let text: String
+    /// Kalendertag als ISO-8601-Zeitstempel (`isoFormatter`, also UTC) — bewusst **nicht**
+    /// über den `dateFormatter`: der trägt die Geräte-Zeitzone und würde den auf 12:00 UTC
+    /// verankerten Date-only-Wert bei großen Offsets auf den Nachbartag kippen
+    /// (Zeitzonen-Vertrag). Der Import normalisiert zusätzlich auf 12:00 UTC.
+    let entryDate: String
+    /// Stimmung als Roh-String, `""` = keine. Passiert Export/Import verbatim (J4).
+    let moodRaw: String
+    let createdAt: String
+    let updatedAt: String
+    /// `Port.id` des optionalen Hafen-Bezugs.
+    let portId: String?
+    /// `Photo.id`s der angehängten Fotos (die Fotos bleiben zugleich Reise-Kinder).
+    let photoIds: [String]
 }
 
 struct ExportPort: Codable, Sendable {
@@ -159,15 +190,22 @@ struct ExportPhoto: Codable, Sendable {
     let id: String?
     /// Base64-Data-URL (`data:image/png;base64,…`) oder ZIP-Pfad (`images/<cruiseId>/<index>`).
     let ref: String
+    /// Bildunterschrift (ADR-003, T7b-Contract). `nil` in Dateien bis 1.8.0 und in Dateien
+    /// neuerer Stände, deren Foto keine Unterschrift trägt — der Import materialisiert dann
+    /// `""`. Weglassen statt leerem String hält Dateien ohne Captions byte-identisch zu 1.8.0
+    /// (siehe `ExportCruise.journalEntries`).
+    let caption: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case ref
+        case caption
     }
 
-    init(id: String?, ref: String) {
+    init(id: String?, ref: String, caption: String? = nil) {
         self.id = id
         self.ref = ref
+        self.caption = caption
     }
 
     init(from decoder: any Decoder) throws {
@@ -176,11 +214,13 @@ struct ExportPhoto: Codable, Sendable {
            let legacyReference = try? single.decode(String.self) {
             id = nil
             ref = legacyReference
+            caption = nil
             return
         }
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .id)
         ref = try container.decode(String.self, forKey: .ref)
+        caption = try container.decodeIfPresent(String.self, forKey: .caption)
     }
 }
 

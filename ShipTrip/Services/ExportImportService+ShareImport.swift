@@ -196,6 +196,12 @@ enum SharePreflight {
         guard cruise.expenses.count <= ShareArchiveLimits.maxExpenses else {
             throw ShareImportError.limitExceeded(reason: "expenses=\(cruise.expenses.count)")
         }
+        // Ohne diesen Deckel waere die Journal-Sammlung die einzige unbegrenzte Kollektion
+        // aus einer Fremddatei (ADR-003, T7b-Contract).
+        let journalCount = (cruise.journalEntries ?? []).count
+        guard journalCount <= ShareArchiveLimits.maxJournalEntries else {
+            throw ShareImportError.limitExceeded(reason: "journalEntries=\(journalCount)")
+        }
     }
 
     // MARK: Helfer

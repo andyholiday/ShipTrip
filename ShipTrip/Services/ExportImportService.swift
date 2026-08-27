@@ -196,12 +196,43 @@ class ExportImportService {
                 rating: cruise.rating,
                 route: exportPorts,
                 photos: photoRefs,
-                expenses: exportExpenses
+                expenses: exportExpenses,
+                journalEntries: buildExportJournalEntries(cruise)
             )
             result.append(exportCruise)
         }
 
         return result
+    }
+
+    /// Journal-Einträge einer Reise als DTOs (ADR-003, T7b-Contract) — `nil`, solange die
+    /// Reise kein Journal hat, damit die Datei byte-identisch zu 1.8.0 bleibt.
+    ///
+    /// Die Reihenfolge ist deterministisch (Tag, dann `createdAt`, dann `id`): der
+    /// `contentFingerprint` (C1) läuft über genau dieses Encoding, und die
+    /// SwiftData-Beziehung liefert keine garantierte Sortierung.
+    private func buildExportJournalEntries(_ cruise: Cruise) -> [ExportJournalEntry]? {
+        let sorted = cruise.journalEntries.sorted {
+            if $0.entryDate != $1.entryDate { return $0.entryDate < $1.entryDate }
+            if $0.createdAt != $1.createdAt { return $0.createdAt < $1.createdAt }
+            return $0.id.uuidString < $1.id.uuidString
+        }
+        guard !sorted.isEmpty else { return nil }
+
+        return sorted.map { entry in
+            ExportJournalEntry(
+                id: entry.id.uuidString,
+                text: entry.text,
+                entryDate: isoFormatter.string(from: entry.entryDate),
+                moodRaw: entry.moodRaw,
+                createdAt: isoFormatter.string(from: entry.createdAt),
+                updatedAt: isoFormatter.string(from: entry.updatedAt),
+                portId: entry.port?.id.uuidString,
+                photoIds: entry.photos
+                    .sorted { $0.sortOrder < $1.sortOrder }
+                    .map { $0.id.uuidString }
+            )
+        }
     }
 
     enum ImportError: LocalizedError {

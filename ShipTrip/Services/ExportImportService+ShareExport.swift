@@ -79,6 +79,13 @@ extension ExportImportService {
             )
         }
 
+        guard cruise.journalEntries.count <= ShareArchiveLimits.maxJournalEntries else {
+            throw ShareExportError.limitExceeded(
+                reason: "\(cruise.journalEntries.count) Journal-Einträge; "
+                    + "erlaubt sind \(ShareArchiveLimits.maxJournalEntries)."
+            )
+        }
+
         let imageSource = ExportImageSource(cruises: [cruise])
         let imageCount = imageSource.entryNames.count
         guard imageCount <= ShareArchiveLimits.maxPhotos else {
@@ -162,7 +169,8 @@ extension ExportImportService {
                 sortedPhotos.enumerated().map { index, photo in
                     ExportPhoto(
                         id: photo.id.uuidString,
-                        ref: "images/\(cruise.id.uuidString)/\(index)"
+                        ref: "images/\(cruise.id.uuidString)/\(index)",
+                        caption: Self.exportCaption(photo)
                     )
                 }
             },
