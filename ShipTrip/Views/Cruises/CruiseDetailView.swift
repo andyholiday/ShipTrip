@@ -336,7 +336,7 @@ struct CruiseDetailView: View {
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                                 if !port.isSeaDay {
-                                    Text(port.country)
+                                    Text(PortCountryCatalog.localizedName(for: port.country))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }

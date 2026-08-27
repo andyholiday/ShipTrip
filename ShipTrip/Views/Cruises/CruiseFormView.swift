@@ -329,7 +329,7 @@ struct CruiseFormView: View {
                                     .font(.subheadline)
                                     .fontWeight(.medium)
                                 if !port.isSeaDay {
-                                    Text(port.country)
+                                    Text(PortCountryCatalog.localizedName(for: port.country))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -1051,7 +1051,7 @@ struct TempPortFormSheet: View {
                             VStack(alignment: .leading) {
                                 Text(suggestion.name)
                                     .foregroundStyle(.primary)
-                                Text(suggestion.country)
+                                Text(suggestion.localizedCountry)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
