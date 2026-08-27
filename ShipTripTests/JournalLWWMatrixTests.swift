@@ -33,7 +33,7 @@ private struct JournalFixture {
     /// Speichert und liest den Eintrag über einen frischen Kontext zurück.
     func savedAndRefetchedEntry() throws -> JournalEntry {
         try context.save()
-        return try #require(refetchJournalEntry(id: entry.id, from: container))
+        return try #require(try refetchJournalEntry(id: entry.id, from: container))
     }
 }
 
@@ -151,7 +151,7 @@ struct JournalPhotoMatrixTests {
         let stored = try fixture.savedAndRefetchedEntry()
         #expect(stored.photos.map(\.id) == [photo.id], "Die Beziehung steht auch im Store")
         #expect(stored.updatedAt == JournalTestClock.firstEdit)
-        let storedPhoto = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+        let storedPhoto = try #require(try refetchPhoto(id: photo.id, from: fixture.container))
         #expect(storedPhoto.journalEntry?.id == fixture.entry.id)
         #expect(storedPhoto.updatedAt == JournalTestClock.firstEdit)
     }
@@ -180,10 +180,10 @@ struct JournalPhotoMatrixTests {
 
         try fixture.context.save()
         let storedPrevious = try #require(
-            refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
+            try refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
         )
         let storedTarget = try #require(
-            refetchJournalEntry(id: target.id, from: fixture.container)
+            try refetchJournalEntry(id: target.id, from: fixture.container)
         )
         #expect(storedPrevious.photos.isEmpty)
         #expect(storedPrevious.updatedAt == JournalTestClock.firstEdit)
@@ -208,7 +208,7 @@ struct JournalPhotoMatrixTests {
         let stored = try fixture.savedAndRefetchedEntry()
         #expect(stored.photos.isEmpty, "Im Store hängt kein Foto mehr am Eintrag")
         #expect(stored.updatedAt == JournalTestClock.firstEdit)
-        let storedPhoto = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+        let storedPhoto = try #require(try refetchPhoto(id: photo.id, from: fixture.container))
         #expect(storedPhoto.journalEntry == nil)
         #expect(storedPhoto.cruise?.id == fixture.cruise.id)
         #expect(storedPhoto.updatedAt == JournalTestClock.firstEdit)
@@ -254,7 +254,7 @@ struct JournalDeleteMatrixTests {
         #expect(fixture.entry.updatedAt == JournalTestClock.firstEdit)
 
         let stored = try #require(
-            refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
+            try refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
         )
         #expect(stored.photos.isEmpty)
         #expect(stored.updatedAt == JournalTestClock.firstEdit)
@@ -298,7 +298,7 @@ struct JournalDeleteMatrixTests {
         #expect(second.journalEntry == nil)
 
         for photo in [first, second] {
-            let stored = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+            let stored = try #require(try refetchPhoto(id: photo.id, from: fixture.container))
             #expect(stored.journalEntry == nil)
             #expect(stored.updatedAt == JournalTestClock.firstEdit)
         }
@@ -331,7 +331,9 @@ struct JournalDeleteMatrixTests {
         )
 
         for entry in [fixture.entry, second] {
-            let stored = try #require(refetchJournalEntry(id: entry.id, from: fixture.container))
+            let stored = try #require(
+                try refetchJournalEntry(id: entry.id, from: fixture.container)
+            )
             #expect(stored.port == nil)
             #expect(stored.updatedAt == JournalTestClock.firstEdit)
             #expect(stored.createdAt == JournalTestClock.insert)
