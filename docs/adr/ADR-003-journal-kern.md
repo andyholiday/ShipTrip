@@ -260,6 +260,11 @@ komplett. Die additive Erweiterung innerhalb von Version 2 erhält den
 Alt-Pfad; Preis ist die dokumentierte Silent-Drop-Asymmetrie
 (s. Konsequenzen).
 
+## Umgesetzt durch
+
+- [Feature-Doku: Journal](../features/journal.md) — Umsetzungsstand,
+  Acceptance-Status und offene Punkte
+
 ## Referenzen
 
 - `docs/architecture/contracts/journal-editor-contract.md` — verbindliche

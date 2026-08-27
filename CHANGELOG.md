@@ -9,6 +9,21 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Journal-Kern, Datenschicht**: Reisen können Journal-Einträge tragen —
+  Freitext, Kalendertag, Stimmung, optionaler Hafen-Bezug und angehängte Fotos,
+  mehrere Einträge pro Tag erlaubt. Fotos bekommen zusätzlich eine
+  Bildunterschrift (`caption`); angehängte Fotos bleiben zugleich Kinder der
+  Reise, sodass Galerie, Statistiken, Export und Teilen sich unverändert
+  verhalten. Der Kalendertag ist ein Date-only-Wert (kanonisch 12:00 UTC des
+  Tag-Tripels), damit ein Zeitzonenwechsel an Bord den Tag nicht verschiebt.
+  Die Schema-Erweiterung ist rein additiv, ein Store aus 1.8.0 öffnet damit
+  ohne Datenverlust (belegt gegen eine eingefrorene 1.8.0-Store-Fixture; der
+  Nachweis auf einem echten Gerät steht noch aus). **Noch ohne
+  Bedienoberfläche** — Editor und Tagebuch-Strang sowie die Übernahme in
+  Backup- und Teilen-Dateien folgen in dieser Version.
+  ([Feature-Doku](docs/features/journal.md),
+  [ADR-003](docs/adr/ADR-003-journal-kern.md))
+
 - **Kreuzfahrt teilen**: Eine einzelne Reise lässt sich über das Menü der
   Reise-Detailansicht („Reise teilen") verschicken. Die Aktion erzeugt eine
   `.shiptrip`-Datei und gibt sie zusammen mit einem Nachrichtentext ins
@@ -98,6 +113,38 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   auf Xcodes automatisch erzeugtes Schema zu treffen.
 
 ### Geaendert
+
+- **Ländernamen folgen der Gerätesprache**: Die ~1.800 Häfen der Referenzdaten
+  trugen ihr Land als deutschen Klartext, der auch auf englischsprachigen
+  Geräten so angezeigt wurde. Die 117 Bestandsnamen sind jetzt auf
+  ISO-3166-Codes abgebildet; Hafen-Auswahl, Routen-Zeilen, Karten-Stopp-Liste
+  und das zugehörige VoiceOver-Label lesen den Namen aus der Geräte-Locale
+  („Greece" statt „Griechenland"). Gespeichert, exportiert und geteilt wird
+  weiterhin der bisherige Wert — kein Schema- oder Formatwechsel. Auf deutschen
+  Geräten ändern sich dadurch **neun Beschriftungen** auf den Systemnamen: USA →
+  „Vereinigte Staaten", Großbritannien → „Vereinigtes Königreich", VAE →
+  „Vereinigte Arabische Emirate", Kap Verde → „Cabo Verde", US-Jungferninseln →
+  „Amerikanische Jungferninseln", Elfenbeinküste → „Côte d'Ivoire",
+  Demokratische Republik Kongo → „Kongo-Kinshasa", Föderierte Staaten von
+  Mikronesien → „Mikronesien", Brunei → „Brunei Darussalam". Jede davon lässt
+  sich einzeln zurücknehmen, indem die betreffende Alias-Zeile in
+  `PortCountryCatalog` entfällt — dann bleibt der Bestandsname stehen, wie schon
+  bei „China" und „Bonaire".
+  ([ADR-008](docs/adr/ADR-008-iso-laendercodes-fuer-hafen-referenzdaten.md))
+
+- **Produktrichtung: Einmalkauf statt Freemium-Abo**: Die Monetarisierung ist
+  als Einmalkauf festgeschrieben; die Reservierung für ein StoreKit-2-Freemium
+  ist damit aufgelöst. Reine Entscheidungs- und Doku-Änderung, in der App ist
+  bisher nichts davon gebaut.
+  ([ADR-004](docs/adr/ADR-004-einmalkauf.md))
+
+- **Reise-Formular in einzelne Dateien aufgeteilt**: Die vier bisher in
+  `CruiseFormView.swift` eingebetteten Dialoge (Erinnerungs-Nachfrage,
+  Hafen-Erfassung während der Reiseerstellung, KI-Import, Bewertungsauswahl)
+  liegen jetzt in eigenen Dateien unter `ShipTrip/Views/Cruises/`, und die
+  wortgleich doppelt vorhandene „Hafen-Momente"-Section existiert nur noch
+  einmal (`HafenMomenteSection`). Reines Verschieben und Zusammenführen ohne
+  Verhaltens- oder Layout-Unterschied; Vorstufe für den Journal-Editor.
 
 - **Reise-Übersicht zählt „Anläufe", die Bilanz „Häfen"**: Beide Ansichten
   trugen dieselbe Beschriftung für zwei verschiedene Kennzahlen — die
