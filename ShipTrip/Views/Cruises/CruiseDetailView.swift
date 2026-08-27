@@ -26,6 +26,8 @@ struct CruiseDetailView: View {
     @State private var showingAlert = false
     /// Teilen-Aktion (C7) — Dateibau, Share-Sheet und Aufräumen liegen in `CruiseShareAction`.
     @State private var shareModel = CruiseShareModel()
+    /// Journal-Ziele (T8c) — Push und Sheet liegen in `CruiseJournalNavigation`.
+    @State private var journalNavigation = CruiseJournalNavigation()
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -112,6 +114,7 @@ struct CruiseDetailView: View {
             PhotoZoomView(photos: cruise.sortedPhotos, initialPhoto: photo)
         }
         .cruiseSharePresentation(shareModel)
+        .cruiseJournalNavigation(journalNavigation, cruise: cruise)
         .alert("Kreuzfahrt löschen?", isPresented: $showingDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
@@ -307,10 +310,8 @@ struct CruiseDetailView: View {
             onAddPort: { showingAddPortSheet = true },
             onSelectPort: { selectedPort = $0 },
             onDeletePort: { deletePort($0) },
-            // T8d: Wiring T8c — Eintrags-Detailansicht und J2-Editor kommen aus
-            // T8c und werden hier eingehängt; bis dahin bewusst wirkungslos.
-            onOpenEntry: { _ in },
-            onAddEntry: { _ in }
+            onOpenEntry: { journalNavigation.openEntry(id: $0) },
+            onAddEntry: { journalNavigation.addEntry(at: $0) }
         )
     }
 
@@ -431,30 +432,6 @@ struct CruiseDetailView: View {
         modelContext.delete(expense)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
         cruise.updatedAt = Date()
-    }
-}
-
-/// Sortiert Ausgaben chronologisch aufsteigend nach Datum. Ausgaben ohne Datum
-/// stehen am Ende. Reine Funktion (kein SwiftData-Zugriff) – testbar in
-/// ShipTripTests/ExpenseSortingTests.swift.
-enum ExpenseSorting {
-    static func sorted(_ expenses: [Expense]) -> [Expense] {
-        expenses.sorted { lhs, rhs in
-            switch (lhs.expenseDate, rhs.expenseDate) {
-            case let (l?, r?):
-                if l != r { return l < r }
-            case (nil, .some):
-                return false
-            case (.some, nil):
-                return true
-            case (nil, nil):
-                break
-            }
-            // Stabiler Tie-Breaker bei gleichem/fehlendem Datum: Erstellungszeitpunkt,
-            // zuletzt die UUID (deterministisch statt undefinierter Sortierreihenfolge).
-            if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
-            return lhs.id.uuidString < rhs.id.uuidString
-        }
     }
 }
 

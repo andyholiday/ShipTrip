@@ -48,6 +48,10 @@ struct RouteStopCard: View {
                         .onTapGesture { onSelectPort() }
                         .accessibilityAddTraits(.isButton)
                         .accessibilityHint(Text("Hafen bearbeiten"))
+                } else {
+                    // Ohne Karteninhalt (Seetag, Hafen ohne Momente) gäbe es
+                    // sonst nur das Kontextmenü als Weg ins Formular (T9b F03).
+                    editPortButton
                 }
 
                 ForEach(entries) { entry in
@@ -116,6 +120,22 @@ struct RouteStopCard: View {
         .accessibilityValue(isExpanded
                             ? String(localized: "aufgeklappt")
                             : String(localized: "zugeklappt"))
+    }
+
+    // MARK: - Aktionen im aufgeklappten Stopp
+
+    /// Sichtbarer Ein-Tap-Einstieg ins Hafen-Formular — gleiches Idiom wie
+    /// „Tagebuch-Eintrag", damit die Karte eine Aktionszeile behält.
+    private var editPortButton: some View {
+        Button {
+            onSelectPort()
+        } label: {
+            Label("Hafen bearbeiten", systemImage: "pencil")
+                .font(.caption.weight(.semibold))
+                .frame(minHeight: Self.headerMinHeight, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
     }
 
     // MARK: - Erfassung (J3neu (d))
