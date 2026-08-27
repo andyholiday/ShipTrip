@@ -91,7 +91,11 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
   KeychainService, NotificationService, DemoDataService (Beispielreise, auch im
   Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
-- `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Share, Stats, Settings)
+- `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Onboarding, Share,
+  Stats, Settings). Das Journal hat **keinen eigenen Strang**: Einträge hängen im
+  Route-Abschnitt der Reise-Detailansicht, die Ansichten liegen deshalb unter
+  `Views/Cruises/` (`RouteJournalSection`, `RouteStopCard`, `JournalEntry*View`).
+  Siehe `docs/features/journal.md`.
 - `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
 - `docs/` — Architektur, Features, ADRs (`docs/adr/`) · `CHANGELOG.md` (Keep a Changelog)

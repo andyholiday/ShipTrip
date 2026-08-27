@@ -18,10 +18,29 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Tag-Tripels), damit ein Zeitzonenwechsel an Bord den Tag nicht verschiebt.
   Die Schema-Erweiterung ist rein additiv, ein Store aus 1.8.0 öffnet damit
   ohne Datenverlust (belegt gegen eine eingefrorene 1.8.0-Store-Fixture; der
-  Nachweis auf einem echten Gerät steht noch aus). **Noch ohne
-  Bedienoberfläche** — Editor und Tagebuch-Strang sowie die Übernahme in
-  Backup- und Teilen-Dateien folgen in dieser Version.
+  Nachweis auf einem echten Gerät steht noch aus). Einträge und
+  Bildunterschriften wandern in das ZIP-Backup und in die
+  `.shiptrip`-Teilen-Datei mit; ältere Dateien ohne diese Felder werden
+  weiterhin gelesen, und eine 1.8.0-Installation importiert die neuen Dateien
+  fehlerfrei, übernimmt Journal und Bildunterschriften dabei aber nicht.
   ([Feature-Doku](docs/features/journal.md),
+  [ADR-003](docs/adr/ADR-003-journal-kern.md))
+
+- **Tagebuch im Route-Abschnitt der Reise**: Das Journal bekommt keinen eigenen
+  Bereich, sondern hängt im Routen-Abschnitt der Reise-Detailansicht. Jeder
+  Stopp — Hafen wie Seetag — ist eine aufklappbare Karte mit seinen Einträgen
+  und der Aktion „Tagebuch-Eintrag". Ein Eintrag mit Hafen-Bezug erscheint an
+  genau diesem Hafen, einer ohne Bezug am ersten Stopp seines Tages, und was
+  keinen Träger findet, sammelt der Block „Weitere Einträge" am Ende des
+  Abschnitts. Während einer laufenden Reise stehen nur die Stopps des heutigen
+  Tages offen — davor und danach alle —, Antippen übersteuert das, der Schalter
+  im Abschnitts-Kopf klappt alles auf oder zu, und über Mitternacht rechnet die
+  Ansicht die Vorgabe neu. Der Editor öffnet als Blatt mit der Erinnerung
+  zuerst; Datum, Stopp und Stimmung sind aus der Karte vorbelegt, aus der heraus
+  er gestartet wurde, Fotos lassen sich mit Bildunterschrift anhängen. Bearbeiten
+  und Löschen gibt es ausschließlich in der Eintrags-Detailansicht, die eine
+  angetippte Zeile öffnet. Alle Beschriftungen liegen in Deutsch und Englisch
+  vor. ([Feature-Doku](docs/features/journal.md),
   [ADR-003](docs/adr/ADR-003-journal-kern.md))
 
 - **Kreuzfahrt teilen**: Eine einzelne Reise lässt sich über das Menü der
@@ -236,6 +255,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Screenshot-UI-Tests schrieben auf einen fest verdrahteten Pfad. Das
   Zielverzeichnis kommt jetzt aus `SHIPTRIP_SCREENSHOT_DIR`; fehlt die
   Variable, werden die Tests übersprungen statt zu scheitern.
+- **Gelöschte Hafen- und Foto-Bezüge eines Tagebuch-Eintrags konnten per Sync
+  zurückkehren**: Vier Wege entfernten Häfen oder Fotos direkt — das Löschen
+  eines Hafens im Reise-Detail, das Zusammenführen doppelter Häfen und der
+  Route-Abgleich beim Speichern des Reise-Formulars sowie das Abwählen eines
+  Fotos. Der betroffene Eintrag galt dabei als unverändert, sodass ein anderes
+  Gerät seinen älteren Stand mit dem gelösten Bezug hätte durchsetzen können.
+  Alle vier Wege markieren den Eintrag jetzt als geändert.
+  ([Feature-Doku](docs/features/journal.md))
 
 ### Geplant
 
