@@ -419,9 +419,12 @@ struct CruiseDetailView: View {
     }
     
     private func deletePort(_ port: Port) {
-        modelContext.delete(port)
+        // Journal-Lösch-Pfad (T8-Auflage, J2a): hängt die Einträge des Hafens ab
+        // und bumpt jeden — SwiftData-Nullify allein täte das nicht.
+        let now = Date()
+        JournalDeletePaths.deletePort(port, in: modelContext, at: now)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
-        cruise.updatedAt = Date()
+        cruise.updatedAt = now
     }
 
     private func deleteExpense(_ expense: Expense) {
