@@ -7,6 +7,10 @@ Diese Datei ist die Naht: Designer (T5) und Modell-Dev (T7) bauen unabhängig
 gegen diesen Contract, nicht gegeneinander. Änderungen gehen über Winston,
 nicht still per Diff.
 
+Rev. 2026-08-27/2 (über Winston, nach Codex-Gate #4): `entryDate` auf
+Date-only-Semantik umgestellt (Finding 3) und LWW-Mutations-Matrix als J2a
+ergänzt (Finding 2); Details im Zeitzonen- bzw. LWW-Vertrag von ADR-003.
+
 ---
 
 ## J1 — Datenmodell-Naht (verbindliche Namen, Typen, Defaults)
@@ -21,7 +25,7 @@ Relationships, keine `.unique`; Dedup über stabile `id: UUID`).
 |---|---|---|---|
 | `id` | `UUID` | `UUID()` | Stabile App-ID, kein Unique-Constraint (ADR-002 §4) |
 | `text` | `String` | `""` | Die Erinnerung (Freitext, mehrzeilig) |
-| `entryDate` | `Date` | `Date()` | Kalendertag des Eintrags; der Editor persistiert `startOfDay` des gewählten Tags. Vergleiche immer kalendertag-basiert (`Calendar.isDate(_:inSameDayAs:)`), nie `==` |
+| `entryDate` | `Date` | `Date()` (Modell-Default) | Kalendertag als **Date-only-Wert**: der Editor persistiert **12:00 UTC** des gewählten Tags (Zeitzonen-Vertrag, ADR-003). Tag-Extraktion nur über UTC-Kalender; Vergleiche auf Tag-Tripeln (Jahr/Monat/Tag, s. J2), nie `==`, nie lokales `startOfDay` |
 | `moodRaw` | `String` | `""` | Stimmung als stabiler Roh-String (s. J4); `""` = keine Stimmung |
 | `createdAt` | `Date` | `Date()` | Erstellungsdatum |
 | `updatedAt` | `Date` | `Date()` | Last-Writer-Wins, bei jedem Save bumpen (ADR-002 §2) |
@@ -67,17 +71,36 @@ zuerst, Eckdaten nachgelagert" ist verbindlich.
 
 | Feld | Eingabe | Default-Regel |
 |---|---|---|
-| Tag/Datum | Datums-Auswahl, begrenzt auf `[cruise.startDate, cruise.endDate]` | Heute, geklemmt auf den Reisezeitraum (vor der Reise → Starttag, danach → Endtag) |
-| Hafen-Bezug | Auswahl über `cruise.route` (nach `sortOrder`, inkl. Seetage) + Option „Kein Hafen" | Erster Route-Stopp, dessen `arrival` auf dem gewählten Tag liegt; sonst kein Hafen. Bei Datumswechsel neu berechnet, solange der User nicht manuell gewählt hat |
+| Tag/Datum | Datums-Auswahl, begrenzt auf `[cruise.startDate, cruise.endDate]` | Heute (Tag-Tripel im Geräte-Kalender), geklemmt auf den Reisezeitraum (vor der Reise → Starttag, danach → Endtag); Klemmen und Grenzen als Tag-Tripel-Vergleich nach Zeitzonen-Vertrag (ADR-003), persistiert als 12:00 UTC des gewählten Tags |
+| Hafen-Bezug | Auswahl über `cruise.route` (nach `sortOrder`, inkl. Seetage) + Option „Kein Hafen" | Erster Route-Stopp, dessen `arrival` auf dem gewählten Tag liegt (Tag-Tripel: `arrival` via Geräte-Kalender, Eintragstag via UTC-Kalender); sonst kein Hafen. Bei Datumswechsel neu berechnet, solange der User nicht manuell gewählt hat |
 | Stimmung | 5 Optionen + „keine" (s. J4) | Keine Stimmung (`moodRaw == ""`) |
 
 **Save-Semantik:** Speichern erst am Ende von Schritt 2 (ein Insert, kein
 Zwischenspeichern); Abbrechen verwirft Eintrag und noch nicht gespeicherte
-Fotos. Jeder Save bumpt `updatedAt` des Eintrags; Caption-Änderungen bumpen
-`photo.updatedAt`.
+Fotos. Alle Timestamp-Bumps folgen der Matrix J2a.
 
 **Bearbeiten:** gleicher Editor, alle Felder vorbelegt, gleiche Reihenfolge.
-**Löschen:** aus dem Tagebuch-Strang; löscht nur den Eintrag (Fotos bleiben).
+**Löschen:** aus dem Tagebuch-Strang; löscht nur den Eintrag (Fotos bleiben);
+Bumps nach J2a.
+
+### J2a — LWW-Mutations-Matrix (verbindlich, T7-Tests decken jede Zeile ab)
+
+Konfliktregel: LWW pro Objekt über `updatedAt` (ADR-002 §2, ADR-003
+LWW-Vertrag). `createdAt` wird einmal beim Insert gesetzt und danach **nie**
+verändert. SwiftData-Nullify bumpt nichts automatisch — die Lösch-Pfade
+führen die markierten Bumps explizit aus.
+
+| Mutation | `entry.createdAt` | `entry.updatedAt` | `photo.updatedAt` |
+|---|---|---|---|
+| Eintrag anlegen (Save Schritt 2) | = now, danach unveränderlich | = `createdAt` | neue Fotos: gesetzt beim Anlegen |
+| `text` / `entryDate` / `moodRaw` ändern | — | bump | — |
+| Hafen setzen / wechseln / entfernen (Editor) | — | bump | — |
+| Foto anhängen (neu oder bestehend) | — | bump | bump (Link `journalEntry` geändert) |
+| Foto abhängen (Detach im Editor) | — | bump | bump |
+| Caption ändern | — | — | bump |
+| Eintrag löschen → Nullify `photo.journalEntry` | (Objekt entfällt) | (Objekt entfällt) | bump je betroffenem Foto, explizit im Lösch-Pfad |
+| Hafen löschen → Nullify `entry.port` | — | bump, explizit im Lösch-Pfad | — |
+| Reise löschen (Cascade) | (Objekt entfällt) | (Objekt entfällt) | (Fotos entfallen mit) |
 
 ---
 

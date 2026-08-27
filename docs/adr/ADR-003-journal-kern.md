@@ -37,6 +37,14 @@ optionalen Beziehungen zu `Cruise` (cascade-besitzt), optional zu `Port`
 angehängte Fotos bleiben zugleich Kinder der Reise, damit Galerie, Export und
 Aggregate unverändert funktionieren. Mehrere Einträge pro Tag sind erlaubt.
 
+Drei Verträge gehören verbindlich zur Entscheidung: `entryDate` trägt
+**Date-only-Semantik** (s. „Zeitzonen-Vertrag"), `createdAt`/`updatedAt`
+folgen dem **LWW-Vertrag** mit Mutations-Matrix (J2a im Editor-Contract),
+und `moodRaw` unterliegt dem **Stabilitätsvertrag** inkl.
+Unknown-Preservation. Per Zusatzentscheid Andre („Beides in 1.8.5") sind
+Journal-Einträge und Foto-Captions außerdem Teil des ZIP-Exports **und** des
+Teilen-Formats (s. „Export- und Teilen-Integration", Contract für T7b).
+
 Die verbindliche Feld-Liste (Namen, Typen, Defaults, Delete-Regeln) und der
 Editor-Flow („Erinnerung zuerst, Eckdaten als Zweitschritt" mit
 Default-Regeln) stehen als eigenständige Naht in
@@ -52,7 +60,9 @@ Datentransform, kein Entfernen. Der Beweis läuft über die eingefrorene
 ## Migrationsstrategie
 
 Die Schema-Änderung ist **additiv** und damit per SwiftData-Lightweight-
-Migration automatisch: Bestandsobjekte bleiben byte-identisch erhalten, neue
+Migration automatisch: Bestandsobjekte bleiben erwartungsgemäß unverändert
+erhalten — belegt ist das erst nach Fixture- (T7), Geräte- (T11b) und
+CloudKit-Gate, nicht vorab per Behauptung. Neue
 Attribute erhalten ihre Defaults (`Photo.caption = ""`), neue Relationships
 sind optional und starten leer. Ein Migrationsplan mit versionierten Schemas
 wird bewusst **nicht** eingeführt — es gibt keinen zu transformierenden
@@ -79,6 +89,82 @@ Development-Umgebung installiert und kontrolliert nach Production promotet
 werden (`docs/cloudkit/*.ckdb` nachziehen). Additive CloudKit-Erweiterungen
 sind unkritisch, aber der Promote ist ein expliziter Release-Schritt.
 
+## Export- und Teilen-Integration (Zusatzentscheid „Beides in 1.8.5") — Contract für T7b
+
+Beide Türen — ZIP-Export (ADR-002 §5) und `.shiptrip`-Teilen (ADR-007) —
+nutzen denselben `ExportArchive`-Envelope; die Erweiterung gilt daher für
+beide gleichzeitig.
+
+- **Versionierung:** `formatVersion` bleibt **2**, `shareFormatVersion`
+  bleibt **1**. Die Erweiterung ist rein additiv über optionale Felder; die
+  Totalmatrix aus ADR-007 bleibt unberührt. Ein Versions-Bump würde
+  1.8.0-Empfänger komplett aussperren (abgelehnt, s. Option F).
+- **Neue DTO-Felder** (alle nach dem bestehenden `decodeIfPresent`-Muster
+  aus `ExportImportDTOs.swift`):
+  - `ExportCruise.journalEntries: [ExportJournalEntry]` — fehlt → `[]`.
+  - `ExportPhoto.caption: String?` — fehlt → beim Materialisieren `""`.
+  - `ExportJournalEntry`: `id`, `text`, `entryDate`, `moodRaw`,
+    `createdAt`, `updatedAt`, `portId: String?`, `photoIds: [String]`
+    (stabile UUIDs; Datums-Encoding wie übrige Export-Daten).
+- **Import-Re-Linking:** Entry↔Photo und Entry↔Port werden beim Import
+  über die stabilen UUIDs **innerhalb derselben Reise** rekonstruiert.
+  Nicht auflösbare IDs werden verworfen — der Eintrag importiert ohne
+  diesen Link, das Foto bleibt Reise-Kind; niemals Import-Abbruch.
+  `.nullify` regelt nur das Lösch-Verhalten im Live-Store; die
+  Rundtrip-Zuordnung leisten ausschließlich die ID-Listen im DTO.
+- **Legacy-Verhalten (verbindliche Fixtures für T7b):** (a) 1.8.0-ZIP und
+  1.8.0-`.shiptrip` ohne Journal-Felder importieren fehlerfrei mit leerem
+  Journal und `caption == ""`; (b) neue Rundtrip-Fixtures mit Einträgen
+  (inkl. Seetag, ohne Hafen, mehrere pro Tag, unbekanntem `moodRaw`)
+  laufen über beide Türen verlustfrei; (c) `moodRaw`-Rohwerte passieren
+  Export/Import verbatim.
+- **Akzeptierte Asymmetrie:** 1.8.0-Leser importieren neue Dateien
+  weiterhin (unbekannte JSON-Keys werden von Codable ignoriert), verlieren
+  dabei aber still Journal + Captions. Bewusst in Kauf genommen, damit
+  Teilen an Bestands-Installationen funktioniert (s. Konsequenzen).
+
+## LWW-Vertrag (`createdAt`/`updatedAt`)
+
+Konfliktregel: Last-Writer-Wins **pro Objekt** über `updatedAt`
+(ADR-002 §2). `createdAt` wird genau einmal beim Insert gesetzt und ist
+danach **unveränderlich**. `updatedAt`-Bumps allein definieren kein LWW —
+verbindlich ist die vollständige Mutation→Timestamp-Matrix in **J2a** des
+Editor-Contracts, die auch Attach/Detach von Fotos und die Nullify-Pfade
+beim Löschen von Eintrag bzw. Hafen abdeckt. Wichtig: SwiftData-Nullify
+bumpt nichts automatisch; die Lösch-Pfade müssen die Bumps explizit
+ausführen. T7-Tests decken die Matrix zeilenweise ab.
+
+## Zeitzonen-Vertrag (`entryDate` als Date-only-Wert)
+
+Gate-#4-Hypothese bestätigt plausibel: lokales `startOfDay` verschiebt bei
+Zeitzonenwechseln — dem Kreuzfahrt-Normalfall — den Kalendertag.
+Entscheidung: `entryDate` ist ein **Date-only-Wert** ohne Uhrzeit-Semantik.
+
+- **Kanonische Kodierung:** 12:00 UTC des gewählten Kalendertags
+  (Mittags-Anker; defensiv robust für Geräte-Zeitzonen bis ±12 h, falls
+  doch einmal lokal interpretiert wird).
+- **Tag-Extraktion aus `entryDate`:** immer über einen Kalender mit fester
+  UTC-Zeitzone.
+- **Vergleiche** (Gruppierung, Reisetag-Nummer, Hafen-Default, Klemmen auf
+  den Reisezeitraum): auf Tag-Tripeln (Jahr/Monat/Tag) — die
+  `entryDate`-Seite via UTC-Kalender, die Seite
+  `cruise.startDate`/`port.arrival` via Geräte-Kalender (lokale
+  Ereignis-Zeitstempel). Nie `Date ==`, nie gemischtes
+  `isDate(inSameDayAs:)` über beide Konventionen hinweg.
+- Eine gespeicherte Reisezeitzone wird bewusst **nicht** eingeführt: kein
+  Träger im Modell nötig, Date-only deckt den Bedarf; falls später
+  Uhrzeiten pro Eintrag gewünscht sind, ist das ein neues ADR.
+
+## `moodRaw`-Stabilitätsvertrag
+
+Ergänzend zu J4: Rohwerte werden **nie umbenannt und nie wiederverwendet** —
+ein ausgemusterter Rohwert bleibt dauerhaft verbrannt.
+**Unknown-Preservation:** ein unbekannter Rohwert (z. B. aus einer neueren
+App-Version via CloudKit-Sync oder Datei-Import) wird verbatim erhalten;
+die UI zeigt den „keine Stimmung"-Fallback, der Editor überschreibt den
+Wert nur, wenn der User aktiv eine andere Stimmung wählt, und
+Export/Import reichen ihn unverändert durch.
+
 ## Nähte und Parallelisierung
 
 - **Naht = Editor-Contract** (J1–J5): T5 (Designer) baut den Editor-Prototyp
@@ -97,21 +183,28 @@ sind unkritisch, aber der Promote ist ein expliziter Release-Schritt.
 
 - Tages-Erinnerungen inkl. Seetagen und mehrfachen Einträgen pro Tag — ohne
   Missbrauch von `Port` oder `Cruise.notes`.
-- Vollständig CloudKit-konform; kein Migrations-Risiko für Bestands-Stores
-  (nur additive Änderungen, per Fixture-Test bewiesen).
+- Vollständig CloudKit-konform; das Migrations-Risiko für Bestands-Stores
+  ist wegen rein additiver Änderungen als gering eingeschätzt — der
+  Nachweis läuft verbindlich über Fixture- (T7), Geräte- (T11b) und
+  CloudKit-Gate und gilt bis dahin als offen.
+- Journal-Einträge und Captions überleben ZIP- und Teilen-Rundtrips
+  (Re-Linking über stabile UUIDs, s. Export- und Teilen-Integration/T7b).
 - Fotos in Einträgen bleiben Reise-Kinder: Galerie, Statistiken, Export und
   Teilen (ADR-007) verhalten sich unverändert (T11a-Regressionskriterium).
-- Stimmung als stabiler Roh-String ist reorder-sicher und export-lesbar.
+- Stimmung als stabiler Roh-String ist reorder-sicher, export-lesbar und
+  dank Unknown-Preservation vorwärtskompatibel.
 
 **Negativ / Risiken**
 
-- **Backup-Lücke:** `JournalEntry` und `Photo.caption` sind im 1.8.5-Scope
-  nicht Teil des ZIP-Exports (ADR-002 §5) und nicht Teil des Teilen-Formats
-  (ADR-007) — Journal-Daten überleben Export/Import-Rundtrips nicht.
-  Bewusst aus dem Run herausgehalten; braucht einen Folge-Task (Backlog)
-  vor dem Marketing-Claim „Tagebuch ist gesichert".
-- `updatedAt` muss in jedem neuen Schreibpfad (Editor-Save, Caption-Edit)
-  manuell gebumpt werden — bekanntes LWW-Risiko aus ADR-002.
+- **Alt-Leser-Asymmetrie:** 1.8.0-Installationen importieren neue
+  ZIP-/`.shiptrip`-Dateien ohne Fehler, verlieren dabei aber still
+  Journal + Captions (unbekannte Keys werden ignoriert). Ohne
+  Versions-Bump — der Alt-Empfänger ganz aussperren würde (Option F) —
+  nicht schließbar; bewusst akzeptiert.
+- `updatedAt` muss in jedem Schreib- **und Lösch-Pfad** manuell nach der
+  Mutations-Matrix (J2a) gebumpt werden — inklusive der Nullify-Pfade, die
+  SwiftData nicht automatisch bumpt; bekanntes LWW-Risiko aus ADR-002,
+  durch T7-Tests zeilenweise abgedeckt.
 - Zwei zusätzliche Relationships auf `Photo`/`Port` erhöhen die Zahl der
   Delete-Regel-Kombinationen; die Löschregeln sind in J1 fixiert und in
   T7-Tests abzudecken.
@@ -152,6 +245,13 @@ abgedeckt; ein Versionierungsgerüst ohne transformierende Stage wäre
 spekulative Infrastruktur. Wird nötig, sobald eine erste nicht-additive
 Änderung ansteht (dann eigenes ADR).
 
+**Option F: `formatVersion`-Bump auf 3 für die Journal-Felder**
+Abgelehnt. Die Totalmatrix (ADR-007) würde jeden Import auf 1.8.0 mit
+„neuere Version nötig" abweisen — Teilen an Bestands-Installationen bräche
+komplett. Die additive Erweiterung innerhalb von Version 2 erhält den
+Alt-Pfad; Preis ist die dokumentierte Silent-Drop-Asymmetrie
+(s. Konsequenzen).
+
 ## Referenzen
 
 - `docs/architecture/contracts/journal-editor-contract.md` — verbindliche
@@ -159,9 +259,23 @@ spekulative Infrastruktur. Wird nötig, sobald eine erste nicht-additive
 - `docs/adr/ADR-002-cloudkit-sync-und-stabile-ids.md` — CloudKit-Regeln,
   LWW, Migrations-Zweischritt
 - `docs/adr/ADR-001-isdemo-in-release-schema.md` — Demo-Filterung
-- `docs/adr/ADR-007-kreuzfahrt-teilen.md` — Teilen-Format (Journal dort
-  bewusst nicht enthalten, s. Konsequenzen)
+- `docs/adr/ADR-007-kreuzfahrt-teilen.md` — Teilen-Format; Journal +
+  Captions werden per Zusatzentscheid additiv innerhalb von
+  formatVersion 2 / shareFormatVersion 1 integriert (s. Export- und
+  Teilen-Integration)
+- `ShipTrip/Services/ExportImportDTOs.swift` — bestehendes
+  `decodeIfPresent`-Muster, das die neuen DTO-Felder spiegeln
 - `.planning/TASKPLAN-1.8.5.md` — Task-DAG, Abschnitt „Migrations-Beweis"
 - `docs/umsetzungsplan-audit-2026-07.md` — Welle B2 (B2.1–B2.3)
 - `ShipTrip/Models/Cruise.swift`, `Port.swift`, `Photo.swift` — gespiegelte
   Bestands-Muster (Storage-Relationship + computed Wrapper, stabile IDs)
+
+## Revisionen
+
+- 2026-08-27 (Iteration 2, nach Codex-Gate #4 NO-GO): Export-/Teilen-
+  Integration als T7b-Contract ergänzt (Finding 1) · LWW-Vertrag mit
+  Mutations-Matrix in J2a des Editor-Contracts (Finding 2) ·
+  Zeitzonen-Vertrag: `entryDate` als Date-only-Wert (Finding 3) ·
+  Migrations-Aussagen auf „Nachweis über Gates" abgeschwächt (Finding 4) ·
+  `moodRaw`-Stabilitätsvertrag mit Unknown-Preservation (Finding 5).
+  Status bleibt Proposed.
