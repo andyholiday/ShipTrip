@@ -66,6 +66,8 @@ APP_PATH="$DERIVED/Build/Products/Debug-iphonesimulator/ShipTrip.app"
 
 echo "==> Installieren und mit Demo-Daten starten"
 xcrun simctl install "$SIM_UDID" "$APP_PATH"
+# Kalender-Zugriff vorab erteilen, damit kein TCC-Dialog den Start blockiert.
+xcrun simctl privacy "$SIM_UDID" grant calendar "$BUNDLE_ID" || true
 xcrun simctl launch "$SIM_UDID" "$BUNDLE_ID" -uiTestingResetAndLoadDemoData
 sleep 8
 
