@@ -72,7 +72,8 @@ struct JournalAggregateRegressionTests {
     @Test("Statistik-Aggregate sind mit und ohne Journal-Daten identisch")
     @MainActor
     func aggregatesAreUnchangedByJournalData() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makePopulatedCruise(context)
         try context.save()
 
@@ -103,7 +104,8 @@ struct JournalAggregateRegressionTests {
     @Test("Die Export-Nutzlast der Reise bleibt mit Journal-Daten identisch")
     @MainActor
     func exportPayloadIsUnchangedByJournalData() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makePopulatedCruise(context)
         try context.save()
 

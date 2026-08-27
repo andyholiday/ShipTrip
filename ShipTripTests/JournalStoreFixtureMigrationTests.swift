@@ -74,7 +74,8 @@ struct JournalStoreFixtureMigrationTests {
 
         let schema = makeJournalAppSchema()
         let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        let context = try ModelContainer(for: schema, configurations: configuration).mainContext
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = container.mainContext
 
         // (1) Bestandsdaten überleben.
         let cruises = try context.fetch(FetchDescriptor<Cruise>())
@@ -122,7 +123,8 @@ struct JournalStoreFixtureMigrationTests {
 
         let schema = makeJournalAppSchema()
         let configuration = ModelConfiguration(schema: schema, url: storeURL)
-        let context = try ModelContainer(for: schema, configurations: configuration).mainContext
+        let container = try ModelContainer(for: schema, configurations: configuration)
+        let context = container.mainContext
 
         let cruises = try context.fetch(FetchDescriptor<Cruise>())
         let photoCountBefore = cruises.reduce(0) { $0 + $1.photos.count }

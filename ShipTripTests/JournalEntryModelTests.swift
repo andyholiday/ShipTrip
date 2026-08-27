@@ -21,7 +21,8 @@ struct JournalEntryFieldTests {
     @Test("Ein frischer Eintrag trägt die Contract-Defaults")
     @MainActor
     func defaultsMatchContract() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let entry = JournalEntry()
         context.insert(entry)
         try context.save()
@@ -41,7 +42,8 @@ struct JournalEntryFieldTests {
     @Test("Ein neues Foto hat eine leere Caption und keinen Journal-Bezug")
     @MainActor
     func photoDefaults() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let photo = makeJournalPhoto(context, cruise: cruise)
         try context.save()
@@ -60,7 +62,8 @@ struct JournalEntryCRUDTests {
     @Test("Eintrag anlegen, lesen, ändern, löschen")
     @MainActor
     func createReadUpdateDelete() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let port = CruisePort(name: "Bergen", country: "Norwegen", latitude: 60.39, longitude: 5.32)
         port.cruise = cruise
@@ -94,7 +97,8 @@ struct JournalEntryCRUDTests {
     @Test("Mehrere Einträge am selben Tag sind erlaubt")
     @MainActor
     func allowsMultipleEntriesPerDay() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let day = Date(timeIntervalSince1970: 1_780_100_000)
 
@@ -118,7 +122,8 @@ struct JournalEntryCRUDTests {
     @Test("Ein unbekannter moodRaw-Rohwert bleibt verbatim erhalten (Unknown-Preservation)")
     @MainActor
     func preservesUnknownMoodRaw() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let entry = JournalEntry(moodRaw: "euphoric-from-a-newer-version")
         context.insert(entry)
         try context.save()
@@ -138,7 +143,8 @@ struct JournalEntryDeleteRuleTests {
     @Test("Reise löschen entfernt ihre Einträge (cascade)")
     @MainActor
     func deletingCruiseCascadesToEntries() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let entry = JournalEntry(text: "Ankunft")
         entry.cruise = cruise
@@ -154,7 +160,8 @@ struct JournalEntryDeleteRuleTests {
     @Test("Eintrag löschen lässt die Fotos in der Reise-Galerie zurück (nullify)")
     @MainActor
     func deletingEntryKeepsPhotosInGallery() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let photo = makeJournalPhoto(context, cruise: cruise)
         let entry = JournalEntry(text: "Mit Foto")
@@ -175,7 +182,8 @@ struct JournalEntryDeleteRuleTests {
     @Test("Hafen löschen lässt den Eintrag zurück und nullt nur den Bezug")
     @MainActor
     func deletingPortKeepsEntry() throws {
-        let context = try makeJournalContainer().mainContext
+        let container = try makeJournalContainer()
+        let context = container.mainContext
         let cruise = makeJournalCruise(context)
         let port = CruisePort(name: "Tromsø", country: "Norwegen", latitude: 69.6, longitude: 18.9)
         port.cruise = cruise
