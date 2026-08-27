@@ -11,6 +11,12 @@ Rev. 2026-08-27/2 (über Winston, nach Codex-Gate #4): `entryDate` auf
 Date-only-Semantik umgestellt (Finding 3) und LWW-Mutations-Matrix als J2a
 ergänzt (Finding 2); Details im Zeitzonen- bzw. LWW-Vertrag von ADR-003.
 
+Rev. 2026-08-27/3 (über Winston, Andre-Entscheid „neue Richtung"): J3
+(separater Tagebuch-Strang) verworfen und durch J3neu ersetzt —
+Journal-Einträge werden in den bestehenden Route-Abschnitt der
+`CruiseDetailView` integriert, inkl. Klapp-Zustandsmaschine für aktive
+Reisen. J1/J2/J2a/J4/J5 unverändert. Siehe Nachtrag in ADR-003.
+
 ---
 
 ## J1 — Datenmodell-Naht (verbindliche Namen, Typen, Defaults)
@@ -82,8 +88,8 @@ Zwischenspeichern); Abbrechen verwirft Eintrag und noch nicht gespeicherte
 Fotos. Alle Timestamp-Bumps folgen der Matrix J2a.
 
 **Bearbeiten:** gleicher Editor, alle Felder vorbelegt, gleiche Reihenfolge.
-**Löschen:** aus dem Tagebuch-Strang; löscht nur den Eintrag (Fotos bleiben);
-Bumps nach J2a.
+**Löschen:** aus der Eintrags-Detailansicht (J3neu (c)); löscht nur den
+Eintrag (Fotos bleiben); Bumps nach J2a.
 
 ### J2a — LWW-Mutations-Matrix (verbindlich, T7-Tests decken jede Zeile ab)
 
@@ -107,15 +113,134 @@ führen die markierten Bumps explizit aus.
 
 ---
 
-## J3 — Tagebuch-Strang (Lesansicht in `CruiseDetailView`)
+## J3neu — Route-Integration (ersetzt J3; Lesansicht im Route-Abschnitt der `CruiseDetailView`)
 
-- Sortierung: `entryDate` aufsteigend, innerhalb eines Tags `createdAt`
-  aufsteigend; Gruppierung pro Kalendertag (Tag-Karten, Pin-Farb-Akzent
-  gemäß Karten-Redesign-Tokens).
-- Mehrere Einträge pro Tag sind erlaubt (kein Unique möglich und nicht
-  gewollt).
-- Tag-Karte zeigt: Reisetag-Nummer + Datum, optionalen Hafen, Stimmung,
-  Text(auszug), Foto-Thumbnails mit Caption.
+Der separate Tagebuch-Strang (altes J3, Logbuch-Strang-Design) ist
+verworfen (Andre-Entscheid 2026-08-27). Journal-Einträge erscheinen im
+bestehenden Route-Abschnitt: **ein Tagesfaden** aus Route-Stopps (inkl.
+Seetage), keine zweite parallele Tages-Liste. Basis ist die IST-Darstellung
+(Stopp-Zeile mit `PortPinView`-Rolle + `PortMemoryCard`); kein neues
+Designsystem, Karten-Redesign-Tokens gelten weiter. Elemente der
+verworfenen Logbuch-Richtung (Tagesziffer, Zeitachse) sind eine optionale
+Kann-Notiz für T8, keine Pflicht.
+
+### (a) Zuordnungsregel Eintrag → Stopp
+
+Alle Tag-Vergleiche als Tag-Tripel nach Zeitzonen-Vertrag (ADR-003):
+`entryDate` via UTC-Kalender, `port.arrival` via Geräte-Kalender — nie
+`Date ==`.
+
+1. **Eintrag mit `port`-Bezug** → erscheint unter genau diesem Stopp.
+   Der Hafen-Bezug hat Vorrang vor dem Datum (auch wenn der User den
+   Eintrag später umdatiert hat); die Eintragszeile zeigt ihr eigenes
+   Datum.
+2. **Eintrag ohne `port`** → unter dem **ersten** Stopp (niedrigster
+   `sortOrder`), dessen `arrival`-Tag-Tripel dem `entryDate`-Tag-Tripel
+   entspricht. Seetage sind Route-Stopps und damit normale Träger; ein
+   hafenloser Eintrag am Seetag landet also unter dem Seetag-Stopp.
+3. **Tag mit zwei (oder mehr) Stopps:** Einträge mit Hafen-Bezug beim
+   jeweiligen Hafen (Regel 1); hafenlose Einträge sammeln sich beim
+   ersten Stopp des Tages (Regel 2).
+4. **Eintrag an einem Tag ohne Route-Stopp** (Route lückenhaft oder leer,
+   oder `port` wurde gelöscht/genullt und kein Stopp trägt den Tag) →
+   Sammelblock **„Weitere Einträge"** am Ende des Route-Abschnitts,
+   sortiert nach `entryDate`/`createdAt`. Es werden **keine** synthetischen
+   Tages-Zeilen aus dem Reisezeitraum erzeugt — die Route bleibt die
+   einzige Quelle der Zeilen. Der Block erscheint nur, wenn er Einträge
+   enthält.
+
+Sortierung innerhalb eines Stopps bzw. des Sammelblocks: `entryDate`
+aufsteigend, innerhalb eines Tags `createdAt` aufsteigend. Mehrere
+Einträge pro Tag und pro Stopp sind erlaubt. Die Zuordnung ist reine
+Anzeige-Logik — es wird **kein** Feld am Modell geändert oder ergänzt.
+
+### (b) Klapp-Zustandsmaschine
+
+Jeder Stopp ist auf- oder zugeklappt. Effektiver Zustand =
+`manuelleÜbersteuerung ?? Automatik-Default`.
+
+**Automatik-Default** aus der Reisephase (Vergleich „heute" als
+Geräte-Kalender-Tag-Tripel gegen `startDate`/`endDate`-Tag-Tripel):
+
+| Phase | Default |
+|---|---|
+| Vor Reisebeginn (heute < Starttag) | alle Stopps aufgeklappt |
+| Aktiv (Starttag ≤ heute ≤ Endtag) | nur Stopps des aktuellen Tages aufgeklappt (`arrival`-Tag-Tripel == heute), alle anderen zugeklappt |
+| Nach Reiseende (heute > Endtag) | alle Stopps aufgeklappt |
+
+**Ereignisse:**
+
+| Ereignis | Wirkung |
+|---|---|
+| View erscheint / App-Start | Phase + Defaults berechnen; Übersteuerungen leer |
+| Tageswechsel 0:00 lokale Gerätezeit (`NSCalendarDayChanged` bzw. Reaktivierung der Szene an einem neuen Tag) | Phase + Defaults neu berechnen; **alle manuellen Übersteuerungen löschen** — sonst hielte eine gestrige Übersteuerung den neuen aktiven Tag zu |
+| Manuelles Tippen auf einen Stopp-Kopf | Übersteuerung für diesen Stopp = Negation des effektiven Zustands |
+| „Alle aufklappen" / „Alle zuklappen" (Kontrolle im Route-Header, jederzeit verfügbar) | Übersteuerung für alle Stopps = auf bzw. zu |
+
+**Persistenz:** nur In-Memory pro View-Leben (`@State`), **kein** neues
+persistentes Feld. Begründung: kein Schema-/CloudKit-Eingriff (ADR-002
+bleibt unberührt), kein Sync-Rauschen für reinen UI-Zustand, und eine
+frische Ansicht kehrt zum sinnvollen Automatik-Default zurück — genau das
+von Andre gewünschte Verhalten. Andres Anforderung „jederzeit komplett
+aufklappbar" ist über die Header-Kontrolle erfüllt.
+
+Zugeklappter Stopp: kompakte Zeile (Pin, Name, Land, Datum) — keine
+`PortMemoryCard`, keine Journal-Zeilen. Aufgeklappter Stopp: bisheriger
+Inhalt (Zeile + `PortMemoryCard` nach deren `shouldRender`-Regel) plus
+Journal-Teil nach (c)/(d). Die bestehende Tap-Navigation zum
+Hafen-Formular (`selectedPort`) darf nicht mit dem Klapp-Toggle
+kollidieren — T8 trennt die Trefferflächen (z. B. Chevron/Kopfzeile
+klappt, Karteninhalt navigiert); die konkrete Aufteilung ist Design-Sache.
+
+### (c) Eintragszeile in der Stopp-Karte + „Weiterlesen"
+
+Pro Eintrag unter dem Stopp eine kompakte Zeile: Stimmungs-Emoji (falls
+`moodRaw` bekannt und nicht leer; unbekannter Rohwert → Fallback nach
+`moodRaw`-Stabilitätsvertrag), Datum (nur wenn vom `arrival`-Tag des
+Stopps abweichend oder im Sammelblock), Text-Auszug, Foto-Thumbnails
+(klein, mit Caption erst in der Detailansicht).
+
+**Auszug/Weiterlesen-Regel:** Text mit `lineLimit(3)`; „Weiterlesen"
+erscheint, wenn der Text länger als 160 Zeichen ist oder mehr als
+3 Zeilenumbrüche enthält (deterministisch, testbar ohne Rendering).
+„Weiterlesen" öffnet die Eintrags-Detailansicht: voller Text, Stimmung,
+Reisetag-Nummer + Datum, Hafen, alle Fotos mit Captions; dort sitzen auch
+Bearbeiten und Löschen (Editor/Löschen exakt nach J2/J2a).
+
+### (d) Einstiegspunkte für die Erfassung
+
+- **Aufgeklappter Stopp:** Aktion „Tagebuch-Eintrag" (Platzierung
+  Design-Sache, bei den Momenten der Karte). Öffnet den J2-Editor
+  **unverändert** (Reihenfolge, Pflichtregel, Save-Semantik, J2a), nur
+  vorbelegt: Tag = `arrival`-Tag-Tripel des Stopps (persistiert als
+  12:00 UTC), Hafen = dieser Stopp (auch Seetage — sie sind
+  Route-Stopps). Der User kann beides in Schritt 2 ändern.
+- **Sammelblock „Weitere Einträge":** Plus-Aktion mit den J2-Defaults
+  (heute, geklemmt; Hafen nach J2-Default-Regel).
+- Bearbeiten/Löschen nur über die Detailansicht (c) — keine
+  Zweitpfade.
+
+### (e) Leere Tage und leere Stopps
+
+- Stopp ohne Einträge: kein leerer Journal-Abschnitt, nur die
+  „Tagebuch-Eintrag"-Aktion im aufgeklappten Zustand (keine
+  Einladungs-Card zusätzlich zur bestehenden `PortMemoryCard`-Logik).
+- Seetage ohne Momente und ohne Einträge bleiben kompakt wie bisher
+  (`PortMemoryCard.shouldRender`); die Eintrags-Aktion erscheint dort
+  trotzdem im aufgeklappten Zustand.
+- Reisetage ohne Route-Stopp erzeugen keine Zeile (s. (a) Regel 4).
+- Route komplett leer: bestehender Leerzustand („Noch keine Häfen…")
+  bleibt; vorhandene Einträge erscheinen im Sammelblock.
+
+### Pflicht-Randbedingungen (T8)
+
+- **Lokalisierung DE/EN:** alle neuen user-sichtbaren Strings als
+  `String(localized:)` über den String-Katalog.
+- **Accessibility:** Klapp-Zustand als `accessibilityValue`
+  („aufgeklappt"/„zugeklappt"), Toggle als AccessibilityAction am
+  Stopp-Kopf, „Alle auf-/zuklappen" und „Weiterlesen" als Buttons mit
+  Label; Eintragszeilen als ein Accessibility-Element mit
+  zusammengesetztem Label (Stimmung, Datum, Auszug).
 
 ---
 

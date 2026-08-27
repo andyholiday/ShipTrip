@@ -260,6 +260,32 @@ komplett. Die additive Erweiterung innerhalb von Version 2 erhält den
 Alt-Pfad; Preis ist die dokumentierte Silent-Drop-Asymmetrie
 (s. Konsequenzen).
 
+## Nachtrag 2026-08-27 — Verankerung im Route-Abschnitt (ersetzt J3)
+
+Andre-Entscheid 2026-08-27 („neue Richtung", wörtlich: Route bei aktiver
+Reise eingeklappt, nur der aktuelle Tag offen, Wechsel um 0:00; Tagebuch im
+jeweiligen Hafen/Reisetag erfassen; nach Reiseende komplette Route; jederzeit
+komplett aufklappbar): Der separate Tagebuch-Abschnitt (altes J3 samt
+Logbuch-Strang-Design) ist **verworfen**. Journal-Einträge werden stattdessen
+in den bestehenden Route-Abschnitt der `CruiseDetailView` integriert — ein
+Tagesfaden statt zwei paralleler Tages-Listen.
+
+Verbindliche Spezifikation ist **J3neu** im Editor-Contract
+(Rev. 2026-08-27/3): Zuordnungsregel Eintrag→Stopp inkl. Randfälle
+(Hafen-Bezug vor Datum; hafenlose Einträge zum ersten Stopp des Tages;
+Seetage als Stopps; Sammelblock „Weitere Einträge" für Tage ohne Stopp),
+Klapp-Zustandsmaschine (Automatik-Default aus der Reisephase, manuelle
+Übersteuerung nur In-Memory pro View-Leben — **kein** neues persistentes
+Feld, ADR-002 unberührt), Auszug/„Weiterlesen"-Regel, Einstiegspunkte und
+Leere-Tage-Verhalten.
+
+**Unverändert bleiben:** J1 (Datenmodell, bereits gebaut in T7), J2/J2a
+(Editor-Flow + LWW-Matrix — der Editor wird aus dem angetippten Stopp nur
+vorbelegt), J4 (Stimmung), J5, die Export-/Teilen-Integration (T7b, bereits
+gemerged) sowie die Demo-Filterung über `cruise?.isDemo`. Kein Modell- oder
+Schema-Eingriff; die Änderung ist reine Anzeige- und Erfassungs-Verankerung.
+`docs/features/journal.md` wird in der T8-Wave auf den neuen Stand gezogen.
+
 ## Umgesetzt durch
 
 - [Feature-Doku: Journal](../features/journal.md) — Umsetzungsstand,
@@ -292,3 +318,7 @@ Alt-Pfad; Preis ist die dokumentierte Silent-Drop-Asymmetrie
   Migrations-Aussagen auf „Nachweis über Gates" abgeschwächt (Finding 4) ·
   `moodRaw`-Stabilitätsvertrag mit Unknown-Preservation (Finding 5).
   Status bleibt Proposed.
+- 2026-08-27 (Nachtrag, Andre-Entscheid „neue Richtung"): Verankerung der
+  Lesansicht im Route-Abschnitt statt separatem Tagebuch-Strang; altes J3 +
+  Logbuch-Strang-Design verworfen, ersetzt durch J3neu im Editor-Contract
+  (Rev. 2026-08-27/3). Modell, Export/Teilen und Editor-Flow unberührt.
