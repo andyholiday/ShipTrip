@@ -68,6 +68,7 @@ struct JournalEntryDetailView: View {
                     Text(entry.text)
                         .font(.body)
                         .textSelection(.enabled)
+                        .accessibilityIdentifier("journalDetail.text")
                 }
             }
 
@@ -85,6 +86,7 @@ struct JournalEntryDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(String(localized: "Bearbeiten")) { isEditing = true }
                     .disabled(entry.cruise == nil)
+                    .accessibilityIdentifier("journalDetail.editButton")
             }
         }
         .sheet(isPresented: $isEditing) {
@@ -123,6 +125,9 @@ struct JournalEntryDetailView: View {
             }
         }
         .padding(.vertical, 2)
+        // Stimmung, Reisetag, Datum und Hafen sind eine Aussage — VoiceOver soll
+        // sie in einem Zug lesen, nicht in vier Wischern.
+        .accessibilityElement(children: .combine)
     }
 
     private func photoRow(_ photo: Photo) -> some View {
@@ -152,6 +157,7 @@ struct JournalEntryDetailView: View {
         } label: {
             Label(String(localized: "Eintrag löschen"), systemImage: "trash")
         }
+        .accessibilityIdentifier("journalDetail.deleteButton")
     }
 
     // MARK: - Abgeleitete Werte

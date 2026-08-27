@@ -65,6 +65,17 @@
       }
     },
 
+    "Alle aufklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all"
+          }
+        }
+      }
+    },
+
     "Alle ausblenden" : {
       "localizations" : {
         "en" : {
@@ -137,6 +148,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All routes hidden"
+          }
+        }
+      }
+    },
+
+    "Alle zuklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse all"
           }
         }
       }
@@ -286,6 +308,17 @@
       }
     },
 
+    "aufgeklappt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "expanded"
+          }
+        }
+      }
+    },
+
     "Ausflug" : {
       "comment" : "ExpenseCategory display name",
       "localizations" : {
@@ -403,6 +436,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rating"
+          }
+        }
+      }
+    },
+
+    "Bildunterschrift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caption"
           }
         }
       }
@@ -528,6 +572,17 @@
       }
     },
 
+    "Die angehängten Fotos bleiben in der Reise-Galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The attached photos stay in the trip gallery."
+          }
+        }
+      }
+    },
+
     "Die Beispielreise kann nicht geteilt werden." : {
       "localizations" : {
         "en" : {
@@ -642,6 +697,17 @@
       }
     },
 
+    "Eckdaten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key facts"
+          }
+        }
+      }
+    },
+
     "Einstellungen" : {
       "localizations" : {
         "en" : {
@@ -675,6 +741,28 @@
       }
     },
 
+    "Eintrag löschen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete entry"
+          }
+        }
+      }
+    },
+
+    "Eintrag nicht gefunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry not found"
+          }
+        }
+      }
+    },
+
     "Ende" : {
       "localizations" : {
         "en" : {
@@ -692,6 +780,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "End Date"
+          }
+        }
+      }
+    },
+
+    "Erinnerung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory"
           }
         }
       }
@@ -819,6 +918,28 @@
       }
     },
 
+    "Foto entfernen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove photo"
+          }
+        }
+      }
+    },
+
+    "Foto ohne Bildunterschrift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo without caption"
+          }
+        }
+      }
+    },
+
     "Fotos" : {
       "localizations" : {
         "en" : {
@@ -836,6 +957,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select Photos"
+          }
+        }
+      }
+    },
+
+    "Fotos hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add photos"
           }
         }
       }
@@ -902,6 +1034,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GitHub"
+          }
+        }
+      }
+    },
+
+    "Großartig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great"
+          }
+        }
+      }
+    },
+
+    "Gut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good"
           }
         }
       }
@@ -1038,12 +1192,56 @@
         }
       }
     },
+    "Kein Hafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No port"
+          }
+        }
+      }
+    },
+
+    "Keine Stimmung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No mood"
+          }
+        }
+      }
+    },
+
     "Löscht alle Daten, deinen KI-API-Key und alle Einstellungen und zeigt das Intro wieder wie beim ersten Öffnen — die App steht danach wie frisch installiert da." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deletes all data, your AI API key and every setting, and shows the intro again just like on first launch — the app is left as if freshly installed."
+          }
+        }
+      }
+    },
+
+    "Nicht so gut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not so good"
+          }
+        }
+      }
+    },
+
+    "Okay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okay"
           }
         }
       }
@@ -1069,6 +1267,83 @@
         }
       }
     },
+    "Schlecht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awful"
+          }
+        }
+      }
+    },
+
+    "Schreib etwas oder wähl mindestens ein Foto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write something or pick at least one photo."
+          }
+        }
+      }
+    },
+
+    "Stimmung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mood"
+          }
+        }
+      }
+    },
+
+    "Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
+
+    "Tag %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %lld"
+          }
+        }
+      }
+    },
+
+    "Tagebuch-Eintrag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Journal entry"
+          }
+        }
+      }
+    },
+
+    "Tagebuch-Eintrag hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add journal entry"
+          }
+        }
+      }
+    },
+
     "Teilen fehlgeschlagen: %@" : {
       "localizations" : {
         "en" : {
@@ -1079,6 +1354,61 @@
         }
       }
     },
+    "Tippen zum Auf- oder Zuklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to expand or collapse"
+          }
+        }
+      }
+    },
+
+    "Weitere Einträge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More entries"
+          }
+        }
+      }
+    },
+
+    "Weiterlesen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read more"
+          }
+        }
+      }
+    },
+
+    "Woran willst du dich erinnern?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you want to remember?"
+          }
+        }
+      }
+    },
+
+    "zugeklappt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collapsed"
+          }
+        }
+      }
+    },
+
     "Zurücksetzen" : {
       "localizations" : {
         "en" : {
@@ -1784,6 +2114,17 @@
         }
       }
     },
+    "Öffnet den ganzen Eintrag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the full entry"
+          }
+        }
+      }
+    },
+
     "Übertragen" : {
       "localizations" : {
         "en" : {

@@ -29,6 +29,7 @@ struct RouteExtraEntriesBlock: View {
                 Text("Weitere Einträge")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .accessibilityIdentifier("routeExtraEntries.title")
                 Spacer()
                 Button {
                     onAddEntry()
@@ -37,6 +38,7 @@ struct RouteExtraEntriesBlock: View {
                         .foregroundStyle(Color.accentColor)
                 }
                 .accessibilityLabel(String(localized: "Tagebuch-Eintrag hinzufügen"))
+                .accessibilityIdentifier("routeExtraEntries.addEntry")
             }
 
             ForEach(entries) { entry in

@@ -109,9 +109,12 @@ struct RouteStopCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+                // Rein dekorativ: den Zustand sagt bereits der A11y-Value der
+                // Kopfzeile („aufgeklappt"/„zugeklappt").
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
             .frame(minHeight: Self.headerMinHeight)
             .contentShape(Rectangle())
@@ -120,6 +123,8 @@ struct RouteStopCard: View {
         .accessibilityValue(isExpanded
                             ? String(localized: "aufgeklappt")
                             : String(localized: "zugeklappt"))
+        .accessibilityHint(Text("Tippen zum Auf- oder Zuklappen"))
+        .accessibilityIdentifier("routeStop.header.\(port.name)")
     }
 
     // MARK: - Aktionen im aufgeklappten Stopp
@@ -136,6 +141,7 @@ struct RouteStopCard: View {
         }
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
+        .accessibilityIdentifier("routeStop.editPort.\(port.name)")
     }
 
     // MARK: - Erfassung (J3neu (d))
@@ -151,6 +157,7 @@ struct RouteStopCard: View {
         .buttonStyle(.plain)
         .foregroundStyle(Color.accentColor)
         .accessibilityLabel(String(localized: "Tagebuch-Eintrag hinzufügen"))
+        .accessibilityIdentifier("routeStop.addEntry.\(port.name)")
     }
 }
 
@@ -184,4 +191,22 @@ struct RouteStopCard: View {
         .padding()
         .background(Color(.secondarySystemBackground))
     }
+}
+
+/// Dynamic-Type-Gegenprobe: Name, Land und Datum der Kopfzeile umbrechen, statt
+/// abgeschnitten zu werden — die Karte hat bewusst kein `lineLimit(1)` und keine
+/// feste Höhe auf Textelementen.
+#Preview("Große Schrift") {
+    let port = Port(name: "Civitavecchia", country: "Italien", latitude: 42.09, longitude: 11.79)
+
+    return ScrollView {
+        RouteStopCard(
+            port: port, pinType: .port, isExpanded: true,
+            entries: [JournalEntry(text: "Kurzer Eintrag", moodRaw: "good")],
+            onToggle: {}, onSelectPort: {}, onDeletePort: {},
+            onOpenEntry: { _ in }, onAddEntry: {}
+        )
+        .padding()
+    }
+    .environment(\.dynamicTypeSize, .accessibility3)
 }

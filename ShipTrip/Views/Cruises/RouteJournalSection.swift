@@ -89,6 +89,7 @@ struct RouteJournalSection: View {
                 .accessibilityLabel(isEverythingExpanded
                                     ? String(localized: "Alle zuklappen")
                                     : String(localized: "Alle aufklappen"))
+                .accessibilityIdentifier("routeSection.toggleAll")
             }
             Button {
                 onAddPort()
@@ -97,6 +98,7 @@ struct RouteJournalSection: View {
                     .foregroundStyle(Color.accentColor)
             }
             .accessibilityLabel(String(localized: "Hafen hinzufügen"))
+            .accessibilityIdentifier("routeSection.addPort")
         }
     }
 
