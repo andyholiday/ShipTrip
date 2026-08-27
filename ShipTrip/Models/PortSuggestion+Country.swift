@@ -42,14 +42,32 @@ enum PortCountryCatalog {
 
     /// Bestandsname → ISO-3166-1-Alpha-2. Deterministisch aus den vorhandenen Ländernamen
     /// abgeleitet (Abgleich gegen die deutschen ICU-Regionsnamen), Sonderfälle per Alias
-    /// ergänzt. Nicht enthalten und damit bewusst im Fallback:
+    /// ergänzt – Ableitungsweg und Toolchain siehe ADR-008, Abschnitt „Provenienz“.
+    ///
+    /// Nicht enthalten und damit bewusst im Fallback:
     ///
     /// - `Antikes Athen`, `Byzantinisches Reich`, `Britisch-Hongkong`: historische Entitäten
-    ///   ohne aktuellen ISO-Code.
-    /// - `China` (CN) und `Bonaire` (BQ): Code existiert, aber der ICU-Anzeigename
-    ///   („China, Festland“ bzw. „Karibische Niederlande“) ist für eine Kreuzfahrt-App
-    ///   schlechter als der Bestandsname. Bewusste Ausnahme, Owner: ShipTrip, Review mit dem
-    ///   nächsten Referenzdaten-Update.
+    ///   ohne aktuellen ISO-Code – kein Regelverstoß, es gibt schlicht keinen Code.
+    /// - `China` und `Bonaire`: siehe Tagged Exception direkt darunter.
+    ///
+    /// **Tagged Exception**
+    /// - **Rule-ID:** `ADR-008-E3` („Anzeige geht über den ISO-Code“; die Ableitung nach
+    ///   `ADR-008-E2` liefert für beide Namen einen Code – `CN` bzw. `BQ`).
+    /// - **Grund:** Der deutsche ICU-Anzeigename ist für eine Kreuzfahrt-App schlechter als
+    ///   der Bestandsname: `CN` → „China, Festland“ (grenzt Hongkong/Macau ab, was für die
+    ///   Hafenliste keine Rolle spielt), `BQ` → „Karibische Niederlande“ (fasst Bonaire,
+    ///   Saba und Sint Eustatius zusammen; angelaufen wird konkret Bonaire).
+    /// - **Owner:** ShipTrip (Andre)
+    /// - **Ablauf:** 2027-02-28 – danach ist die Ausnahme ein Finding, nicht mehr gewährt:
+    ///   entweder erneut bewusst verlängern oder auflösen (nächstes Referenzdaten-Update,
+    ///   oder eigene Anzeigenamen statt Fallback).
+    /// - **Risiko:** niedrig und auf die Anzeige begrenzt. Beide Namen bleiben in jeder
+    ///   Gerätesprache deutsch, weil der Fallback greift; auf einem EN-Gerät steht also
+    ///   „China“ statt „China (mainland)“ und „Bonaire“ statt „Caribbean Netherlands“.
+    ///   Persistenz, Export und Suche sind nicht betroffen – dort gilt ohnehin der Rohwert.
+    /// - **Kompensierender Test:** `PortCountryCatalogTests.taggedExceptionKeepsChina` und
+    ///   `…KeepsBonaire` fixieren je Code-Losigkeit *und* den Rückfall auf den
+    ///   Bestandsnamen, damit die Ausnahme nicht unbemerkt kippt.
     static let regionCodesByLegacyName: [String: String] = [
         "Albanien": "AL",
         "Algerien": "DZ",

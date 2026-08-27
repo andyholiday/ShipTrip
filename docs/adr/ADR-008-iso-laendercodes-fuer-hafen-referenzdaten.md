@@ -58,6 +58,38 @@ gegen die 117 Bestandsnamen abgeglichen. 103 Namen trafen exakt. Die restlichen
 reproduzierbar und bei einem künftigen Referenzdaten-Update mit demselben
 Verfahren erweiterbar.
 
+**Provenienz des Abgleichs.** „Deterministisch" heißt hier: gegen eine benannte
+ICU-Datenlage reproduzierbar — nicht ICU-versionsunabhängig. Konkret:
+
+| | |
+|---|---|
+| Eingabe | die 117 distinkten `country`-Werte aus `PortSuggestion.popular` |
+| Generator | Ad-hoc-Swift-Skript: `Locale.Region.isoRegions` (261 Alpha-2-Regionen) → `Locale(identifier: "de_DE").localizedString(forRegionCode:)` → Umkehrindex Name → Code, dann exakter Lookup je Bestandsname |
+| Ergebnis | 103 exakte Treffer, 14 ohne Treffer (5 Fallbacks + 9 Aliasse) |
+| Toolchain | Apple Swift 6.3.3 (`swiftlang-6.3.3.1.3`, `clang-2100.1.1.101`) |
+| Host | macOS 26.5.2 (Build 25F84), SDK 26.5 |
+| ICU / CLDR | ICU 78.1 / CLDR 48 (`/usr/lib/libicucore.dylib` des Hosts, ausgelesen über `u_getVersion` bzw. `ulocdata_getCLDRVersion`) |
+| Stand | 2026-08-27, nachvollzogen 2026-08-27 (Gate #4) — Zahlen oben sind das Ergebnis des Nachlaufs, nicht des Erstlaufs |
+
+Das Skript ist bewusst nicht eingecheckt: es läuft einmal pro
+Referenzdaten-Update, sein Ergebnis ist die eingecheckte Tabelle, und ein
+Generator im Repo, der nie in CI läuft, verrottet. Die Beschreibung oben
+genügt, um ihn in wenigen Zeilen neu zu schreiben.
+
+Zwei Grenzen dieser Reproduzierbarkeit:
+
+- **Andere ICU-/CLDR-Version ⇒ möglicherweise andere Treffermenge.** Benennt
+  ein künftiges CLDR eine Region um, verschiebt sich die Grenze zwischen
+  „exakter Treffer" und „Alias". Auf die *eingecheckte* Tabelle wirkt das
+  nicht — sie ist ein Build-Zeit-Artefakt (genau der Grund gegen den
+  Reverse-Lookup zur Laufzeit, siehe Alternativen). Nur ein erneuter
+  Ableitungslauf würde abweichen.
+- **Host-ICU ≠ Geräte-ICU.** Abgeglichen wurde gegen die ICU des Entwickler-Macs;
+  die Anzeige zur Laufzeit kommt aus der ICU des iOS-Geräts (18.5+, jeweils
+  ältere CLDR-Stände). Betroffen sind nur die *Anzeigenamen*, nicht die
+  Code-Zuordnung. `PortCountryCatalogTests` prüft deshalb die Codes gegen
+  `Locale.Region.isoRegions` statt gegen erwartete Klartextnamen.
+
 **3. Die Anzeige geht über den Code, der Fallback über den Bestandsnamen.**
 
 ```
@@ -126,8 +158,14 @@ manuellen Eingabe bleiben auf dem Rohwert — sie schreiben nach `Port.country`.
     Wikidata-Imports; separat zu bereinigen, nicht hier).
   - `China` (CN) und `Bonaire` (BQ) — der Code existiert, aber der
     ICU-Anzeigename („China, Festland" bzw. „Karibische Niederlande") ist für
-    eine Kreuzfahrt-App schlechter als der Bestandsname. Tagged Exception,
-    Owner ShipTrip, Review beim nächsten Referenzdaten-Update.
+    eine Kreuzfahrt-App schlechter als der Bestandsname. **Tagged Exception**
+    `ADR-008-E3`, Owner ShipTrip (Andre), Ablauf **2027-02-28**, Risiko niedrig
+    (beide Namen bleiben in jeder Gerätesprache deutsch; Persistenz, Export und
+    Suche unberührt). Der vollständige Tag steht am Code in
+    `ShipTrip/Models/PortSuggestion+Country.swift`, kompensierende Tests:
+    `PortCountryCatalogTests.taggedExceptionKeepsChina` / `…KeepsBonaire`. Nach dem
+    Ablaufdatum ist die Ausnahme ein Finding, kein Freibrief — bewusst
+    verlängern oder auflösen.
 - **Anzeige und Eingabefeld können auseinanderlaufen:** Auf einem EN-Gerät zeigt
   die Vorschlagsliste „Spain", das Feld „Land" nach der Auswahl aber weiterhin
   „Spanien" — weil dort der zu speichernde Rohwert steht. Auf DE-Geräten ist der

@@ -44,6 +44,28 @@ struct PortCountryCatalogTests {
         #expect(PortCountryCatalog.localizedName(for: "") == "")
     }
 
+    // MARK: - Tagged Exception ADR-008-E3
+
+    /// Kompensierender Test zur Tagged Exception `ADR-008-E3` in
+    /// `PortSuggestion+Country.swift`: Der ISO-Code existiert, wird aber bewusst nicht
+    /// gemappt. Fixiert beides – dass der Code gültig wäre (die Ausnahme ist eine
+    /// Entscheidung, kein vergessenes Mapping) und dass der Bestandsname stehen bleibt.
+    private func expectTaggedException(legacyName: String, excludedCode: String) {
+        #expect(Locale.current.localizedString(forRegionCode: excludedCode) != nil)
+        #expect(PortCountryCatalog.regionCode(for: legacyName) == nil)
+        #expect(PortCountryCatalog.localizedName(for: legacyName) == legacyName)
+    }
+
+    @Test("Tagged Exception ADR-008-E3: China behält den Bestandsnamen statt CN")
+    func taggedExceptionKeepsChina() {
+        expectTaggedException(legacyName: "China", excludedCode: "CN")
+    }
+
+    @Test("Tagged Exception ADR-008-E3: Bonaire behält den Bestandsnamen statt BQ")
+    func taggedExceptionKeepsBonaire() {
+        expectTaggedException(legacyName: "Bonaire", excludedCode: "BQ")
+    }
+
     @Test("Anzeigename kommt bei vorhandenem Code aus der Geräte-Locale")
     func usesLocaleForMappedNames() {
         let expected = Locale.current.localizedString(forRegionCode: "ES")
