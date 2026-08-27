@@ -42,7 +42,7 @@ struct RouteJournalEntryRow: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 if showsDate {
-                    Text(Self.dayText(for: entry.entryDate))
+                    Text(JournalEntryDayDisplay.dayText(for: entry.entryDate))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -88,8 +88,8 @@ struct RouteJournalEntryRow: View {
 
     // MARK: - Bausteine
 
-    private var mood: RouteJournalMood? {
-        RouteJournalMood.known(rawValue: entry.moodRaw)
+    private var mood: JournalMood? {
+        JournalMood.known(forRaw: entry.moodRaw)
     }
 
     private var sortedPhotos: [Photo] {
@@ -115,6 +115,7 @@ struct RouteJournalEntryRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        // Plural über den Katalog-Key `%lld Fotos` — „1 Foto" statt „1 Fotos".
         .accessibilityLabel(String(localized: "\(sortedPhotos.count) Fotos"))
     }
 
@@ -133,14 +134,5 @@ struct RouteJournalEntryRow: View {
         calendar: Calendar = .current
     ) -> Bool {
         RouteDayKey.entryDay(entryDate) != RouteDayKey.localDay(stopArrival, calendar: calendar)
-    }
-
-    /// Datums-Text eines `entryDate`. `entryDate` ist ein Date-only-Wert
-    /// (12:00 UTC), deshalb wird er **in GMT** formatiert — mit der Gerätezone
-    /// könnte bei Offsets ab ±12 h der Nachbartag erscheinen.
-    static func dayText(for entryDate: Date, locale: Locale = .current) -> String {
-        entryDate.formatted(
-            Date.FormatStyle(date: .abbreviated, time: .omitted, locale: locale, timeZone: .gmt)
-        )
     }
 }

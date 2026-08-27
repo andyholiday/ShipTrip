@@ -66,7 +66,7 @@ func reconcileRoute(
     }
     for port in existingPorts {
         if let kept = existingByID[port.id], kept !== port {
-            modelContext.delete(port)
+            JournalDeletePaths.deletePort(port, in: modelContext)
         }
     }
 
@@ -81,8 +81,11 @@ func reconcileRoute(
 
     let tempIDs = Set(dedupedTempPorts.map { $0.id })
 
+    // Journal-Lösch-Pfad statt `modelContext.delete` (T8-Auflage, J2a): SwiftData
+    // nullt `JournalEntry.port` still, ohne die Einträge zu bumpen — der Wegfall
+    // des Hafen-Bezugs ginge sonst beim CloudKit-Merge verloren.
     for port in existingByID.values where !tempIDs.contains(port.id) {
-        modelContext.delete(port)
+        JournalDeletePaths.deletePort(port, in: modelContext)
     }
 
     var result: [Port] = []
@@ -781,11 +784,12 @@ struct CruiseFormView: View {
             existingCruise.updatedAt = Date()
             targetCruise = existingCruise
 
-            // Remove deleted photos
+            // Remove deleted photos — über den Journal-Lösch-Pfad (T8-Auflage,
+            // J2a): hing das Foto an einem Eintrag, muss dieser bumpen.
             let existingPhotoSet = Set(existingPhotos.map { ObjectIdentifier($0) })
             for photo in existingCruise.photos {
                 if !existingPhotoSet.contains(ObjectIdentifier(photo)) {
-                    modelContext.delete(photo)
+                    JournalDeletePaths.deletePhoto(photo, in: modelContext)
                 }
             }
         } else {
