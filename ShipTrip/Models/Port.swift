@@ -70,7 +70,13 @@ final class Port {
     
     /// Zugehörige Kreuzfahrt
     var cruise: Cruise?
-    
+
+    /// Journal-Einträge mit Bezug auf diesen Hafen (ADR-003/J1).
+    /// Hafen löschen → Eintrag bleibt, `port` wird genullt (Bump via
+    /// `JournalDeletePaths.deletePort`).
+    @Relationship(deleteRule: .nullify, inverse: \JournalEntry.port)
+    var journalEntriesStorage: [JournalEntry]?
+
     // MARK: - Initialization
     
     init(

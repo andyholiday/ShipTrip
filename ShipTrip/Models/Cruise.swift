@@ -77,6 +77,10 @@ final class Cruise {
     @Relationship(deleteRule: .cascade, originalName: "photos", inverse: \Photo.cruise)
     var photosStorage: [Photo]?
 
+    /// Journal-Einträge der Reise (ADR-003/J1)
+    @Relationship(deleteRule: .cascade, inverse: \JournalEntry.cruise)
+    var journalEntriesStorage: [JournalEntry]?
+
     /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
     var route: [Port] {
         get { routeStorage ?? [] }
@@ -94,7 +98,13 @@ final class Cruise {
         get { photosStorage ?? [] }
         set { photosStorage = newValue }
     }
-    
+
+    /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    var journalEntries: [JournalEntry] {
+        get { journalEntriesStorage ?? [] }
+        set { journalEntriesStorage = newValue }
+    }
+
     // MARK: - Initialization
     
     init(
