@@ -16,16 +16,24 @@ import SwiftData
 
 @MainActor
 private struct JournalFixture {
+    let container: ModelContainer
     let context: ModelContext
     let cruise: Cruise
     let entry: JournalEntry
 
     init() throws {
-        context = try makeJournalContainer().mainContext
+        container = try makeJournalContainer()
+        context = container.mainContext
         cruise = makeJournalCruise(context)
         entry = JournalEntry(text: "Erinnerung", now: JournalTestClock.insert)
         entry.cruise = cruise
         context.insert(entry)
+    }
+
+    /// Speichert und liest den Eintrag über einen frischen Kontext zurück.
+    func savedAndRefetchedEntry() throws -> JournalEntry {
+        try context.save()
+        return try #require(refetchJournalEntry(id: entry.id, from: container))
     }
 }
 
@@ -115,6 +123,11 @@ struct JournalEditMatrixTests {
         fixture.entry.setPort(nil, at: later)
         #expect(fixture.entry.port == nil)
         #expect(fixture.entry.updatedAt == later)
+
+        let stored = try fixture.savedAndRefetchedEntry()
+        #expect(stored.port == nil, "Auch im Store hängt kein Hafen mehr am Eintrag")
+        #expect(stored.updatedAt == later)
+        #expect(stored.createdAt == JournalTestClock.insert)
     }
 }
 
@@ -134,6 +147,48 @@ struct JournalPhotoMatrixTests {
 
         #expect(fixture.entry.updatedAt == JournalTestClock.firstEdit)
         #expect(photo.updatedAt == JournalTestClock.firstEdit)
+
+        let stored = try fixture.savedAndRefetchedEntry()
+        #expect(stored.photos.map(\.id) == [photo.id], "Die Beziehung steht auch im Store")
+        #expect(stored.updatedAt == JournalTestClock.firstEdit)
+        let storedPhoto = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+        #expect(storedPhoto.journalEntry?.id == fixture.entry.id)
+        #expect(storedPhoto.updatedAt == JournalTestClock.firstEdit)
+    }
+
+    @Test("Ein Foto an einen anderen Eintrag hängen bumpt beide Einträge")
+    @MainActor
+    func reAttachBumpsBothEntries() throws {
+        let fixture = try JournalFixture()
+        let target = JournalEntry(text: "Ziel-Eintrag", now: JournalTestClock.insert)
+        target.cruise = fixture.cruise
+        fixture.context.insert(target)
+
+        let photo = makeJournalPhoto(fixture.context, cruise: fixture.cruise)
+        fixture.entry.attach(photo, at: JournalTestClock.insert)
+        fixture.entry.updatedAt = JournalTestClock.insert
+        target.updatedAt = JournalTestClock.insert
+
+        target.attach(photo, at: JournalTestClock.firstEdit)
+
+        #expect(
+            fixture.entry.updatedAt == JournalTestClock.firstEdit,
+            "Der bisherige Eintrag verliert ein Foto und muss mitbumpen"
+        )
+        #expect(target.updatedAt == JournalTestClock.firstEdit)
+        #expect(photo.updatedAt == JournalTestClock.firstEdit)
+
+        try fixture.context.save()
+        let storedPrevious = try #require(
+            refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
+        )
+        let storedTarget = try #require(
+            refetchJournalEntry(id: target.id, from: fixture.container)
+        )
+        #expect(storedPrevious.photos.isEmpty)
+        #expect(storedPrevious.updatedAt == JournalTestClock.firstEdit)
+        #expect(storedTarget.photos.map(\.id) == [photo.id])
+        #expect(storedTarget.updatedAt == JournalTestClock.firstEdit)
     }
 
     @Test("Foto abhängen bumpt Eintrag und Foto, das Foto bleibt Reise-Kind")
@@ -149,6 +204,14 @@ struct JournalPhotoMatrixTests {
         #expect(photo.cruise?.id == fixture.cruise.id)
         #expect(fixture.entry.updatedAt == JournalTestClock.firstEdit)
         #expect(photo.updatedAt == JournalTestClock.firstEdit)
+
+        let stored = try fixture.savedAndRefetchedEntry()
+        #expect(stored.photos.isEmpty, "Im Store hängt kein Foto mehr am Eintrag")
+        #expect(stored.updatedAt == JournalTestClock.firstEdit)
+        let storedPhoto = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+        #expect(storedPhoto.journalEntry == nil)
+        #expect(storedPhoto.cruise?.id == fixture.cruise.id)
+        #expect(storedPhoto.updatedAt == JournalTestClock.firstEdit)
     }
 
     @Test("Caption ändern bumpt nur das Foto")
@@ -189,6 +252,12 @@ struct JournalDeleteMatrixTests {
 
         #expect(try fixture.context.fetch(FetchDescriptor<Photo>()).isEmpty)
         #expect(fixture.entry.updatedAt == JournalTestClock.firstEdit)
+
+        let stored = try #require(
+            refetchJournalEntry(id: fixture.entry.id, from: fixture.container)
+        )
+        #expect(stored.photos.isEmpty)
+        #expect(stored.updatedAt == JournalTestClock.firstEdit)
     }
 
     @Test("Ein freies Foto zu löschen bumpt nichts")
@@ -227,6 +296,12 @@ struct JournalDeleteMatrixTests {
         #expect(second.updatedAt == JournalTestClock.firstEdit)
         #expect(first.journalEntry == nil)
         #expect(second.journalEntry == nil)
+
+        for photo in [first, second] {
+            let stored = try #require(refetchPhoto(id: photo.id, from: fixture.container))
+            #expect(stored.journalEntry == nil)
+            #expect(stored.updatedAt == JournalTestClock.firstEdit)
+        }
     }
 
     @Test("Hafen löschen bumpt jeden betroffenen Eintrag (Nullify-Pfad)")
@@ -254,6 +329,13 @@ struct JournalDeleteMatrixTests {
             fixture.entry.createdAt == JournalTestClock.insert,
             "createdAt bleibt auch im Lösch-Pfad"
         )
+
+        for entry in [fixture.entry, second] {
+            let stored = try #require(refetchJournalEntry(id: entry.id, from: fixture.container))
+            #expect(stored.port == nil)
+            #expect(stored.updatedAt == JournalTestClock.firstEdit)
+            #expect(stored.createdAt == JournalTestClock.insert)
+        }
     }
 
     @Test("Reise löschen entfernt Einträge und deren Fotos (Cascade)")

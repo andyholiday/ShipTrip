@@ -201,12 +201,12 @@ struct JournalEntryDeleteRuleTests {
 @Suite("JournalEntry — CloudKit-Konformität (ADR-002 §3)")
 struct JournalEntrySchemaTests {
 
-    @Test("JournalEntry ist im App-Schema enthalten (transitiv über die Beziehungen)")
+    @Test("JournalEntry ist im App-Schema explizit registriert")
     func journalEntryIsPartOfAppSchema() throws {
         let names = makeJournalAppSchema().entities.map(\.name)
         #expect(
             names.contains("JournalEntry"),
-            "Fehlt JournalEntry im Schema, muss es in ShipTripApp.init explizit registriert werden"
+            "JournalEntry muss in ShipTripApp.init explizit im Schema stehen"
         )
     }
 

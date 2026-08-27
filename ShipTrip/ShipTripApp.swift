@@ -35,6 +35,7 @@ struct ShipTripApp: App {
             Expense.self,
             Deal.self,
             Photo.self,
+            JournalEntry.self,
             CustomShippingLine.self,
             CustomShip.self,
             HiddenCatalogItem.self

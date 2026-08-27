@@ -119,6 +119,43 @@ struct JournalDayEncodingTests {
             #expect(localDay == 15, "Zeitzone \(identifier) darf den Tag nicht kippen")
         }
     }
+
+    /// Ein nicht-gregorianischer Geräte-Kalender liefert Tag-Tripel in seiner
+    /// eigenen Ära (buddhistisch: 2026 → 2569). Würde `entryDate` daraus direkt
+    /// gebaut, läge der Eintrag ein halbes Jahrtausend daneben.
+    @Test("Ein nicht-gregorianischer Geräte-Kalender kodiert denselben Tag")
+    func nonGregorianDeviceCalendarEncodesSameDay() throws {
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = try #require(TimeZone(identifier: "Asia/Bangkok"))
+        let local = try makeDate("2026-06-15 08:30", timeZoneIdentifier: "Asia/Bangkok")
+
+        let parts = utcParts(
+            JournalDay.normalizedEntryDate(forLocalDay: local, calendar: buddhist)
+        )
+
+        #expect(parts.year == 2026, "Die Ära des Geräte-Kalenders darf nicht durchschlagen")
+        #expect(parts.month == 6)
+        #expect(parts.day == 15)
+        #expect(parts.hour == 12)
+    }
+
+    @Test("Tag-Vergleiche gelten auch mit nicht-gregorianischem Geräte-Kalender")
+    func nonGregorianDeviceCalendarComparesSameDay() throws {
+        var japanese = Calendar(identifier: .japanese)
+        japanese.timeZone = try #require(TimeZone(identifier: "Asia/Tokyo"))
+        let local = try makeDate("2026-06-15 08:30", timeZoneIdentifier: "Asia/Tokyo")
+
+        let entry = JournalDay.normalizedEntryDate(forLocalDay: local, calendar: japanese)
+        let sameDayEvening = try makeDate("2026-06-15 22:00", timeZoneIdentifier: "Asia/Tokyo")
+        let nextDay = try makeDate("2026-06-16 09:00", timeZoneIdentifier: "Asia/Tokyo")
+
+        #expect(
+            JournalDay.isSameDay(entryDate: entry, asLocalDay: sameDayEvening, calendar: japanese)
+        )
+        #expect(
+            !JournalDay.isSameDay(entryDate: entry, asLocalDay: nextDay, calendar: japanese)
+        )
+    }
 }
 
 // MARK: - Import-Normalisierung

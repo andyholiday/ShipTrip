@@ -9,11 +9,12 @@ import Foundation
 import SwiftData
 @testable import ShipTrip
 
-/// Modelle exakt so registriert wie in `ShipTripApp.init` — `JournalEntry`
-/// kommt transitiv über die Beziehungen dazu.
+/// Modelle exakt so registriert wie in `ShipTripApp.init` — `JournalEntry` steht
+/// dort **explizit** in der Liste, nicht nur transitiv über die Beziehungen.
 func makeJournalAppSchema() -> Schema {
     Schema([
         Cruise.self, ShipTrip.Port.self, Expense.self, Deal.self, Photo.self,
+        JournalEntry.self,
         CustomShippingLine.self, CustomShip.self, HiddenCatalogItem.self
     ])
 }
@@ -58,6 +59,25 @@ func makeJournalPhoto(
     photo.cruise = cruise
     context.insert(photo)
     return photo
+}
+
+// MARK: - Re-Fetch
+
+// Ein Fetch auf dem `mainContext` gibt die bereits registrierte Instanz zurück
+// und beweist damit nichts über den Store. Diese Helfer öffnen einen **frischen**
+// Kontext auf demselben Container und lesen die persistierten Zeilen — Aufrufer
+// müssen vorher `save()`.
+
+func refetchJournalEntry(id: UUID, from container: ModelContainer) throws -> JournalEntry? {
+    try ModelContext(container)
+        .fetch(FetchDescriptor<JournalEntry>())
+        .first { $0.id == id }
+}
+
+func refetchPhoto(id: UUID, from container: ModelContainer) throws -> Photo? {
+    try ModelContext(container)
+        .fetch(FetchDescriptor<Photo>())
+        .first { $0.id == id }
 }
 
 /// Feste Zeitstempel für die LWW-Matrix — Bumps sind so eindeutig prüfbar.

@@ -42,17 +42,21 @@ final class JournalEntry {
     /// Zugehörige Kreuzfahrt (inverse Seite von `Cruise.journalEntriesStorage`)
     var cruise: Cruise?
 
-    /// Optionaler Hafen-Bezug (inverse Seite von `Port.journalEntriesStorage`)
-    var port: Port?
+    /// Optionaler Hafen-Bezug (inverse Seite von `Port.journalEntriesStorage`).
+    /// Nur lesbar von aussen — Schreibpfad ist `setPort(_:at:)` (J2a).
+    private(set) var port: Port?
 
     /// Angehängte Fotos; die Fotos bleiben zugleich Kinder der Reise.
+    /// Nur lesbar von aussen — Schreibpfade sind `attach`/`detach` und
+    /// `detachAllPhotosForDeletion` (J2a).
     @Relationship(deleteRule: .nullify, inverse: \Photo.journalEntry)
-    var photosStorage: [Photo]?
+    private(set) var photosStorage: [Photo]?
 
     /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    /// Bewusst **ohne** Setter: ein direkter Setter wäre ein Schreibpfad an den
+    /// LWW-Bumps vorbei.
     var photos: [Photo] {
-        get { photosStorage ?? [] }
-        set { photosStorage = newValue }
+        photosStorage ?? []
     }
 
     // MARK: - Initialization
@@ -112,17 +116,32 @@ final class JournalEntry {
     }
 
     /// Foto anhängen (neu oder bestehend) — Eintrag **und** Foto bumpen.
+    ///
+    /// Re-Attach: hing das Foto an einem **anderen** Eintrag, bumpt auch dieser.
+    /// Sonst behielte der bisherige Eintrag trotz geänderter Foto-Liste sein
+    /// altes `updatedAt` und verlöre den Wechsel beim LWW-Merge (J2a).
     func attach(_ photo: Photo, at now: Date = Date()) {
-        photo.journalEntry = self
-        photo.touch(at: now)
+        let previousEntry = photo.journalEntry
+        photo.setJournalEntry(self, at: now)
+        previousEntry?.touch(at: now)
         touch(at: now)
     }
 
     /// Foto abhängen; das Foto bleibt Kind der Reise.
     func detach(_ photo: Photo, at now: Date = Date()) {
         guard photo.journalEntry === self else { return }
-        photo.journalEntry = nil
-        photo.touch(at: now)
+        photo.setJournalEntry(nil, at: now)
         touch(at: now)
+    }
+
+    /// Lösch-Pfad (`JournalDeletePaths.deleteEntry`): hängt alle Fotos ab und
+    /// bumpt jedes. Der Eintrag selbst bumpt **nicht** — er wird unmittelbar
+    /// danach gelöscht.
+    func detachAllPhotosForDeletion(at now: Date = Date()) {
+        // Erst schnappschussen, dann lösen — die Beziehung ändert sich beim Nullen.
+        for photo in Array(photos) {
+            photo.setJournalEntry(nil, at: now)
+        }
+        photosStorage = []
     }
 }

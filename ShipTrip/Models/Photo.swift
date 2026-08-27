@@ -39,7 +39,12 @@ final class Photo {
     /// Optionaler Journal-Eintrag, an dem dieses Foto hängt (ADR-003/J1).
     /// Das Foto bleibt zusätzlich Kind der Reise — Galerie, Statistiken und
     /// Export verhalten sich unverändert.
-    var journalEntry: JournalEntry?
+    ///
+    /// Nur lesbar von aussen: geschrieben wird ausschliesslich über
+    /// `setJournalEntry(_:at:)`, damit kein Schreibpfad am LWW-Bump vorbeikommt
+    /// (J2a). Einstiege sind `JournalEntry.attach/detach` und
+    /// `JournalDeletePaths`.
+    private(set) var journalEntry: JournalEntry?
 
     init(imageData: Data, sortOrder: Int = 0) {
         self.imageData = imageData
@@ -55,6 +60,15 @@ final class Photo {
     /// Caption ändern — bumpt nur das Foto (J2a).
     func setCaption(_ newCaption: String, at now: Date = Date()) {
         caption = newCaption
+        touch(at: now)
+    }
+
+    /// Einziger Schreibpfad für den Journal-Bezug: setzt die Beziehung und bumpt
+    /// das Foto. Die Bumps der betroffenen **Einträge** liegen beim Aufrufer
+    /// (`JournalEntry.attach/detach`, `JournalDeletePaths`) — nur der kennt
+    /// alten und neuen Eintrag.
+    func setJournalEntry(_ newEntry: JournalEntry?, at now: Date = Date()) {
+        journalEntry = newEntry
         touch(at: now)
     }
 }

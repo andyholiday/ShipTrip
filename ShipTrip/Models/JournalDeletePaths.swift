@@ -10,7 +10,15 @@ import Foundation
 
 /// SwiftData-Nullify bumpt **nichts** automatisch. Damit Last-Writer-Wins auch
 /// beim Löschen trägt, führen diese Pfade die von J2a geforderten Bumps
-/// explizit aus — jede Lösch-Aktion des Journals läuft über sie.
+/// explizit aus.
+///
+/// **Verbindlicher Einstieg:** Journal-Objekte (`JournalEntry`, `Photo` mit
+/// Journal-Bezug, `Port` mit Einträgen) werden ausschliesslich über diese
+/// Methoden gelöscht. Ein direktes `context.delete(...)` auf eines dieser
+/// Objekte ist ein Vertragsbruch — es nullt die Beziehung still und lässt die
+/// Gegenseite mit altem `updatedAt` zurück, womit der Löschvorgang beim
+/// CloudKit-Merge verlorengeht. Die Bindung der produktiven UI-Einstiege an
+/// diese Helfer ist Auflage von T8.
 enum JournalDeletePaths {
 
     /// Eintrag löschen: Fotos bleiben in der Reise-Galerie, `journalEntry` wird
@@ -20,13 +28,7 @@ enum JournalDeletePaths {
         in context: ModelContext,
         at now: Date = Date()
     ) {
-        // Erst schnappschussen, dann lösen — die Beziehung ändert sich beim Nullen.
-        let attachedPhotos = Array(entry.photos)
-        for photo in attachedPhotos {
-            photo.journalEntry = nil
-            photo.touch(at: now)
-        }
-        entry.photosStorage = []
+        entry.detachAllPhotosForDeletion(at: now)
         context.delete(entry)
     }
 
@@ -37,8 +39,7 @@ enum JournalDeletePaths {
         at now: Date = Date()
     ) {
         if let entry = photo.journalEntry {
-            photo.journalEntry = nil
-            entry.touch(at: now)
+            entry.detach(photo, at: now)
         }
         context.delete(photo)
     }
@@ -52,8 +53,7 @@ enum JournalDeletePaths {
     ) {
         let affectedEntries = Array(port.journalEntriesStorage ?? [])
         for entry in affectedEntries {
-            entry.port = nil
-            entry.touch(at: now)
+            entry.setPort(nil, at: now)
         }
         port.journalEntriesStorage = []
         context.delete(port)

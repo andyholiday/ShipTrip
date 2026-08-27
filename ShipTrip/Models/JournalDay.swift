@@ -29,14 +29,31 @@ enum JournalDay {
         return calendar
     }()
 
+    /// Gregorianischer Kalender mit der **Zeitzone** des übergebenen Kalenders.
+    ///
+    /// `entryDate` ist gregorianisch kodiert. Ein nicht-gregorianischer
+    /// Geräte-Kalender (buddhistisch, japanisch, hebräisch …) liefert ein
+    /// Tag-Tripel in seiner eigenen Ära — `utcCalendar` würde es als
+    /// gregorianisch lesen und den Tag um Jahrhunderte verschieben. Deshalb
+    /// wird für die Tag-Extraktion nur die Zeitzone des Geräts übernommen,
+    /// nie sein Kalendersystem.
+    static func gregorianCalendar(zonedLike calendar: Calendar) -> Calendar {
+        guard calendar.identifier != .gregorian else { return calendar }
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        return gregorian
+    }
+
     // MARK: - Tag-Tripel
 
-    /// Tag-Tripel eines lokalen Ereignis-Zeitstempels (Geräte-Kalender).
+    /// Tag-Tripel eines lokalen Ereignis-Zeitstempels — Zeitzone vom
+    /// Geräte-Kalender, Kalendersystem immer gregorianisch.
     static func localDayComponents(
         of date: Date,
         calendar: Calendar = .current
     ) -> DateComponents {
-        calendar.dateComponents([.year, .month, .day], from: date)
+        gregorianCalendar(zonedLike: calendar)
+            .dateComponents([.year, .month, .day], from: date)
     }
 
     /// Tag-Tripel eines gespeicherten `entryDate` (immer UTC-Kalender).
