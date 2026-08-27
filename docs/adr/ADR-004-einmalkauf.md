@@ -44,13 +44,29 @@ und freigeschaltetem Umfang sowie die technische StoreKit-2-Anbindung
 sind ein späteres, eigenes Umsetzungs-Thema mit eigener Entscheidung. Bis
 dahin bleibt die App bewusst ohne Kauf-Code.
 
+Offen bleiben damit ausdrücklich diese Folgeentscheidungen, die ein
+Einmalkauf nicht automatisch mitbeantwortet:
+
+- **Restore:** Wiederherstellen-Aktion auf neuen Geräten und nach Neuinstallation.
+- **Refund/Revocation:** Verhalten, wenn Apple einen Kauf erstattet oder
+  zurückzieht (`revocationDate`) — Rückfall auf den freien Umfang oder Kulanz.
+- **Offline-Zugriff:** wie lange die Freischaltung ohne erreichbare
+  StoreKit-Prüfung gilt.
+- **Family Sharing:** ob das Produkt familienfreigabefähig ausgeliefert wird.
+- **Bestandsschutz:** was Nutzer behalten, die die App vor Einführung des
+  Kaufs installiert haben.
+
 ## Konsequenzen
 
 Positiv:
 
-- Kein Abo-Code in der App: kein `PremiumStore`, kein Paywall-Sheet, keine
-  Entitlement-Prüfungen in Views — bestehende Funktionen müssen nicht
-  nachträglich hinter Gates gezogen werden.
+- Kein Abo-Code in der App: solange kein Kauf ausgeliefert ist, gibt es
+  weiterhin keinen `PremiumStore`, kein Paywall-Sheet und keine
+  Entitlement-Prüfungen in Views. Das beschreibt den Ist-Zustand, keine
+  Dauerzusage: sobald der Free/Unlock-Schnitt steht, wird genau eine
+  Entitlement-Prüfung nötig — aber eine einmalige, ohne Ablauf- und
+  Erneuerungslogik. Bestehende Funktionen müssen dabei nicht nachträglich
+  hinter Gates gezogen werden.
 - Kein Abo-Overhead im App-Review und in den Store-Metadaten
   (Trial-Offenlegung, Kündigungshinweise, Abo-Verwaltung, Preisänderungs-
   Zustimmung).
@@ -104,6 +120,20 @@ späterer KI-Proxy) und macht jede kostenverursachende Funktion unbezahlbar.
 Abgelehnt: kein Ausprobieren vor dem Kauf, was bei einem Reisetagebuch die
 Einstiegshürde massiv erhöht; der In-App-Kauf erlaubt eine frei nutzbare Basis
 mit einmaliger Freischaltung.
+
+**D: Hybrid — Einmalkauf für den App-Umfang plus BYOK oder
+verbrauchsabhängige Abrechnung für die KI.**
+Nicht abgelehnt, sondern vertagt: Diese Variante trifft den oben genannten
+Schwachpunkt des Einmalkaufs — die pro Nutzer laufenden KI-Kosten — direkt,
+weil nur der kostenverursachende Teil verbrauchsabhängig bleibt. Der
+BYOK-Zweig ist heute schon der Ist-Zustand: `GeminiService` nutzt den
+eigenen Gemini-API-Key des Nutzers aus dem Keychain, die Kosten liegen
+also bereits beim Nutzer. Der Hybrid steht damit nicht im Widerspruch zu
+dieser ADR, sondern baut auf ihr auf; er verlangt aber eine eigene
+Abwägung (Consumable-Guthaben vs. reines BYOK, Zumutbarkeit der
+Key-Beschaffung, Store-Regeln für externe Schlüssel). Diese Abwägung
+gehört in die KI-Proxy-Entscheidung (ADR-005-Reservierung, Welle D1) und
+wird hier bewusst nicht vorweggenommen.
 
 ## Referenzen
 
