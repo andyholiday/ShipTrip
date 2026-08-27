@@ -64,6 +64,7 @@ struct RouteJournalEntryRow: View {
                             .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("journalEntryRow.readMore")
                 }
 
                 if !sortedPhotos.isEmpty {
@@ -81,8 +82,12 @@ struct RouteJournalEntryRow: View {
         .onTapGesture { onOpen() }
         // Eine Zeile = ein Accessibility-Element mit zusammengesetztem Label
         // (Stimmung, Datum, Auszug); `.combine` erhält dabei die Aktion des
-        // „Weiterlesen"-Buttons. Der volle A11y-Pass ist T8d.
+        // „Weiterlesen"-Buttons. Die Zeile selbst ist antippbar, deshalb trägt
+        // sie den Button-Trait — sonst kündigt VoiceOver sie als reinen Text an.
         .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(Text("Öffnet den ganzen Eintrag"))
+        .accessibilityIdentifier("journalEntryRow")
         .accessibilityAction { onOpen() }
     }
 

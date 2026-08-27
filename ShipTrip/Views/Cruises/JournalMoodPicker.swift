@@ -31,6 +31,7 @@ struct JournalMoodPicker: View {
                 ForEach(JournalMood.allCases) { mood in
                     option(
                         label: mood.label,
+                        identifier: "journalEditor.mood.\(mood.rawValue)",
                         isSelected: selected == mood,
                         action: { moodRaw = mood.rawValue }
                     ) {
@@ -40,6 +41,7 @@ struct JournalMoodPicker: View {
 
                 option(
                     label: JournalMood.noneLabel,
+                    identifier: "journalEditor.mood.none",
                     isSelected: selected == nil,
                     action: { moodRaw = "" }
                 ) {
@@ -56,6 +58,7 @@ struct JournalMoodPicker: View {
     /// **und** als VoiceOver-Trait (nicht nur farblich).
     private func option<Content: View>(
         label: String,
+        identifier: String,
         isSelected: Bool,
         action: @escaping () -> Void,
         @ViewBuilder content: () -> Content
@@ -71,6 +74,7 @@ struct JournalMoodPicker: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
+        .accessibilityIdentifier(identifier)
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : [.isButton])
     }
 }

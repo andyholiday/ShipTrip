@@ -107,10 +107,12 @@ struct JournalEntryEditorView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(String(localized: "Abbrechen")) { dismiss() }
+                        .accessibilityIdentifier("journalEditor.cancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Speichern")) { save() }
                         .disabled(!canSave)
+                        .accessibilityIdentifier("journalEditor.saveButton")
                 }
             }
             .onChange(of: pickerItems) { _, items in loadPickedPhotos(items) }
@@ -140,6 +142,7 @@ struct JournalEntryEditorView: View {
             PhotosPicker(selection: $pickerItems, matching: .images) {
                 Label(String(localized: "Fotos hinzufügen"), systemImage: "photo.badge.plus")
             }
+            .accessibilityIdentifier("journalEditor.addPhotos")
         } header: {
             Text(String(localized: "Erinnerung"))
         } footer: {
@@ -164,6 +167,7 @@ struct JournalEntryEditorView: View {
                 }
             }
             .accessibilityLabel(String(localized: "Erinnerung"))
+            .accessibilityIdentifier("journalEditor.text")
     }
 
     private func photoRow(
@@ -206,6 +210,7 @@ struct JournalEntryEditorView: View {
                 ),
                 displayedComponents: .date
             )
+            .accessibilityIdentifier("journalEditor.dayPicker")
 
             Picker(String(localized: "Hafen"), selection: portBinding) {
                 Text(String(localized: "Kein Hafen")).tag(UUID?.none)
@@ -214,6 +219,7 @@ struct JournalEntryEditorView: View {
                 }
             }
             .pickerStyle(.navigationLink)
+            .accessibilityIdentifier("journalEditor.portPicker")
 
             JournalMoodPicker(moodRaw: $moodRaw)
         }
