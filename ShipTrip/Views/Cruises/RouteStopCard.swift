@@ -1,0 +1,167 @@
+//
+//  RouteStopCard.swift
+//  ShipTrip
+//
+//  Ein Stopp im Route-Journal-Faden: Klapp-Kopf + aufgeklappter Inhalt
+//  (Contract J3neu (b)/(c)/(d)/(e)).
+//
+
+import SwiftUI
+
+/// Ein Route-Stopp (Hafen oder Seetag) als klappbare Karte.
+///
+/// **Zugeklappt:** nur die kompakte Kopfzeile (Pin, Name, Land, Datum).
+/// **Aufgeklappt:** zusätzlich die `PortMemoryCard` (nach deren
+/// `shouldRender`-Regel), die Journal-Eintragszeilen und die Aktion
+/// „Tagebuch-Eintrag".
+///
+/// Trefferflächen sind getrennt (J3neu (b)): die **Kopfzeile klappt**, der
+/// **Karteninhalt navigiert** ins Hafen-Formular. Weil ein zugeklappter Stopp
+/// und ein Seetag ohne Momente keinen Karteninhalt haben, liegt „Bearbeiten"
+/// zusätzlich im Kontextmenü — sonst wäre das Formular dort nicht erreichbar.
+struct RouteStopCard: View {
+    let port: Port
+    let pinType: PortPinType
+    let isExpanded: Bool
+    /// Einträge dieses Stopps in Anzeige-Reihenfolge (`RouteJournalPlanner`).
+    let entries: [JournalEntry]
+    let onToggle: () -> Void
+    /// Öffnet das Hafen-Formular (bestehende `selectedPort`-Navigation).
+    let onSelectPort: () -> Void
+    let onDeletePort: () -> Void
+    /// Öffnet die Eintrags-Detailansicht (T8c).
+    let onOpenEntry: (UUID) -> Void
+    /// Öffnet den J2-Editor, vorbelegt mit diesem Stopp (T8c).
+    let onAddEntry: () -> Void
+
+    /// Mindesthöhe der Kopfzeile — Tap-Ziel ≥ 44 pt.
+    private static let headerMinHeight: CGFloat = 44
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            header
+
+            if isExpanded {
+                if PortMemoryCard.shouldRender(for: port) {
+                    PortMemoryCard(port: port)
+                        .contentShape(Rectangle())
+                        .onTapGesture { onSelectPort() }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint(Text("Hafen bearbeiten"))
+                }
+
+                ForEach(entries) { entry in
+                    RouteJournalEntryRow(
+                        entry: entry,
+                        showsDate: RouteJournalEntryRow.showsDate(
+                            entryDate: entry.entryDate,
+                            stopArrival: port.arrival
+                        ),
+                        onOpen: { onOpenEntry(entry.id) }
+                    )
+                }
+
+                addEntryButton
+            }
+        }
+        .padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                onSelectPort()
+            } label: {
+                Label("Bearbeiten", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                onDeletePort()
+            } label: {
+                Label("Löschen", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Kopfzeile (klappt)
+
+    private var header: some View {
+        Button {
+            onToggle()
+        } label: {
+            HStack(spacing: 12) {
+                PortPinView(type: pinType)
+
+                VStack(alignment: .leading) {
+                    Text(port.name)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    if !port.isSeaDay {
+                        Text(PortCountryCatalog.localizedName(for: port.country))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(minHeight: Self.headerMinHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(isExpanded
+                            ? String(localized: "aufgeklappt")
+                            : String(localized: "zugeklappt"))
+    }
+
+    // MARK: - Erfassung (J3neu (d))
+
+    private var addEntryButton: some View {
+        Button {
+            onAddEntry()
+        } label: {
+            Label("Tagebuch-Eintrag", systemImage: "square.and.pencil")
+                .font(.caption.weight(.semibold))
+                .frame(minHeight: Self.headerMinHeight, alignment: .leading)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.accentColor)
+        .accessibilityLabel(String(localized: "Tagebuch-Eintrag hinzufügen"))
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    let port = Port(name: "Civitavecchia", country: "Italien", latitude: 42.09, longitude: 11.79)
+    port.excursions = ["Kolosseum", "Vatikan-Tour"]
+
+    let entry = JournalEntry(
+        text: """
+        Früh raus, mit dem Zug nach Rom. Die Schlange am Kolosseum war lang, \
+        aber der Blick von oben hat alles wettgemacht.
+        """,
+        moodRaw: "great"
+    )
+
+    return ScrollView {
+        VStack(alignment: .leading, spacing: 16) {
+            RouteStopCard(
+                port: port, pinType: .homePort, isExpanded: true, entries: [entry],
+                onToggle: {}, onSelectPort: {}, onDeletePort: {},
+                onOpenEntry: { _ in }, onAddEntry: {}
+            )
+            RouteStopCard(
+                port: port, pinType: .port, isExpanded: false, entries: [entry],
+                onToggle: {}, onSelectPort: {}, onDeletePort: {},
+                onOpenEntry: { _ in }, onAddEntry: {}
+            )
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+    }
+}
