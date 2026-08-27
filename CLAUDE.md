@@ -85,7 +85,8 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 
 ## Projektstruktur
 
-- `ShipTrip/Models/` — SwiftData-Modelle (Cruise, Port, Expense, Deal, Photo) +
+- `ShipTrip/Models/` — SwiftData-Modelle (Cruise, Port, Expense, Deal, Photo,
+  JournalEntry) +
   Referenzdaten (PortSuggestion ~1.800 Häfen, ShippingLine)
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
   KeychainService, NotificationService, DemoDataService (Beispielreise, auch im
