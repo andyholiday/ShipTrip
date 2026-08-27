@@ -167,6 +167,13 @@ extension ExportImportService {
             // die Route verstümmeln.
             var seenPortIDs: Set<UUID> = []
 
+            // Re-Linking-Tabellen für die Journal-Einträge (ADR-003, T7b-Contract): Schlüssel ist
+            // immer die ID **aus der Datei**, auch wenn das Objekt sie wegen einer Kollision nicht
+            // übernehmen konnte — der Eintrag im DTO verweist auf die Datei-ID. Erstes Vorkommen
+            // gewinnt, wie bei den ID-Dubletten oben.
+            var portsByExportID: [String: Port] = [:]
+            var photosByExportID: [String: Photo] = [:]
+
             // Häfen importieren
             for (index, exportPort) in exportCruise.route.enumerated() {
                 // H3-Fix: explizites Flag hat Vorrang; nur Alt-Formate ohne das Feld (exportPort.isSeaDay
@@ -220,6 +227,9 @@ extension ExportImportService {
 
                 port.cruise = cruise
                 modelContext.insert(port)
+                if portsByExportID[exportPort.id] == nil {
+                    portsByExportID[exportPort.id] = port
+                }
             }
 
             // Fotos importieren (Base64 oder Dateipfad).
@@ -235,6 +245,9 @@ extension ExportImportService {
 
                 let photo = Photo(imageData: imageData, sortOrder: index)
                 photo.thumbnailData = ImageDownsampler.thumbnail(from: imageData)
+                // Bildunterschrift (ADR-003): fehlt in Dateien bis 1.8.0 → "". Direkte Zuweisung
+                // statt `setCaption`, weil das Foto frisch ist und kein LWW-Bump ansteht.
+                photo.caption = exportPhoto.caption ?? ""
                 // Stabile Foto-ID übernehmen; 1.7-Dateien tragen keine id, dort bleibt die
                 // frische UUID aus dem Init.
                 if let photoUUID = exportPhoto.id.flatMap({ UUID(uuidString: $0) }),
@@ -244,6 +257,9 @@ extension ExportImportService {
                 }
                 photo.cruise = cruise
                 modelContext.insert(photo)
+                if let exportPhotoID = exportPhoto.id, photosByExportID[exportPhotoID] == nil {
+                    photosByExportID[exportPhotoID] = photo
+                }
             }
 
             // Ausgaben importieren
@@ -269,6 +285,16 @@ extension ExportImportService {
                 expense.cruise = cruise
                 modelContext.insert(expense)
             }
+
+            // Journal-Einträge importieren (ADR-003, T7b-Contract) — fehlt der Schlüssel
+            // (Datei bis 1.8.0), bleibt das Journal leer.
+            importJournalEntries(
+                exportCruise.journalEntries ?? [],
+                into: cruise,
+                ports: portsByExportID,
+                photos: photosByExportID,
+                modelContext: modelContext
+            )
 
             importedCount += 1
         }

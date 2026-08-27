@@ -144,7 +144,11 @@ extension ExportImportService {
             photoEncoder: { _, sortedPhotos in
                 sortedPhotos.map { photo in
                     let base64 = photo.imageData.base64EncodedString()
-                    return ExportPhoto(id: photo.id.uuidString, ref: "data:image/png;base64,\(base64)")
+                    return ExportPhoto(
+                        id: photo.id.uuidString,
+                        ref: "data:image/png;base64,\(base64)",
+                        caption: Self.exportCaption(photo)
+                    )
                 }
             }
         )
@@ -202,7 +206,11 @@ extension ExportImportService {
             hiddenCatalogItems: hiddenCatalogItems,
             photoEncoder: { cruise, sortedPhotos in
                 sortedPhotos.enumerated().map { index, photo in
-                    ExportPhoto(id: photo.id.uuidString, ref: "images/\(cruise.id.uuidString)/\(index)")
+                    ExportPhoto(
+                        id: photo.id.uuidString,
+                        ref: "images/\(cruise.id.uuidString)/\(index)",
+                        caption: Self.exportCaption(photo)
+                    )
                 }
             },
             portImageURL: { cruise, port, index in
@@ -286,5 +294,11 @@ extension ExportImportService {
     /// Local File Header (30 B + Name) + Central-Directory-Eintrag (46 B + Name) eines Eintrags.
     private static func zipStructureBytes(forEntryName name: String) -> Int {
         30 + 46 + 2 * name.utf8.count
+    }
+
+    /// Bildunterschrift fürs DTO (ADR-003): leer → `nil`, damit der Schlüssel in Dateien ohne
+    /// Captions gar nicht erst auftaucht (byte-identisch zu 1.8.0).
+    static func exportCaption(_ photo: Photo) -> String? {
+        photo.caption.isEmpty ? nil : photo.caption
     }
 }
