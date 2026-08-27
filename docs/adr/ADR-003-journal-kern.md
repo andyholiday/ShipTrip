@@ -180,8 +180,11 @@ Export/Import reichen ihn unverändert durch.
   beide unabhängig und ohne Querzugriff.
 - **Parallel:** T5/T6 (Design-Strecke) ∥ T7 (Modell-Wave, nach Gate-#4-GO);
   die Modell-Wave hängt nicht am UI-Design.
-- **Seriell:** T8 (UI-Wave) erst nach T6 (visuelles Gate + Andre-Go), T7
-  (Modell vorhanden) und T4 (Dialog-Struktur in `Views/Cruises/`).
+- **Seriell:** T8 (UI-Wave) erst nach T7 (Modell vorhanden) und T4
+  (Dialog-Struktur in `Views/Cruises/`). *(Rev. 2026-08-27/3: die frühere
+  Bedingung „nach T6, visuelles Gate + Andre-Go" ist entfallen — die
+  Design-Strecke wurde mit dem Re-Anchoring verworfen; T8 baut gegen
+  J3neu.)*
 - Contract-Änderungen laufen über Winston (Rev.-Vermerk im Contract), nie
   still per Diff.
 
@@ -317,7 +320,9 @@ Schema-Eingriff; die Änderung ist reine Anzeige- und Erfassungs-Verankerung.
   Zeitzonen-Vertrag: `entryDate` als Date-only-Wert (Finding 3) ·
   Migrations-Aussagen auf „Nachweis über Gates" abgeschwächt (Finding 4) ·
   `moodRaw`-Stabilitätsvertrag mit Unknown-Preservation (Finding 5).
-  Status bleibt Proposed.
+  Status: Accepted (nach Fix-Runde von frischem Opus-Prüfer verifiziert;
+  die frühere Zeile „Status bleibt Proposed" war gegenüber dem Kopf
+  veraltet).
 - 2026-08-27 (Nachtrag, Andre-Entscheid „neue Richtung"): Verankerung der
   Lesansicht im Route-Abschnitt statt separatem Tagebuch-Strang; altes J3 +
   Logbuch-Strang-Design verworfen, ersetzt durch J3neu im Editor-Contract

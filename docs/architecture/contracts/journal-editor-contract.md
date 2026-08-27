@@ -168,6 +168,12 @@ Geräte-Kalender-Tag-Tripel gegen `startDate`/`endDate`-Tag-Tripel):
 | Aktiv (Starttag ≤ heute ≤ Endtag) | nur Stopps des aktuellen Tages aufgeklappt (`arrival`-Tag-Tripel == heute), alle anderen zugeklappt |
 | Nach Reiseende (heute > Endtag) | alle Stopps aufgeklappt |
 
+Fallback in Phase „Aktiv": Hat der aktuelle Tag **keinen** Route-Stopp
+(Lücke in der Route), bleiben alle Stopps zugeklappt — es wird kein
+fremder Tag ersatzweise geöffnet; der Sammelblock (s. u.) bleibt sichtbar.
+Der **Sammelblock „Weitere Einträge"** ist von der Klapp-Maschine
+ausgenommen: er ist immer sichtbar und offen, hat keinen Klapp-Kopf.
+
 **Ereignisse:**
 
 | Ereignis | Wirkung |
