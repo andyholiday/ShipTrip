@@ -25,7 +25,7 @@ Relationships, keine `.unique`; Dedup über stabile `id: UUID`).
 |---|---|---|---|
 | `id` | `UUID` | `UUID()` | Stabile App-ID, kein Unique-Constraint (ADR-002 §4) |
 | `text` | `String` | `""` | Die Erinnerung (Freitext, mehrzeilig) |
-| `entryDate` | `Date` | `Date()` (Modell-Default) | Kalendertag als **Date-only-Wert**: der Editor persistiert **12:00 UTC** des gewählten Tags (Zeitzonen-Vertrag, ADR-003). Tag-Extraktion nur über UTC-Kalender; Vergleiche auf Tag-Tripeln (Jahr/Monat/Tag, s. J2), nie `==`, nie lokales `startOfDay` |
+| `entryDate` | `Date` | `Date()` (reiner Schema-Default, CloudKit-Pflicht — nie unnormalisiert persistieren) | Kalendertag als **Date-only-Wert**: **jeder Schreibpfad** (Editor-Save, Import/T7b) persistiert **12:00 UTC** des Tag-Tripels — importierte Werte werden auf 12:00 UTC ihres UTC-Tag-Tripels normalisiert. Tag-Extraktion nur über UTC-Kalender; Vergleiche auf Tag-Tripeln (Jahr/Monat/Tag, s. J2), nie `==`, nie lokales `startOfDay` |
 | `moodRaw` | `String` | `""` | Stimmung als stabiler Roh-String (s. J4); `""` = keine Stimmung |
 | `createdAt` | `Date` | `Date()` | Erstellungsdatum |
 | `updatedAt` | `Date` | `Date()` | Last-Writer-Wins, bei jedem Save bumpen (ADR-002 §2) |
@@ -33,8 +33,10 @@ Relationships, keine `.unique`; Dedup über stabile `id: UUID`).
 | `port` | `Port?` | — | Optionaler Hafen-Bezug (inverse Seite) |
 | `photosStorage` | `[Photo]?` | — | `@Relationship(deleteRule: .nullify, inverse: \Photo.journalEntry)`; computed Wrapper `photos: [Photo]` nach Cruise-Muster |
 
-Abgeleitet, **nicht** gespeichert: Reisetag-Nummer („Tag 3") = Differenz
-`entryDate` zu `cruise.startDate` + 1 (UI-berechnet, kein Drift-Risiko).
+Abgeleitet, **nicht** gespeichert: Reisetag-Nummer („Tag 3") =
+Kalendertag-Differenz der **Tag-Tripel** (Zeitzonen-Vertrag: `entryDate`
+via UTC-Kalender, `cruise.startDate` via Geräte-Kalender) + 1 — nie rohe
+`Date`-Differenz (UI-berechnet, kein Drift-Risiko).
 Kein `isDemo` auf `JournalEntry` — Demo-Filterung läuft wie bei
 Port/Expense/Photo über `cruise?.isDemo`.
 
@@ -98,6 +100,7 @@ führen die markierten Bumps explizit aus.
 | Foto anhängen (neu oder bestehend) | — | bump | bump (Link `journalEntry` geändert) |
 | Foto abhängen (Detach im Editor) | — | bump | bump |
 | Caption ändern | — | — | bump |
+| Foto aus Galerie löschen (Photo entfällt, hing an Eintrag) | — | bump, explizit im Lösch-Pfad | (Objekt entfällt) |
 | Eintrag löschen → Nullify `photo.journalEntry` | (Objekt entfällt) | (Objekt entfällt) | bump je betroffenem Foto, explizit im Lösch-Pfad |
 | Hafen löschen → Nullify `entry.port` | — | bump, explizit im Lösch-Pfad | — |
 | Reise löschen (Cascade) | (Objekt entfällt) | (Objekt entfällt) | (Fotos entfallen mit) |

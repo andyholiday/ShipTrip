@@ -122,6 +122,14 @@ beide gleichzeitig.
   weiterhin (unbekannte JSON-Keys werden von Codable ignoriert), verlieren
   dabei aber still Journal + Captions. Bewusst in Kauf genommen, damit
   Teilen an Bestands-Installationen funktioniert (s. Konsequenzen).
+- **Import-Limit:** `ShareArchiveLimits` (C10-Preflight, ADR-007 Schritt 7)
+  wird um `maxJournalEntries` erweitert — konkreter Wert analog zur
+  bestehenden Limit-Skala, festgelegt in T7b; ohne dieses Limit wäre die
+  Entry-Sammlung die einzige unbegrenzte Kollektion aus Fremddateien.
+- **Import-Normalisierung:** importierte `entryDate`-Werte werden auf
+  12:00 UTC ihres UTC-Tag-Tripels normalisiert (Zeitzonen-Vertrag) —
+  Alt- und Fremddateien dürfen keine unnormalisierten Zeitstempel in den
+  Store bringen.
 
 ## LWW-Vertrag (`createdAt`/`updatedAt`)
 
