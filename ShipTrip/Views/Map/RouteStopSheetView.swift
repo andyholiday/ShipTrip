@@ -106,7 +106,7 @@ struct RouteStopSheetView: View {
                     Text(role.port.name)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text(role.port.country)
+                    Text(PortCountryCatalog.localizedName(for: role.port.country))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

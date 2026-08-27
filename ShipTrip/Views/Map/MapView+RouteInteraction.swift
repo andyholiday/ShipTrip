@@ -183,7 +183,8 @@ extension MapView {
         case .seaDay:
             roleLabel = String(localized: "Seetag")
         }
-        return "\(roleLabel), \(role.port.name), \(role.port.country)"
+        let country = PortCountryCatalog.localizedName(for: role.port.country)
+        return "\(roleLabel), \(role.port.name), \(country)"
     }
 
     /// Winziger Dot für den Welt-Zoom, in Routenfarbe statt einheitlichem `Color.portPin` —

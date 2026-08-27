@@ -114,7 +114,7 @@ struct PortFormView: View {
                                         VStack(alignment: .leading) {
                                             Text(suggestion.name)
                                                 .foregroundStyle(.primary)
-                                            Text(suggestion.country)
+                                            Text(suggestion.localizedCountry)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -131,7 +131,7 @@ struct PortFormView: View {
                                 VStack(alignment: .leading) {
                                     Text(name)
                                         .font(.headline)
-                                    Text(country)
+                                    Text(PortCountryCatalog.localizedName(for: country))
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
