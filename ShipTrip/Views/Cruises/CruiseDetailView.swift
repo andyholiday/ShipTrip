@@ -298,84 +298,20 @@ struct CruiseDetailView: View {
         }
     }
     
+    /// Route als Tagesfaden mit Journal-Einträgen (Contract J3neu, T8b) –
+    /// Klapp-Zustand, Eintragszeilen und Sammelblock liegen in
+    /// `RouteJournalSection`.
     private var routeSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Route")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    showingAddPortSheet = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-            
-            if cruise.route.isEmpty {
-                Text("Noch keine Häfen hinzugefügt")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                let sortedPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })
-                let firstSortOrder = sortedPorts.filter { !$0.isSeaDay }.first?.sortOrder
-                let lastSortOrder = sortedPorts.filter { !$0.isSeaDay }.last?.sortOrder
-                ForEach(sortedPorts) { port in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 12) {
-                            PortPinView(type: PortPinType(
-                                isSeaDay: port.isSeaDay,
-                                isFirst: port.sortOrder == firstSortOrder,
-                                isLast: port.sortOrder == lastSortOrder
-                            ))
-
-                            VStack(alignment: .leading) {
-                                Text(port.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                if !port.isSeaDay {
-                                    Text(PortCountryCatalog.localizedName(for: port.country))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        // Hafen-Momente (Foto + Ausflüge) als eigene Card in voller Breite –
-                        // die Liegezeit (vormals in der Metadaten-Zeile oben) sitzt jetzt als
-                        // Badge auf dem Hero-Foto (siehe PortMemoryCard.stayBadgeText).
-                        // Bei Seetagen ohne erfasste Momente bleibt die Zeile kompakt (keine
-                        // Einladungs-Card), siehe PortMemoryCard.shouldRender.
-                        if PortMemoryCard.shouldRender(for: port) {
-                            PortMemoryCard(port: port)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedPort = port
-                    }
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            deletePort(port)
-                        } label: {
-                            Label("Löschen", systemImage: "trash")
-                        }
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
+        RouteJournalSection(
+            cruise: cruise,
+            onAddPort: { showingAddPortSheet = true },
+            onSelectPort: { selectedPort = $0 },
+            onDeletePort: { deletePort($0) },
+            // T8d: Wiring T8c — Eintrags-Detailansicht und J2-Editor kommen aus
+            // T8c und werden hier eingehängt; bis dahin bewusst wirkungslos.
+            onOpenEntry: { _ in },
+            onAddEntry: { _ in }
+        )
     }
 
     private var expensesSection: some View {
