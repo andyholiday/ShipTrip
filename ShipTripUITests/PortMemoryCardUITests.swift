@@ -76,9 +76,25 @@ final class PortMemoryCardUITests: XCTestCase {
         XCTAssertTrue(cruiseEntry.waitForExistence(timeout: 10), "Neu angelegte Reise nicht in der Liste gefunden")
         cruiseEntry.tap()
 
-        XCTAssertTrue(app.staticTexts[portName].waitForExistence(timeout: 10))
+        // Seit dem Route-Journal (Contract J3neu (b)) steckt die PortMemoryCard im
+        // aufgeklappten Stopp. Der Zustand wird hier explizit hergestellt, statt sich
+        // auf den Phasen-Default der Klapp-Automatik zu verlassen.
+        let stopHeader = app.buttons["routeStop.header.\(portName)"]
+        XCTAssertTrue(stopHeader.waitForExistence(timeout: 10), "Stopp-Kopf des Testhafens fehlt")
+        if stopHeader.value as? String == "zugeklappt" {
+            stopHeader.tap()
+        }
+        XCTAssertEqual(stopHeader.value as? String, "aufgeklappt",
+                       "Stopp liess sich nicht aufklappen – Zero-State waere nicht sichtbar")
+
+        // Elementtyp-unabhängig: der Karteninhalt navigiert ins Hafen-Formular und trägt
+        // deshalb seit dem A11y-Pass (T8d-2) den Button-Trait – aus dem früheren
+        // StaticText ist ein Button geworden, der Text selbst ist unverändert.
+        let zeroStateHint = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Foto & Ausflüge erfassen"))
+            .firstMatch
         XCTAssertTrue(
-            app.staticTexts["Foto & Ausflüge erfassen"].waitForExistence(timeout: 5),
+            zeroStateHint.waitForExistence(timeout: 5),
             "Zero-State-Hinweis der PortMemoryCard fehlt bei Hafen ohne Momente (B7.2/B2)"
         )
     }
