@@ -7,6 +7,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geplant
+
+- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
+  festlegen; Build 19 enthält noch das alte Relationship-Schema.
+- Wetter-API Integration
+- Hafen-Bilder mit KI-Generierung
+
+---
+
+## [1.8.5] - 2026-08-28
+
 ### Hinzugefuegt
 
 - **Journal-Kern, Datenschicht**: Reisen können Journal-Einträge tragen —
@@ -269,13 +280,6 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Gerät seinen älteren Stand mit dem gelösten Bezug hätte durchsetzen können.
   Alle vier Wege markieren den Eintrag jetzt als geändert.
   ([Feature-Doku](docs/features/journal.md))
-
-### Geplant
-
-- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
-  festlegen; Build 19 enthält noch das alte Relationship-Schema.
-- Wetter-API Integration
-- Hafen-Bilder mit KI-Generierung
 
 ---
 
@@ -1037,7 +1041,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.8.5...HEAD
+[1.8.5]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...v1.8.5
 [1.7.1]: https://github.com/andyholiday/ShipTrip/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/andyholiday/ShipTrip/compare/v1.6.2...v1.6.3
