@@ -2,7 +2,8 @@
 //  JournalEditorDefaults.swift
 //  ShipTrip
 //
-//  Default-Regeln von Schritt 2 „Eckdaten" (ADR-003, Contract J2/J3neu).
+//  Default-Regeln von Schritt 2 „Eckdaten" und das Save-Gate von Schritt 1
+//  (ADR-003, Contract J2/J3neu).
 //
 
 import Foundation
@@ -86,6 +87,25 @@ enum JournalEditorDefaults {
         // Widerspruechliche Reisedaten wuerden `lower...upper` zum Absturz bringen.
         guard lower <= upper else { return lower...lower }
         return lower...upper
+    }
+
+    // MARK: - Save-Gate (Schritt 1)
+
+    /// Pflichtregel J2 Schritt 1 als reine Logik: speicherbar, sobald Text da ist
+    /// **oder** mindestens ein Foto am Eintrag haengt.
+    ///
+    /// - Parameter photoLoadsInFlight: Anzahl der noch laufenden Foto-Transfers
+    ///   des Pickers.
+    static func canSave(
+        hasText: Bool,
+        pendingPhotoCount: Int,
+        attachedPhotoCount: Int,
+        photoLoadsInFlight: Int
+    ) -> Bool {
+        // Commit 1 von 2 (Rot-Beweis): extrahiertes Bestands-Verhalten —
+        // `photoLoadsInFlight` geht hier bewusst noch **nicht** ein, genau daran
+        // haengt der rote Repro-Test der Foto-Verlust-Race.
+        hasText || pendingPhotoCount > 0 || attachedPhotoCount > 0
     }
 
     // MARK: - Hafen

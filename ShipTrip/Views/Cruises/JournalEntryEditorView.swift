@@ -39,6 +39,8 @@ struct JournalEntryEditorView: View {
     @State private var detachedPhotoIDs: Set<UUID> = []
     @State private var captionDrafts: [UUID: String] = [:]
     @State private var pickerItems: [PhotosPickerItem] = []
+    /// Laufende Picker-Transfers; > 0 heisst: es sind Fotos unterwegs.
+    @State private var photoLoadsInFlight = 0
 
     // Schritt 2 „Eckdaten"
     @State private var localDay: Date
@@ -243,10 +245,14 @@ struct JournalEntryEditorView: View {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Pflichtregel J2 Schritt 1: Speichern erst, wenn Text nicht leer **oder**
-    /// mindestens ein Foto am Eintrag haengt.
+    /// Pflichtregel J2 Schritt 1 (Logik in `JournalEditorDefaults.canSave`).
     private var canSave: Bool {
-        !trimmedText.isEmpty || !pendingPhotos.isEmpty || !attachedPhotos.isEmpty
+        JournalEditorDefaults.canSave(
+            hasText: !trimmedText.isEmpty,
+            pendingPhotoCount: pendingPhotos.count,
+            attachedPhotoCount: attachedPhotos.count,
+            photoLoadsInFlight: photoLoadsInFlight
+        )
     }
 
     /// Bereits angehaengte Fotos ohne die im Editor abgehaengten.
@@ -291,6 +297,7 @@ struct JournalEntryEditorView: View {
 
     private func loadPickedPhotos(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
+        photoLoadsInFlight += 1
         Task {
             var loaded: [PendingPhoto] = []
             for item in items {
@@ -300,6 +307,7 @@ struct JournalEntryEditorView: View {
             }
             pendingPhotos.append(contentsOf: loaded)
             pickerItems = []
+            photoLoadsInFlight -= 1
         }
     }
 
