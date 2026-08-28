@@ -169,6 +169,8 @@ struct CruiseFormView: View {
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var photoDataList: [Data] = []
     @State private var existingPhotos: [Photo] = []
+    /// Laufende Picker-Transfers; > 0 heisst: es sind Fotos unterwegs.
+    @State private var photoLoadsInFlight = 0
     
     // AI Import
     @State private var showingAISheet = false
@@ -433,7 +435,7 @@ struct CruiseFormView: View {
                     Button("Speichern") {
                         saveCruise()
                     }
-                    .disabled(title.isEmpty || ship.isEmpty || isSaving)
+                    .disabled(!canSave)
                 }
             }
             .onAppear {
@@ -543,7 +545,19 @@ struct CruiseFormView: View {
         }
     }
     
+    /// Save-Gate des Formulars (Logik in `CruiseFormSaveGate.canSave`).
+    private var canSave: Bool {
+        CruiseFormSaveGate.canSave(
+            hasTitle: !title.isEmpty,
+            hasShip: !ship.isEmpty,
+            isSaving: isSaving,
+            photoLoadsInFlight: photoLoadsInFlight
+        )
+    }
+
     private func loadPhotos(from items: [PhotosPickerItem]) {
+        guard !items.isEmpty else { return }
+        photoLoadsInFlight += 1
         Task {
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self) {
@@ -554,6 +568,7 @@ struct CruiseFormView: View {
             }
             await MainActor.run {
                 selectedPhotos = []
+                photoLoadsInFlight -= 1
             }
         }
     }
