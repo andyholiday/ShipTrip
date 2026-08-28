@@ -973,6 +973,17 @@
       }
     },
 
+    "Fotos werden geladen …" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading photos …"
+          }
+        }
+      }
+    },
+
     "Füge eine Buchungsbestätigung ein und lasse die Daten automatisch extrahieren." : {
       "localizations" : {
         "en" : {
@@ -1691,6 +1702,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "My Cruises"
+          }
+        }
+      }
+    },
+
+    "Mindestens ein Foto konnte nicht geladen werden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one photo could not be loaded."
           }
         }
       }

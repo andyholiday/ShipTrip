@@ -94,6 +94,10 @@ enum JournalEditorDefaults {
     /// Pflichtregel J2 Schritt 1 als reine Logik: speicherbar, sobald Text da ist
     /// **oder** mindestens ein Foto am Eintrag haengt.
     ///
+    /// Solange noch ein Picker-Transfer laeuft, bleibt Speichern gesperrt: der
+    /// Save-Pfad wartet nicht auf den Transfer, ein Speichern waehrenddessen
+    /// verwuerfe die gerade geladenen Fotos still mit dem View-State.
+    ///
     /// - Parameter photoLoadsInFlight: Anzahl der noch laufenden Foto-Transfers
     ///   des Pickers.
     static func canSave(
@@ -102,10 +106,8 @@ enum JournalEditorDefaults {
         attachedPhotoCount: Int,
         photoLoadsInFlight: Int
     ) -> Bool {
-        // Commit 1 von 2 (Rot-Beweis): extrahiertes Bestands-Verhalten —
-        // `photoLoadsInFlight` geht hier bewusst noch **nicht** ein, genau daran
-        // haengt der rote Repro-Test der Foto-Verlust-Race.
-        hasText || pendingPhotoCount > 0 || attachedPhotoCount > 0
+        guard photoLoadsInFlight == 0 else { return false }
+        return hasText || pendingPhotoCount > 0 || attachedPhotoCount > 0
     }
 
     // MARK: - Hafen

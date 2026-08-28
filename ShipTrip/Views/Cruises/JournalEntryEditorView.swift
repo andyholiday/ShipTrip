@@ -41,6 +41,8 @@ struct JournalEntryEditorView: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     /// Laufende Picker-Transfers; > 0 heisst: es sind Fotos unterwegs.
     @State private var photoLoadsInFlight = 0
+    /// Mindestens ein Transfer der letzten Auswahl ist fehlgeschlagen.
+    @State private var photoLoadFailed = false
 
     // Schritt 2 „Eckdaten"
     @State private var localDay: Date
@@ -148,7 +150,11 @@ struct JournalEntryEditorView: View {
         } header: {
             Text(String(localized: "Erinnerung"))
         } footer: {
-            if !canSave {
+            if photoLoadsInFlight > 0 {
+                Text(String(localized: "Fotos werden geladen …"))
+            } else if photoLoadFailed {
+                Text(String(localized: "Mindestens ein Foto konnte nicht geladen werden."))
+            } else if !canSave {
                 Text(String(localized: "Schreib etwas oder wähl mindestens ein Foto."))
             }
         }
@@ -298,14 +304,21 @@ struct JournalEntryEditorView: View {
     private func loadPickedPhotos(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         photoLoadsInFlight += 1
+        photoLoadFailed = false
         Task {
             var loaded: [PendingPhoto] = []
+            var failed = false
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self) {
                     loaded.append(PendingPhoto(data: data))
+                } else {
+                    // Kein Fehler-Framework, aber auch kein stilles Schlucken:
+                    // der Hinweis im Section-Footer macht den Ausfall sichtbar.
+                    failed = true
                 }
             }
             pendingPhotos.append(contentsOf: loaded)
+            photoLoadFailed = photoLoadFailed || failed
             pickerItems = []
             photoLoadsInFlight -= 1
         }
