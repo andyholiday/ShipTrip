@@ -17,6 +17,12 @@ Journal-Einträge werden in den bestehenden Route-Abschnitt der
 `CruiseDetailView` integriert, inkl. Klapp-Zustandsmaschine für aktive
 Reisen. J1/J2/J2a/J4/J5 unverändert. Siehe Nachtrag in ADR-003.
 
+Rev. 2026-08-28/4 (über Winston, nach Codex-Gate #3): J2 Schritt 1 um die
+transiente Ladesperre während laufender Foto-Transfers ergänzt; in J3neu (b)
+die Sichtbarkeit des Sammelblocks an (a) Regel 4 angeglichen (die Formulierung
+„immer sichtbar" widersprach dem Contract und dem Code). Keine Modell- oder
+Persistenz-Änderung.
+
 ---
 
 ## J1 — Datenmodell-Naht (verbindliche Namen, Typen, Defaults)
@@ -74,6 +80,14 @@ zuerst, Eckdaten nachgelagert" ist verbindlich.
 | Text | mehrzeiliger Texteditor | Pflichtregel: Weiter/Speichern erst, wenn Text nicht leer **oder** ≥ 1 Foto gewählt |
 | Fotos | Foto-Picker, 0–n | Neue Fotos werden beim Save als `Photo` mit `cruise` = Reise **und** `journalEntry` = Eintrag angelegt; `sortOrder` ans Ende der bestehenden Galerie |
 | Caption je Foto | einzeilig, optional | Default `""`; Eingabe direkt am Foto-Thumbnail |
+
+**Transiente Ladesperre:** Solange ein Picker-Transfer läuft
+(`photoLoadsInFlight > 0`), ist Speichern zusätzlich gesperrt — der Save-Pfad
+wartet nicht auf den Transfer, ein Speichern währenddessen verwürfe die gerade
+geladenen Fotos still mit dem View-State. Die Sperre ist rein transient
+(kein Modell-, kein Persistenz-Effekt); der Editor zeigt sie als Fußnote
+(„Fotos werden geladen …"), ein fehlgeschlagener Transfer erscheint als
+eigener Hinweis. Logik als reine Funktion in `JournalEditorDefaults.canSave`.
 
 **Schritt 2 „Eckdaten"** (alles vorbelegt, User kann durchwinken):
 
@@ -172,7 +186,9 @@ Fallback in Phase „Aktiv": Hat der aktuelle Tag **keinen** Route-Stopp
 (Lücke in der Route), bleiben alle Stopps zugeklappt — es wird kein
 fremder Tag ersatzweise geöffnet; der Sammelblock (s. u.) bleibt sichtbar.
 Der **Sammelblock „Weitere Einträge"** ist von der Klapp-Maschine
-ausgenommen: er ist immer sichtbar und offen, hat keinen Klapp-Kopf.
+ausgenommen: er hat keinen Klapp-Kopf und ist stets offen. Sichtbar wird er
+aber nur, wenn er Einträge enthält — es gilt (a) Regel 4, nicht die
+Klapp-Phase.
 
 **Ereignisse:**
 

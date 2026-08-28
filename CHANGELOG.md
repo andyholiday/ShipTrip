@@ -192,6 +192,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Journal-Editor verlor frisch gewählte Fotos**: Wer direkt nach dem Auswählen
+  auf „Speichern" tippte, sicherte den Eintrag ohne die noch übertragenen Bilder
+  — sie verschwanden still mit dem geschlossenen Blatt. „Speichern" bleibt jetzt
+  gesperrt, solange Fotos übertragen werden (Hinweis „Fotos werden geladen …"),
+  und ein fehlgeschlagener Transfer wird gemeldet statt kommentarlos zu fehlen.
+  ([Feature-Doku](docs/features/journal.md))
 - **Erinnerungen nach dem Soft-Ask erst beim nächsten Start**: „Erinnerungen
   aktivieren" im Erststart fragte nur die Berechtigung ab und plante nichts;
   bereits vorhandene Reisen bekamen ihre Erinnerungen deshalb verspätet. Nach

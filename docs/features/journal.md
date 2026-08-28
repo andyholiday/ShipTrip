@@ -60,9 +60,11 @@ der separate Strang verworfen und durch die Route-Verankerung ersetzt.
 | 4 | Tests für Migration, Entry-CRUD, unveränderte Aggregate | Erfüllt |
 | 5 | Journal in ZIP-Export und `.shiptrip`-Teilen-Datei | Erfüllt (T7b) |
 
-Die T8-Wellen sind einzeln grün (549 Unit- und 4 UI-Tests). Offen bleiben die
-abschließende Integrations-Wave über den vollen Build samt Regression auf
-Statistiken, Export und Teilen sowie der Gerätetest 1.8.0 → 1.8.5.
+Die Integration in den vollen Build ist mit T8d-1 (6e891c8) erfolgt; die
+Vollsuite läuft auf dem aktuellen Stand grün (553 Unit-Tests, 4 UI-Tests),
+Statistiken, Export und Teilen sind regressionsfrei. Offen bleiben nur der
+Gerätetest 1.8.0 → 1.8.5 auf echter Hardware und die CloudKit-Schema-Promotion
+(siehe „Known Limitations").
 
 - **1:** `JournalEntry` trägt `id`, `text`, `entryDate`, `moodRaw`, `createdAt`,
   `updatedAt` — alle nicht-optionalen Attribute mit Default, alle Beziehungen
