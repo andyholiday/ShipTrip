@@ -7,6 +7,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Reise-Formular verlor frisch gewählte Fotos**: Wer im Formular „Neue
+  Kreuzfahrt" bzw. „Bearbeiten" direkt nach dem Auswählen auf „Speichern"
+  tippte, sicherte die Reise ohne die noch übertragenen Bilder — sie
+  verschwanden still mit dem geschlossenen Formular. „Speichern" bleibt jetzt
+  gesperrt, solange Fotos übertragen werden (Hinweis „Fotos werden geladen …"),
+  und ein fehlgeschlagener Transfer wird gemeldet statt kommentarlos zu fehlen.
+  Dasselbe Verhalten hatte der Journal-Editor in 1.8.5 bekommen.
+
 ### Geplant
 
 - ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung

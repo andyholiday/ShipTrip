@@ -12,6 +12,10 @@ enum CruiseFormSaveGate {
     /// Pflichtregel des Reise-Formulars: speicherbar, sobald Titel **und**
     /// Schiff gefüllt sind und kein Save laeuft.
     ///
+    /// Solange noch ein Picker-Transfer laeuft, bleibt Speichern gesperrt: der
+    /// Save-Pfad wartet nicht auf den Transfer, ein Speichern waehrenddessen
+    /// verwuerfe die gerade geladenen Fotos still mit dem View-State.
+    ///
     /// - Parameter photoLoadsInFlight: Anzahl der noch laufenden Foto-Transfers
     ///   des Pickers.
     static func canSave(
@@ -20,9 +24,7 @@ enum CruiseFormSaveGate {
         isSaving: Bool,
         photoLoadsInFlight: Int
     ) -> Bool {
-        // Commit 1 von 2 (Rot-Beweis): extrahiertes Bestands-Verhalten —
-        // `photoLoadsInFlight` geht hier bewusst noch **nicht** ein, genau daran
-        // haengt der rote Repro-Test der Foto-Verlust-Race.
-        hasTitle && hasShip && !isSaving
+        guard photoLoadsInFlight == 0 else { return false }
+        return hasTitle && hasShip && !isSaving
     }
 }

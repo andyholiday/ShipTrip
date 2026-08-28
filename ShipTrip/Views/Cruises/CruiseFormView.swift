@@ -171,6 +171,8 @@ struct CruiseFormView: View {
     @State private var existingPhotos: [Photo] = []
     /// Laufende Picker-Transfers; > 0 heisst: es sind Fotos unterwegs.
     @State private var photoLoadsInFlight = 0
+    /// Mindestens ein Transfer der letzten Auswahl ist fehlgeschlagen.
+    @State private var photoLoadFailed = false
     
     // AI Import
     @State private var showingAISheet = false
@@ -385,7 +387,7 @@ struct CruiseFormView: View {
                 }
                 
                 // Fotos
-                Section("Fotos") {
+                Section {
                     PhotosPicker(selection: $selectedPhotos, maxSelectionCount: 10, matching: .images) {
                         Label("Fotos auswählen", systemImage: "photo.on.rectangle.angled")
                     }
@@ -413,8 +415,16 @@ struct CruiseFormView: View {
                             .padding(.vertical, 4)
                         }
                     }
+                } header: {
+                    Text("Fotos")
+                } footer: {
+                    if photoLoadsInFlight > 0 {
+                        Text(String(localized: "Fotos werden geladen …"))
+                    } else if photoLoadFailed {
+                        Text(String(localized: "Mindestens ein Foto konnte nicht geladen werden."))
+                    }
                 }
-                
+
                 // Notizen
                 Section("Notizen") {
                     TextEditor(text: $notes)
@@ -558,15 +568,22 @@ struct CruiseFormView: View {
     private func loadPhotos(from items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
         photoLoadsInFlight += 1
+        photoLoadFailed = false
         Task {
+            var failed = false
             for item in items {
                 if let data = try? await item.loadTransferable(type: Data.self) {
                     await MainActor.run {
                         photoDataList.append(data)
                     }
+                } else {
+                    // Kein Fehler-Framework, aber auch kein stilles Schlucken:
+                    // der Hinweis im Section-Footer macht den Ausfall sichtbar.
+                    failed = true
                 }
             }
             await MainActor.run {
+                photoLoadFailed = photoLoadFailed || failed
                 selectedPhotos = []
                 photoLoadsInFlight -= 1
             }
