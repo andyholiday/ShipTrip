@@ -7,6 +7,17 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geplant
+
+- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
+  festlegen; Build 19 enthält noch das alte Relationship-Schema.
+- Wetter-API Integration
+- Hafen-Bilder mit KI-Generierung
+
+---
+
+## [1.8.6] - 2026-08-29
+
 ### Behoben
 
 - **Reise-Formular verlor frisch gewählte Fotos**: Wer im Formular „Neue
@@ -16,13 +27,6 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   gesperrt, solange Fotos übertragen werden (Hinweis „Fotos werden geladen …"),
   und ein fehlgeschlagener Transfer wird gemeldet statt kommentarlos zu fehlen.
   Dasselbe Verhalten hatte der Journal-Editor in 1.8.5 bekommen.
-
-### Geplant
-
-- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
-  festlegen; Build 19 enthält noch das alte Relationship-Schema.
-- Wetter-API Integration
-- Hafen-Bilder mit KI-Generierung
 
 ---
 
@@ -1051,7 +1055,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.8.5...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.8.6...HEAD
+[1.8.6]: https://github.com/andyholiday/ShipTrip/compare/v1.8.5...v1.8.6
 [1.8.5]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...v1.8.5
 [1.7.1]: https://github.com/andyholiday/ShipTrip/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...v1.7.0
