@@ -12,7 +12,10 @@ struct CalendarSyncObserver: View {
     @Query(sort: \Cruise.startDate) private var cruises: [Cruise]
     @AppStorage(CalendarSyncPreferences.enabledKey) private var isEnabled = false
     @AppStorage(CalendarSyncPreferences.calendarIdentifierKey) private var calendarIdentifier = ""
-    @AppStorage(CalendarSyncPreferences.modeKey) private var modeRawValue = CalendarSyncMode.tripOnly.rawValue
+    /// Nur Auslöser für den Neulauf, kein Leseort des Umfangs: Der Default
+    /// steht ausschließlich in `CalendarSyncPreferences.mode(in:)`, hier
+    /// bedeutet der leere Wert schlicht „noch nichts gespeichert".
+    @AppStorage(CalendarSyncPreferences.modeKey) private var modeRawValue = ""
     @Environment(\.scenePhase) private var scenePhase
 
     private var syncToken: String {

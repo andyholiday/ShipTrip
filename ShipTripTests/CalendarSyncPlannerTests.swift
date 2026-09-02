@@ -103,6 +103,100 @@ struct CalendarSyncPlannerTests {
         #expect(portEvent.startDate == date(2026, 9, 1, 8))
         #expect(portEvent.endDate == date(2026, 9, 1, 18))
     }
+
+    // MARK: - Umfang (1.8.7)
+
+    @Test("Nur-Stopps-Modus lässt den Ganzreise-Termin weg")
+    func itineraryOnlyOmitsTripDraft() {
+        let cruise = sampleCruise()
+
+        let drafts = CalendarEventPlanner.makeDrafts(
+            for: cruise,
+            mode: .itineraryOnly,
+            calendar: utcCalendar
+        )
+
+        #expect(drafts.count == cruise.route.count)
+        #expect(!drafts.contains { $0.stableKey.hasSuffix("/trip") })
+    }
+
+    @Test("Ohne beide Schalter entsteht kein einziger Termin")
+    func noneCreatesNoDrafts() {
+        let drafts = CalendarEventPlanner.makeDrafts(
+            for: sampleCruise(),
+            mode: .none,
+            calendar: utcCalendar
+        )
+
+        #expect(drafts.isEmpty)
+    }
+
+    // MARK: - Anklickbarer Ort (1.8.7)
+
+    @Test("Nur Häfen mit gepflegten Koordinaten tragen eine Koordinate")
+    func coordinateIsSetOnlyForPortsWithCoordinates() throws {
+        let cruise = sampleCruise()
+        let route = cruise.route.sorted { $0.sortOrder < $1.sortOrder }
+
+        let drafts = CalendarEventPlanner.makeDrafts(
+            for: cruise,
+            mode: .tripAndItinerary,
+            calendar: utcCalendar
+        )
+
+        let portDraft = try #require(draft(drafts, for: route[0]))
+        let coordinate = try #require(portDraft.coordinate)
+        #expect(coordinate.latitude == 38.7)
+        #expect(coordinate.longitude == -9.1)
+
+        let seaDayDraft = try #require(draft(drafts, for: route[1]))
+        #expect(seaDayDraft.coordinate == nil)
+
+        // Null-Insel: Hafen ohne gepflegte Koordinaten fällt auf den Text zurück.
+        let nullIslandDraft = try #require(draft(drafts, for: route[2]))
+        #expect(nullIslandDraft.coordinate == nil)
+        #expect(nullIslandDraft.location == "Privathafen, Bahamas")
+
+        let tripDraft = try #require(drafts.first { $0.stableKey.hasSuffix("/trip") })
+        #expect(tripDraft.coordinate == nil)
+    }
+
+    // MARK: - Hilfen
+
+    /// Reise mit einem Hafen mit Koordinaten, einem Seetag und einem Hafen
+    /// ohne gepflegte Koordinaten.
+    private func sampleCruise() -> Cruise {
+        let cruise = Cruise(
+            title: "Atlantik",
+            startDate: date(2026, 10, 1),
+            endDate: date(2026, 10, 3),
+            shippingLine: "TUI Cruises",
+            ship: "Mein Schiff 7"
+        )
+
+        let lisbon = Port(name: "Lissabon", country: "Portugal", latitude: 38.7, longitude: -9.1)
+        lisbon.arrival = date(2026, 10, 1, 8)
+        lisbon.departure = date(2026, 10, 1, 18)
+        lisbon.sortOrder = 0
+
+        let seaDay = Port(name: "Seetag", country: "", latitude: 0, longitude: 0)
+        seaDay.arrival = date(2026, 10, 2)
+        seaDay.departure = date(2026, 10, 2)
+        seaDay.sortOrder = 1
+        seaDay.isSeaDay = true
+
+        let unknown = Port(name: "Privathafen", country: "Bahamas", latitude: 0, longitude: 0)
+        unknown.arrival = date(2026, 10, 3, 9)
+        unknown.departure = date(2026, 10, 3, 17)
+        unknown.sortOrder = 2
+
+        cruise.route = [lisbon, seaDay, unknown]
+        return cruise
+    }
+
+    private func draft(_ drafts: [CalendarEventDraft], for port: Port) -> CalendarEventDraft? {
+        drafts.first { $0.stableKey.hasSuffix("/route/\(port.id.uuidString)") }
+    }
 }
 
 private extension Array {

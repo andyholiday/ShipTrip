@@ -3,33 +3,10 @@
 //  ShipTrip
 //
 
+import CoreLocation
 import EventKit
 import Foundation
 import OSLog
-
-enum CalendarSyncPreferences {
-    static let enabledKey = "calendarSyncEnabled"
-    static let calendarIdentifierKey = "calendarSyncCalendarIdentifier"
-    static let modeKey = "calendarSyncMode"
-
-    static func isEnabled(in defaults: UserDefaults) -> Bool {
-        defaults.bool(forKey: enabledKey)
-    }
-
-    static func calendarIdentifier(in defaults: UserDefaults) -> String {
-        defaults.string(forKey: calendarIdentifierKey) ?? ""
-    }
-
-    static func mode(in defaults: UserDefaults) -> CalendarSyncMode {
-        CalendarSyncMode(rawValue: defaults.string(forKey: modeKey) ?? "") ?? .tripOnly
-    }
-
-    static var isEnabled: Bool { isEnabled(in: .standard) }
-
-    static var calendarIdentifier: String { calendarIdentifier(in: .standard) }
-
-    static var mode: CalendarSyncMode { mode(in: .standard) }
-}
 
 struct WritableCalendar: Identifiable, Hashable {
     let id: String
@@ -84,7 +61,10 @@ final class CalendarSyncService {
     /// bewusst nicht: Sonst erschiene beim Kalenderwechsel ein Umzugsdialog,
     /// obwohl es nichts zu übertragen gibt.
     var hasManagedEvents: Bool {
-        managedEventIdentifiers.values.contains { eventStore.event(withIdentifier: $0) != nil }
+        migrateSyncModeIfNeeded()
+        return managedEventIdentifiers.values.contains {
+            eventStore.event(withIdentifier: $0) != nil
+        }
     }
 
     func requestAccess() async -> Bool {
@@ -147,6 +127,7 @@ final class CalendarSyncService {
     ///   Wahrheit, und ein früher genutzter Kalender darf nicht wieder als
     ///   Fundgrube dienen.
     private func synchronize(cruises: [Cruise], allowMarkerSearch: Bool) throws -> Int {
+        migrateSyncModeIfNeeded()
         guard CalendarSyncPreferences.isEnabled(in: defaults) else { return 0 }
         guard authorizationStatus == .fullAccess else { throw CalendarSyncError.accessDenied }
         guard let targetCalendar = calendar(withIdentifier: targetCalendarIdentifier) else {
@@ -243,9 +224,55 @@ final class CalendarSyncService {
         event.startDate = draft.startDate
         event.endDate = draft.endDate
         event.isAllDay = draft.isAllDay
-        event.location = draft.location
+        applyLocation(draft, to: event)
         event.notes = draft.notes
         event.url = draft.markerURL
+    }
+
+    /// Setzt den Ort. Mit Koordinate wird er strukturiert hinterlegt, damit
+    /// der Kalender ihn anklickbar macht und Karte bzw. Navigation öffnet;
+    /// ohne Koordinate bleibt es beim reinen Text.
+    ///
+    /// Der Weg über `structuredLocation` ist auch der Aufräumpfad: Verliert
+    /// ein Hafen seine Koordinate, überschreibt `event.location` den alten
+    /// strukturierten Ort mitsamt Geo-Position.
+    private func applyLocation(_ draft: CalendarEventDraft, to event: EKEvent) {
+        guard let title = draft.location else {
+            event.structuredLocation = nil
+            return
+        }
+        guard let coordinate = draft.coordinate else {
+            event.location = title
+            return
+        }
+        let structured = EKStructuredLocation(title: title)
+        structured.geoLocation = CLLocation(
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude
+        )
+        event.structuredLocation = structured
+    }
+
+    /// Schreibt den Bestand einmalig auf einen ausdrücklichen Umfang fest,
+    /// bevor irgendetwas synchronisiert wird (siehe `CalendarSyncModeMigration`).
+    ///
+    /// Die Vorabfrage spart den Bestands-Scan: Nach der einmaligen
+    /// Entscheidung kostet der Aufruf nur noch eine Defaults-Lesung.
+    private func migrateSyncModeIfNeeded() {
+        guard !CalendarSyncModeMigration.isSettled(in: defaults) else { return }
+        CalendarSyncModeMigration.run(
+            in: defaults,
+            hasCalendarAccess: authorizationStatus == .fullAccess,
+            hasLiveTripEvent: hasLiveTripEvent
+        )
+    }
+
+    /// Ob zu einem Mapping-Schlüssel mit Suffix `/trip` noch ein Termin im
+    /// Kalender steht — der Bestandsnachweis der Modus-Migration.
+    private var hasLiveTripEvent: Bool {
+        managedEventIdentifiers.contains { stableKey, identifier in
+            stableKey.hasSuffix("/trip") && eventStore.event(withIdentifier: identifier) != nil
+        }
     }
 
     /// Arbeitet das Lösch-Journal ab: Termine, die bereits durch neue ersetzt
