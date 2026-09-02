@@ -16,6 +16,19 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geändert
 
+- **Standardmäßig landen nur noch die Stopps im Kalender**: Neu ist der Umfang
+  auf die einzelnen Hafen- und Seetage eingestellt; der ganztägige Eintrag über
+  die komplette Reise ist ein Opt-in („Gesamte Reise als Eintrag"). Wer beim
+  Update bereits einen solchen Ganzreise-Termin im Kalender hat, behält ihn —
+  das Opt-in wird dann automatisch aktiviert, nichts verschwindet ungefragt.
+  Beide Schalter liegen unter Einstellungen → *Kalender* → *Umfang* und lassen
+  sich auch bei ausgeschaltetem Sync vorab setzen.
+- **Stopp-Termine tragen einen anklickbaren Ort**: Hafeneinträge bekommen die
+  Koordinate des Hafens mit, sodass die Kalender-App Karte und Navigation
+  öffnet. Häfen ohne gepflegte Koordinate behalten den bisherigen Text-Ort.
+- **Erinnerungs-Einstellungen wirken sofort**: Ein geänderter Schalter oder
+  Vorlauf plant die Benachrichtigungen unmittelbar neu, statt erst beim
+  nächsten App-Start.
 - **Kalenderwechsel legt erst neu an, dann löscht er**: Wer den Zielkalender
   wechselt, bekommt die Termine zuerst im neuen Kalender und verliert die alten
   erst danach. Scheitert das Anlegen, bleibt der bisherige Bestand
@@ -36,6 +49,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **Abgebrochener Sync hinterlässt keine Karteileichen mehr**: Bricht der
   Vorgang zwischen Anlegen und Aufräumen ab, holt der nächste App-Start das
   Löschen der ersetzten Termine nach.
+- **Gescheiterte Wiederherstellung beim Kalenderwechsel wird gemeldet**:
+  Schlägt der Umzug in einen anderen Kalender fehl *und* lässt sich der
+  bisherige Stand nicht zurückholen, erscheint jetzt ein Hinweis mit der Bitte,
+  den Kalender zu prüfen — vorher blieb genau dieser Fall stumm.
 
 ### Technisch
 
