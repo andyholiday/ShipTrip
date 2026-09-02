@@ -1,7 +1,7 @@
 # Kalender-Sync
 
 Stand: 1.8.7, Wellen 0-2 gemergt (Modus-Umkehr, anklickbarer Ort,
-Rollback-Meldung, Erinnerungs-Reconcile). Release-Schnitt steht aus.
+Rollback-Meldung, Erinnerungs-Reconcile). Release-Schnitt 1.8.7 erfolgt.
 
 ShipTrip trägt Reisen in einen vom Nutzer gewählten Gerätekalender ein, damit
 Reisezeitraum und Route dort sichtbar sind, wo ohnehin geplant wird. Der Sync
@@ -107,7 +107,7 @@ Kriterien nach `.planning/ZIEL.md` (Kalender-Paket 1.8.7).
 | 3c — Rollback getestet, Scheitern sichtbar | erledigt | `CalendarMigrationCoordinatorTests` |
 | 3d — Erinnerungs-Änderung löst sofort Reconcile aus | erledigt, Testtiefe offen | `NotificationSettingsReconcileTests` (nur Weiterleiter) |
 | 4 — Tests je Verhaltensänderung, Bestand grün | erledigt mit Lücken | Q1a F06/F07, siehe Known Limitations |
-| 5 — Release-Reife 1.8.7 | offen | Release-Schnitt und Versionsanhebung nur auf Zuruf |
+| 5 — Release-Reife 1.8.7 | erledigt (Release-Schnitt 1.8.7) | Marketing-Version 1.8.7, Build 28, Changelog-Block `## [1.8.7]` |
 
 ## Known Limitations
 

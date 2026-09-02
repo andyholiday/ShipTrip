@@ -14,6 +14,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.8.7] - 2026-09-02
+
 ### Geändert
 
 - **Standardmäßig landen nur noch die Stopps im Kalender**: Neu ist der Umfang
@@ -1104,7 +1108,8 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.8.6...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.8.7...HEAD
+[1.8.7]: https://github.com/andyholiday/ShipTrip/compare/v1.8.6...v1.8.7
 [1.8.6]: https://github.com/andyholiday/ShipTrip/compare/v1.8.5...v1.8.6
 [1.8.5]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...v1.8.5
 [1.7.1]: https://github.com/andyholiday/ShipTrip/compare/v1.7.0...v1.7.1
