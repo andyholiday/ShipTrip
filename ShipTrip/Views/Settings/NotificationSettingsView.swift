@@ -33,14 +33,13 @@ struct NotificationSettingsView: View {
     }
 
     /// Wird nach jeder Änderung einer der drei Erinnerungs-Einstellungen
-    /// gerufen.
+    /// gerufen und gleicht die geplanten Erinnerungen sofort ab — sonst wirkte
+    /// die Änderung erst beim nächsten App-Start.
     ///
     /// Eigene Methode statt Inline-`onChange`, damit der Ablauf ohne
     /// SwiftUI-Laufzeit testbar ist.
     func settingsChanged(context: ModelContext) async {
-        // Rot-Beweis (F: „Erinnerungs-Toggle/Offset-Änderung löst keinen
-        // Reconcile aus"): der Stand vor dem Fix tut hier nichts — die
-        // Änderung wirkt erst beim nächsten App-Start.
+        await reconcile(context)
     }
 
     var body: some View {
@@ -89,6 +88,13 @@ struct NotificationSettingsView: View {
         .onAppear {
             checkAuthorization()
         }
+        .onChange(of: notifyBeforeCruise) { reconcileAfterChange() }
+        .onChange(of: reminderDaysBefore) { reconcileAfterChange() }
+        .onChange(of: notifyOnCruiseDay) { reconcileAfterChange() }
+    }
+
+    private func reconcileAfterChange() {
+        Task { await settingsChanged(context: modelContext) }
     }
     
     private func checkAuthorization() {
