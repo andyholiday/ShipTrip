@@ -372,6 +372,12 @@ struct CalendarSyncSettingsView: View {
         calendarIdentifier = selectedIdentifier
         isEnabled = true
         performSynchronization()
+        // Der Zugriff kann erst hier erteilt worden sein — `.task` laeuft nur
+        // einmal beim Erscheinen. Der Sync hat die Bestands-Migration
+        // mitgenommen, also beide Sperr-Gruende neu einlesen; sonst blieben
+        // die Umfangs-Schalter fuer den Rest der Sitzung grau.
+        hasCalendarAccess = CalendarSyncService.shared.authorizationStatus == .fullAccess
+        isScopeMigrationSettled = CalendarSyncModeMigration.isSettled(in: .standard)
     }
 
     private func synchronizeIfEnabled() {
