@@ -2082,6 +2082,28 @@
       }
     },
 
+    "Termine nicht wiederhergestellt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events Not Restored"
+          }
+        }
+      }
+    },
+
+    "Der Umzug ist fehlgeschlagen und die Termine im bisherigen Kalender ließen sich nicht wiederherstellen. Prüfe deinen Kalender und synchronisiere danach erneut." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The move failed and the events in the previous calendar could not be restored. Check your calendar, then sync again."
+          }
+        }
+      }
+    },
+
     "Tippe auf + um deine erste Kreuzfahrt hinzuzufügen" : {
       "localizations" : {
         "en" : {
