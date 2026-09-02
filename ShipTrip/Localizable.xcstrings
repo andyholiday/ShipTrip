@@ -2093,6 +2093,9 @@
       }
     },
 
+    "Der Umfang lässt sich ändern, sobald der Kalenderzugriff erteilt ist." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "You can change the scope once calendar access is granted." } } }
+    },
     "Der Umzug ist fehlgeschlagen und die Termine im bisherigen Kalender ließen sich nicht wiederherstellen. Prüfe deinen Kalender und synchronisiere danach erneut." : {
       "localizations" : {
         "en" : {

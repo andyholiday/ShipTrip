@@ -51,7 +51,17 @@ struct CalendarScopeAvailability: Equatable {
     var isWorking: Bool
 
     var isEditable: Bool {
-        !isWorking
+        isMigrationSettled && !isWorking
+    }
+
+    /// Warum gesperrt wird, solange die Migration offen ist: Ohne
+    /// Kalenderzugriff bleibt der Bestand ungeprüft, und der Umfang darf
+    /// nicht blind festgeschrieben werden.
+    var lockedHint: String? {
+        guard !isMigrationSettled, !hasCalendarAccess else { return nil }
+        return String(
+            localized: "Der Umfang lässt sich ändern, sobald der Kalenderzugriff erteilt ist."
+        )
     }
 }
 
@@ -198,7 +208,11 @@ struct CalendarSyncSettingsView: View {
             } header: {
                 Text("Umfang")
             } footer: {
-                Text("Standardmäßig werden nur die einzelnen Stopps eingetragen. Die gesamte Reise als ganztägiger Eintrag ist optional.")
+                if let hint = scopeAvailability.lockedHint {
+                    Text(hint)
+                } else {
+                    Text("Standardmäßig werden nur die einzelnen Stopps eingetragen. Die gesamte Reise als ganztägiger Eintrag ist optional.")
+                }
             }
 
             if isEnabled {
@@ -299,9 +313,11 @@ struct CalendarSyncSettingsView: View {
             calendars = []
             return
         }
-        // Die Bestands-Migration muss entschieden haben, bevor die Schalter
-        // einen Umfang zeigen. `hasManagedEvents` ist der vorhandene Auslöser;
-        // die Vorabfrage spart den Termin-Scan, sobald sie gefallen ist.
+        // Bis die Bestands-Migration entschieden hat, sperrt
+        // `scopeAvailability` die Umfangs-Schalter — sonst schriebe ein Tipp
+        // den Mode-Key, den die Migration danach als bewusste Wahl liest.
+        // `hasManagedEvents` ist der vorhandene Auslöser; die Vorabfrage
+        // spart den Termin-Scan, sobald die Entscheidung gefallen ist.
         if !isScopeMigrationSettled {
             _ = CalendarSyncService.shared.hasManagedEvents
             isScopeMigrationSettled = CalendarSyncModeMigration.isSettled(in: .standard)

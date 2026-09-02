@@ -58,6 +58,23 @@ struct CalendarScopeAvailabilityTests {
         #expect(availability.isEditable)
     }
 
+    @Test("Solange gesperrt wird, nennt die Fußnote den fehlenden Kalenderzugriff")
+    func lockedHintNamesMissingCalendarAccess() {
+        let locked = CalendarScopeAvailability(
+            isMigrationSettled: false,
+            hasCalendarAccess: false,
+            isWorking: false
+        )
+        let settled = CalendarScopeAvailability(
+            isMigrationSettled: true,
+            hasCalendarAccess: true,
+            isWorking: false
+        )
+
+        #expect(locked.lockedHint != nil)
+        #expect(settled.lockedHint == nil)
+    }
+
     @Test("Ein laufender Sync sperrt die Schalter weiterhin")
     func runningSyncKeepsScopeLocked() {
         let availability = CalendarScopeAvailability(

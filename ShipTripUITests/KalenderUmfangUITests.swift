@@ -37,6 +37,10 @@ final class KalenderUmfangUITests: XCTestCase {
             "Der Schalter „Stopps eintragen“ fehlt im Umfangs-Bereich"
         )
         XCTAssertTrue(trip.exists, "Der Schalter „Gesamte Reise als Eintrag“ fehlt")
+        XCTAssertTrue(
+            waitUntilEnabled(trip),
+            "Die Umfangs-Schalter bleiben gesperrt — die Bestands-Migration hat nicht entschieden"
+        )
 
         // Ausgangslage: nur die Stopps, kein Ganzreise-Termin.
         XCTAssertEqual(itinerary.value as? String, "1", "Stopps sind nicht voreingestellt")
@@ -62,6 +66,10 @@ final class KalenderUmfangUITests: XCTestCase {
         XCTAssertTrue(
             scrollUntilHittable(tripAfterRestart, in: relaunched),
             "Der Umfangs-Bereich fehlt nach dem Neustart"
+        )
+        XCTAssertTrue(
+            waitUntilEnabled(tripAfterRestart),
+            "Die Umfangs-Schalter bleiben nach dem Neustart gesperrt"
         )
         XCTAssertEqual(
             tripAfterRestart.value as? String,
@@ -102,6 +110,17 @@ final class KalenderUmfangUITests: XCTestCase {
     /// Schalter am rechten Rand.
     private func flip(_ element: XCUIElement) {
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+    }
+
+    /// Die Umfangs-Schalter sind gesperrt, bis die Bestands-Migration
+    /// entschieden hat. Die laeuft beim Erscheinen der Einstellungen — also
+    /// auf `isEnabled` warten statt zu sleepen.
+    private func waitUntilEnabled(_ element: XCUIElement) -> Bool {
+        let enabled = expectation(
+            for: NSPredicate(format: "isEnabled == true"),
+            evaluatedWith: element
+        )
+        return XCTWaiter.wait(for: [enabled], timeout: 10) == .completed
     }
 
     /// Kein `sleep`: SwiftUI schreibt die Praeferenz und rendert den Schalter
