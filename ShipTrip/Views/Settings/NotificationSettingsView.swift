@@ -5,17 +5,44 @@
 //  Created by ShipTrip on 02.09.26.
 //
 
+import SwiftData
 import SwiftUI
 
 /// Notification-Einstellungen
 struct NotificationSettingsView: View {
+    @Environment(\.modelContext) private var modelContext
     @AppStorage("notifyBeforeCruise") private var notifyBeforeCruise = true
     @AppStorage("notifyOnCruiseDay") private var notifyOnCruiseDay = true
     @AppStorage("reminderDaysBefore") private var reminderDaysBefore = 7
     
     @State private var isAuthorized = false
     @State private var isCheckingAuth = true
-    
+
+    /// Gleicht die geplanten Erinnerungen gegen den Soll-Zustand ab. Als
+    /// Closure injizierbar, damit der Ablauf ohne Notification-Center testbar
+    /// bleibt; der Default ist derselbe Lauf wie beim App-Start
+    /// (`CruiseListView`), inklusive `isDemo`-Filter.
+    private let reconcile: @MainActor (ModelContext) async -> Void
+
+    init(
+        reconcile: @escaping @MainActor (ModelContext) async -> Void = {
+            await NotificationReconciler.run(context: $0)
+        }
+    ) {
+        self.reconcile = reconcile
+    }
+
+    /// Wird nach jeder Änderung einer der drei Erinnerungs-Einstellungen
+    /// gerufen.
+    ///
+    /// Eigene Methode statt Inline-`onChange`, damit der Ablauf ohne
+    /// SwiftUI-Laufzeit testbar ist.
+    func settingsChanged(context: ModelContext) async {
+        // Rot-Beweis (F: „Erinnerungs-Toggle/Offset-Änderung löst keinen
+        // Reconcile aus"): der Stand vor dem Fix tut hier nichts — die
+        // Änderung wirkt erst beim nächsten App-Start.
+    }
+
     var body: some View {
         Form {
             // Authorization Status
