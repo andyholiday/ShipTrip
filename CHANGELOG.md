@@ -22,7 +22,10 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Update bereits einen solchen Ganzreise-Termin im Kalender hat, behält ihn —
   das Opt-in wird dann automatisch aktiviert, nichts verschwindet ungefragt.
   Beide Schalter liegen unter Einstellungen → *Kalender* → *Umfang* und lassen
-  sich auch bei ausgeschaltetem Sync vorab setzen.
+  sich auch bei ausgeschaltetem Sync vorab setzen, sobald die App den Bestand
+  einmal geprüft hat. Ohne erteilten Kalenderzugriff bleiben sie gesperrt, damit
+  ein vorschneller Tipp den Bestand nicht überschreibt; die Ansicht nennt den
+  Grund unter den Schaltern.
 - **Stopp-Termine tragen einen anklickbaren Ort**: Hafeneinträge bekommen die
   Koordinate des Hafens mit, sodass die Kalender-App Karte und Navigation
   öffnet. Häfen ohne gepflegte Koordinate behalten den bisherigen Text-Ort.

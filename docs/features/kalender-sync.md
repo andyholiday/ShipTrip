@@ -24,8 +24,15 @@ unter `ShipTrip/Views/Settings/CalendarSyncSettingsView.swift` und
   Ganztages-Eintrag) und pro Seetag; *Gesamte Reise* ist der eine
   Ganztages-Eintrag über den Reisezeitraum. Sind beide Schalter aus, weist die
   Ansicht darauf hin, dass keine Einträge angelegt werden. Beide Schalter sind
-  auch bei ausgeschaltetem Sync bedienbar; jede Änderung löst bei
-  eingeschaltetem Sync sofort einen Abgleich aus.
+  auch bei ausgeschaltetem Sync bedienbar — aber erst, wenn die
+  Bestands-Migration entschieden hat (`CalendarScopeAvailability`). Grund: Ein
+  Tipp schreibt `calendarSyncMode`, und die Migration liest einen gesetzten
+  Schlüssel danach als bewusste Wahl; vor ihrer Entscheidung gäbe ein Tipp den
+  Ganzreise-Termin eines Bestandsnutzers still zur Löschung frei. Ohne vollen
+  Kalenderzugriff fällt keine Entscheidung, die Schalter bleiben gesperrt und
+  die Fußnote nennt den Grund („Der Umfang lässt sich ändern, sobald der
+  Kalenderzugriff erteilt ist."). Ein laufender Abgleich sperrt sie wie bisher.
+  Jede Änderung löst bei eingeschaltetem Sync sofort einen Abgleich aus.
 - **Default-Leseort:** `CalendarSyncPreferences.mode(in:)` ist die einzige
   Stelle, an der der Default `itineraryOnly` steht — Service, Observer und
   Einstellungen lesen darüber.
@@ -37,7 +44,8 @@ unter `ShipTrip/Views/Settings/CalendarSyncSettingsView.swift` und
   `tripOnly` festgeschrieben — der Ganzreise-Termin bleibt also, und es
   entstehen keine ungefragten Stopp-Einträge. Ohne solchen Termin gilt der neue
   Default. Ohne Kalenderzugriff fällt keine Entscheidung und der Merker bleibt
-  aus, damit der nächste Lauf es nachholt.
+  aus, damit der nächste Lauf es nachholt. Solange die Entscheidung offen ist,
+  bleiben die Umfangs-Schalter gesperrt.
 - **Ort:** Hafen-Einträge mit gepflegter Koordinate bekommen eine
   `EKStructuredLocation` mit `geoLocation`, damit der Kalender Karte und
   Navigation öffnet; Titel bleibt `"Name, Land"`. Ohne Koordinate fällt der
