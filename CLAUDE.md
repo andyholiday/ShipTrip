@@ -89,8 +89,9 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
   JournalEntry) +
   Referenzdaten (PortSuggestion ~1.800 Häfen, ShippingLine)
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
-  KeychainService, NotificationService, DemoDataService (Beispielreise, auch im
-  Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
+  KeychainService, NotificationService, CalendarSyncService (Kalender-Sync,
+  siehe `docs/features/kalender-sync.md`), DemoDataService (Beispielreise, auch
+  im Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
 - `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Onboarding, Share,
   Stats, Settings). Das Journal hat **keinen eigenen Strang**: Einträge hängen im
   Route-Abschnitt der Reise-Detailansicht, die Ansichten liegen deshalb unter
