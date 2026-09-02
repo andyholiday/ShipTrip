@@ -4223,20 +4223,20 @@
     "Erlaube ShipTrip den vollständigen Kalenderzugriff, damit du einen Zielkalender auswählen und bestehende ShipTrip-Termine aktualisieren kannst." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow ShipTrip full calendar access so you can select a calendar and update existing ShipTrip events." } } }
     },
+    "Es werden keine Einträge angelegt." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No entries will be created." } } }
+    },
+    "Gesamte Reise als Eintrag" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add entire trip as one entry" } } }
+    },
     "Hafen: %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Port: %@" } } }
-    },
-    "Im Detailmodus erhält jeder Hafen und Seetag einen eigenen Eintrag. Seetage nennen die Häfen davor und danach." : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "In detailed mode, each port and sea day gets its own entry. Sea days name the preceding and following ports." } } }
     },
     "Jetzt synchronisieren" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Now" } } }
     },
     "Kalender" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar" } } }
-    },
-    "Kalendereinträge" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar Entries" } } }
     },
     "Kalender wird aktualisiert …" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Updating calendar…" } } }
@@ -4256,17 +4256,11 @@
     "Kreuzfahrt: %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cruise: %@" } } }
     },
-    "Nur Reisen" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips Only" } } }
-    },
     "Reisedaten werden automatisch über deinen privaten iCloud-Account synchronisiert. Die Kalender-Synchronisation ist optional." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trip data syncs automatically through your private iCloud account. Calendar sync is optional." } } }
     },
     "Reisen mit Kalender synchronisieren" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Trips with Calendar" } } }
-    },
-    "Reisen, Häfen & Seetage" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips, Ports & Sea Days" } } }
     },
     "Seetag: %@ → %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sea Day: %@ → %@" } } }
@@ -4277,8 +4271,14 @@
     "ShipTrip-Termine wurden entfernt." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "ShipTrip events were removed." } } }
     },
+    "Standardmäßig werden nur die einzelnen Stopps eingetragen. Die gesamte Reise als ganztägiger Eintrag ist optional." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "By default only the individual stops are added. The whole trip as an all-day entry is optional." } } }
+    },
     "Status nicht verfügbar" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Status unavailable" } } }
+    },
+    "Stopps eintragen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add stops" } } }
     },
     "Umfang" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Scope" } } }

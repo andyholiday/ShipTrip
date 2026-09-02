@@ -34,19 +34,6 @@ enum CalendarSyncMode: String, CaseIterable, Identifiable {
         case .tripOnly, .none: false
         }
     }
-
-    var displayName: String {
-        switch self {
-        case .tripOnly:
-            String(localized: "Nur Reisen")
-        case .tripAndItinerary:
-            String(localized: "Reisen, Häfen & Seetage")
-        case .itineraryOnly:
-            String(localized: "Nur Häfen & Seetage")
-        case .none:
-            String(localized: "Keine Einträge")
-        }
-    }
 }
 
 struct CalendarEventDraft: Equatable {

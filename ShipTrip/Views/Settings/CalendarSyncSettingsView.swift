@@ -39,7 +39,10 @@ struct CalendarSyncSettingsView: View {
     @Query(sort: \Cruise.startDate) private var cruises: [Cruise]
     @AppStorage(CalendarSyncPreferences.enabledKey) private var isEnabled = false
     @AppStorage(CalendarSyncPreferences.calendarIdentifierKey) private var calendarIdentifier = ""
-    @AppStorage(CalendarSyncPreferences.modeKey) private var modeRawValue = CalendarSyncMode.tripOnly.rawValue
+    /// Nur Auslöser für die Neuberechnung, kein Leseort des Defaults: Der
+    /// Default steht ausschließlich in `CalendarSyncPreferences.mode(in:)`,
+    /// hier bedeutet der leere Wert schlicht „noch nichts gespeichert".
+    @AppStorage(CalendarSyncPreferences.modeKey) private var modeRawValue = ""
 
     @State private var calendars: [WritableCalendar] = []
     @State private var operationState = CalendarSyncOperationState()
@@ -69,14 +72,36 @@ struct CalendarSyncSettingsView: View {
         )
     }
 
-    private var mode: Binding<String> {
+    /// Der wirksame Umfang. Fällt der gespeicherte Wert aus, entscheidet
+    /// `CalendarSyncPreferences` — der einzige Ort des Defaults.
+    private var mode: CalendarSyncMode {
+        CalendarSyncMode(rawValue: modeRawValue) ?? CalendarSyncPreferences.mode
+    }
+
+    private var itineraryScope: Binding<Bool> {
         Binding(
-            get: { modeRawValue },
-            set: { newValue in
-                modeRawValue = newValue
-                synchronizeIfEnabled()
-            }
+            get: { mode.includesItinerary },
+            set: { apply(itinerary: $0, trip: mode.includesTrip) }
         )
+    }
+
+    private var tripScope: Binding<Bool> {
+        Binding(
+            get: { mode.includesTrip },
+            set: { apply(itinerary: mode.includesItinerary, trip: $0) }
+        )
+    }
+
+    /// Die beiden Schalter bilden zusammen die vier Umfangs-Fälle ab.
+    private func apply(itinerary: Bool, trip: Bool) {
+        let newMode: CalendarSyncMode = switch (itinerary, trip) {
+        case (true, true): .tripAndItinerary
+        case (true, false): .itineraryOnly
+        case (false, true): .tripOnly
+        case (false, false): .none
+        }
+        modeRawValue = newMode.rawValue
+        synchronizeIfEnabled()
     }
 
     var body: some View {
@@ -126,17 +151,23 @@ struct CalendarSyncSettingsView: View {
             }
 
             Section {
-                Picker("Kalendereinträge", selection: mode) {
-                    ForEach(CalendarSyncMode.allCases) { option in
-                        Text(option.displayName).tag(option.rawValue)
-                    }
+                Toggle("Stopps eintragen", isOn: itineraryScope)
+                    .accessibilityIdentifier("calendarSync.itineraryToggle")
+                    .disabled(isWorking)
+
+                Toggle("Gesamte Reise als Eintrag", isOn: tripScope)
+                    .accessibilityIdentifier("calendarSync.tripToggle")
+                    .disabled(isWorking)
+
+                if mode == .none {
+                    Text("Es werden keine Einträge angelegt.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
-                .pickerStyle(.inline)
-                .disabled(!isEnabled || isWorking)
             } header: {
                 Text("Umfang")
             } footer: {
-                Text("Im Detailmodus erhält jeder Hafen und Seetag einen eigenen Eintrag. Seetage nennen die Häfen davor und danach.")
+                Text("Standardmäßig werden nur die einzelnen Stopps eingetragen. Die gesamte Reise als ganztägiger Eintrag ist optional.")
             }
 
             if isEnabled {
@@ -235,6 +266,12 @@ struct CalendarSyncSettingsView: View {
         guard CalendarSyncService.shared.authorizationStatus == .fullAccess else {
             calendars = []
             return
+        }
+        // Die Bestands-Migration muss entschieden haben, bevor die Schalter
+        // einen Umfang zeigen. `hasManagedEvents` ist der vorhandene Auslöser;
+        // die Vorabfrage spart den Termin-Scan, sobald sie gefallen ist.
+        if !CalendarSyncModeMigration.isSettled(in: .standard) {
+            _ = CalendarSyncService.shared.hasManagedEvents
         }
         calendars = CalendarSyncService.shared.writableCalendars()
         calendarIdentifier = CalendarSyncService.shared.selectDefaultCalendarIfNeeded() ?? ""
