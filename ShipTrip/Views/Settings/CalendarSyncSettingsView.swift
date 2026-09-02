@@ -34,6 +34,27 @@ struct CalendarSyncOperationState {
     }
 }
 
+/// Ob die beiden Umfangs-Schalter bedienbar sind.
+///
+/// Ein Tipp schreibt `calendarSyncMode`; `CalendarSyncModeMigration` wertet
+/// einen gesetzten Schlüssel danach als bewusste Wahl. Vor der entschiedenen
+/// Bestands-Migration gäbe ein Tipp deshalb den Ganzreise-Termin eines
+/// Bestandsnutzers stillschweigend zur Löschung frei.
+@MainActor
+struct CalendarScopeAvailability: Equatable {
+    /// Ob die Bestands-Migration entschieden hat.
+    var isMigrationSettled: Bool
+    /// Ohne vollen Kalenderzugriff lässt sich der Bestand nicht prüfen, die
+    /// Migration bleibt offen.
+    var hasCalendarAccess: Bool
+    /// Ein laufender Sync sperrt die Schalter wie bisher.
+    var isWorking: Bool
+
+    var isEditable: Bool {
+        !isWorking
+    }
+}
+
 /// Optionale Spiegelung aller Reisen in einen auswählbaren Systemkalender.
 struct CalendarSyncSettingsView: View {
     @Query(sort: \Cruise.startDate) private var cruises: [Cruise]
@@ -50,9 +71,19 @@ struct CalendarSyncSettingsView: View {
     @State private var showingAccessAlert = false
     @State private var showingRollbackAlert = false
     @State private var pendingCalendarIdentifier: String?
+    @State private var isScopeMigrationSettled = CalendarSyncModeMigration.isSettled(in: .standard)
+    @State private var hasCalendarAccess = false
 
     private var isWorking: Bool {
         operationState.isWorking
+    }
+
+    private var scopeAvailability: CalendarScopeAvailability {
+        CalendarScopeAvailability(
+            isMigrationSettled: isScopeMigrationSettled,
+            hasCalendarAccess: hasCalendarAccess,
+            isWorking: isWorking
+        )
     }
 
     /// Der Picker schreibt die Auswahl erst nach einer eventuell nötigen
@@ -153,11 +184,11 @@ struct CalendarSyncSettingsView: View {
             Section {
                 Toggle("Stopps eintragen", isOn: itineraryScope)
                     .accessibilityIdentifier("calendarSync.itineraryToggle")
-                    .disabled(isWorking)
+                    .disabled(!scopeAvailability.isEditable)
 
                 Toggle("Gesamte Reise als Eintrag", isOn: tripScope)
                     .accessibilityIdentifier("calendarSync.tripToggle")
-                    .disabled(isWorking)
+                    .disabled(!scopeAvailability.isEditable)
 
                 if mode == .none {
                     Text("Es werden keine Einträge angelegt.")
@@ -263,15 +294,17 @@ struct CalendarSyncSettingsView: View {
     }
 
     private func refreshCalendars() async {
-        guard CalendarSyncService.shared.authorizationStatus == .fullAccess else {
+        hasCalendarAccess = CalendarSyncService.shared.authorizationStatus == .fullAccess
+        guard hasCalendarAccess else {
             calendars = []
             return
         }
         // Die Bestands-Migration muss entschieden haben, bevor die Schalter
         // einen Umfang zeigen. `hasManagedEvents` ist der vorhandene Auslöser;
         // die Vorabfrage spart den Termin-Scan, sobald sie gefallen ist.
-        if !CalendarSyncModeMigration.isSettled(in: .standard) {
+        if !isScopeMigrationSettled {
             _ = CalendarSyncService.shared.hasManagedEvents
+            isScopeMigrationSettled = CalendarSyncModeMigration.isSettled(in: .standard)
         }
         calendars = CalendarSyncService.shared.writableCalendars()
         calendarIdentifier = CalendarSyncService.shared.selectDefaultCalendarIfNeeded() ?? ""
