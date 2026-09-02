@@ -12,17 +12,23 @@ enum CalendarSyncPreferences {
     static let calendarIdentifierKey = "calendarSyncCalendarIdentifier"
     static let modeKey = "calendarSyncMode"
 
-    static var isEnabled: Bool {
-        UserDefaults.standard.bool(forKey: enabledKey)
+    static func isEnabled(in defaults: UserDefaults) -> Bool {
+        defaults.bool(forKey: enabledKey)
     }
 
-    static var calendarIdentifier: String {
-        UserDefaults.standard.string(forKey: calendarIdentifierKey) ?? ""
+    static func calendarIdentifier(in defaults: UserDefaults) -> String {
+        defaults.string(forKey: calendarIdentifierKey) ?? ""
     }
 
-    static var mode: CalendarSyncMode {
-        CalendarSyncMode(rawValue: UserDefaults.standard.string(forKey: modeKey) ?? "") ?? .tripOnly
+    static func mode(in defaults: UserDefaults) -> CalendarSyncMode {
+        CalendarSyncMode(rawValue: defaults.string(forKey: modeKey) ?? "") ?? .tripOnly
     }
+
+    static var isEnabled: Bool { isEnabled(in: .standard) }
+
+    static var calendarIdentifier: String { calendarIdentifier(in: .standard) }
+
+    static var mode: CalendarSyncMode { mode(in: .standard) }
 }
 
 struct WritableCalendar: Identifiable, Hashable {
@@ -54,17 +60,20 @@ final class CalendarSyncService {
     static let shared = CalendarSyncService()
 
     private static let mappingKey = "calendarSyncManagedEventIdentifiers"
-    private let eventStore: EKEventStore
+    private let eventStore: any CalendarEventStoring
     private let defaults: UserDefaults
     private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "CalendarSync")
 
-    init(eventStore: EKEventStore = EKEventStore(), defaults: UserDefaults = .standard) {
+    init(
+        eventStore: any CalendarEventStoring = EKEventStore(),
+        defaults: UserDefaults = .standard
+    ) {
         self.eventStore = eventStore
         self.defaults = defaults
     }
 
     var authorizationStatus: EKAuthorizationStatus {
-        EKEventStore.authorizationStatus(for: .event)
+        eventStore.authorizationStatus
     }
 
     /// Ob ShipTrip Termine verwaltet, die im Kalender noch existieren.
@@ -110,7 +119,7 @@ final class CalendarSyncService {
 
     @discardableResult
     func selectDefaultCalendarIfNeeded() -> String? {
-        let configuredIdentifier = defaults.string(forKey: CalendarSyncPreferences.calendarIdentifierKey) ?? ""
+        let configuredIdentifier = targetCalendarIdentifier
         if !configuredIdentifier.isEmpty,
            calendar(withIdentifier: configuredIdentifier) != nil {
             return configuredIdentifier
@@ -126,9 +135,9 @@ final class CalendarSyncService {
 
     @discardableResult
     func synchronize(cruises: [Cruise]) throws -> Int {
-        guard CalendarSyncPreferences.isEnabled else { return 0 }
+        guard CalendarSyncPreferences.isEnabled(in: defaults) else { return 0 }
         guard authorizationStatus == .fullAccess else { throw CalendarSyncError.accessDenied }
-        guard let targetCalendar = calendar(withIdentifier: CalendarSyncPreferences.calendarIdentifier) else {
+        guard let targetCalendar = calendar(withIdentifier: targetCalendarIdentifier) else {
             throw CalendarSyncError.calendarMissing
         }
 
@@ -137,7 +146,7 @@ final class CalendarSyncService {
             .flatMap {
                 CalendarEventPlanner.makeDrafts(
                     for: $0,
-                    mode: CalendarSyncPreferences.mode
+                    mode: CalendarSyncPreferences.mode(in: defaults)
                 )
             }
         let desiredKeys = Set(drafts.map(\.stableKey))
@@ -148,7 +157,7 @@ final class CalendarSyncService {
                 let event = identifiers[draft.stableKey]
                     .flatMap(eventStore.event(withIdentifier:))
                     ?? matchingEvent(for: draft, in: targetCalendar)
-                    ?? EKEvent(eventStore: eventStore)
+                    ?? eventStore.makeEvent()
 
                 event.calendar = targetCalendar
                 event.title = draft.title
@@ -196,9 +205,9 @@ final class CalendarSyncService {
     /// die Migration **vorher** alle Vorbedingungen von `synchronize`.
     @discardableResult
     func migrateManagedEvents(cruises: [Cruise]) throws -> Int {
-        guard CalendarSyncPreferences.isEnabled else { return 0 }
+        guard CalendarSyncPreferences.isEnabled(in: defaults) else { return 0 }
         guard authorizationStatus == .fullAccess else { throw CalendarSyncError.accessDenied }
-        guard calendar(withIdentifier: CalendarSyncPreferences.calendarIdentifier) != nil else {
+        guard calendar(withIdentifier: targetCalendarIdentifier) != nil else {
             throw CalendarSyncError.calendarMissing
         }
 
@@ -220,6 +229,10 @@ final class CalendarSyncService {
             throw error
         }
         managedEventIdentifiers = [:]
+    }
+
+    private var targetCalendarIdentifier: String {
+        CalendarSyncPreferences.calendarIdentifier(in: defaults)
     }
 
     private func calendar(withIdentifier identifier: String) -> EKCalendar? {
