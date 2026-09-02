@@ -113,21 +113,22 @@ struct AppResetCalendarCleanupTests {
 
 // MARK: - Fixture
 
-/// Zwei frisch angelegte Testkalender, ein isoliertes `UserDefaults`-Suite für
-/// die Termin-Zuordnung und gesicherte Sync-Einstellungen.
+/// Zwei frisch angelegte Testkalender und ein isoliertes `UserDefaults`-Suite
+/// für Zuordnung **und** Sync-Einstellungen.
 ///
-/// Die Einstellungen (`enabled`/`calendarIdentifier`/`mode`) liest der
-/// Produktionscode über `CalendarSyncPreferences` aus `UserDefaults.standard` —
-/// sie werden hier gesetzt und in `tearDown()` wiederhergestellt.
+/// Bewusst nichts in `UserDefaults.standard`: Der Test-Host teilt sich diese
+/// Domain mit allen anderen Suiten, parallele oder abgebrochene Läufe würden
+/// sich sonst gegenseitig die Einstellungen umschreiben (F15).
 @MainActor
-private final class MigrationFixture {
+final class MigrationFixture {
     enum FixtureError: Error {
         case notAuthorized
         case noWritableSource
     }
 
-    /// Spiegelt den privaten Persistenz-Schlüssel von `CalendarSyncService`.
+    /// Spiegeln die privaten Persistenz-Schlüssel von `CalendarSyncService`.
     private static let mappingKey = "calendarSyncManagedEventIdentifiers"
+    private static let journalKey = "calendarSyncPendingRemovalIdentifiers"
 
     let store = EKEventStore()
     let defaults: UserDefaults
@@ -143,8 +144,6 @@ private final class MigrationFixture {
     )
 
     private let suiteName: String
-    private let standard = UserDefaults.standard
-    private let previousPreferences: [String: Any?]
 
     init(name: String) throws {
         guard EKEventStore.authorizationStatus(for: .event) == .fullAccess else {
@@ -161,15 +160,17 @@ private final class MigrationFixture {
         defaults.removePersistentDomain(forName: suiteName)
 
         self.defaults = defaults
-        oldCalendar = try Self.makeCalendar(titled: "ShipTrip Alt \(name)", source: source, store: store)
-        newCalendar = try Self.makeCalendar(titled: "ShipTrip Neu \(name)", source: source, store: store)
+        let old = try Self.makeCalendar(titled: "ShipTrip Alt \(name)", source: source, store: store)
+        do {
+            newCalendar = try Self.makeCalendar(titled: "ShipTrip Neu \(name)", source: source, store: store)
+        } catch {
+            // F16: Der erste Kalender liegt schon im Store — ohne dieses
+            // Aufräumen bliebe er nach einem geworfenen Init für immer stehen.
+            try? store.removeCalendar(old, commit: true)
+            throw error
+        }
+        oldCalendar = old
         service = CalendarSyncService(eventStore: store, defaults: defaults)
-        previousPreferences = [
-            CalendarSyncPreferences.enabledKey: standard.object(forKey: CalendarSyncPreferences.enabledKey),
-            CalendarSyncPreferences.calendarIdentifierKey:
-                standard.object(forKey: CalendarSyncPreferences.calendarIdentifierKey),
-            CalendarSyncPreferences.modeKey: standard.object(forKey: CalendarSyncPreferences.modeKey)
-        ]
     }
 
     private static func makeCalendar(
@@ -188,9 +189,6 @@ private final class MigrationFixture {
         try? store.removeCalendar(oldCalendar, commit: true)
         try? store.removeCalendar(newCalendar, commit: true)
         defaults.removePersistentDomain(forName: suiteName)
-        for (key, value) in previousPreferences {
-            standard.set(value ?? nil, forKey: key)
-        }
     }
 
     func setPreferences(
@@ -198,9 +196,9 @@ private final class MigrationFixture {
         calendarIdentifier: String,
         mode: CalendarSyncMode = .tripOnly
     ) {
-        standard.set(enabled, forKey: CalendarSyncPreferences.enabledKey)
-        standard.set(calendarIdentifier, forKey: CalendarSyncPreferences.calendarIdentifierKey)
-        standard.set(mode.rawValue, forKey: CalendarSyncPreferences.modeKey)
+        defaults.set(enabled, forKey: CalendarSyncPreferences.enabledKey)
+        defaults.set(calendarIdentifier, forKey: CalendarSyncPreferences.calendarIdentifierKey)
+        defaults.set(mode.rawValue, forKey: CalendarSyncPreferences.modeKey)
     }
 
     @discardableResult
@@ -218,6 +216,25 @@ private final class MigrationFixture {
             try store.remove(event, span: .thisEvent, commit: false)
         }
         try store.commit()
+    }
+
+    /// Ein anderer Store (z. B. das Double) auf derselben Persistenz — so
+    /// sieht ein „nächster Service-Start" genau die Daten des Vorgängers.
+    func makeService(store: any CalendarEventStoring) -> CalendarSyncService {
+        CalendarSyncService(eventStore: store, defaults: defaults)
+    }
+
+    /// Simuliert den Mapping-Verlust nach Restore oder Neuinstallation.
+    func clearMapping() {
+        defaults.removeObject(forKey: Self.mappingKey)
+    }
+
+    var journal: [String] {
+        defaults.stringArray(forKey: Self.journalKey) ?? []
+    }
+
+    func writeJournal(_ identifiers: [String]) {
+        defaults.set(identifiers, forKey: Self.journalKey)
     }
 
     var managedIdentifiers: [String: String] {
