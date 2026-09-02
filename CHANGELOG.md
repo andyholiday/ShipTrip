@@ -14,6 +14,35 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Geändert
+
+- **Kalenderwechsel legt erst neu an, dann löscht er**: Wer den Zielkalender
+  wechselt, bekommt die Termine zuerst im neuen Kalender und verliert die alten
+  erst danach. Scheitert das Anlegen, bleibt der bisherige Bestand
+  unangetastet, statt halb übertragen zurückzubleiben.
+- **Keine Termine mehr zwischen Kalendern umgehängt**: Liegt ein verwalteter
+  Termin im falschen Kalender, entsteht er im Ziel neu und das Original wird
+  gelöscht. Das frühere Verschieben über Kalender- und Kontogrenzen hinweg
+  konnte den Termin still verlieren.
+  ([Feature-Doku](docs/features/kalender-sync.md))
+
+### Behoben
+
+- **Keine doppelten Kalendereinträge nach einer Wiederherstellung**: Nach
+  Backup-Rückspielung oder Neuinstallation erkennt der Sync seine bereits
+  vorhandenen Termine wieder, statt jeden davon ein zweites Mal anzulegen. Die
+  Suche über alle Kalender greift nur in genau diesem Fall, damit ein bewusster
+  Kalenderwechsel weiterhin wirkt.
+- **Abgebrochener Sync hinterlässt keine Karteileichen mehr**: Bricht der
+  Vorgang zwischen Anlegen und Aufräumen ab, holt der nächste App-Start das
+  Löschen der ersetzten Termine nach.
+
+### Technisch
+
+- EventKit-Zugriff des Kalender-Syncs hinter eine schmale Fassade gelegt
+  (Testnaht für Fehlerfälle), Kalender- und Erinnerungs-Einstellungen aus
+  `SettingsView` in eigene Ansichten ausgelagert.
+
 ---
 
 ## [1.8.6] - 2026-08-29
