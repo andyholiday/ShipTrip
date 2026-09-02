@@ -126,8 +126,9 @@ final class MigrationFixture {
         case noWritableSource
     }
 
-    /// Spiegelt den privaten Persistenz-Schlüssel von `CalendarSyncService`.
+    /// Spiegeln die privaten Persistenz-Schlüssel von `CalendarSyncService`.
     private static let mappingKey = "calendarSyncManagedEventIdentifiers"
+    private static let journalKey = "calendarSyncPendingRemovalIdentifiers"
 
     let store = EKEventStore()
     let defaults: UserDefaults
@@ -215,6 +216,25 @@ final class MigrationFixture {
             try store.remove(event, span: .thisEvent, commit: false)
         }
         try store.commit()
+    }
+
+    /// Ein anderer Store (z. B. das Double) auf derselben Persistenz — so
+    /// sieht ein „nächster Service-Start" genau die Daten des Vorgängers.
+    func makeService(store: any CalendarEventStoring) -> CalendarSyncService {
+        CalendarSyncService(eventStore: store, defaults: defaults)
+    }
+
+    /// Simuliert den Mapping-Verlust nach Restore oder Neuinstallation.
+    func clearMapping() {
+        defaults.removeObject(forKey: Self.mappingKey)
+    }
+
+    var journal: [String] {
+        defaults.stringArray(forKey: Self.journalKey) ?? []
+    }
+
+    func writeJournal(_ identifiers: [String]) {
+        defaults.set(identifiers, forKey: Self.journalKey)
     }
 
     var managedIdentifiers: [String: String] {
