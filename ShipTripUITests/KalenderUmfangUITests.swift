@@ -7,8 +7,11 @@
 //  Installation — Stopps an, Gesamtreise aus — und dass das Opt-in auf die
 //  Gesamtreise den Neustart ueberlebt.
 //
-//  Kein Kalenderzugriff noetig: Die Schalter schreiben nur die Praeferenz,
-//  der Sync selbst haengt am Schalter „Reisen mit Kalender synchronisieren".
+//  Voraussetzung ist voller Kalenderzugriff (im Test-Kanon per
+//  `simctl privacy grant calendar com.andre.ShipTrip` gesetzt): Ohne ihn
+//  bleibt die Bestands-Migration offen und die Umfangs-Schalter gesperrt.
+//  Der erste Start setzt Umfang und Migrations-Merker zurueck, damit der Test
+//  nicht vom Restzustand des Simulators abhaengt.
 //
 
 import XCTest
@@ -25,7 +28,13 @@ final class KalenderUmfangUITests: XCTestCase {
 
     func testGesamtreiseIstOptInUndUeberlebtDenNeustart() throws {
         let app = XCUIApplication()
-        app.launchArguments += ["-uiTestingCompleteOnboarding"]
+        app.launchArguments += [
+            "-uiTestingCompleteOnboarding",
+            // Auslieferungszustand des Umfangs erzwingen: gespeicherte Wahl
+            // und Migrations-Merker weg. Nur beim ersten Start — der zweite
+            // prueft ja gerade, dass die Wahl den Neustart ueberlebt.
+            "-uiTestingResetCalendarSyncScope"
+        ]
         app.launch()
 
         openCalendarSettings(in: app)
@@ -76,12 +85,6 @@ final class KalenderUmfangUITests: XCTestCase {
             "1",
             "Die zugeschaltete Gesamtreise hat den Neustart nicht ueberlebt"
         )
-
-        // Ausgangslage wiederherstellen, damit ein zweiter Lauf auf demselben
-        // Simulator wieder von der Auslieferungs-Voreinstellung startet.
-        flip(tripAfterRestart)
-        XCTAssertTrue(waitForSwitch(tripAfterRestart, toBe: "0"), "Aufraeumen fehlgeschlagen")
-        XCUIDevice.shared.press(.home)
     }
 
     // MARK: - Helper

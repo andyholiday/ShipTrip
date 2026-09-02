@@ -27,6 +27,7 @@ struct ShipTripApp: App {
 #if DEBUG
         Self.resetOnboardingIfNeeded()
         Self.completeOnboardingIfNeeded()
+        Self.resetCalendarSyncScopeIfNeeded()
 #endif
 
         let schema = Schema([
@@ -150,6 +151,19 @@ struct ShipTripApp: App {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains("-uiTestingCompleteOnboarding") else { return }
         UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
+    }
+
+    /// UI-Test-Naht (1.8.7): stellt den Sync-Umfang auf den
+    /// Auslieferungszustand zurueck — gespeicherte Wahl **und** Merker der
+    /// Bestands-Migration. `AppPreferencesReset` laesst den Merker bewusst
+    /// stehen (versionierte Buchhaltung, keine Einstellung); ein UI-Test, der
+    /// die Voreinstellung prueft, braucht dagegen beides weg, sonst haengt
+    /// sein Ergebnis am Restzustand des Simulators.
+    private static func resetCalendarSyncScopeIfNeeded() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("-uiTestingResetCalendarSyncScope") else { return }
+        UserDefaults.standard.removeObject(forKey: CalendarSyncPreferences.modeKey)
+        UserDefaults.standard.removeObject(forKey: CalendarSyncModeMigration.markerKey)
     }
 
     private static func prepareUITestDataIfNeeded(in container: ModelContainer) {
