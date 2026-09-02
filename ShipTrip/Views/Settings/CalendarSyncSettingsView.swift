@@ -45,6 +45,7 @@ struct CalendarSyncSettingsView: View {
     @State private var operationState = CalendarSyncOperationState()
     @State private var statusMessage = ""
     @State private var showingAccessAlert = false
+    @State private var showingRollbackAlert = false
     @State private var pendingCalendarIdentifier: String?
 
     private var isWorking: Bool {
@@ -175,6 +176,14 @@ struct CalendarSyncSettingsView: View {
         } message: { _ in
             Text("Alle bestehenden ShipTrip-Termine werden im neuen Kalender angelegt und im bisherigen Kalender gelöscht.")
         }
+        .alert(
+            String(localized: "Termine nicht wiederhergestellt"),
+            isPresented: $showingRollbackAlert
+        ) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(String(localized: "Der Umzug ist fehlgeschlagen und die Termine im bisherigen Kalender ließen sich nicht wiederherstellen. Prüfe deinen Kalender und synchronisiere danach erneut."))
+        }
     }
 
     // MARK: - Zielkalender wechseln
@@ -208,29 +217,18 @@ struct CalendarSyncSettingsView: View {
     private func migrateNow(to identifier: String) {
         defer { operationState.finish() }
 
-        let previousIdentifier = calendarIdentifier
-        calendarIdentifier = identifier
-        do {
-            let count = try CalendarSyncService.shared.migrateManagedEvents(cruises: cruises)
+        switch CalendarMigrationCoordinator().migrate(to: identifier, cruises: cruises) {
+        case .migrated(let count):
             statusMessage = String(localized: "\(count) Kalendereinträge in den neuen Kalender übertragen.")
-        } catch CalendarSyncError.accessDenied {
-            calendarIdentifier = previousIdentifier
+        case .accessDenied:
             isEnabled = false
             showingAccessAlert = true
-        } catch {
-            calendarIdentifier = previousIdentifier
-            restorePreviousCalendarEvents()
+        case .rolledBack(let error):
             statusMessage = error.localizedDescription
+        case .rollbackFailed(let migrationError, _):
+            statusMessage = migrationError.localizedDescription
+            showingRollbackAlert = true
         }
-    }
-
-    /// Stellt nach einer fehlgeschlagenen Migration die Termine im bisherigen
-    /// Kalender wieder her. Nötig, weil `calendarIdentifier` durch den Rollback
-    /// netto unverändert bleibt und `CalendarSyncObserver` deshalb nicht feuert.
-    private func restorePreviousCalendarEvents() {
-        // Ein Fehler hier bleibt bewusst stumm: Sichtbar ist die Ursache des
-        // Fehlschlags, die der Aufrufer direkt danach in `statusMessage` setzt.
-        try? CalendarSyncService.shared.synchronize(cruises: cruises)
     }
 
     private func refreshCalendars() async {
