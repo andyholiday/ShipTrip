@@ -243,7 +243,7 @@ extension MigrationFixture {
 
     /// Hängt einen Hafen mit Liegezeit am ersten Reisetag an die Testreise.
     @discardableResult
-    func addPort(name: String, country: String, latitude: Double, longitude: Double) -> Port {
+    func addPort(name: String, country: String, latitude: Double, longitude: Double) -> ShipTrip.Port {
         let port = Port(name: name, country: country, latitude: latitude, longitude: longitude)
         port.arrival = cruise.startDate.addingTimeInterval(9 * 3_600)
         port.departure = cruise.startDate.addingTimeInterval(18 * 3_600)
@@ -252,7 +252,7 @@ extension MigrationFixture {
         return port
     }
 
-    func routeKey(for port: Port) -> String {
+    func routeKey(for port: ShipTrip.Port) -> String {
         "cruise/\(cruise.id.uuidString)/route/\(port.id.uuidString)"
     }
 }

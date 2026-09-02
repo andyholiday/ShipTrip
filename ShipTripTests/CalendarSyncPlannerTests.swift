@@ -194,7 +194,7 @@ struct CalendarSyncPlannerTests {
         return cruise
     }
 
-    private func draft(_ drafts: [CalendarEventDraft], for port: Port) -> CalendarEventDraft? {
+    private func draft(_ drafts: [CalendarEventDraft], for port: ShipTrip.Port) -> CalendarEventDraft? {
         drafts.first { $0.stableKey.hasSuffix("/route/\(port.id.uuidString)") }
     }
 }
