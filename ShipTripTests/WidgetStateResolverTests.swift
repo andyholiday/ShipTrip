@@ -196,6 +196,25 @@ struct WidgetStateResolverTests {
         #expect(info?.isAfterLastStop == false)
     }
 
+    @Test("Zwei Stopps am selben Tag: der spaeter begonnene ist der aktuelle")
+    func twoStopsOnSameDay() {
+        let cruises = [cruise(start: at(6, 1, 17), end: at(6, 7, 8), route: [
+            stop("Frueh", order: 0, arrival: at(6, 3, 6), departure: at(6, 3, 9)),
+            stop("Spaet", order: 1, arrival: at(6, 3, 14), departure: at(6, 3, 20)),
+            stop("Tromsoe", order: 2, arrival: at(6, 5, 8), departure: at(6, 5, 18))
+        ])]
+
+        // Beide Fenster sind vorbei: der spaetere Hafen ist der aktuelle.
+        let afterBoth = resolve(cruises, at: at(6, 3, 22)).asActive
+        #expect(afterBoth?.currentStop?.name == "Spaet")
+        #expect(afterBoth?.nextStop?.name == "Tromsoe")
+
+        // Zwischen beiden Fenstern gilt weiter der fruehere Hafen.
+        let between = resolve(cruises, at: at(6, 3, 11)).asActive
+        #expect(between?.currentStop?.name == "Frueh")
+        #expect(between?.nextStop?.name == "Spaet")
+    }
+
     @Test("Nach dem letzten Eintrag: letzter Stopp bleibt, Nachfolger entfaellt")
     func afterLastStop() {
         let info = resolve([standardCruise()], at: at(6, 5, 12)).asActive

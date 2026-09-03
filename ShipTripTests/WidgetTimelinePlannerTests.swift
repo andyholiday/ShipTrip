@@ -29,6 +29,11 @@ private func plusDays(_ days: Int, from date: Date) -> Date {
     berlin.date(byAdding: .day, value: days, to: date) ?? date
 }
 
+/// Groesster Abstand zwischen zwei benachbarten Eintraegen.
+private func maximumGap(in dates: [Date]) -> TimeInterval {
+    zip(dates, dates.dropFirst()).map { $1.timeIntervalSince($0) }.max() ?? 0
+}
+
 private func stopInfo(day: Date, arrival: Date?, departure: Date?) -> WidgetStopInfo {
     WidgetStopInfo(id: UUID(), name: "Bergen", country: "Norwegen", isSeaDay: false,
                    day: day, arrival: arrival, departure: departure)
@@ -87,8 +92,10 @@ struct WidgetTimelinePlannerTests {
         let dates = WidgetTimelinePlanner.entryDates(for: state, now: now, calendar: berlin)
 
         // Vergangene Ankunft faellt raus; Mitternacht und Reiseende fallen
-        // auf denselben Zeitpunkt und stehen nur einmal drin.
-        #expect(dates == [now, at(6, 3, 13), at(6, 4, 0), at(6, 5, 0)])
+        // auf denselben Zeitpunkt und stehen nur einmal drin. Dahinter fuellen
+        // die Tagesmitternachte bis zum Deckel auf.
+        #expect(Array(dates.prefix(4)) == [now, at(6, 3, 13), at(6, 4, 0), at(6, 5, 0)])
+        #expect(dates.count == WidgetTimelinePlanner.maxEntries)
     }
 
     @Test("Countdown: Reisestart und naechste Mitternacht sind Eintraege")
@@ -100,7 +107,41 @@ struct WidgetTimelinePlannerTests {
 
         let dates = WidgetTimelinePlanner.entryDates(for: state, now: now, calendar: berlin)
 
-        #expect(dates == [now, at(6, 4, 0), at(6, 5, 17)])
+        #expect(Array(dates.prefix(4)) == [now, at(6, 4, 0), at(6, 5, 0), at(6, 5, 17)])
+        #expect(dates.count == WidgetTimelinePlanner.maxEntries)
+    }
+
+    @Test("Countdown weit voraus: taegliche Eintraege statt einer Mehrtages-Luecke")
+    func countdownFarAheadHasNoGaps() {
+        let now = at(6, 3, 10)
+        let state = WidgetState.countdown(CountdownInfo(
+            title: "Nordland", ship: "AIDAsol",
+            startDate: plusDays(30, from: at(6, 3, 17)), daysUntilStart: 30
+        ))
+
+        let dates = WidgetTimelinePlanner.entryDates(for: state, now: now, calendar: berlin)
+
+        #expect(dates.first == now)
+        #expect(dates.count == WidgetTimelinePlanner.maxEntries)
+        // 25 h deckt den 25-Stunden-Tag der Zeitumstellung mit ab.
+        #expect(maximumGap(in: dates) <= 25 * 60 * 60)
+        #expect((dates.last ?? now)
+                >= now.addingTimeInterval(WidgetTimelinePlanner.minimumHorizon))
+    }
+
+    @Test("Aktive Reise mit fernem Ende: taegliche Eintraege statt einer Luecke")
+    func activeWithDistantEndHasNoGaps() {
+        let now = plusDays(10, from: at(6, 1, 10))
+
+        let dates = WidgetTimelinePlanner.entryDates(
+            for: maximalActiveState(now: now),
+            now: now,
+            calendar: berlin
+        )
+
+        #expect(dates.first == now)
+        #expect(dates.count == WidgetTimelinePlanner.maxEntries)
+        #expect(maximumGap(in: dates) <= 25 * 60 * 60)
     }
 
     @Test("Leerlauf und leere Zustaende: nur jetzt und die naechste Mitternacht")
