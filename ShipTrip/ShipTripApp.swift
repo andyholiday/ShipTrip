@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+import Combine
 import SwiftData
+import CoreData
 import OSLog
 
 private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "Persistence")
@@ -18,6 +20,11 @@ struct ShipTripApp: App {
 
     private let modelContainer: ModelContainer?
     private let usingTemporaryStore: Bool
+
+    /// Schreibt den Widget-Snapshot (ADR-009). `nil` heisst: dieser Lauf
+    /// veroeffentlicht nichts — kein Store, nur ein Notbehelf-Store, ein
+    /// UI-Test oder kein App-Group-Container.
+    private let widgetPublisher: WidgetSnapshotPublisher?
 
     /// Erststart-Entscheidung, einmal beim Start getroffen — also **vor** der
     /// ersten Praesentation des Covers.
@@ -69,6 +76,11 @@ struct ShipTripApp: App {
             }
         }
 
+        widgetPublisher = Self.makeWidgetPublisher(
+            container: modelContainer,
+            usingTemporaryStore: usingTemporaryStore
+        )
+
         onboardingStartupDecision = Self.resolveOnboardingStartupDecision(
             container: modelContainer,
             usingTemporaryStore: usingTemporaryStore
@@ -78,6 +90,34 @@ struct ShipTripApp: App {
         if onboardingStartupDecision == .migrateSilently {
             UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
         }
+    }
+
+    // MARK: - Widget-Snapshot
+
+    /// Der Publisher entsteht nur, wenn es etwas zu veroeffentlichen gibt.
+    ///
+    /// Kein Store (`nil`) und der In-Memory-Notbehelf scheiden aus: beide
+    /// tragen keinen belastbaren Bestand, ein Snapshot daraus wuerde das
+    /// Widget mit Luecken fuellen. UI-Testlaeufe bleiben ebenfalls aussen vor
+    /// (sie setzen den Store zurueck und wuerden den echten Snapshot des
+    /// Geraets ueberschreiben). Fehlt das App-Group-Entitlement, gibt es kein
+    /// Ziel — das wird protokolliert, aber nie zum Startfehler.
+    private static func makeWidgetPublisher(
+        container: ModelContainer?,
+        usingTemporaryStore: Bool
+    ) -> WidgetSnapshotPublisher? {
+        guard let container, !usingTemporaryStore else { return nil }
+        guard !ProcessInfo.processInfo.arguments.contains(where: {
+            $0.hasPrefix("-uiTesting")
+        }) else { return nil }
+        guard let containerURL = WidgetSnapshotStore.appGroupURL() else {
+            logger.warning("App-Group-Container fehlt – Widget-Snapshot wird nicht geschrieben.")
+            return nil
+        }
+        return WidgetSnapshotPublisher(
+            container: container,
+            store: WidgetSnapshotStore(containerURL: containerURL)
+        )
     }
 
     // MARK: - Erststart-Entscheidung
@@ -181,6 +221,8 @@ struct ShipTripApp: App {
 
     // MARK: - UI
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var showTemporaryStoreAlert = true
 
     /// Erststart-Flow (B2). `false`/fehlend heisst: das Onboarding steht noch aus.
@@ -250,6 +292,33 @@ struct ShipTripApp: App {
                         shareImportCoordinator.handleIncomingURL(
                             url, modelContext: container.mainContext
                         )
+                    }
+                    // Widget-Snapshot (ADR-009): ein zentraler Hook statt
+                    // Aufrufen in jedem Mutationspfad. `didSave` deckt jede
+                    // persistierte Aenderung ab — und zwar erst *nach* dem
+                    // Speichern, nie mitten in einem offenen Kontext.
+                    .onReceive(
+                        NotificationCenter.default.publisher(
+                            for: ModelContext.didSave, object: container.mainContext
+                        )
+                    ) { _ in
+                        widgetPublisher?.publish()
+                    }
+                    // Sicherheitsnetz fuer CloudKit-Merges: die Aenderung kommt
+                    // aus einem anderen Prozess, `didSave` sieht sie nie.
+                    // `receive(on:)`, weil die Benachrichtigung im Hintergrund
+                    // gepostet wird.
+                    .onReceive(
+                        NotificationCenter.default
+                            .publisher(for: .NSPersistentStoreRemoteChange)
+                            .receive(on: RunLoop.main)
+                    ) { _ in
+                        widgetPublisher?.publish()
+                    }
+                    // Zweites Sicherheitsnetz: beim Wechsel in den Vordergrund
+                    // steht der Snapshot auf jeden Fall wieder auf dem Ist-Stand.
+                    .onChange(of: scenePhase) { _, phase in
+                        if phase == .active { widgetPublisher?.publish() }
                     }
                     // Bewusst **nach** dem Cover: eine Praesentation erbt die
                     // Umgebung an der Stelle ihres Modifiers, nicht die der
