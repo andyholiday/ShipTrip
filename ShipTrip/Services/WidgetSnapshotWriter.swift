@@ -23,7 +23,10 @@ actor WidgetSnapshotWriter {
 
     /// Schreibt den Snapshot. Wirft weiter, damit der Aufrufer entscheidet,
     /// wie er den Fehler behandelt — die App protokolliert ihn nur.
-    func save(_ snapshot: WidgetSnapshot) throws {
+    ///
+    /// `generation` ist die Naht fuer Fix 3: veraltete Auftraege verwirft
+    /// diese Fassung noch nicht.
+    func save(_ snapshot: WidgetSnapshot, generation: UInt64) throws {
         try store.save(snapshot)
     }
 }

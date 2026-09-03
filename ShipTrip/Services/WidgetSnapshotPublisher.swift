@@ -31,6 +31,11 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
     private let reload: @Sendable () -> Void
     private let debounce: Duration
 
+    /// Lesevorgang als Naht (Fix 3): die Voreinstellung holt alle
+    /// Nicht-Demo-Reisen aus dem uebergebenen Kontext, Tests reichen einen
+    /// Fehlerfall herein.
+    private let fetchCruises: (ModelContext) throws -> [Cruise]
+
     /// Der eine ausstehende Schreibauftrag. Ein neuer `publish()`-Aufruf
     /// verwirft ihn und plant neu — so wird aus einem Sturm von Saves genau
     /// ein Snapshot.
@@ -40,12 +45,18 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
         container: ModelContainer,
         store: WidgetSnapshotStore,
         reload: @escaping @Sendable () -> Void = { WidgetCenter.shared.reloadAllTimelines() },
-        debounce: Duration = .seconds(1)
+        debounce: Duration = .seconds(1),
+        fetchCruises: @escaping (ModelContext) throws -> [Cruise] = { context in
+            try context.fetch(
+                FetchDescriptor<Cruise>(predicate: #Predicate<Cruise> { $0.isDemo == false })
+            )
+        }
     ) {
         self.container = container
         self.writer = WidgetSnapshotWriter(store: store)
         self.reload = reload
         self.debounce = debounce
+        self.fetchCruises = fetchCruises
     }
 
     // MARK: - Ausloesen
@@ -87,7 +98,7 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
     private func write() async {
         let snapshot = makeSnapshot(now: Date())
         do {
-            try await writer.save(snapshot)
+            try await writer.save(snapshot, generation: 0)
         } catch {
             logger.error("Widget-Snapshot nicht geschrieben: \(error.localizedDescription)")
             return
@@ -98,10 +109,7 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
     /// Fetch und DTO-Abbildung laufen vollstaendig hier auf dem MainActor;
     /// den Aktor verlassen ausschliesslich `Sendable`-Werte, nie ein `@Model`.
     private func makeSnapshot(now: Date) -> WidgetSnapshot {
-        let descriptor = FetchDescriptor<Cruise>(
-            predicate: #Predicate<Cruise> { $0.isDemo == false }
-        )
-        let cruises = (try? container.mainContext.fetch(descriptor)) ?? []
+        let cruises = (try? fetchCruises(container.mainContext)) ?? []
         let calendar = Calendar.current
         let active = activeCruise(in: cruises, now: now, calendar: calendar)
 

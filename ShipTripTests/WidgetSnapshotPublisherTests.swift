@@ -62,6 +62,8 @@ private func makeStore() -> WidgetSnapshotStore {
     )
 }
 
+private enum FetchStub: Error { case failed }
+
 private func day(_ offset: Int) -> Date {
     Date().addingTimeInterval(Double(offset) * 86_400)
 }
@@ -308,5 +310,90 @@ struct WidgetSnapshotPublisherTests {
         let result = store.load()
 
         #expect(result == .missing)
+    }
+
+    // MARK: - Fix 3 (Codex a2 F1-F3)
+
+    /// F1: Ein offener `mainContext` gehoert nie ins Widget.
+    @Test("Ungespeicherte Aenderungen bleiben aus dem Snapshot")
+    func unsavedChangesStayOutOfSnapshot() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = makeStore()
+        let publisher = WidgetSnapshotPublisher(container: container, store: store, reload: {})
+        let cruise = insertCruise("Nordland", start: day(10), end: day(17), in: context)
+        try context.save()
+
+        insertCruise("Karibik", start: day(40), end: day(47), in: context)
+        await publisher.publishNow()
+        let afterInsert = titles(in: store)
+        context.rollback()
+
+        cruise.title = "Nordland Extra"
+        await publisher.publishNow()
+        let afterEdit = titles(in: store)
+        context.rollback()
+
+        context.delete(cruise)
+        await publisher.publishNow()
+        let afterDelete = titles(in: store)
+
+        #expect(afterInsert == ["Nordland"])
+        #expect(afterEdit == ["Nordland"])
+        #expect(afterDelete == ["Nordland"])
+    }
+
+    /// F2: Scheitert der Fetch, bleibt der Last-known-good stehen — kein Reload.
+    @Test("Ein Lesefehler laesst Snapshot und Reload unangetastet")
+    func fetchFailureKeepsLastKnownGood() async throws {
+        let container = try makeContainer()
+        let store = makeStore()
+        insertCruise("Nordland", start: day(10), end: day(17), in: container.mainContext)
+        try container.mainContext.save()
+        await WidgetSnapshotPublisher(container: container, store: store, reload: {}).publishNow()
+
+        let spy = CallCounter()
+        let failing = WidgetSnapshotPublisher(
+            container: container, store: store, reload: { spy.record() },
+            fetchCruises: { _ in throw FetchStub.failed }
+        )
+        await failing.publishNow()
+
+        #expect(titles(in: store) == ["Nordland"])
+        #expect(spy.count == 0)
+    }
+
+    /// F3: Zwei ueberlappende Laeufe veroeffentlichen genau einmal.
+    @Test("Ueberlappende Publish-Vorgaenge ergeben genau einen Reload")
+    func overlappingPublishesReloadOnce() async throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        let store = makeStore()
+        let spy = CallCounter()
+        let publisher = WidgetSnapshotPublisher(
+            container: container, store: store, reload: { spy.record() })
+        insertCruise("Nordland", start: day(10), end: day(17), in: context)
+        try context.save()
+
+        async let first: Void = publisher.publishNow()
+        async let second: Void = publisher.publishNow()
+        _ = await (first, second)
+
+        #expect(spy.count == 1)
+        #expect(titles(in: store) == ["Nordland"])
+    }
+
+    /// F3: Ein alter Snapshot darf einen frischen nicht ueberschreiben.
+    @Test("Der Writer verwirft einen veralteten Schreibauftrag")
+    func writerDiscardsStaleGeneration() async throws {
+        let store = makeStore()
+        let writer = WidgetSnapshotWriter(store: store)
+        let newer = WidgetSnapshot(generatedAt: Date(timeIntervalSince1970: 2_000), cruises: [])
+        let older = WidgetSnapshot(generatedAt: Date(timeIntervalSince1970: 1_000), cruises: [])
+
+        try await writer.save(newer, generation: 2)
+        try await writer.save(older, generation: 1)
+
+        #expect(store.load() == .snapshot(newer))
     }
 }
