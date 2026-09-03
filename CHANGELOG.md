@@ -14,6 +14,31 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefügt
+
+- **Widget für Home- und Sperrbildschirm**: ShipTrip liefert ein Widget
+  „Reisestatus" in vier Größen (klein, mittel, rechteckig und rund auf dem
+  Sperrbildschirm). Läuft gerade eine Reise, stehen dort der aktuelle Hafen
+  mit Ankunfts- und Abfahrtszeit und der nächste Stopp — ist der aktuelle
+  oder der nächste Eintrag ein Seetag, wird der Seetag genannt; nach dem
+  letzten Hafen tritt das Reiseende an diese Stelle. Steht die nächste Reise
+  noch bevor, zeigt das Widget Titel, Schiff und den Countdown („Morgen",
+  „In 12 Tagen"). Ist keine Reise geplant, erscheint der Hinweis „Keine neue
+  Reise geplant" zusammen mit dem Abstand zur letzten Reise. Die Anzeige
+  wechselt von selbst, etwa von Hafen auf Seetag oder vom Countdown auf die
+  laufende Reise. Ein Tipp öffnet die App. Beispielreisen bleiben außen vor.
+  ([Feature-Doku](docs/features/widget.md))
+- **Geteilter Datenbereich für das Widget**: App und Widget teilen die App
+  Group `group.com.andre.ShipTrip`. Die App legt dort bei jeder Änderung an
+  Reisen und Route einen kleinen Auszug ab (Titel, Schiff, Zeitraum, Route
+  mit Zeiten — keine Fotos), aus dem das Widget liest. Der Reisebestand
+  selbst bleibt unangetastet. Hat die App länger als 14 Tage nichts
+  geschrieben, zeigt das Widget „Öffne ShipTrip zum Aktualisieren" statt
+  möglicherweise veralteter Zeiten; dasselbe gilt, solange noch kein Auszug
+  vorliegt. Änderungen von einem anderen Gerät erscheinen erst, nachdem die
+  App dort einmal im Vordergrund war.
+  ([ADR-009](docs/adr/ADR-009-widget-app-group-snapshot.md))
+
 ---
 
 ## [1.8.7] - 2026-09-02

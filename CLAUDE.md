@@ -91,12 +91,20 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
   KeychainService, NotificationService, CalendarSyncService (Kalender-Sync,
   siehe `docs/features/kalender-sync.md`), DemoDataService (Beispielreise, auch
-  im Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
+  im Release; nur der UI-Test-Reset steht unter `#if DEBUG`),
+  WidgetSnapshotPublisher/-Writer (schreibt den Widget-Snapshot in die App Group)
 - `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Onboarding, Share,
   Stats, Settings). Das Journal hat **keinen eigenen Strang**: Einträge hängen im
   Route-Abschnitt der Reise-Detailansicht, die Ansichten liegen deshalb unter
   `Views/Cruises/` (`RouteJournalSection`, `RouteStopCard`, `JournalEntry*View`).
   Siehe `docs/features/journal.md`.
+- `ShipTrip/WidgetShared/` — der einzige mit dem Widget geteilte Code (Snapshot-Schema,
+  Store, Zustandsableitung, Timeline-Planung). **Nur Foundation**: kein SwiftData, kein
+  SwiftUI, kein WidgetKit, keine `String(localized:)`. Jede neue Datei hier muss in der
+  `project.pbxproj` zusätzlich ins `membershipExceptions`-Set des Widget-Targets
+  eingetragen werden, sonst baut die Extension nicht.
+- `ShipTripWidget/` — WidgetKit-Extension (Bundle `com.andre.ShipTrip.Widget`, App Group
+  `group.com.andre.ShipTrip`, eigener String Catalog). Siehe `docs/features/widget.md`.
 - `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
 - `docs/` — Architektur, Features, ADRs (`docs/adr/`) · `CHANGELOG.md` (Keep a Changelog)

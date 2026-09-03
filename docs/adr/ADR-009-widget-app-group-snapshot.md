@@ -113,6 +113,10 @@ kennt nur Foundation.
   auszustellen. Vor jedem Upload sind beide Entitlement-Sätze zu prüfen
   (Release-Schritt T7 im Taskplan).
 
+## Implemented by
+
+- [Home-Screen-Widget](../features/widget.md)
+
 ## Referenzen
 
 - `.planning/ZIEL.md` (v5.1, 2026-09-03) — Erfolgskriterium 3 „Datenweg Snapshot (Variante A)"
