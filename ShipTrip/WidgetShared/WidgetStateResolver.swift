@@ -150,6 +150,9 @@ enum WidgetStateResolver {
     /// Aktueller Eintrag: erst das Zeitfenster, dann der heutige Kalendertag,
     /// zuletzt der letzte vergangene Eintrag. `nil`, wenn die Route leer ist
     /// oder noch kein Eintrag begonnen hat.
+    ///
+    /// Liegen mehrere Eintraege auf dem heutigen Tag (Tenderhafen morgens,
+    /// Abendhafen), gilt der letzte, dessen Ankunft schon vorbei ist.
     private static func currentIndex(
         in stops: [WidgetStopInfo],
         now: Date,
@@ -162,7 +165,11 @@ enum WidgetStateResolver {
         if let inWindow { return inWindow }
 
         let today = calendar.startOfDay(for: now)
-        if let onToday = stops.firstIndex(where: { $0.day == today }) { return onToday }
+        let todays = stops.indices.filter { stops[$0].day == today }
+        if let started = todays.last(where: { (stops[$0].arrival ?? today) <= now }) {
+            return started
+        }
+        if let first = todays.first { return first }
         return stops.lastIndex { $0.day < today }
     }
 
