@@ -61,9 +61,7 @@ enum WidgetPreviewFamily: String, CaseIterable {
 
 // MARK: - Zustand
 
-/// Die vier Zustaende aus `WidgetState`. Der aktive Zustand nimmt bewusst die
-/// Fixture mit den adversarial langen Namen — genau sie ist bei Dynamic Type
-/// XXL der Pruefstein (Taskplan 1.9.0, LE 10).
+/// Die vier Zustaende aus `WidgetState`.
 enum WidgetPreviewStateKind: String, CaseIterable {
 
     case active
@@ -71,9 +69,17 @@ enum WidgetPreviewStateKind: String, CaseIterable {
     case idle
     case unavailable
 
-    var state: WidgetState {
+    /// - Parameter adversarial: bei grossem Schriftgrad nimmt der aktive
+    ///   Zustand die Fixture mit den absichtlich langen Namen — dort ist sie
+    ///   der Pruefstein (Taskplan 1.9.0, LE 10). Bei normalem Schriftgrad
+    ///   zeigt die Galerie die realistische Fixture, damit die Belegbilder das
+    ///   uebliche Bild zeigen und nicht den Sonderfall.
+    func state(adversarial: Bool) -> WidgetState {
         switch self {
-        case .active: WidgetPreviewFixtures.activeLongNames.state
+        case .active:
+            adversarial
+                ? WidgetPreviewFixtures.activeLongNames.state
+                : WidgetPreviewFixtures.activePort.state
         case .countdown: WidgetPreviewFixtures.countdown.state
         case .idle: WidgetPreviewFixtures.idle.state
         case .unavailable: WidgetPreviewFixtures.unavailable.state
@@ -84,6 +90,10 @@ enum WidgetPreviewStateKind: String, CaseIterable {
 // MARK: - Galerie
 
 struct WidgetPreviewGalleryView: View {
+
+    /// Schriftgrad des Laufs — er entscheidet, welche aktive Fixture die
+    /// Galerie zeigt (siehe `WidgetPreviewStateKind.state(adversarial:)`).
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     /// Startet die App in der Galerie statt im Hauptbaum.
     static let launchArgument = "-widgetPreview"
@@ -134,7 +144,10 @@ struct WidgetPreviewGalleryView: View {
         _ state: WidgetPreviewStateKind
     ) -> some View {
         VStack(spacing: 6) {
-            WidgetPreviewFrame(family: family, state: state.state)
+            WidgetPreviewFrame(
+                family: family,
+                state: state.state(adversarial: typeSize.isAccessibilitySize)
+            )
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(Self.identifier(family, state))
 

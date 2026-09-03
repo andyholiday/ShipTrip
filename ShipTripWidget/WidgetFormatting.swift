@@ -96,13 +96,17 @@ enum WidgetFormatting {
     static var currentLabel: String { String(localized: "Aktuell", bundle: bundle) }
     static var nextStopLabel: String { String(localized: "Nächster Stopp", bundle: bundle) }
 
-    static func nextStopLine(_ stop: WidgetStopInfo) -> String {
-        String(localized: "Nächster Stopp: \(stopName(stop)), \(day(stop.day))", bundle: bundle)
+    /// - Parameter compactName: kuerzt den Hafennamen ueber `shortStopName`.
+    ///   Die Kacheln setzen das, VoiceOver bekommt weiter den vollen Wortlaut.
+    static func nextStopLine(_ stop: WidgetStopInfo, compactName: Bool = false) -> String {
+        let name = compactName ? shortStopName(stop) : stopName(stop)
+        return String(localized: "Nächster Stopp: \(name), \(day(stop.day))", bundle: bundle)
     }
 
     /// Ohne Datum — fuer enge Layouts und grosse Schriftgrade.
-    static func nextStopLineShort(_ stop: WidgetStopInfo) -> String {
-        String(localized: "Nächster Stopp: \(stopName(stop))", bundle: bundle)
+    static func nextStopLineShort(_ stop: WidgetStopInfo, compactName: Bool = false) -> String {
+        let name = compactName ? shortStopName(stop) : stopName(stop)
+        return String(localized: "Nächster Stopp: \(name)", bundle: bundle)
     }
 
     static func cruiseEndLine(_ date: Date) -> String {

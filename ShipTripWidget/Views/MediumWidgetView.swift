@@ -8,6 +8,13 @@
 //  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen die
 //  Spaltenueberschriften; der Platz geht an die Namen (dritte Zeile).
 //
+//  Wie bei `RectangularWidgetView` ist der Schriftgrad zusaetzlich nach oben
+//  gedeckelt — die Kachel waechst nicht mit, 364×170 pt sind fest, eine Spalte
+//  ist damit rund 155 pt breit. Ohne Deckel brachen bei Dynamic Type XXL beide
+//  Namen („Puert…", „Sant…") und die Zeiten („Ankunft 8:0…") ab, was ZIEL K2
+//  verletzt. Namen laufen ausserdem ueber `shortStopName`, die Zeiten im engen
+//  Fall ueber die kompakte Form „8:00 – 17:00".
+//
 
 import SwiftUI
 
@@ -24,6 +31,7 @@ struct MediumWidgetView: View {
         VStack(alignment: .leading, spacing: 8) {
             content
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(WidgetFormatting.accessibilityLabel(for: state))
@@ -72,8 +80,10 @@ struct MediumWidgetView: View {
             column(
                 label: WidgetFormatting.currentLabel,
                 symbol: WidgetSymbol.stop(current),
-                title: WidgetFormatting.stopName(current),
-                detail: WidgetFormatting.stopDetail(current)
+                title: WidgetFormatting.shortStopName(current),
+                detail: isTight
+                    ? WidgetFormatting.stopDetailCompact(current)
+                    : WidgetFormatting.stopDetail(current)
             )
         } else {
             column(
@@ -91,7 +101,7 @@ struct MediumWidgetView: View {
             column(
                 label: WidgetFormatting.nextStopLabel,
                 symbol: WidgetSymbol.stop(next),
-                title: WidgetFormatting.stopName(next),
+                title: WidgetFormatting.shortStopName(next),
                 detail: WidgetFormatting.day(next.day)
             )
         } else {

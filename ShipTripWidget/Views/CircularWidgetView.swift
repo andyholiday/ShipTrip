@@ -6,8 +6,13 @@
 //  ein Kurzwert. Mehr passt in den Kreis nicht ohne Abschneiden.
 //
 //  Zuordnung: Seetag → Wellen, Hafen → Faehre plus Abfahrtszeit, Countdown →
-//  Segel plus Anzahl Tage (ueber 99 als „99+"), Leerlauf → Anker,
-//  nicht verfuegbar → Aktualisieren-Pfeil.
+//  gefuelltes Segelboot plus Anzahl Tage (ueber 99 als „99+"), Leerlauf →
+//  Segelboot als Umriss, nicht verfuegbar → Aktualisieren-Pfeil.
+//
+//  Der Kreis misst feste 76 pt und waechst mit dem Schriftgrad nicht mit;
+//  deshalb ist der Schriftgrad hier bei `.large` gedeckelt. Ohne Deckel stiess
+//  bei Dynamic Type XXL der Kurzwert an die Kreiskante („17:…", ZIEL K2). Der
+//  Innenabstand haelt Symbol und Wert zusaetzlich von der Rundung fern.
 //
 //  - Note: Im aktiven Zustand steht die Abfahrtszeit statt einer Tageszahl.
 //    `ActiveInfo` fuehrt bewusst keinen vorberechneten Tageswert, und in der
@@ -31,11 +36,12 @@ struct CircularWidgetView: View {
                     Text(value)
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                        .minimumScaleFactor(0.5)
                 }
             }
-            .padding(2)
+            .padding(6)
         }
+        .dynamicTypeSize(...DynamicTypeSize.large)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(WidgetFormatting.accessibilityLabel(for: state))
     }

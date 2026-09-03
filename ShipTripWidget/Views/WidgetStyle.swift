@@ -43,7 +43,10 @@ enum WidgetSymbol {
     static let ship = "sailboat.fill"
     static let embarkation = "figure.walk"
     static let cruiseEnd = "flag.checkered"
-    static let idle = "anchor"
+    /// Umriss statt Fuellung — genau das unterscheidet den Leerlauf vom
+    /// aktiven `ship`. Kein Anker: „anchor" ist kein SF Symbol, das Bild fiel
+    /// dadurch in allen Familien aus (rund blieb ganz leer).
+    static let idle = "sailboat"
     static let unavailable = "arrow.clockwise"
 
     static func stop(_ stop: WidgetStopInfo) -> String {
@@ -90,7 +93,7 @@ struct WidgetCaption: View {
             .font(.caption2)
             .foregroundStyle(.secondary)
             .lineLimit(lines)
-            .minimumScaleFactor(0.8)
+            .minimumScaleFactor(0.75)
             .truncationMode(.tail)
     }
 }

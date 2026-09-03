@@ -10,6 +10,14 @@
 //  geht an den Namen des aktuellen Stopps (dritte Zeile), damit auch ein
 //  adversarial langer Hafenname ohne „…" umbricht.
 //
+//  Zusaetzlich ist der Schriftgrad wie bei `RectangularWidgetView` nach oben
+//  gedeckelt — die Kachel waechst nicht mit, 170×170 pt sind fest. Ohne
+//  Deckel blieb bei Dynamic Type XXL von jedem Pflichtfeld nur ein Stummel
+//  („Pue…", „Ankunft 8:…", „Nächster…") — Verstoss gegen ZIEL K2. Namen
+//  laufen ausserdem ueber `shortStopName`, die Zeiten im engen Fall ueber die
+//  kompakte Form „8:00 – 17:00". Der volle Wortlaut bleibt ueber
+//  `accessibilityLabel` erreichbar.
+//
 
 import SwiftUI
 
@@ -25,6 +33,7 @@ struct SmallWidgetView: View {
         VStack(alignment: .leading, spacing: 6) {
             content
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(WidgetFormatting.accessibilityLabel(for: state))
@@ -55,10 +64,15 @@ struct SmallWidgetView: View {
         if let current = info.currentStop {
             WidgetHeadline(
                 symbol: WidgetSymbol.stop(current),
-                text: WidgetFormatting.stopName(current),
+                text: WidgetFormatting.shortStopName(current),
                 lineLimit: isTight ? 3 : 2
             )
-            WidgetCaption(text: WidgetFormatting.stopDetail(current), lines: 2)
+            WidgetCaption(
+                text: isTight
+                    ? WidgetFormatting.stopDetailCompact(current)
+                    : WidgetFormatting.stopDetail(current),
+                lines: 2
+            )
         } else if info.nextStop != nil {
             WidgetHeadline(symbol: WidgetSymbol.embarkation, text: WidgetFormatting.embarkation)
         } else {
@@ -75,8 +89,8 @@ struct SmallWidgetView: View {
         if let next = info.nextStop {
             WidgetCaption(
                 text: isTight
-                    ? WidgetFormatting.nextStopLineShort(next)
-                    : WidgetFormatting.nextStopLine(next),
+                    ? WidgetFormatting.nextStopLineShort(next, compactName: true)
+                    : WidgetFormatting.nextStopLine(next, compactName: true),
                 lines: 2
             )
         } else if info.isAfterLastStop {
