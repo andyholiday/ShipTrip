@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		BF1F29082EF5A001006C7F7D /* ShipTripWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BF1F29012EF5A001006C7F7D /* ShipTripWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		BF1F281B2EF411EB006C7F7D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +25,61 @@
 			remoteGlobalIDString = BF1F28092EF411EA006C7F7D;
 			remoteInfo = ShipTrip;
 		};
+		BF1F29092EF5A001006C7F7D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BF1F28022EF411EA006C7F7D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BF1F29032EF5A001006C7F7D;
+			remoteInfo = ShipTripWidget;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BF1F29072EF5A001006C7F7D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BF1F29082EF5A001006C7F7D /* ShipTripWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		BF1F280A2EF411EA006C7F7D /* ShipTrip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShipTrip.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF1F281A2EF411EB006C7F7D /* ShipTripTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShipTripTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF1F28242EF411EB006C7F7D /* ShipTripUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShipTripUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF1F29012EF5A001006C7F7D /* ShipTripWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShipTripWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BF1F290E2EF5A001006C7F7D /* Exceptions for "ShipTrip" folder in "ShipTripWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				WidgetShared/WidgetSnapshot.swift,
+				WidgetShared/WidgetSnapshotPublishing.swift,
+				WidgetShared/WidgetSnapshotStore.swift,
+			);
+			target = BF1F29032EF5A001006C7F7D /* ShipTripWidget */;
+		};
+		BF1F290F2EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTripWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BF1F29032EF5A001006C7F7D /* ShipTripWidget */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BF1F280C2EF411EA006C7F7D /* ShipTrip */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BF1F290E2EF5A001006C7F7D /* Exceptions for "ShipTrip" folder in "ShipTripWidget" target */,
+			);
 			path = ShipTrip;
 			sourceTree = "<group>";
 		};
@@ -43,6 +91,14 @@
 		BF1F28272EF411EB006C7F7D /* ShipTripUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = ShipTripUITests;
+			sourceTree = "<group>";
+		};
+		BF1F29022EF5A001006C7F7D /* ShipTripWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BF1F290F2EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTripWidget" target */,
+			);
+			path = ShipTripWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +125,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BF1F29052EF5A001006C7F7D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -88,6 +151,7 @@
 				BF1F280A2EF411EA006C7F7D /* ShipTrip.app */,
 				BF1F281A2EF411EB006C7F7D /* ShipTripTests.xctest */,
 				BF1F28242EF411EB006C7F7D /* ShipTripUITests.xctest */,
+				BF1F29012EF5A001006C7F7D /* ShipTripWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,10 +166,12 @@
 				BF1F28062EF411EA006C7F7D /* Sources */,
 				BF1F28072EF411EA006C7F7D /* Frameworks */,
 				BF1F28082EF411EA006C7F7D /* Resources */,
+				BF1F29072EF5A001006C7F7D /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BF1F290A2EF5A001006C7F7D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				BF1F280C2EF411EA006C7F7D /* ShipTrip */,
@@ -163,6 +229,28 @@
 			productReference = BF1F28242EF411EB006C7F7D /* ShipTripUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		BF1F29032EF5A001006C7F7D /* ShipTripWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF1F290D2EF5A001006C7F7D /* Build configuration list for PBXNativeTarget "ShipTripWidget" */;
+			buildPhases = (
+				BF1F29042EF5A001006C7F7D /* Sources */,
+				BF1F29052EF5A001006C7F7D /* Frameworks */,
+				BF1F29062EF5A001006C7F7D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				BF1F29022EF5A001006C7F7D /* ShipTripWidget */,
+			);
+			name = ShipTripWidget;
+			packageProductDependencies = (
+			);
+			productName = ShipTripWidget;
+			productReference = BF1F29012EF5A001006C7F7D /* ShipTripWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +272,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = BF1F28092EF411EA006C7F7D;
 					};
+					BF1F29032EF5A001006C7F7D = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = BF1F28052EF411EA006C7F7D /* Build configuration list for PBXProject "ShipTrip" */;
@@ -204,6 +295,7 @@
 				BF1F28092EF411EA006C7F7D /* ShipTrip */,
 				BF1F28192EF411EB006C7F7D /* ShipTripTests */,
 				BF1F28232EF411EB006C7F7D /* ShipTripUITests */,
+				BF1F29032EF5A001006C7F7D /* ShipTripWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -224,6 +316,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		BF1F28222EF411EB006C7F7D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF1F29062EF5A001006C7F7D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -254,6 +353,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BF1F29042EF5A001006C7F7D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -266,6 +372,11 @@
 			isa = PBXTargetDependency;
 			target = BF1F28092EF411EA006C7F7D /* ShipTrip */;
 			targetProxy = BF1F28252EF411EB006C7F7D /* PBXContainerItemProxy */;
+		};
+		BF1F290A2EF5A001006C7F7D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BF1F29032EF5A001006C7F7D /* ShipTripWidget */;
+			targetProxy = BF1F29092EF5A001006C7F7D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -566,6 +677,62 @@
 			};
 			name = Release;
 		};
+		BF1F290B2EF5A001006C7F7D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShipTripWidget/ShipTripWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = LH324Y9MG7;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShipTripWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShipTrip;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.8.7;
+				PRODUCT_BUNDLE_IDENTIFIER = com.andre.ShipTrip.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BF1F290C2EF5A001006C7F7D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShipTripWidget/ShipTripWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 28;
+				DEVELOPMENT_TEAM = LH324Y9MG7;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShipTripWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShipTrip;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.8.7;
+				PRODUCT_BUNDLE_IDENTIFIER = com.andre.ShipTrip.Widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -601,6 +768,15 @@
 			buildConfigurations = (
 				BF1F28352EF411EB006C7F7D /* Debug */,
 				BF1F28362EF411EB006C7F7D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF1F290D2EF5A001006C7F7D /* Build configuration list for PBXNativeTarget "ShipTripWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF1F290B2EF5A001006C7F7D /* Debug */,
+				BF1F290C2EF5A001006C7F7D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
