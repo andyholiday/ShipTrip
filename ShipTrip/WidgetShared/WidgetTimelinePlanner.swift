@@ -15,7 +15,8 @@ enum WidgetTimelinePlanner {
     static let maxEntries = 12
 
     /// So weit reicht die Timeline mindestens, damit das Widget auch ohne
-    /// Reload aktuell bleibt.
+    /// Reload aktuell bleibt — und zugleich die groesste erlaubte Luecke
+    /// zwischen zwei Eintraegen.
     static let minimumHorizon: TimeInterval = 24 * 60 * 60
 
     /// Zeitpunkte, zu denen sich die Anzeige aendern kann — aufsteigend,
@@ -26,12 +27,20 @@ enum WidgetTimelinePlanner {
     /// der Moment, in dem die laufende Reise endet — dazu die folgenden
     /// Tagesmitternachte, damit zwischen zwei Eintraegen hoechstens ein
     /// Kalendertag liegt.
+    ///
+    /// In jedem Zustand reicht die Liste mindestens `minimumHorizon` weit und
+    /// laesst zwischen zwei Eintraegen hoechstens `minimumHorizon` — dafuer
+    /// sorgt `filled(_:now:calendar:)`.
     static func entryDates(for state: WidgetState, now: Date, calendar: Calendar) -> [Date] {
         // Leerlauf und leere Zustaende aendern sich nur mit dem Datumswechsel;
-        // danach fragt WidgetKit ueber die `.after`-Policy ohnehin neu.
+        // danach fragt WidgetKit ueber die `.after`-Policy ohnehin neu. Die
+        // naechste Mitternacht allein liegt aber oft weniger als 24 Stunden
+        // voraus — deshalb auffuellen, statt dort aufzuhoeren.
         switch state {
         case .idle, .unavailable:
-            return [now, nextMidnight(after: now, calendar: calendar)]
+            return filled([now, nextMidnight(after: now, calendar: calendar)],
+                          now: now,
+                          calendar: calendar)
         case .active, .countdown:
             break
         }
@@ -52,7 +61,39 @@ enum WidgetTimelinePlanner {
 
         // Der Deckel greift erst nach dem Sortieren: die nahen Ankunfts- und
         // Abfahrtszeiten ueberleben ihn, nur ferne Mitternachte fallen weg.
-        return Array(dates.prefix(maxEntries))
+        return Array(filled(dates, now: now, calendar: calendar).prefix(maxEntries))
+    }
+
+    // MARK: - Horizont und Luecken
+
+    /// Ergaenzt Zwischenschritte, bis die Liste `minimumHorizon` weit reicht
+    /// und zwischen zwei Eintraegen hoechstens `minimumHorizon` liegt.
+    ///
+    /// Noetig wird das an zwei Stellen: bei Leerlauf und leeren Zustaenden,
+    /// deren einziger Kandidat die naechste Mitternacht ist, und am
+    /// 25-Stunden-Tag der Zeitumstellung, an dem zwei aufeinanderfolgende
+    /// Mitternachte eine Luecke von 25 Stunden aufreissen.
+    ///
+    /// - Precondition: `dates` ist aufsteigend sortiert und dublettenfrei.
+    private static func filled(_ dates: [Date], now: Date, calendar: Calendar) -> [Date] {
+        var result: [Date] = []
+        for date in dates {
+            while let last = result.last, date.timeIntervalSince(last) > minimumHorizon {
+                result.append(dayLater(than: last, calendar: calendar))
+            }
+            result.append(date)
+        }
+        while let last = result.last, last.timeIntervalSince(now) < minimumHorizon {
+            result.append(dayLater(than: last, calendar: calendar))
+        }
+        return result
+    }
+
+    /// 24 Stunden spaeter — ueber den Kalender gerechnet statt ueber eine
+    /// feste Sekundenzahl.
+    private static func dayLater(than date: Date, calendar: Calendar) -> Date {
+        calendar.date(byAdding: .hour, value: 24, to: date)
+            ?? date.addingTimeInterval(minimumHorizon)
     }
 
     // MARK: - Kandidaten

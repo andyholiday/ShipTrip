@@ -28,7 +28,8 @@ Zweig enthalten (sie stehen gar nicht erst im Snapshot).
 
 - **Aktiv** — Reise ab `startDate` bis zum Ende des Kalendertags von `endDate`; bei
   mehreren gewinnt der früheste Start. Gezeigt werden der aktuelle Eintrag der
-  kanonischen Ordnung (`sortOrder`, bei Gleichstand `arrival`, dann `id`) mit
+  kanonischen Ordnung (aktuell ist das Zeitfenster `[Ankunft, Abfahrt)`, Ordnung nach
+  `sortOrder`, bei Gleichstand `arrival`, dann `id`) mit
   „Ankunft HH:MM · Abfahrt HH:MM" sowie „Nächster Stopp: *Name*, *Datum*". Ist der
   aktuelle Eintrag ein Seetag, steht *Seetag* als aktueller Stopp. Nach dem letzten
   Eintrag tritt „Reiseende *Datum*" an die Stelle des nächsten Stopps; steht der erste
@@ -67,7 +68,8 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
 - **Timeline:** `WidgetTimelinePlanner.entryDates(for:now:calendar:)` liefert die
   Zeitpunkte möglicher Wechsel (Ankunft/Abfahrt des aktuellen und nächsten Stopps,
   Mitternachte, Reisestart, Reiseende) — höchstens 12, mit `.after`-Policy auf den
-  letzten Eintrag.
+  letzten Eintrag. Die Liste reicht in jedem Zustand mindestens 24 Stunden und lässt
+  zwischen zwei Einträgen höchstens 24 Stunden (Zwischenschritt am 25-Stunden-Tag).
 
 ## Architektur-Regeln
 
@@ -88,15 +90,15 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
 ## Acceptance-Status
 
 Bezug: `.planning/ZIEL.md` (v5.1) K1–K5. Testbeleg für alle „runtime-verifiziert"-Zeilen
-ist der Lauf über vier Widget-Suiten mit 38/38 grün
-(`.winston-evidence/20260903T152731Z/gate-run.json`).
+ist der Lauf über vier Widget-Suiten mit 45/45 grün
+(`.winston-evidence/20260903T160134Z/gate-run.json`).
 
 | Kriterium | Stand | Beleg |
 |-----------|-------|-------|
-| K1 Zustände | runtime-verifiziert | `WidgetStateResolverTests` (18), Store-Tests (6) |
+| K1 Zustände | runtime-verifiziert | `WidgetStateResolverTests` (21), Store-Tests (7) |
 | K2 Familien | **offen** | Views und Katalog DE/EN liegen; Abnahme T5 fehlt |
-| K3 Datenweg | runtime-verifiziert | `WidgetSnapshotPublisherTests` (8) |
-| K4 Timeline | runtime-verifiziert nach W1-Fix | `WidgetTimelinePlannerTests` (6), Fix bed8003 |
+| K3 Datenweg | runtime-verifiziert | `WidgetSnapshotPublisherTests` (9) |
+| K4 Timeline | runtime-verifiziert nach Fix 2 | `WidgetTimelinePlannerTests` (8), Fix bed8003 |
 | K5 Release-Hygiene | in Arbeit | Doku und Katalog fertig; Bump/Gate (T5), Signing (T7) offen |
 
 K3 deckt didSave, Anlegen/Bearbeiten/Löschen, Demo-Filter, Koaleszierung,

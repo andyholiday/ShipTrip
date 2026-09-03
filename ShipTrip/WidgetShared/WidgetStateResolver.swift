@@ -147,20 +147,23 @@ enum WidgetStateResolver {
         return lhs.id.uuidString < rhs.id.uuidString
     }
 
-    /// Aktueller Eintrag: erst das Zeitfenster, dann der heutige Kalendertag,
-    /// zuletzt der letzte vergangene Eintrag. `nil`, wenn die Route leer ist
-    /// oder noch kein Eintrag begonnen hat.
+    /// Aktueller Eintrag: erst das Zeitfenster `[Ankunft, Abfahrt)`, dann der
+    /// heutige Kalendertag, zuletzt der letzte vergangene Eintrag. `nil`, wenn
+    /// die Route leer ist oder noch kein Eintrag begonnen hat.
     ///
-    /// Liegen mehrere Eintraege auf dem heutigen Tag (Tenderhafen morgens,
-    /// Abendhafen), gilt der letzte, dessen Ankunft schon vorbei ist.
+    /// Das Fenster ist halboffen, damit der Wechsel bei nahtlos
+    /// aneinandergrenzenden Stopps genau zur Abfahrtszeit faellt und nicht
+    /// erst danach. Passen mehrere Fenster (ueberlappende oder deckungs-
+    /// gleiche Stopps), gilt — wie beim Kalendertag — der kanonisch letzte,
+    /// dessen Ankunft schon vorbei ist.
     private static func currentIndex(
         in stops: [WidgetStopInfo],
         now: Date,
         calendar: Calendar
     ) -> Int? {
-        let inWindow = stops.firstIndex { stop in
+        let inWindow = stops.lastIndex { stop in
             guard let arrival = stop.arrival, let departure = stop.departure else { return false }
-            return arrival <= now && now <= departure
+            return arrival <= now && now < departure
         }
         if let inWindow { return inWindow }
 
