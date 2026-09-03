@@ -60,6 +60,12 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
   laufen durch `WidgetSnapshotPublisher.publish()` mit **1 s Debounce**, danach
   `WidgetCenter.shared.reloadAllTimelines()`. Fehler werden geloggt, nie geworfen — ein
   Widget-Problem darf keinen Speichervorgang der App abbrechen.
+- **Separater Lesekontext:** gelesen wird je Veröffentlichung aus einem frischen
+  `ModelContext(container)` (`autosaveEnabled = false`), nie aus dem `mainContext` — so
+  landen offene, noch ungespeicherte Änderungen nie im Widget. Scheitert der Fetch,
+  bricht der Publisher ab (kein Schreiben, kein Reload) und der Last-known-good bleibt
+  stehen. Jeder Schreibvorgang trägt eine monotone Generationsnummer; der Writer
+  verwirft überholte Aufträge, und nur der jüngste Lauf löst den Reload aus.
 - **Kappung:** höchstens 3 Reisen (aktive, nächste geplante, jüngste vergangene),
   höchstens 40 Stopps je Reise (bei längeren Routen ein Fenster um den aktuellen
   Stopp), Datei < 64 KB. Keine Fotos, Koordinaten, Ausgaben oder Journaleinträge.

@@ -31,10 +31,14 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
     private let reload: @Sendable () -> Void
     private let debounce: Duration
 
-    /// Lesevorgang als Naht (Fix 3): die Voreinstellung holt alle
-    /// Nicht-Demo-Reisen aus dem uebergebenen Kontext, Tests reichen einen
-    /// Fehlerfall herein.
+    /// Lesevorgang als Naht: die Voreinstellung holt alle Nicht-Demo-Reisen
+    /// aus dem uebergebenen Lesekontext, Tests reichen einen Fehlerfall herein.
     private let fetchCruises: (ModelContext) throws -> [Cruise]
+
+    /// Laufende Nummer der Schreibvorgaenge. Jeder `write()` zieht die
+    /// naechste; nur der jeweils juengste Lauf reloadet, ein von einem
+    /// neueren ueberholter tritt still zurueck.
+    private var generation: UInt64 = 0
 
     /// Der eine ausstehende Schreibauftrag. Ein neuer `publish()`-Aufruf
     /// verwirft ihn und plant neu — so wird aus einem Sturm von Saves genau
@@ -96,20 +100,40 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
     // MARK: - Schreiben
 
     private func write() async {
-        let snapshot = makeSnapshot(now: Date())
+        generation &+= 1
+        let mine = generation
+        guard let snapshot = makeSnapshot(now: Date()) else { return }
         do {
-            try await writer.save(snapshot, generation: 0)
+            try await writer.save(snapshot, generation: mine)
         } catch {
             logger.error("Widget-Snapshot nicht geschrieben: \(error.localizedDescription)")
             return
         }
+        // Ein neuerer Lauf hat inzwischen uebernommen — der reloadet selbst.
+        guard mine == generation else { return }
         reload()
     }
 
     /// Fetch und DTO-Abbildung laufen vollstaendig hier auf dem MainActor;
     /// den Aktor verlassen ausschliesslich `Sendable`-Werte, nie ein `@Model`.
-    private func makeSnapshot(now: Date) -> WidgetSnapshot {
-        let cruises = (try? fetchCruises(container.mainContext)) ?? []
+    ///
+    /// Gelesen wird aus einem **frischen, eigenen `ModelContext`** je Aufruf:
+    /// der sieht ausschliesslich den persistierten Store-Stand, nie die
+    /// offenen Aenderungen des `mainContext`. `autosaveEnabled = false`, damit
+    /// dieser Lesekontext selbst nie schreibt.
+    ///
+    /// Scheitert der Fetch, gibt es `nil` statt eines leeren Snapshots — der
+    /// Aufrufer bricht dann ab und laesst den Last-known-good stehen.
+    private func makeSnapshot(now: Date) -> WidgetSnapshot? {
+        let readContext = ModelContext(container)
+        readContext.autosaveEnabled = false
+        let cruises: [Cruise]
+        do {
+            cruises = try fetchCruises(readContext)
+        } catch {
+            logger.error("Widget-Snapshot nicht gelesen: \(error.localizedDescription)")
+            return nil
+        }
         let calendar = Calendar.current
         let active = activeCruise(in: cruises, now: now, calendar: calendar)
 

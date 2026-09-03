@@ -17,6 +17,9 @@ actor WidgetSnapshotWriter {
 
     private let store: WidgetSnapshotStore
 
+    /// Nummer des zuletzt angenommenen Auftrags.
+    private var lastAccepted: UInt64 = 0
+
     init(store: WidgetSnapshotStore) {
         self.store = store
     }
@@ -24,9 +27,13 @@ actor WidgetSnapshotWriter {
     /// Schreibt den Snapshot. Wirft weiter, damit der Aufrufer entscheidet,
     /// wie er den Fehler behandelt — die App protokolliert ihn nur.
     ///
-    /// `generation` ist die Naht fuer Fix 3: veraltete Auftraege verwirft
-    /// diese Fassung noch nicht.
+    /// Auftraege mit kleinerer `generation` als der zuletzt angenommene sind
+    /// von einem neueren ueberholt worden; sie werden verworfen, statt den
+    /// frischeren Stand auf der Platte zu ueberschreiben. Der Aktor
+    /// serialisiert, die Reihenfolge der Ankunft entscheidet also nicht.
     func save(_ snapshot: WidgetSnapshot, generation: UInt64) throws {
+        guard generation >= lastAccepted else { return }
+        lastAccepted = generation
         try store.save(snapshot)
     }
 }
