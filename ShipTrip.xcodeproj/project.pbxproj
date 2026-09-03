@@ -62,6 +62,9 @@
 				WidgetShared/WidgetSnapshot.swift,
 				WidgetShared/WidgetSnapshotPublishing.swift,
 				WidgetShared/WidgetSnapshotStore.swift,
+				WidgetShared/WidgetState.swift,
+				WidgetShared/WidgetStateResolver.swift,
+				WidgetShared/WidgetTimelinePlanner.swift,
 			);
 			target = BF1F29032EF5A001006C7F7D /* ShipTripWidget */;
 		};
