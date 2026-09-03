@@ -38,6 +38,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   vorliegt. Änderungen von einem anderen Gerät erscheinen erst, nachdem die
   App dort einmal im Vordergrund war.
   ([ADR-009](docs/adr/ADR-009-widget-app-group-snapshot.md))
+- **Widget-Stand direkt beim App-Start**: Die App schreibt den Auszug für das
+  Widget schon beim Öffnen, nicht erst bei der nächsten Änderung. Ein frisch
+  installiertes Gerät zeigt damit sofort die Reiselage statt „Öffne ShipTrip
+  zum Aktualisieren".
+- **Nur Entwicklung: Widget-Galerie für Abnahmebilder**: Mit dem Startargument
+  `-widgetPreview` zeigt die App alle Widget-Größen in allen Zuständen; die
+  UI-Test-Suite `WidgetScreenshotUITests` fotografiert sie. In der ausgelieferten
+  App ist die Galerie nicht erreichbar.
+  ([Feature-Doku](docs/features/widget.md))
 
 ---
 

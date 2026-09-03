@@ -1,7 +1,8 @@
 # Home-Screen-Widget
 
-Stand: 1.9.0 in Arbeit (T0–T4 gemergt, W1-Fix eingearbeitet). Release-Schnitt,
-Screenshot-Abnahme und Signing stehen aus — siehe Acceptance-Status.
+Stand: 1.9.0 in Arbeit (T0–T5c gemergt, Stand 53b0833, Version 1.9.0 / Build 29).
+Der Screenshot-Nachweis liegt vor; Signing und TestFlight-Upload (T7) stehen aus —
+siehe Acceptance-Status.
 
 Das Widget zeigt die Reiselage auf Home- und Sperrbildschirm: bei laufender Reise
 den aktuellen Stopp mit Zeiten und den nächsten, vor einer Reise den Countdown,
@@ -28,8 +29,9 @@ Zweig enthalten (sie stehen gar nicht erst im Snapshot).
 
 - **Aktiv** — Reise ab `startDate` bis zum Ende des Kalendertags von `endDate`; bei
   mehreren gewinnt der früheste Start. Gezeigt werden der aktuelle Eintrag der
-  kanonischen Ordnung (aktuell ist das Zeitfenster `[Ankunft, Abfahrt)`, Ordnung nach
-  `sortOrder`, bei Gleichstand `arrival`, dann `id`) mit
+  kanonischen Ordnung (aktuell ist das halboffene Zeitfenster `[Ankunft, Abfahrt)`,
+  Ordnung nach `sortOrder`, bei Gleichstand `arrival`, dann `id`; haben mehrere Stopps
+  gleichzeitig begonnen, gewinnt der in dieser Ordnung letzte) mit
   „Ankunft HH:MM · Abfahrt HH:MM" sowie „Nächster Stopp: *Name*, *Datum*". Ist der
   aktuelle Eintrag ein Seetag, steht *Seetag* als aktueller Stopp. Nach dem letzten
   Eintrag tritt „Reiseende *Datum*" an die Stelle des nächsten Stopps; steht der erste
@@ -60,6 +62,9 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
   laufen durch `WidgetSnapshotPublisher.publish()` mit **1 s Debounce**, danach
   `WidgetCenter.shared.reloadAllTimelines()`. Fehler werden geloggt, nie geworfen — ein
   Widget-Problem darf keinen Speichervorgang der App abbrechen.
+- **Kaltstart:** ein `.task` am Wurzel-Aufbau der App veröffentlicht einmal je Start, damit
+  ein frisch installiertes Gerät nicht ohne Snapshot bleibt, bis zufällig gespeichert wird
+  (`ShipTripApp.swift`).
 - **Separater Lesekontext:** gelesen wird je Veröffentlichung aus einem frischen
   `ModelContext(container)` (`autosaveEnabled = false`), nie aus dem `mainContext` — so
   landen offene, noch ungespeicherte Änderungen nie im Widget. Scheitert der Fetch,
@@ -76,6 +81,8 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
   Mitternachte, Reisestart, Reiseende) — höchstens 12, mit `.after`-Policy auf den
   letzten Eintrag. Die Liste reicht in jedem Zustand mindestens 24 Stunden und lässt
   zwischen zwei Einträgen höchstens 24 Stunden (Zwischenschritt am 25-Stunden-Tag).
+  Auch „Keine Reise geplant" und „Nicht verfügbar" füllen diesen Horizont mit
+  Mitternachts-Einträgen, statt nur einen einzigen Zeitpunkt zu liefern.
 
 ## Architektur-Regeln
 
@@ -93,22 +100,49 @@ Container (Begründung: [ADR-009](../adr/ADR-009-widget-app-group-snapshot.md)).
 - Der SwiftData-/CloudKit-Store bleibt unverändert: kein Schema-Change, keine
   Store-Verlagerung, keine Migration.
 
+## Nachweis K2 / Screenshot-Harness
+
+WidgetKit rendert die echten Widgets in einem fremden Prozess, den XCUITest nicht
+erreicht. Belegbilder entstehen deshalb über eine Debug-Galerie in der App.
+
+- **Galerie:** `ShipTrip/Views/Debug/WidgetPreviewGalleryView.swift` zeigt alle vier
+  Familien in allen vier Zuständen in Widget-Rahmengröße. Sie ersetzt den Hauptbaum nur,
+  wenn die App mit dem Launch-Argument `-widgetPreview` startet (`widgetPreviewOverride()`
+  in `ShipTripApp.swift`).
+- **Damit die Galerie dieselben Ansichten zeigt wie das Widget**, sind die Dateien aus
+  `ShipTripWidget/Views/` und `WidgetFormatting.swift` zusätzlich Mitglied des
+  App-Targets (`membershipExceptions` in `ShipTrip.xcodeproj/project.pbxproj`).
+- **Suite:** `ShipTripUITests/WidgetScreenshotUITests.swift` (4 Tests) scrollt jede Zelle
+  in Sicht und legt die Bilder unter `audit/screenshots/widget-*.png` ab.
+- **Stolperstein:** Der Ausgabeordner kommt aus `SHIPTRIP_SCREENSHOT_DIR`. Fehlt die
+  Variable, überspringt sich die Suite per `XCTSkip` **still** und meldet trotzdem grün.
+  Bei `test-without-building` genügt es nicht, sie in der Shell zu setzen — sie muss in den
+  `EnvironmentVariables`-Block der `.xctestrun`-Datei injiziert werden, sonst erreicht sie
+  den Testprozess nie.
+
 ## Acceptance-Status
 
 Bezug: `.planning/ZIEL.md` (v5.1) K1–K5. Testbeleg für alle „runtime-verifiziert"-Zeilen
-ist der Lauf über vier Widget-Suiten mit 45/45 grün
-(`.winston-evidence/20260903T160134Z/gate-run.json`).
+sind 49/49 grün über vier Widget-Suiten — Store 7, Resolver 21, Planner 8, Publisher 13
+(`.winston-evidence/20260903T161424Z/gate-run.json`, Commit 3735daf). Die volle Unit-Suite
+lief vor den Fix-Runden 2 und 3 mit 619/619
+(`.winston-evidence/20260903T154931Z/gate-run.json`).
 
 | Kriterium | Stand | Beleg |
 |-----------|-------|-------|
 | K1 Zustände | runtime-verifiziert | `WidgetStateResolverTests` (21), Store-Tests (7) |
-| K2 Familien | **offen** | Views und Katalog DE/EN liegen; Abnahme T5 fehlt |
-| K3 Datenweg | runtime-verifiziert | `WidgetSnapshotPublisherTests` (9) |
-| K4 Timeline | runtime-verifiziert nach Fix 2 | `WidgetTimelinePlannerTests` (8), Fix bed8003 |
-| K5 Release-Hygiene | in Arbeit | Doku und Katalog fertig; Bump/Gate (T5), Signing (T7) offen |
+| K2 Familien | runtime-verifiziert | `WidgetScreenshotUITests` 4/4, 23 Bilder gesichtet |
+| K3 Datenweg | runtime-verifiziert | `WidgetSnapshotPublisherTests` (13) |
+| K4 Timeline | runtime-verifiziert | `WidgetTimelinePlannerTests` (8) |
+| K5 Release-Hygiene | in Arbeit | Release-Gate läuft; Signing/TestFlight (T7) offen |
+
+K2 ist per Sichtprüfung der 23 Bilder unter `audit/screenshots/widget-*.png` (Haupt-Repo,
+unversioniert) abgenommen; Lauf `.winston-evidence/20260903T164049Z/gate-run.json`,
+Commit 53b0833. ZIEL K2 erlaubt dabei ausdrücklich, dass der Reisetitel als Sekundärzeile
+kürzt.
 
 K3 deckt didSave, Anlegen/Bearbeiten/Löschen, Demo-Filter, Koaleszierung,
-Failure-Injection und die Kappung ab.
+Failure-Injection, den separaten Lesekontext, den Fetch-Fehler-Abbruch und die Kappung ab.
 
 ## Known Limitations
 
@@ -123,6 +157,15 @@ Failure-Injection und die Kappung ab.
   nicht selbst mit einem `Calendar` rechnen.
 - **Kappung ist sichtbar:** Routen jenseits von 40 Stopps zeigt das Widget nur im
   Fenster um den aktuellen Stopp; mehr als drei relevante Reisen kennt es nicht.
+- **Widget-Ansichten liegen auch im App-Binary:** Für die Screenshot-Galerie sind sie
+  Mitglied des App-Targets. Außerhalb der Debug-Galerie ruft die App sie nicht auf; im
+  Release wird der Code also mitgeliefert, ohne benutzt zu werden.
+- **Zeitzonenwechsel während einer Reise ist nicht gesondert behandelt:** Alle
+  Kalendertage entstehen in der jeweils aktuellen Gerätezeitzone; ein Wechsel an Bord
+  verschiebt damit Tagesgrenzen im Widget.
+- **Die 64-KB-Grenze ist nicht zur Laufzeit geprüft:** Sie ist nur durch einen Test am
+  Maximalbestand belegt (`WidgetSnapshotStoreTests`); es gibt keinen Wächter, der einen
+  zu großen Snapshot abweist.
 - **Zwei Datenrepräsentationen:** SwiftData-Modelle und Snapshot-DTOs müssen bei
   Feldänderungen gemeinsam gepflegt werden; `schemaVersion` fängt nur Fehlversionen ab.
 

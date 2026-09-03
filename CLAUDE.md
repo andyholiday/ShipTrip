@@ -105,6 +105,8 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
   eingetragen werden, sonst baut die Extension nicht.
 - `ShipTripWidget/` — WidgetKit-Extension (Bundle `com.andre.ShipTrip.Widget`, App Group
   `group.com.andre.ShipTrip`, eigener String Catalog). Siehe `docs/features/widget.md`.
+- `ShipTrip/Views/Debug/` — nur für Abnahmebilder: `WidgetPreviewGalleryView` erscheint
+  ausschließlich beim Start mit `-widgetPreview` (siehe `docs/features/widget.md`).
 - `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
 - `docs/` — Architektur, Features, ADRs (`docs/adr/`) · `CHANGELOG.md` (Keep a Changelog)
@@ -124,6 +126,9 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 
 - Build/Test bevorzugt über die Xcode-MCP-Tools (`BuildProject`, `RunAllTests`) oder
   `xcodebuild -scheme ShipTrip`. Test-Builds laufen strikt seriell.
+- Screenshot-Suiten lesen `SHIPTRIP_SCREENSHOT_DIR`; bei `test-without-building` muss die
+  Variable in den `EnvironmentVariables`-Block der `.xctestrun`-Datei injiziert werden,
+  sonst überspringen sich die Tests still und der Lauf meldet trotzdem grün.
 
 ## CloudKit-Hinweis
 

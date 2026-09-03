@@ -51,8 +51,10 @@ Gerätezeitzone.
 Alle Writes laufen über `actor WidgetSnapshotWriter`, ausgelöst durch einen
 zentralen Hook auf `ModelContext.didSave` (plus `scenePhase == .active` und
 `NSPersistentStoreRemoteChange` als Sicherheitsnetz), koalesziert über einen
-Debounce. Der Write ist atomar; schlägt er fehl, bleibt die vorige Datei als
-**Last-known-good** stehen. Fehler werden geloggt, nie geworfen — kein
+Debounce. Gelesen wird dabei aus einem eigenen, nicht autosavenden `ModelContext`, nie
+aus dem `mainContext`, damit ungespeicherte Bearbeitungen nicht ins Widget gelangen;
+scheitert der Fetch, unterbleibt der Write. Der Write ist atomar; schlägt er fehl,
+bleibt die vorige Datei als **Last-known-good** stehen. Fehler werden geloggt, nie geworfen — kein
 Widget-Problem darf einen Cruise-Save, einen Import oder einen Reset abbrechen.
 
 **4. Gelesen wird defensiv, nie blockierend.**
@@ -93,6 +95,9 @@ kennt nur Foundation.
   ohne Simulator und ohne SwiftData unit-testbar.
 - Bricht der Schreibweg, degradiert das Widget sichtbar (`.missing`,
   `.unreadable`, `.stale`) statt still falsche Zeiten zu zeigen.
+- Der separate Lesekontext hält den Snapshot auf dem persistierten Stand: Das Widget
+  zeigt nie eine offene Bearbeitung, und ein fehlgeschlagener Fetch lässt den
+  Last-known-good stehen, statt ihn zu überschreiben.
 
 **Neutral**
 
