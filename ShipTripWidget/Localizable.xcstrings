@@ -1,7 +1,326 @@
 {
   "sourceLanguage" : "de",
   "strings" : {
-
+    "%@ – %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ – %@"
+          }
+        }
+      }
+    },
+    "Aktuell" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now"
+          }
+        }
+      }
+    },
+    "Aktueller Hafen, nächster Stopp oder Countdown zur nächsten Reise." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current port, next stop, or countdown to your next cruise."
+          }
+        }
+      }
+    },
+    "Ankunft %@ · Abfahrt %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrival %@ · Departure %@"
+          }
+        }
+      }
+    },
+    "Bereits vorbei" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Already over"
+          }
+        }
+      }
+    },
+    "Einschiffung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Embarkation"
+          }
+        }
+      }
+    },
+    "Heute!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today!"
+          }
+        }
+      }
+    },
+    "In %lld Monat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld month"
+          }
+        }
+      }
+    },
+    "In %lld Monaten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld months"
+          }
+        }
+      }
+    },
+    "In %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld days"
+          }
+        }
+      }
+    },
+    "In %lld Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld week"
+          }
+        }
+      }
+    },
+    "In %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In %lld weeks"
+          }
+        }
+      }
+    },
+    "In ca. %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In about %lld weeks"
+          }
+        }
+      }
+    },
+    "Keine neue Reise geplant" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cruise planned"
+          }
+        }
+      }
+    },
+    "Letzte Reise gestern beendet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise ended yesterday"
+          }
+        }
+      }
+    },
+    "Letzte Reise heute beendet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise ended today"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor %lld Monat" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise %lld month ago"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor %lld Monaten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise %lld months ago"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor %lld Tagen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise %lld days ago"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor %lld Woche" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise %lld week ago"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise %lld weeks ago"
+          }
+        }
+      }
+    },
+    "Letzte Reise vor ca. %lld Wochen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last cruise about %lld weeks ago"
+          }
+        }
+      }
+    },
+    "Mittelmeer-Kreuzfahrt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mediterranean Cruise"
+          }
+        }
+      }
+    },
+    "Morgen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow"
+          }
+        }
+      }
+    },
+    "Noch keine Reise — leg deine erste an" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No cruise yet — add your first one"
+          }
+        }
+      }
+    },
+    "Nächster Stopp" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Stop"
+          }
+        }
+      }
+    },
+    "Nächster Stopp: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next stop: %@"
+          }
+        }
+      }
+    },
+    "Nächster Stopp: %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next stop: %@, %@"
+          }
+        }
+      }
+    },
+    "Reiseende %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cruise ends %@"
+          }
+        }
+      }
+    },
+    "Reisestatus" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cruise Status"
+          }
+        }
+      }
+    },
+    "Seetag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sea Day"
+          }
+        }
+      }
+    },
+    "Öffne ShipTrip zum Aktualisieren" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open ShipTrip to refresh"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
