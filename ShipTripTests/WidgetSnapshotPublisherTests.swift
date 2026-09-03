@@ -268,6 +268,27 @@ struct WidgetSnapshotPublisherTests {
         #expect(routeLengths == [40, 40, 0])
     }
 
+    /// Kaltstart ohne Bearbeitung (W2a-F01): keiner der drei ereignisgebundenen
+    /// Hooks feuert sicher, wenn der Nutzer die App nur oeffnet und liest.
+    /// Der `.task`-Hook in `ShipTripApp` ruft dafuer `publishNow()` — hier ist
+    /// die Zusicherung, auf die er sich stuetzt: ein Aufruf auf frischem
+    /// Container **ohne** vorherigen Save hinterlaesst eine lesbare Datei,
+    /// nicht `.missing`.
+    @Test("Kaltstart ohne Save schreibt trotzdem einen Snapshot")
+    func publishNowWritesSnapshotWithoutAnySave() async throws {
+        let container = try makeContainer()
+        let store = makeStore()
+        let publisher = WidgetSnapshotPublisher(container: container, store: store, reload: {})
+
+        await publisher.publishNow()
+
+        guard case .snapshot(let snapshot) = store.load() else {
+            Issue.record("Kaltstart hinterlaesst keine lesbare Snapshot-Datei")
+            return
+        }
+        #expect(snapshot.cruises.isEmpty)
+    }
+
     @Test("Ohne Veroeffentlichung entsteht keine Datei")
     func initDoesNotPublish() async throws {
         let container = try makeContainer()

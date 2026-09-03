@@ -320,6 +320,13 @@ struct ShipTripApp: App {
                     .onChange(of: scenePhase) { _, phase in
                         if phase == .active { widgetPublisher?.publish() }
                     }
+                    // Kaltstart-Netz: die drei Hooks daruaeber haengen alle an
+                    // einem *Ereignis* — ein Save, ein CloudKit-Merge oder ein
+                    // Wechsel von `scenePhase`. Oeffnet der Nutzer die App nur
+                    // und liest, tritt keines davon ein und das Widget bliebe
+                    // ohne Snapshot. `.task` laeuft genau einmal beim Aufbau
+                    // der Szene und schreibt bedingungslos den Ist-Stand.
+                    .task { await widgetPublisher?.publishNow() }
                     // Bewusst **nach** dem Cover: eine Praesentation erbt die
                     // Umgebung an der Stelle ihres Modifiers, nicht die der
                     // modifizierten Ansicht. Stand `.modelContainer` darueber,

@@ -60,8 +60,8 @@ final class WidgetSnapshotPublisher: WidgetSnapshotPublishing {
         }
     }
 
-    /// Schreibt sofort, ohne Entprellung. Fuer `scenePhase`-Uebergaenge und
-    /// Tests, die kein Warten auf den Debounce brauchen.
+    /// Schreibt sofort, ohne Entprellung. Fuer den Kaltstart-Hook in
+    /// `ShipTripApp` und Tests, die kein Warten auf den Debounce brauchen.
     func publishNow() async {
         pending?.cancel()
         pending = nil
