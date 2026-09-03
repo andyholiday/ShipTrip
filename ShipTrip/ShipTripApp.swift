@@ -338,8 +338,12 @@ struct ShipTripApp: App {
                     // haengt: Hauptbaum, Cover und Alert teilen denselben
                     // `mainContext`.
                     .modelContainer(container)
+                    // Debug-Abzweig fuer die Widget-Screenshots (LE 10):
+                    // `-widgetPreview` zeigt statt des Hauptbaums die Galerie.
+                    .widgetPreviewOverride()
             } else {
                 StoreUnavailableView()
+                    .widgetPreviewOverride()
             }
         }
     }

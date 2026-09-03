@@ -68,6 +68,21 @@
 			);
 			target = BF1F29032EF5A001006C7F7D /* ShipTripWidget */;
 		};
+		BF1F29202EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTrip" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				PreviewFixtures.swift,
+				ShipTripWidget.swift,
+				Views/CircularWidgetView.swift,
+				Views/MediumWidgetView.swift,
+				Views/RectangularWidgetView.swift,
+				Views/ShipTripWidgetEntryView.swift,
+				Views/SmallWidgetView.swift,
+				Views/WidgetStyle.swift,
+				WidgetFormatting.swift,
+			);
+			target = BF1F28092EF411EA006C7F7D /* ShipTrip */;
+		};
 		BF1F290F2EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTripWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -100,6 +115,7 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				BF1F290F2EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTripWidget" target */,
+				BF1F29202EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTrip" target */,
 			);
 			path = ShipTripWidget;
 			sourceTree = "<group>";
