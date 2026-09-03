@@ -210,7 +210,17 @@ struct WidgetSnapshotPublisherTests {
         )
 
         for _ in 0..<5 { publisher.publish() }
-        try await Task.sleep(for: .milliseconds(900))
+        // Auf das Ergebnis warten statt auf die Uhr: der entprellte Task
+        // braucht den MainActor, und unter voller Suite-Last kommt er dort
+        // spaeter dran als debounce + fester Puffer. Ein starres
+        // `Task.sleep(900ms)` hat genau daran fehlgeschlagen (0 statt 1).
+        let deadline = Date().addingTimeInterval(10)
+        while spy.count == 0, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        // Nachlauf, damit ein zweiter — faelschlich nicht koaleszierter —
+        // Reload noch sichtbar wuerde: er kaeme eine Entprellung nach dem ersten.
+        try await Task.sleep(for: .milliseconds(600))
         let calls = spy.count
 
         #expect(calls == 1)
