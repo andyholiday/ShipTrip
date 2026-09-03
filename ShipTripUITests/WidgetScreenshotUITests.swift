@@ -61,11 +61,14 @@ final class WidgetScreenshotUITests: XCTestCase {
     func testGallery_DE_Light_LargeType() throws {
         let app = try launch(language: "de", locale: "de_DE", scheme: "light", size: .large)
         for family in Self.families {
-            for state in ["active", "countdown", "idle"] {
+            // `unavailable` genuegt einmal. Der Zustand steht in der Galerie
+            // hinter `idle`, wird hier also im Vorwaertslauf mitgenommen —
+            // nachtraeglich zurueckscrollen kann `scrollIntoView` nicht.
+            let states = family == "small" ? Self.states : ["active", "countdown", "idle"]
+            for state in states {
                 try capture(app, family: family, state: state, suffix: "de-light-L")
             }
         }
-        try capture(app, family: "small", state: "unavailable", suffix: "de-light-L")
     }
 
     /// Englisch: Beleg, dass der Widget-Katalog auch im Harness greift.
