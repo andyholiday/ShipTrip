@@ -3,8 +3,9 @@
 //  ShipTripTests
 //
 //  Contract-Tests des Widget-Snapshot-Stores (Taskplan 1.9.0, T0):
-//  Lesefaelle (fehlend/unlesbar/gueltig), Roundtrip am Maximalbestand mit
-//  Groessenbudget und Last-known-good beim gescheiterten Schreiben.
+//  Lesefaelle (fehlend/unlesbar/gueltig), Toleranz gegenueber unbekannten
+//  Feldern, Roundtrip am Maximalbestand mit Groessenbudget und
+//  Last-known-good beim gescheiterten Schreiben.
 //
 
 import Testing
@@ -95,6 +96,30 @@ struct WidgetSnapshotStoreTests {
         snapshot.schemaVersion = WidgetSnapshot.current + 1
         try store.save(snapshot)
         #expect(store.load() == .unreadable)
+    }
+
+    @Test("Unbekannte Zusatzfelder werden ueberlesen, nicht als Fehler gewertet")
+    func unknownFieldsAreIgnored() throws {
+        let store = WidgetSnapshotStore(containerURL: try makeTempDirectory())
+        let snapshot = makeMaximalSnapshot()
+        let encoded = try WidgetSnapshotStore.makeEncoder().encode(snapshot)
+
+        // Ein spaeteres Schema derselben Version darf Felder ergaenzen, ohne
+        // dass die aktuelle App-Version die Datei fuer unlesbar haelt.
+        guard var object = try JSONSerialization.jsonObject(with: encoded) as? [String: Any],
+              var cruises = object["cruises"] as? [[String: Any]],
+              var route = cruises[0]["route"] as? [[String: Any]] else {
+            Issue.record("Snapshot-JSON hat nicht die erwartete Struktur")
+            return
+        }
+        route[0]["tenderPort"] = true
+        cruises[0]["route"] = route
+        cruises[0]["bookingNumber"] = "AIDA-4711"
+        object["cruises"] = cruises
+        object["writtenBy"] = "1.9.1"
+        try JSONSerialization.data(withJSONObject: object).write(to: store.fileURL)
+
+        #expect(store.load() == .snapshot(snapshot))
     }
 
     // MARK: Roundtrip

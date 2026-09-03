@@ -5,7 +5,8 @@
 //  Zustandsableitung fuer das Widget (Taskplan 1.9.0, T1). Belegt die drei
 //  Zweige aus ZIEL K1 samt Kanten: Tag-Grenze, Ausschiffungstag, zeitlose
 //  Eintraege, `sortOrder`-Ties, Reise ohne Route, mehrere aktive Reisen,
-//  Stale-Grenze und beide DST-Wechsel 2026 in Europe/Berlin.
+//  Stale-Grenze, die Raender des Stopp-Fensters `[Ankunft, Abfahrt)` und
+//  beide DST-Wechsel 2026 in Europe/Berlin.
 //
 
 import Testing
@@ -85,13 +86,15 @@ struct WidgetStateResolverTests {
                 == .unavailable(.unreadable))
     }
 
-    @Test("Stale-Grenze: 13 Tage alt ist frisch, 15 Tage alt ist veraltet")
+    @Test("Stale-Grenze: 13 und exakt 14 Tage sind frisch, 15 Tage sind veraltet")
     func staleBoundary() {
         let now = at(6, 20)
         let fresh = loaded([], generatedAt: at(6, 7))
+        let exactly = loaded([], generatedAt: at(6, 6))
         let old = loaded([], generatedAt: at(6, 5))
 
         #expect(WidgetStateResolver.resolve(fresh, now: now, calendar: berlin).asIdle != nil)
+        #expect(WidgetStateResolver.resolve(exactly, now: now, calendar: berlin).asIdle != nil)
         #expect(WidgetStateResolver.resolve(old, now: now, calendar: berlin)
                 == .unavailable(.stale))
     }
@@ -157,9 +160,11 @@ struct WidgetStateResolverTests {
             stop("Tie A", order: 5, arrival: at(6, 2, 10), departure: at(6, 2, 20), id: ids[0])
         ])]
 
+        // Beide Fenster sind deckungsgleich; kanonisch steht `ids[0]` vorn,
+        // aktuell ist damit der spaetere Eintrag `ids[1]`.
         let first = resolve(cruises, at: at(6, 2, 12)).asActive
-        #expect(first?.currentStop?.id == ids[0])
-        #expect(first?.nextStop?.id == ids[1])
+        #expect(first?.currentStop?.id == ids[1])
+        #expect(first?.nextStop?.name == "Spaet")
         #expect(resolve(cruises, at: at(6, 3, 12)).asActive?.currentStop?.name == "Spaet")
     }
 
@@ -213,6 +218,42 @@ struct WidgetStateResolverTests {
         let between = resolve(cruises, at: at(6, 3, 11)).asActive
         #expect(between?.currentStop?.name == "Frueh")
         #expect(between?.nextStop?.name == "Spaet")
+    }
+
+    @Test("Zur Ankunftszeit gilt der Eintrag bereits als aktuell")
+    func currentStopAtItsArrival() {
+        let info = resolve([standardCruise()], at: at(6, 2, 8)).asActive
+
+        #expect(info?.currentStop?.name == "Bergen")
+        #expect(info?.nextStop?.name == "Seetag")
+    }
+
+    @Test("Nahtloser Nachfolger: zur Abfahrtszeit gilt schon der naechste Stopp")
+    func seamlessStopsSwitchAtDeparture() {
+        // Abfahrt des ersten und Ankunft des zweiten fallen zusammen. Das
+        // Fenster ist halboffen, der Wechsel faellt also exakt auf 14:00.
+        let cruises = [cruise(start: at(6, 1, 17), end: at(6, 7, 8), route: [
+            stop("Bergen", order: 0, arrival: at(6, 3, 8), departure: at(6, 3, 14)),
+            stop("Tromsoe", order: 1, arrival: at(6, 3, 14), departure: at(6, 3, 20))
+        ])]
+
+        #expect(resolve(cruises, at: at(6, 3, 13, 59)).asActive?.currentStop?.name == "Bergen")
+
+        let atSwitch = resolve(cruises, at: at(6, 3, 14)).asActive
+        #expect(atSwitch?.currentStop?.name == "Tromsoe")
+        #expect(atSwitch?.nextStop == nil)
+        #expect(atSwitch?.isAfterLastStop == true)
+    }
+
+    @Test("Ueberlappende Fenster: der kanonisch letzte begonnene Stopp gilt")
+    func overlappingStopsUseCanonicallyLast() {
+        let cruises = [cruise(start: at(6, 1, 17), end: at(6, 7, 8), route: [
+            stop("Bergen", order: 0, arrival: at(6, 3, 8), departure: at(6, 3, 19)),
+            stop("Tromsoe", order: 1, arrival: at(6, 3, 14), departure: at(6, 3, 22))
+        ])]
+
+        #expect(resolve(cruises, at: at(6, 3, 12)).asActive?.currentStop?.name == "Bergen")
+        #expect(resolve(cruises, at: at(6, 3, 16)).asActive?.currentStop?.name == "Tromsoe")
     }
 
     @Test("Nach dem letzten Eintrag: letzter Stopp bleibt, Nachfolger entfaellt")
