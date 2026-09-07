@@ -1,8 +1,7 @@
 # Home-Screen-Widget
 
-Stand: 1.9.0 in Arbeit (T0–T5c gemergt, Stand 53b0833, Version 1.9.0 / Build 29).
-Der Screenshot-Nachweis liegt vor; Signing und TestFlight-Upload (T7) stehen aus —
-siehe Acceptance-Status.
+Stand: 1.9.0 released (Version 1.9.0 / Build 29, TestFlight-Upload 2026-09-07).
+Screenshot-Nachweis, Signing-Gate und Upload liegen vor — siehe Acceptance-Status.
 
 Das Widget zeigt die Reiselage auf Home- und Sperrbildschirm: bei laufender Reise
 den aktuellen Stopp mit Zeiten und den nächsten, vor einer Reise den Countdown,
@@ -134,7 +133,7 @@ lief vor den Fix-Runden 2 und 3 mit 619/619
 | K2 Familien | runtime-verifiziert | `WidgetScreenshotUITests` 4/4, 23 Bilder gesichtet |
 | K3 Datenweg | runtime-verifiziert | `WidgetSnapshotPublisherTests` (13) |
 | K4 Timeline | runtime-verifiziert | `WidgetTimelinePlannerTests` (8) |
-| K5 Release-Hygiene | in Arbeit | Release-Gate läuft; Signing/TestFlight (T7) offen |
+| K5 Release-Hygiene | erfüllt | Signing-Gate T7 grün, TestFlight 1.9.0 (29) hochgeladen |
 
 K2 ist per Sichtprüfung der 23 Bilder unter `audit/screenshots/widget-*.png` (Haupt-Repo,
 unversioniert) abgenommen; Lauf `.winston-evidence/20260903T164049Z/gate-run.json`,
@@ -143,6 +142,12 @@ kürzt.
 
 K3 deckt didSave, Anlegen/Bearbeiten/Löschen, Demo-Filter, Koaleszierung,
 Failure-Injection, den separaten Lesekontext, den Fetch-Fehler-Abbruch und die Kappung ab.
+
+K5 ist mit dem Signing-Gate T7 abgenommen: Die App Group `group.com.andre.ShipTrip` hängt
+an beiden App-IDs, das Archiv signiert mit je einem Profil pro Target („ShipTrip App Store
+1.9.0" für die App, „ShipTrip Widget App Store" für die Extension), und `codesign` weist
+die Entitlements für App **und** Appex nach. Build 29 liegt in TestFlight; die
+Signing-Befehle stehen unter [SETUP.md](../SETUP.md#fastlane--testflight-release).
 
 ## Known Limitations
 

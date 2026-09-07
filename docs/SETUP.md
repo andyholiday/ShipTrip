@@ -142,7 +142,7 @@ Der Release-Prozess läuft über `fastlane` (`fastlane/Fastfile`), drei Lanes:
 | Lane | Zweck |
 |------|-------|
 | `fastlane ios validate` | Prüft API-Key und liest die neueste TestFlight-Buildnummer |
-| `fastlane ios fetch_profile` | Holt das App-Store-Provisioning-Profile über die App Store Connect API |
+| `fastlane ios fetch_profile` | Holt die App-Store-Provisioning-Profile über die App Store Connect API — seit 1.9.0 zwei: App und Widget |
 | `fastlane ios upload_testflight` | Lädt `build/export/ShipTrip.ipa` zu TestFlight hoch |
 
 Beide Lanes authentifizieren sich über `app_store_connect_api_key` und
@@ -167,6 +167,26 @@ validieren, über die CloudKit Console nach Production promoten und den
 Production-Export vergleichen.
 Ein echter Geräte-Smoke bleibt der stärkste End-to-End-Nachweis; ist kein Gerät
 verfügbar, muss diese Einschränkung im Release-Status ausdrücklich stehen.
+
+### Archiv-Signing seit 1.9.0 (App Groups)
+
+Mit der App Group `group.com.andre.ShipTrip` scheitert Automatic Signing beim Archiv:
+„Provisioning profile … doesn't include the App Groups capability". Das Archiv entsteht
+deshalb mit manuellem Signing und je einem Profil pro Target; die Zuordnung erledigt eine
+verschachtelte Build-Setting-Substitution über `$(TARGET_NAME)`:
+
+```bash
+xcodebuild -scheme ShipTrip -configuration Release -destination 'generic/platform=iOS' \
+  -archivePath build/ShipTrip-<version>-<build>.xcarchive archive \
+  CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=LH324Y9MG7 CODE_SIGN_IDENTITY="Apple Distribution" \
+  PROVISIONING_PROFILE_SPECIFIER='$(PROFILE_$(TARGET_NAME))' \
+  PROFILE_ShipTrip="ShipTrip App Store 1.9.0" PROFILE_ShipTripWidget="ShipTrip Widget App Store"
+```
+
+Exportiert wird anschließend mit `build/ExportOptions.plist` (`signingStyle` `manual`,
+`provisioningProfiles` für beide Bundle-IDs `com.andre.ShipTrip` und
+`com.andre.ShipTrip.Widget`). Das alte Profil „ShipTrip App Store 1785864156" ist seit
+der App-Groups-Capability ungültig und darf nicht mehr verwendet werden.
 
 ## Projektstruktur verstehen
 
