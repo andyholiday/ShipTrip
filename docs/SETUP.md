@@ -190,6 +190,12 @@ Exportiert wird anschließend mit `build/ExportOptions.plist` (`signingStyle` `m
 „ShipTrip App Store 1785864156" ist seit der App-Groups-Capability ungültig und darf
 nicht mehr verwendet werden.
 
+`build/ExportOptions.plist` ist **nicht versioniert** (`build/` steht in `.gitignore`);
+das Profil-Mapping für App, Widget und Share-Extension liegt damit nur lokal. Auf einem
+frischen Klon muss die Datei vor dem Archiv-Export neu angelegt werden — mit `method`
+`app-store-connect`, `signingStyle` `manual`, `teamID` `LH324Y9MG7` und den drei
+Profil-Zuordnungen aus dem Archiv-Aufruf oben.
+
 ## Projektstruktur verstehen
 
 ```

@@ -16,8 +16,9 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefügt
 
-- **ShipTrip steht im Teilen-Sheet**: Eine `.shiptrip`-Datei aus iMessage, Mail
-  oder der Dateien-App lässt sich über „Teilen → ShipTrip" an die App übergeben.
+- **ShipTrip steht im Teilen-Sheet**: Eine `.shiptrip`-Datei lässt sich aus dem
+  Teilen-Sheet — etwa aus der Dateien-App oder aus Nachrichten — über
+  „Teilen → ShipTrip" an die App übergeben.
   Beim nächsten Öffnen von ShipTrip wird die Reise importiert und das bekannte
   Ergebnis-Fenster erscheint. Ist die Mitteilungs-Berechtigung erteilt, weist
   eine Mitteilung auf die wartende Reise hin; ihr Antippen öffnet die App.

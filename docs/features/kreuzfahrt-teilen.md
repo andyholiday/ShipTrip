@@ -1,8 +1,8 @@
 # Kreuzfahrt teilen
 
 **Stand:** Vollständig — W1 (Share-Export, C4/C5), W2 (Import-Flow, C3/C6/C10)
-und W3 (Teilen-Aktion, C7/C8/C9) sind gemergt; seit 1.9.0 kommt die
-Share-Extension als Empfangsweg dazu (ADR-010).
+und W3 (Teilen-Aktion, C7/C8/C9) sind gemergt; ab Build 31 (Unreleased) kommt
+die Share-Extension als Empfangsweg dazu (ADR-010).
 **Code:** `ShipTrip/Services/ExportImportService+ShareExport.swift`,
 `ShipTrip/Services/ShareImageTranscoder.swift`,
 `ShipTrip/Services/ExportImportService+ShareImport.swift`,
@@ -91,18 +91,20 @@ tragen drei Elemente stabile Accessibility-IDs (C9): `cruiseDetail.shareButton`,
 ### Share-Extension (Run 2026-09-10)
 
 Kriterien aus `.planning/ZIEL.md` (Run „Share-Extension"). Verifikationsstand:
-Test-Build 59/59 grün, Code-Review ohne Blocker.
+Test-Build 59/59 grün, Code-Review ohne Blocker, E2E im Simulator (XCUITest) am
+2026-09-10 grün. Die Abnahmebilder liegen unversioniert unter
+`audit/screenshots/share-ext-*.png`.
 
 | Nr. | Kriterium (Kurzfassung) | Status |
 |---|---|---|
-| 1 | Target `ShipTripShare`, Prädikat-Regel, „ShipTrip" im Teilen-Sheet | Erfüllt |
-| 2 | Extension kopiert atomar in die App Group, kein SwiftData, kein App-Öffnen | Erfüllt |
+| 1 | Target `ShipTripShare`, Prädikat-Regel, „ShipTrip" im Teilen-Sheet | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-01-sheet.png`) |
+| 2 | Extension kopiert atomar in die App Group, kein SwiftData, kein App-Öffnen | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-02-extension.png`) |
 | 3 | Vordergrund-Scan importiert über `ShareImportCoordinator`, Unit-Test vorher rot | Erfüllt |
 | 4 | `shouldRemoveAfterImport` kennt den Übergabeordner, Unit-Test vorher rot | Erfüllt |
 | 5 | ADR-010 samt Contract, Gate #4 grün | Erfüllt |
 | 6 | `fetch_profile` und Signing-Wege um `ShipTripShare` ergänzt | Erfüllt |
-| 7 | E2E im Simulator: Teilen → ShipTrip → Reise importiert | Simulator-E2E läuft |
-| 8 | Geräte-Abnahme iMessage-Anhang (Build 31, TestFlight) | Offen — Andre |
+| 7 | E2E im Simulator: Teilen → ShipTrip → Reise importiert | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-07-after-share.png`) |
+| 8 | Geräte-Abnahme iMessage-Anhang (Build 31, TestFlight) | Offen — Geräte-Abnahme iMessage durch Andre (Build 31) |
 | 9 | Changelog, Feature-Doku, CLAUDE.md nachgezogen | Erfüllt |
 
 - **1:** `NSExtensionActivationRule` als Prädikat auf `com.andre.shiptrip.cruise`
@@ -116,8 +118,15 @@ Test-Build 59/59 grün, Code-Review ohne Blocker.
 - **3/4:** `ShareImportHandoffScanTests` und `ShareImportCleanupTests` decken
   Scan, Single-Flight, `inbox: nil` und die erweiterte Löschregel ab;
   `ShareHandoffStoreTests` prüft Namensschema, Ordner-Scan und 24-h-Regel.
-- **7:** Der Simulator-Nachweis läuft zum Zeitpunkt dieses Eintrags noch (wird
-  nach Abschluss hier nachgezogen).
+- **7:** Der XCUITest teilt eine exportierte Reise aus der Dateien-App: Das
+  Teilen-Sheet führt „ShipTrip" als ersten Eintrag, die Extension meldet den
+  Abschluss und hinterlässt in `ShareInbox/` genau eine `.shiptrip`-Datei ohne
+  `.tmp`-Rest. Die App importiert beim Wechsel in den Vordergrund, zeigt „Reise
+  importiert" und lässt den Übergabeordner leer zurück
+  (`share-ext-07-after-share.png`); ein zweiter Durchlauf endet im
+  Duplikat-Hinweis (`share-ext-06-duplicate.png`). Ohne erteilte
+  Mitteilungs-Berechtigung erscheint erwartungsgemäß keine Mitteilung — der
+  autorisierte Fall gehört zu #8.
 - **8:** Nur am Gerät prüfbar — der Simulator hat kein iMessage; offen sind damit
   die Prädikat-Verifikation an Nachrichten-Anhängen und die Zustellung der
   Mitteilung.
