@@ -180,12 +180,13 @@ xcodebuild -scheme ShipTrip -configuration Release -destination 'generic/platfor
   -archivePath build/ShipTrip-<version>-<build>.xcarchive archive \
   CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=LH324Y9MG7 CODE_SIGN_IDENTITY="Apple Distribution" \
   PROVISIONING_PROFILE_SPECIFIER='$(PROFILE_$(TARGET_NAME))' \
-  PROFILE_ShipTrip="ShipTrip App Store 1.9.0" PROFILE_ShipTripWidget="ShipTrip Widget App Store"
+  PROFILE_ShipTrip="ShipTrip App Store 1.9.0" PROFILE_ShipTripWidget="ShipTrip Widget App Store" \
+  PROFILE_ShipTripShare="ShipTrip Share App Store"
 ```
 
 Exportiert wird anschließend mit `build/ExportOptions.plist` (`signingStyle` `manual`,
-`provisioningProfiles` für beide Bundle-IDs `com.andre.ShipTrip` und
-`com.andre.ShipTrip.Widget`). Das alte Profil „ShipTrip App Store 1785864156" ist seit
+`provisioningProfiles` für alle drei Bundle-IDs `com.andre.ShipTrip`,
+`com.andre.ShipTrip.Widget` und `com.andre.ShipTrip.Share`). Das alte Profil „ShipTrip App Store 1785864156" ist seit
 der App-Groups-Capability ungültig und darf nicht mehr verwendet werden.
 
 ## Projektstruktur verstehen
