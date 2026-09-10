@@ -15,6 +15,7 @@ werden als neue ADR mit `Ersetzt ADR-NNN` erfasst, nicht als Edit.
 | ADR-007 | Kreuzfahrt-Teilen als `.shiptrip`-Datei auf Basis des Backup-Envelopes | Accepted  | 2026-08-25 |
 | ADR-008 | ISO-Ländercodes für die Hafen-Referenzdaten                        | Accepted  | 2026-08-27 |
 | ADR-009 | Widget liest einen Codable-Snapshot aus der App Group statt aus dem SwiftData-Store | Accepted  | 2026-09-03 |
+| ADR-010 | Share-Extension reicht `.shiptrip`-Dateien per App-Group-Übergabeordner an die App weiter | Proposed  | 2026-09-10 |
 
 **Hinweis für neue ADRs:** Der Umsetzungsplan (`docs/umsetzungsplan-audit-2026-07.md`)
 reserviert ADR-Nummern pro Welle im Voraus; offen ist davon nur noch D1→005 (KI-Proxy) — 003, 004 und 006 sind vergeben.
