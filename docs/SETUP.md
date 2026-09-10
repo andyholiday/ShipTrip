@@ -186,8 +186,9 @@ xcodebuild -scheme ShipTrip -configuration Release -destination 'generic/platfor
 
 Exportiert wird anschließend mit `build/ExportOptions.plist` (`signingStyle` `manual`,
 `provisioningProfiles` für alle drei Bundle-IDs `com.andre.ShipTrip`,
-`com.andre.ShipTrip.Widget` und `com.andre.ShipTrip.Share`). Das alte Profil „ShipTrip App Store 1785864156" ist seit
-der App-Groups-Capability ungültig und darf nicht mehr verwendet werden.
+`com.andre.ShipTrip.Widget` und `com.andre.ShipTrip.Share`). Das alte Profil
+„ShipTrip App Store 1785864156" ist seit der App-Groups-Capability ungültig und darf
+nicht mehr verwendet werden.
 
 ## Projektstruktur verstehen
 

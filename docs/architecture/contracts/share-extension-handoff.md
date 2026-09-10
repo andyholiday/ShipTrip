@@ -11,6 +11,10 @@ Verträge, nicht gegeneinander. Änderungen gehen über Winston.
 am 2026-09-10 gelesen wurde (Quellen im ADR). „(unverifiziert)" = Modellwissen,
 Forums- oder Community-Aussage, am Simulator/Gerät zu prüfen.
 
+**Auflagen aus Gate #4, Iteration 2 (eingetragen 2026-09-10):** A1 — Re-Scan im
+`.onDisappear` des Ergebnis-Sheets statt in der Sheet-Bindung (H3, Aufrufstelle 3);
+A2 — kein Scan, solange `usingTemporaryStore == true` (H3).
+
 **Änderungen gegenüber Iteration 1 (Review Gate #4):** H1 gestrichen (kein
 `file=`, kein Router-Fall — F03/F02); H5 ersetzt Responder-Chain durch lokale
 Mitteilung (F01); H3 mit Test-Nähten (F04) und Re-Scan nach `dismiss` (F12);
@@ -133,9 +137,19 @@ drei Aufrufstellen:
 1. `onChange(of: scenePhase)`: bei `.active` (im bestehenden Block neben
    `widgetPublisher?.publish()`).
 2. Im bestehenden `.task` (einmalig beim Szenenaufbau, neben `publishNow()`).
-3. Nach `shareImportCoordinator.dismiss()` im Ergebnis-Sheet (beide
-   `dismiss`-Stellen) — damit eine zweite anstehende Datei nicht bis zum
-   24-h-Aufräumen liegen bleibt (F12).
+3. `.onDisappear` am Inhalt des Ergebnis-Sheets (`ShareImportResultSheet`) —
+   läuft **nach** abgeschlossener Dismiss-Animation und deckt beide Schließwege
+   (Swipe und Button) mit **einer** Stelle ab, damit eine zweite anstehende
+   Datei nicht bis zum 24-h-Aufräumen liegen bleibt (F12). Nicht im
+   `set:`-Closure der Sheet-Bindung und nicht im Button-Callback aufrufen: ein
+   dort gesetzter Zustand fällt in die laufende Dismiss-Animation und SwiftUI
+   verwirft die Neu-Präsentation kommentarlos (Auflage A1 aus Gate #4).
+
+Der Scan unterbleibt, solange `usingTemporaryStore == true` — in den
+Ersatzstore importierte Reisen wären nach dem Neustart verloren, die
+Übergabedatei aber gelöscht. Die Datei bleibt liegen und wird beim nächsten
+gesunden Start importiert (die 24-h-Regel der Extension begrenzt das)
+(Auflage A2 aus Gate #4).
 
 Single-Flight (C10) bleibt: Läuft schon ein Import oder steht ein Ergebnis
 (`.importing`/`.finished`/`.failed`/`.linkHint`), wird der Scan verworfen.
@@ -197,10 +211,13 @@ matcht **jeden** Dateityp — ShipTrip stünde dann auch bei PDFs im Sheet.
 `attachments.first(where: { $0.hasItemConformingToTypeIdentifier("com.andre.shiptrip.cruise") })`
 gewählt, nie per Index. Laden über
 `loadFileRepresentation(for: UTType("com.andre.shiptrip.cruise")!, openInPlace: false)`
-(iOS 16+, verifiziert). Für die untypisierte Variante ist verifiziert, dass die
-Temp-Datei nach Rückkehr des Handlers gelöscht wird; für die typisierte Variante
-ist das Löschverhalten nicht in der Referenz belegt (unverifiziert) — die Kopie
-nach H2 erfolgt deshalb in jedem Fall **synchron innerhalb des
+(iOS 16+, verifiziert). Für **beide** Varianten ist verifiziert, dass die
+Temp-Datei nach Rückkehr des Handlers gelöscht wird — für die typisierte
+Variante belegt durch den SDK-Header (iOS 26.5,
+`UniformTypeIdentifiers.framework/Headers/NSItemProvider+UTType.h:105-107`:
+„This temporary file will be deleted once your completion handler returns");
+derselbe Absatz hält fest, dass der Handler auf einer beliebigen Queue laufen
+kann. Die Kopie nach H2 erfolgt deshalb in jedem Fall **synchron innerhalb des
 Completion-Handlers**.
 
 **Gerätetest-Pflicht, Diagnose-Reihenfolge, Rückfallposition (F10).** Ob

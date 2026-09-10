@@ -105,6 +105,12 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
   eingetragen werden, sonst baut die Extension nicht.
 - `ShipTripWidget/` — WidgetKit-Extension (Bundle `com.andre.ShipTrip.Widget`, App Group
   `group.com.andre.ShipTrip`, eigener String Catalog). Siehe `docs/features/widget.md`.
+- `ShipTrip/ShareShared/` — mit der Share-Extension geteilter Code (`ShareHandoffStore`:
+  Übergabeordner `ShareInbox/` in der App Group). Gleiche Regel wie `WidgetShared/`: nur
+  Foundation und Eintrag in `membershipExceptions` des Share-Targets.
+- `ShipTripShare/` — Share-Extension (Bundle `com.andre.ShipTrip.Share`, UIKit ohne
+  Storyboard, kein SwiftData; legt die geteilte `.shiptrip`-Datei nur in der App Group ab,
+  importiert wird in der App). Siehe `docs/adr/ADR-010-share-extension-app-group-handoff.md`.
 - `ShipTrip/Views/Debug/` — nur für Abnahmebilder: `WidgetPreviewGalleryView` erscheint
   ausschließlich beim Start mit `-widgetPreview` (siehe `docs/features/widget.md`).
 - `ShipTrip/Utilities/` — Color+Theme, Date+Extensions

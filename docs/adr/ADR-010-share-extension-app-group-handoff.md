@@ -1,6 +1,6 @@
 # ADR-010: Share-Extension reicht `.shiptrip`-Dateien per App-Group-Übergabeordner an die App weiter
 
-**Status:** Proposed (Iteration 2 nach Gate #4, 2026-09-10)
+**Status:** Accepted (2026-09-10, Gate #4 Iteration 2 mit den Auflagen A1/A2)
 **Datum:** 2026-09-10
 **Autor:** Architect (Winston-Run „Share-Extension 1.9.0"), auf Basis von Andres
 Entscheid „Minimal-Variante" (Extension reicht nur weiter, keine Import-Vorschau)
@@ -55,7 +55,8 @@ SwiftData-Container, keine Reise-Vorschau und **keinen Versuch, die App zu
 
 **Ein einziger Import-Trigger:** Bei jedem Wechsel in den Vordergrund
 (`scenePhase == .active`, zusätzlich einmalig beim Szenenaufbau und nach dem
-Schließen des Ergebnis-Sheets) prüft `ShareImportCoordinator` den
+Schließen des Ergebnis-Sheets — nicht jedoch, solange die App auf dem
+Wegwerf-Store läuft) prüft `ShareImportCoordinator` den
 Übergabeordner und importiert die älteste anstehende Datei über den
 bestehenden Pfad. Dieser Weg braucht keine API, die einer Extension verwehrt
 ist — er funktioniert, sobald der Nutzer ShipTrip öffnet.
@@ -172,6 +173,19 @@ Contract entweder übernommen oder als Backlog markiert.
 | F08 | Vollständige pbxproj-Objektliste mit Zeilenbelegen des Widget-Targets in H6 (Kopiervorlage). |
 | F09 | Schritt V (Nachweis) mit Simulator-Screenshot, E2E, `gate-run.json`, L10n-Gate, Build-Bump 31, Doku (ZIEL #1, #7, #8, #9) — Owner benannt. |
 
+Das Go der Iteration 2 stand unter zwei Auflagen, die in H3 des Contracts
+eingetragen sind und die die Umsetzung erfüllt:
+
+- **A1** — Der Re-Scan nach dem Ergebnis-Sheet hängt am `.onDisappear` des
+  Sheet-Inhalts, nicht in der Sheet-Bindung und nicht im Button-Callback: ein
+  dort gesetzter Zustand fällt in die laufende Dismiss-Animation, SwiftUI
+  verwirft die Neu-Präsentation kommentarlos, und der Coordinator bliebe bis zum
+  Neustart blockiert. Damit bleiben es drei Aufrufstellen.
+- **A2** — Der Scan unterbleibt, solange `usingTemporaryStore == true`: in den
+  Ersatzstore importierte Reisen wären nach dem Neustart verloren, die
+  Übergabedatei aber gelöscht. Sie bleibt liegen und wird beim nächsten gesunden
+  Start importiert.
+
 ## Referenzen
 
 - `docs/architecture/contracts/share-extension-handoff.md` — Verträge H1–H6,
@@ -181,7 +195,7 @@ Contract entweder übernommen oder als Backlog markiert.
 - `docs/adr/ADR-007-kreuzfahrt-teilen.md`,
   `docs/architecture/contracts/share-cruise-contracts.md` (C3, C6, C10)
 - `docs/adr/ADR-009-widget-app-group-snapshot.md` — App Group, Extension-Muster
-- `docs/features/kreuzfahrt-teilen.md` — Abschnitt „Keine Share-Extension"
+- `docs/features/kreuzfahrt-teilen.md` — Abschnitt „Übergabe aus dem Teilen-Sheet"
 - `docs/SETUP.md` — „Archiv-Signing seit 1.9.0 (App Groups)"
 - `ShipTrip/Views/Share/ShareImportCoordinator.swift`,
   `ShipTrip/Utilities/IncomingLinkRouter.swift`, `ShipTrip/ShipTripApp.swift`,
@@ -214,3 +228,6 @@ Contract entweder übernommen oder als Backlog markiert.
 - 2026-09-10: Iteration 2 nach Gate #4 — Responder-Chain und `file=` gestrichen,
   lokale Mitteilung als Ersatz, Test-Nähte, vollständige Target-Integration
   (siehe „Änderungen Iteration 2"). Status weiterhin Proposed.
+- 2026-09-10: Accepted — umgesetzt in `feature/share-extension` (Test-Build grün,
+  Code-Review ohne Blocker); Auflagen A1/A2 aus Gate #4 sind in H3 des Contracts
+  und im Code eingetragen.

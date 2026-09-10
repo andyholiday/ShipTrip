@@ -14,6 +14,15 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Hinzugefügt
+
+- **ShipTrip steht im Teilen-Sheet**: Eine `.shiptrip`-Datei aus iMessage, Mail
+  oder der Dateien-App lässt sich über „Teilen → ShipTrip" an die App übergeben.
+  Beim nächsten Öffnen von ShipTrip wird die Reise importiert und das bekannte
+  Ergebnis-Fenster erscheint. Ist die Mitteilungs-Berechtigung erteilt, weist
+  eine Mitteilung auf die wartende Reise hin; ihr Antippen öffnet die App.
+  ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
+
 ### Behoben
 
 - **Geteilte `.shiptrip`-Dateien lassen sich aus der Dateien-App öffnen**: Ein
