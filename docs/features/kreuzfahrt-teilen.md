@@ -41,8 +41,10 @@ Verifikationsstand: 412/412 Unit-Tests, `ShareRoundtripTests` 2/2 und
   mit Dedup über die stabile `id`. Das Ergebnis-Sheet weist eine abweichende
   Senderfassung als Versionskonflikt aus. **Fußnote:** Automatischer Import und
   Ergebnis-Sheet sind unit-verifiziert über den echten Share-Einstieg
-  (`ShareRoundtripTests`); der physische Doppeltipp auf eine Datei auf einem Gerät
-  ist nicht automatisiert getestet — die manuelle Abnahme steht aus.
+  (`ShareRoundtripTests`); der Tipp auf eine Datei ist seit dem Fix-Run vom
+  2026-09-10 zusätzlich im Simulator nachgestellt (Dateien-App → `.shiptrip` →
+  Import mit Ergebnis-Sheet). Die Abnahme auf einem physischen Gerät steht
+  weiterhin aus.
 - **4:** `shiptrip://import` wird geroutet und zeigt den Hinweis auf die
   angehängte Datei. Der Link steckt im Nachrichtentext des Share-Sheets
   (`CruiseShareModel.shareMessage`), Träger der Daten bleibt die Datei.
@@ -79,6 +81,14 @@ tragen drei Elemente stabile Accessibility-IDs (C9): `cruiseDetail.shareButton`,
   manuelle Import in den Einstellungen bleibt bewusst beim Bestandsschutz des
   `ZipArchiveReader` (50 MB je Eintrag, Zip-Slip-Abwehr, CRC) — die Zählgrenzen
   für Häfen, Fotos und Ausgaben greifen dort über den Archiv-Preflight trotzdem.
+- **Keine Share-Extension:** ShipTrip meldet nur den Dateityp `.shiptrip` und
+  das URL-Schema an, aber keine Extension vom Typ `com.apple.share-services`.
+  Folge: Im Teilen-Sheet der Dateien-App taucht ShipTrip nicht als Ziel auf, und
+  iMessage bietet für einen `.shiptrip`-Anhang nur „Weiterleiten" statt „In
+  ShipTrip öffnen". Der unterstützte Weg führt deshalb über die Dateien-App —
+  Anhang dort sichern und antippen. Erst eine Share-Extension mit
+  `NSExtensionActivationSupportsFileWithMaxCount` würde das ändern; als
+  Backlog-Punkt vermerkt, nicht Teil dieses Fixes.
 
 ## Related Decisions
 

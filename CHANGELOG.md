@@ -14,6 +14,23 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+### Behoben
+
+- **Geteilte `.shiptrip`-Dateien lassen sich aus der Dateien-App öffnen**: Ein
+  Tipp auf eine per iMessage oder iCloud Drive erhaltene Reise-Datei blieb
+  wirkungslos — ShipTrip meldete den Dateityp zu eng an und erlaubte das Öffnen
+  am Ablageort nicht. Beides ist korrigiert; die Datei öffnet die App und die
+  Reise wird importiert.
+- **Die Originaldatei bleibt nach dem Import erhalten**: Bisher löschte ShipTrip
+  die importierte Datei in jedem Fall. Entfernt wird jetzt nur noch die eigene
+  Arbeitskopie im App-Ordner — eine Datei, die in iCloud Drive oder einer
+  anderen Ablage des Nutzers liegt, bleibt liegen.
+- **Import-Rückmeldung geht beim Erststart nicht mehr verloren**: Wird eine
+  Reise-Datei geöffnet, während das Intro noch läuft, erscheint das
+  Ergebnis-Fenster jetzt, sobald das Intro geschlossen ist — vorher verschwand
+  es kommentarlos.
+  ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
+
 ---
 
 ## [1.9.0] - 2026-09-07
