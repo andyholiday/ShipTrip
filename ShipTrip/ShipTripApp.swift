@@ -235,6 +235,21 @@ struct ShipTripApp: App {
     /// laufenden/abgeschlossenen Imports; Single-Flight steckt im Coordinator.
     @State private var shareImportCoordinator = ShareImportCoordinator()
 
+    /// Vordergrund-Scan des Uebergabeordners der Share-Extension (ADR-010, H3).
+    ///
+    /// Kein Scan im Wegwerf-Store (Gate-Auflage A2): eine dorthin importierte
+    /// Reise waere nach dem Neustart weg, die Uebergabedatei aber geloescht.
+    /// Sie bleibt stattdessen liegen und kommt beim naechsten gesunden Start
+    /// dran (die 24-h-Regel der Extension begrenzt das). Alles Weitere —
+    /// Single-Flight, leerer Ordner, fehlender App-Group-Container — entscheidet
+    /// der Coordinator.
+    private func scanShareHandoff(_ container: ModelContainer) {
+        guard !usingTemporaryStore else { return }
+        shareImportCoordinator.importPendingHandoffIfIdle(
+            modelContext: container.mainContext
+        )
+    }
+
     /// Sichtbarkeit des Onboarding-Covers — eine Naht fuer beide Leser:
     /// das Cover selbst und das Share-Ergebnis-Sheet, das sich davor
     /// zurueckhaelt.
@@ -300,6 +315,16 @@ struct ShipTripApp: App {
                         ShareImportResultSheet(presentation: presentation) {
                             shareImportCoordinator.dismiss()
                         }
+                        // Re-Scan fuer eine zweite wartende Datei — bewusst
+                        // hier und nicht im `set:`-Closure der Bindung oder im
+                        // Schliessen-Callback: `.onDisappear` laeuft **nach**
+                        // der Dismiss-Animation und deckt beide Schliesswege
+                        // (Wischen und Knopf) mit einer Stelle ab. Ein schnell
+                        // fehlschlagender Zweitimport wuerde sonst mitten in
+                        // die laufende Animation `.failed` setzen; SwiftUI
+                        // verwirft die Neu-Praesentation dann kommentarlos und
+                        // der Coordinator haengt bis zum Neustart (Single-Flight).
+                        .onDisappear { scanShareHandoff(container) }
                     }
                     // Datei-Oeffnen (.shiptrip) und `shiptrip://import` laufen beide
                     // hierdurch — Kalt- und Warmstart identisch (C3).
@@ -333,7 +358,13 @@ struct ShipTripApp: App {
                     // Zweites Sicherheitsnetz: beim Wechsel in den Vordergrund
                     // steht der Snapshot auf jeden Fall wieder auf dem Ist-Stand.
                     .onChange(of: scenePhase) { _, phase in
-                        if phase == .active { widgetPublisher?.publish() }
+                        if phase == .active {
+                            widgetPublisher?.publish()
+                            // Tragender Weg der Share-Extension (ADR-010):
+                            // die Extension legt nur ab, importiert wird beim
+                            // naechsten Wechsel in den Vordergrund.
+                            scanShareHandoff(container)
+                        }
                     }
                     // Kaltstart-Netz: die drei Hooks daruaeber haengen alle an
                     // einem *Ereignis* — ein Save, ein CloudKit-Merge oder ein
@@ -341,7 +372,13 @@ struct ShipTripApp: App {
                     // und liest, tritt keines davon ein und das Widget bliebe
                     // ohne Snapshot. `.task` laeuft genau einmal beim Aufbau
                     // der Szene und schreibt bedingungslos den Ist-Stand.
-                    .task { await widgetPublisher?.publishNow() }
+                    .task {
+                        await widgetPublisher?.publishNow()
+                        // Kaltstart: die App wurde ueber die Mitteilung der
+                        // Extension geoeffnet, `scenePhase` wechselt dabei
+                        // nicht mehr auf `.active`.
+                        scanShareHandoff(container)
+                    }
                     // Bewusst **nach** dem Cover: eine Praesentation erbt die
                     // Umgebung an der Stelle ihres Modifiers, nicht die der
                     // modifizierten Ansicht. Stand `.modelContainer` darueber,
