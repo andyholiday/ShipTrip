@@ -57,6 +57,33 @@ final class ShareImportCoordinator {
         state = .idle
     }
 
+    // MARK: - Aufraeumen
+
+    /// Darf die Quelldatei nach dem Import geloescht werden?
+    ///
+    /// Seit `LSSupportsOpeningDocumentsInPlace` reicht die Dateien-App die
+    /// **Originaldatei des Nutzers** herein (iCloud Drive, Anhang-Ablage,
+    /// fremder File Provider). Geloescht wird deshalb nur, was die App selbst
+    /// als Kopie bekommen hat: `Documents/Inbox` (Kopie beim Oeffnen ohne
+    /// In-Place) und das `tmp`-Verzeichnis des Containers (Arbeitskopie).
+    /// Alles andere bleibt liegen — im Zweifel lieber eine Datei zu viel.
+    static func shouldRemoveAfterImport(_ url: URL) -> Bool {
+        let candidate = normalizedPath(url)
+        let inbox = normalizedPath(URL.documentsDirectory.appending(
+            path: "Inbox", directoryHint: .isDirectory
+        ))
+        let temporary = normalizedPath(FileManager.default.temporaryDirectory)
+
+        return candidate.hasPrefix(inbox + "/") || candidate.hasPrefix(temporary + "/")
+    }
+
+    /// Vergleichbarer Pfad: Symlinks aufgeloest (`/var` → `/private/var`),
+    /// `..`/`.` entfernt, kein abschliessender Trenner.
+    private static func normalizedPath(_ url: URL) -> String {
+        let path = url.resolvingSymlinksInPath().standardizedFileURL.path(percentEncoded: false)
+        return path.count > 1 && path.hasSuffix("/") ? String(path.dropLast()) : path
+    }
+
     // MARK: - Import
 
     private func startImport(of fileURL: URL, modelContext: ModelContext) {
@@ -71,8 +98,10 @@ final class ShareImportCoordinator {
             let isSecurityScoped = fileURL.startAccessingSecurityScopedResource()
             defer {
                 if isSecurityScoped { fileURL.stopAccessingSecurityScopedResource() }
-                // Inbox-/Arbeitskopie in jedem Fall entfernen — Erfolg wie Fehler.
-                try? FileManager.default.removeItem(at: fileURL)
+                // Nur App-eigene Kopien entfernen — Erfolg wie Fehler.
+                if Self.shouldRemoveAfterImport(fileURL) {
+                    try? FileManager.default.removeItem(at: fileURL)
+                }
             }
 
             do {

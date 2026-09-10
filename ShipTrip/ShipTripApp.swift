@@ -235,6 +235,16 @@ struct ShipTripApp: App {
     /// laufenden/abgeschlossenen Imports; Single-Flight steckt im Coordinator.
     @State private var shareImportCoordinator = ShareImportCoordinator()
 
+    /// Sichtbarkeit des Onboarding-Covers — eine Naht fuer beide Leser:
+    /// das Cover selbst und das Share-Ergebnis-Sheet, das sich davor
+    /// zurueckhaelt.
+    private var onboardingCover: Binding<Bool> {
+        OnboardingPresentation.coverBinding(
+            hasCompleted: $hasCompletedOnboarding,
+            isSuppressed: onboardingStartupDecision == .postpone
+        )
+    }
+
     var body: some Scene {
         WindowGroup {
             if let container = modelContainer {
@@ -249,12 +259,7 @@ struct ShipTripApp: App {
                     // damit die Datenverlust-Warnung allein steht — ohne den
                     // Schalter anzufassen: beim naechsten gesunden Start steht
                     // der Erststart unveraendert an.
-                    .fullScreenCover(
-                        isPresented: OnboardingPresentation.coverBinding(
-                            hasCompleted: $hasCompletedOnboarding,
-                            isSuppressed: onboardingStartupDecision == .postpone
-                        )
-                    ) {
+                    .fullScreenCover(isPresented: onboardingCover) {
                         OnboardingFlowView { hasCompletedOnboarding = true }
                     }
                     .alert(
@@ -276,9 +281,19 @@ struct ShipTripApp: App {
                     // Grund wie das Cover darueber. Der Kontext wird dem Coordinator
                     // ausdruecklich als `container.mainContext` mitgegeben, damit die
                     // Mutation im selben Store landet wie der Hauptbaum.
+                    //
+                    // Solange das Onboarding-Cover steht, bleibt das Sheet zu:
+                    // SwiftUI praesentiert nur *eine* Sache pro Ansicht und
+                    // verwarf das Ergebnis sonst kommentarlos („only presenting
+                    // a single sheet is supported"). Der Zustand liegt derweil
+                    // im Coordinator; sobald das Cover schliesst, wertet die
+                    // Bindung neu aus und das Ergebnis erscheint doch noch.
                     .sheet(
-                        item: Binding(
-                            get: { ShareImportPresentation(state: shareImportCoordinator.state) },
+                        item: Binding<ShareImportPresentation?>(
+                            get: {
+                                guard !onboardingCover.wrappedValue else { return nil }
+                                return ShareImportPresentation(state: shareImportCoordinator.state)
+                            },
                             set: { if $0 == nil { shareImportCoordinator.dismiss() } }
                         )
                     ) { presentation in
