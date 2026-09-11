@@ -16,6 +16,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefügt
 
+- **Reisedauer in Nächten**: Das Reiseformular zeigt beim Anlegen und Bearbeiten
+  eine Zeile „Nächte"; Startdatum, Enddatum und Nächte sind miteinander
+  gekoppelt. Wird das Startdatum verschoben, fragt ShipTrip „Enddatum
+  mitverschieben" oder „Nächte anpassen" und danach — nur wenn sich die Route
+  tatsächlich ändert —, ob die Hafen- und Seetag-Daten mitwandern sollen. Der
+  Kalender-Sync übernimmt die geänderten Termine wie bisher. Bestehende Reisen
+  erhalten ihre Nächtezahl automatisch.
+  ([Feature-Doku](docs/features/reisedauer.md))
 - **ShipTrip steht im Teilen-Sheet**: Eine `.shiptrip`-Datei lässt sich aus dem
   Teilen-Sheet — etwa aus der Dateien-App oder aus Nachrichten — über
   „Teilen → ShipTrip" an die App übergeben.

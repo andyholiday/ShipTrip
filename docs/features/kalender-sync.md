@@ -81,6 +81,9 @@ unter `ShipTrip/Views/Settings/CalendarSyncSettingsView.swift` und
 - **Erinnerungen:** Änderungen an Vorlauf oder Erinnerungs-Schaltern in
   Einstellungen → *Erinnerungen* stoßen über `onChange` sofort einen
   `NotificationReconciler`-Lauf an, statt bis zum nächsten App-Start zu warten.
+- **Auslöser bei Reiseänderungen:** Datumsänderungen aus dem Reiseformular
+  stoßen keinen eigenen Sync an — `CalendarSyncObserver` beobachtet `updatedAt`
+  jeder Reise und gleicht danach ab, siehe [Reisedauer](reisedauer.md).
 - **Demo-Daten:** Reisen mit `isDemo` sind vom Sync ausgenommen, siehe
   [Beispielreise](beispielreise.md).
 - **Abschalten:** `removeAllManagedEvents()` löscht alle verwalteten Termine

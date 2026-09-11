@@ -113,7 +113,7 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
   importiert wird in der App). Siehe `docs/adr/ADR-010-share-extension-app-group-handoff.md`.
 - `ShipTrip/Views/Debug/` — nur für Abnahmebilder: `WidgetPreviewGalleryView` erscheint
   ausschließlich beim Start mit `-widgetPreview` (siehe `docs/features/widget.md`).
-- `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
+- `ShipTrip/Utilities/` — Color+Theme, Date+Extensions, CruiseDateTriad
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
 - `docs/` — Architektur, Features, ADRs (`docs/adr/`) · `CHANGELOG.md` (Keep a Changelog)
 
