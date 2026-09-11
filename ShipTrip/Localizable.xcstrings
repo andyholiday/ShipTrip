@@ -763,6 +763,28 @@
       }
     },
 
+    "Enddatum anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust end date"
+          }
+        }
+      }
+    },
+
+    "Enddatum mitverschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move end date too"
+          }
+        }
+      }
+    },
+
     "Ende" : {
       "localizations" : {
         "en" : {
@@ -1116,6 +1138,88 @@
       }
     },
 
+    "Hafen- und Seetag-Daten um %lld Tage nach hinten verschieben?" : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tag nach hinten verschieben?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tage nach hinten verschieben?"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld day later?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld days later?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "Hafen- und Seetag-Daten um %lld Tage nach vorne verschieben?" : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tag nach vorne verschieben?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tage nach vorne verschieben?"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld day earlier?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld days earlier?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "Hafenname" : {
       "localizations" : {
         "en" : {
@@ -1236,12 +1340,56 @@
       }
     },
 
+    "Nächte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nights"
+          }
+        }
+      }
+    },
+
+    "Nächte anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust nights"
+          }
+        }
+      }
+    },
+
+    "Nächte geändert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nights changed"
+          }
+        }
+      }
+    },
+
     "Nicht so gut" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Not so good"
+          }
+        }
+      }
+    },
+
+    "Nicht verschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't move"
           }
         }
       }
@@ -1295,6 +1443,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Write something or pick at least one photo."
+          }
+        }
+      }
+    },
+
+    "Startdatum anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust start date"
+          }
+        }
+      }
+    },
+
+    "Startdatum verschoben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start date moved"
           }
         }
       }
@@ -1371,6 +1541,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to expand or collapse"
+          }
+        }
+      }
+    },
+
+    "Verschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move"
           }
         }
       }

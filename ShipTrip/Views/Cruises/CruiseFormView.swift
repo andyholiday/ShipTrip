@@ -146,6 +146,10 @@ struct CruiseFormView: View {
     @State private var title = ""
     @State private var startDate = Date()
     @State private var endDate = Date().addingTimeInterval(7 * 24 * 60 * 60)
+    @State private var nights = 7
+    /// Setzt das Formular selbst, bevor es Start/Ende schreibt (Laden, KI-Import) –
+    /// `CruiseDatesSection` fragt dann nicht nach und zieht nur ihren Bezugspunkt nach.
+    @State private var isProgrammaticDateChange = false
     @State private var selectedLineOption: ShippingLineOption?
     @State private var selectedShipOption: ShipOption?
     // Getrennter State für "unberührt" vs. "aktiv geleert" (Fix B3): nur ein expliziter
@@ -258,11 +262,16 @@ struct CruiseFormView: View {
                 // Grunddaten
                 Section("Allgemein") {
                     TextField("Titel", text: $title)
-                    
-                    DatePicker("Startdatum", selection: $startDate, displayedComponents: .date)
-                    
-                    DatePicker("Enddatum", selection: $endDate, in: startDate..., displayedComponents: .date)
                 }
+
+                CruiseDatesSection(
+                    startDate: $startDate,
+                    endDate: $endDate,
+                    nights: $nights,
+                    isProgrammaticDateChange: $isProgrammaticDateChange,
+                    routeIsEmpty: tempPorts.isEmpty,
+                    shiftRoute: shiftRouteDates(byDays:)
+                )
                 // Schiff & Reederei
                 Section("Schiff & Reederei") {
                     Picker("Reederei", selection: $selectedLineOption) {
@@ -519,11 +528,25 @@ struct CruiseFormView: View {
     // MARK: - Data Loading
     
     private func loadExistingData() {
-        guard let cruise = cruise else { return }
+        guard let cruise = cruise else {
+            // Neue Reise: Nächte aus den Vorgabedaten ableiten (Invariante K1).
+            nights = CruiseDateTriad(
+                start: startDate, end: endDate, storedNights: 0, calendar: .current
+            ).nights
+            return
+        }
         
         title = cruise.title
+        // Backfill: `nights` stammt immer aus Start und Ende, auch bei Altbestand mit 0.
+        isProgrammaticDateChange = true
         startDate = cruise.startDate
         endDate = cruise.endDate
+        nights = CruiseDateTriad(
+            start: cruise.startDate,
+            end: cruise.endDate,
+            storedNights: cruise.nights,
+            calendar: .current
+        ).nights
         // Preserve-on-save (ADR-006, Abschnitt 5): currentSelection sorgt dafür, dass ein
         // gelöschter/ausgeblendeter Name als `.unlisted`-Option gefunden wird statt nil zu bleiben.
         selectedLineOption = lineOptions.first { $0.name == cruise.shippingLine }
@@ -587,6 +610,22 @@ struct CruiseFormView: View {
                 selectedPhotos = []
                 photoLoadsInFlight -= 1
             }
+        }
+    }
+
+    /// Antwort auf Dialog B: alle Ankunfts- und Abfahrtszeiten der Route
+    /// (Häfen und Seetage) um N Kalendertage verschieben.
+    private func shiftRouteDates(byDays days: Int) {
+        guard days != 0 else { return }
+        let calendar = Calendar.current
+        for index in tempPorts.indices {
+            let port = tempPorts[index]
+            tempPorts[index].arrival = CruiseDateTriad.shifted(
+                port.arrival, byDays: days, calendar: calendar
+            )
+            tempPorts[index].departure = CruiseDateTriad.shifted(
+                port.departure, byDays: days, calendar: calendar
+            )
         }
     }
 
@@ -677,12 +716,14 @@ struct CruiseFormView: View {
                     
                     if let startDateStr = extracted.startDate,
                        let parsedStart = dateFormatter.date(from: startDateStr) {
+                        isProgrammaticDateChange = true
                         startDate = parsedStart
                         filledCount += 1
                     }
                     
                     if let endDateStr = extracted.endDate,
                        let parsedEnd = dateFormatter.date(from: endDateStr) {
+                        isProgrammaticDateChange = true
                         endDate = parsedEnd
                         filledCount += 1
                     }
@@ -796,11 +837,16 @@ struct CruiseFormView: View {
         }
 
         let targetCruise: Cruise
+        // Invariante beim Speichern: Nächte == Kalendertage(Start, Ende).
+        let savedNights = CruiseDateTriad(
+            start: startDate, end: endDate, storedNights: nights, calendar: .current
+        ).nights
 
         if let existingCruise = cruise {
             existingCruise.title = title
             existingCruise.startDate = startDate
             existingCruise.endDate = endDate
+            existingCruise.nights = savedNights
             // Preserve-on-save (ADR-006, Abschnitt 5, HIGH-Finding): nie einen zuvor
             // nicht-leeren Namen mit "" überschreiben, wenn die Auswahl nicht aktiv
             // geändert wurde – nur ein expliziter "Wählen..."-Reset darf leeren.
@@ -832,6 +878,7 @@ struct CruiseFormView: View {
                 shippingLine: Self.resolvedShippingLineName(selected: selectedLineOption, userCleared: userClearedLine, existing: ""),
                 ship: Self.resolvedShipName(selected: selectedShipOption, userCleared: userClearedShip, existing: ship)
             )
+            newCruise.nights = savedNights
             newCruise.cabinType = cabinType
             newCruise.cabinNumber = cabinNumber
             newCruise.bookingNumber = bookingNumber
