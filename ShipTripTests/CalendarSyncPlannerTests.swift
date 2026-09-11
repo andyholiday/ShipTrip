@@ -161,6 +161,36 @@ struct CalendarSyncPlannerTests {
         #expect(tripDraft.coordinate == nil)
     }
 
+    // MARK: - Verschobene Reise
+
+    @Test("Verschobene Reise behält die stabilen Schlüssel und meldet neue Daten")
+    func shiftedCruiseKeepsStableKeysWithNewDates() throws {
+        let cruise = sampleCruise()
+        let mode = CalendarSyncMode.tripAndItinerary
+        func moved(_ date: Date) -> Date {
+            CruiseDateTriad.shifted(date, byDays: 5, calendar: utcCalendar)
+        }
+        let before = CalendarEventPlanner.makeDrafts(for: cruise, mode: mode, calendar: utcCalendar)
+        cruise.startDate = moved(cruise.startDate)
+        cruise.endDate = moved(cruise.endDate)
+        for port in cruise.route {
+            port.arrival = moved(port.arrival)
+            port.departure = moved(port.departure)
+        }
+        let after = CalendarEventPlanner.makeDrafts(for: cruise, mode: mode, calendar: utcCalendar)
+
+        // Gleiche Schlüssel — der Sync aktualisiert die Termine, statt neue anzulegen …
+        let firstPort = try #require(cruise.route.sorted { $0.sortOrder < $1.sortOrder }.first)
+        #expect(after.map(\.stableKey) == before.map(\.stableKey))
+        #expect(after.first?.stableKey == "cruise/\(cruise.id.uuidString)/trip")
+        #expect(after[1].stableKey
+            == "cruise/\(cruise.id.uuidString)/route/\(firstPort.id.uuidString)")
+        for (old, new) in zip(before, after) { // … mit den neuen Daten.
+            #expect(new.startDate == moved(old.startDate))
+            #expect(new.endDate == moved(old.endDate))
+        }
+    }
+
     // MARK: - Hilfen
 
     /// Reise mit einem Hafen mit Koordinaten, einem Seetag und einem Hafen

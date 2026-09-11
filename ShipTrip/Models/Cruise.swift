@@ -25,6 +25,13 @@ final class Cruise {
     /// Enddatum der Reise
     var endDate: Date = Date()
 
+    /// Reisedauer in Nächten (Kalendertage zwischen Start und Ende).
+    /// Additiv mit Default und ohne Unique-Constraint — CloudKit-konform
+    /// (Lightweight-Migration, ADR-002). Bestehende Reisen tragen 0 und werden
+    /// beim Laden ins Formular aus Start/Ende nachgefüllt (`CruiseDateTriad`).
+    /// `duration` (Tage = Nächte + 1) bleibt davon unberührt.
+    var nights: Int = 0
+
     /// Name der Reederei
     var shippingLine: String = ""
 
