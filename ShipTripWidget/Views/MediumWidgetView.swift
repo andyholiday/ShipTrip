@@ -152,11 +152,12 @@ struct MediumWidgetView: View {
     @ViewBuilder
     private func outlookBlock(_ info: ActiveInfo) -> some View {
         VStack(alignment: .trailing, spacing: 2) {
-            // Bei grossem Schriftgrad ohne Wochentag — sonst passt das Datum
-            // nicht mehr einzeilig in die schmalere Spalte.
+            // Bei grossem Schriftgrad rein numerisch — die ausgeschriebene
+            // Form passt nicht mehr einzeilig in die schmalere Spalte und
+            // verlor dort das Jahr („13. September 20…").
             WidgetCaption(
                 text: isTight
-                    ? WidgetFormatting.dayWithYear(dateForHeader(info))
+                    ? WidgetFormatting.dayNumeric(dateForHeader(info))
                     : WidgetFormatting.dayWithWeekday(dateForHeader(info))
             )
             if let next = info.nextStop, !isTight {

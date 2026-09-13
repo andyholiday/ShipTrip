@@ -346,7 +346,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Still %@"
+            "value": "%@ left"
           }
         }
       }

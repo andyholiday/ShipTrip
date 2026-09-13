@@ -57,6 +57,13 @@ enum WidgetFormatting {
         date.formatted(.dateTime.day().month(.wide).year())
     }
 
+    /// Tag rein numerisch, mit zweistelligem Jahr (z. B. „13.09.26" bzw.
+    /// „09/13/26") — Kopfzeile des Mittelformats bei grossem Schriftgrad. Die
+    /// ausgeschriebene Form brach dort mit „13. September 20…" ab (ZIEL K2).
+    static func dayNumeric(_ date: Date) -> String {
+        date.formatted(.dateTime.day().month(.twoDigits).year(.twoDigits))
+    }
+
     /// Zeitraum zweier Tage. Teilt sich den Katalog-Key mit `timeRange`.
     static func dateRange(from start: Date, to end: Date) -> String {
         String(localized: "\(day(start)) – \(day(end))", bundle: bundle)

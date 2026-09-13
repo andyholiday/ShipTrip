@@ -47,14 +47,21 @@ struct RectangularWidgetView: View {
 
     /// Das Ring-Instrument, hier bewusst klein: die 26 pt nimmt es dem Text
     /// weg, der auf dieser Kachel Vorrang hat (ZIEL K2).
+    ///
+    /// `Circle().stroke` zeichnet mittig auf den Pfad, die Linie ragt also um
+    /// ihre halbe Staerke ueber den Rahmen hinaus. Buendig an der Inhaltskante
+    /// wurde der Ring dadurch links flach gekappt. 24 pt Durchmesser plus 2 pt
+    /// fuehrendes Padding halten den vollen Bogen im Inhaltsbereich und
+    /// belegen zusammen weiter genau 26 pt — die Textbreite bleibt gleich.
     private var ring: some View {
         WidgetRing(
             symbol: symbol,
             progress: progress,
-            diameter: 26,
+            diameter: 24,
             lineWidth: 3.5,
             monochrome: true
         )
+        .padding(.leading, 2)
         .widgetAccentable()
     }
 
