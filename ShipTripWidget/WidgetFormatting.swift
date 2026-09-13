@@ -46,6 +46,17 @@ enum WidgetFormatting {
         date.formatted(.dateTime.day().month(.abbreviated))
     }
 
+    /// Tag mit Wochentag und Jahr (z. B. „Mo., 2. Juni 2025") — Kopfzeile des
+    /// Mittelformats in der Richtung „Dynamic Instrument".
+    static func dayWithWeekday(_ date: Date) -> String {
+        date.formatted(.dateTime.weekday(.abbreviated).day().month(.wide).year())
+    }
+
+    /// Tag mit Jahr, ohne Wochentag (z. B. „17. Juni 2025").
+    static func dayWithYear(_ date: Date) -> String {
+        date.formatted(.dateTime.day().month(.wide).year())
+    }
+
     /// Zeitraum zweier Tage. Teilt sich den Katalog-Key mit `timeRange`.
     static func dateRange(from start: Date, to end: Date) -> String {
         String(localized: "\(day(start)) – \(day(end))", bundle: bundle)
@@ -96,6 +107,19 @@ enum WidgetFormatting {
     static var currentLabel: String { String(localized: "Aktuell", bundle: bundle) }
     static var nextStopLabel: String { String(localized: "Nächster Stopp", bundle: bundle) }
 
+    /// Ueberschrift ueber dem aktuellen Hafen im Mittelformat.
+    static var currentInLabel: String { String(localized: "Aktuell in", bundle: bundle) }
+
+    /// Ueberschrift ueber der Countdown-Zahl im Mittelformat.
+    static var nextCruiseInLabel: String {
+        String(localized: "Nächste Kreuzfahrt in", bundle: bundle)
+    }
+
+    /// „Abfahrt: 17. Juni 2025".
+    static func departureLine(_ date: Date) -> String {
+        String(localized: "Abfahrt: \(dayWithYear(date))", bundle: bundle)
+    }
+
     /// - Parameter compactName: kuerzt den Hafennamen ueber `shortStopName`.
     ///   Die Kacheln setzen das, VoiceOver bekommt weiter den vollen Wortlaut.
     static func nextStopLine(_ stop: WidgetStopInfo, compactName: Bool = false) -> String {
@@ -140,6 +164,58 @@ enum WidgetFormatting {
         }
     }
 
+    /// „Noch" — Vorlauf ueber der grossen Countdown-Zahl im Kleinformat.
+    static var stillLabel: String { String(localized: "Noch", bundle: bundle) }
+
+    /// Zerlegt den Countdown in grosse Zahl und Einheit, damit die Kachel die
+    /// Zahl als Instrument-Wert setzen kann (Konzept 03).
+    ///
+    /// `nil` bei allen Wortlauten ohne saubere Zahl-Einheit-Trennung —
+    /// „Bereits vorbei", „Heute!", „Morgen" und die „ca."-Spanne. Dort setzt
+    /// die Kachel den vollen Wortlaut aus `countdown(daysUntilStart:)`.
+    ///
+    /// Die Schwellen sind identisch mit `countdown(daysUntilStart:)`; der
+    /// Wortlaut aendert sich durch diese Richtung nicht.
+    ///
+    /// - Parameter dative: deutscher Dativ nach „in" („in 12 **Tagen**")
+    ///   statt Nominativ nach „Noch" („Noch 12 **Tage**").
+    static func countdownParts(
+        daysUntilStart days: Int,
+        dative: Bool
+    ) -> (value: String, unit: String)? {
+        switch days {
+        case ..<2:
+            return nil
+        case 2...7:
+            return (days.formatted(.number.grouping(.never)), dative ? daysUnitDative : daysUnit)
+        case 8...14:
+            let weeks = days / 7
+            return (
+                weeks.formatted(.number.grouping(.never)),
+                weeks >= 2 ? weeksUnit : weekUnit
+            )
+        case 15...30:
+            return nil
+        default:
+            let months = days / 30
+            if months >= 2 {
+                return (
+                    months.formatted(.number.grouping(.never)),
+                    dative ? monthsUnitDative : monthsUnit
+                )
+            }
+            return (months.formatted(.number.grouping(.never)), monthUnit)
+        }
+    }
+
+    private static var daysUnit: String { String(localized: "Tage", bundle: bundle) }
+    private static var daysUnitDative: String { String(localized: "Tagen", bundle: bundle) }
+    private static var weekUnit: String { String(localized: "Woche", bundle: bundle) }
+    private static var weeksUnit: String { String(localized: "Wochen", bundle: bundle) }
+    private static var monthUnit: String { String(localized: "Monat", bundle: bundle) }
+    private static var monthsUnit: String { String(localized: "Monate", bundle: bundle) }
+    private static var monthsUnitDative: String { String(localized: "Monaten", bundle: bundle) }
+
     // MARK: - Leerlauf
 
     static var noPlannedCruise: String {
@@ -169,6 +245,51 @@ enum WidgetFormatting {
                 ? String(localized: "Letzte Reise vor \(days / 30) Monaten", bundle: bundle)
                 : String(localized: "Letzte Reise vor \(days / 30) Monat", bundle: bundle)
         }
+    }
+
+    /// Ueberschrift ueber dem Abstand zur letzten Reise (Konzept 03 trennt
+    /// Label und Wert: „Letzte Reise" / „vor 43 Tagen").
+    static var lastCruiseLabel: String { String(localized: "Letzte Reise", bundle: bundle) }
+
+    /// Nur der Wert zu `lastCruiseLabel` — „vor 43 Tagen", „heute beendet".
+    /// Gleiche Schwellen wie `lastCruise(daysSince:)`, das fuer VoiceOver
+    /// unveraendert den ganzen Satz liefert.
+    static func sinceLastCruise(days: Int) -> String {
+        switch days {
+        case ..<1:
+            return String(localized: "heute beendet", bundle: bundle)
+        case 1:
+            return String(localized: "gestern beendet", bundle: bundle)
+        case 2...7:
+            return String(localized: "vor \(days) Tagen", bundle: bundle)
+        case 8...14:
+            return days >= 14
+                ? String(localized: "vor \(days / 7) Wochen", bundle: bundle)
+                : String(localized: "vor \(days / 7) Woche", bundle: bundle)
+        case 15...30:
+            return String(localized: "vor ca. \(days / 7) Wochen", bundle: bundle)
+        default:
+            return days >= 60
+                ? String(localized: "vor \(days / 30) Monaten", bundle: bundle)
+                : String(localized: "vor \(days / 30) Monat", bundle: bundle)
+        }
+    }
+
+    // MARK: - Beiwerk
+
+    /// Kapitaelchen-Zeile im Mittelformat, aktiver Zustand.
+    static var taglineActive: String {
+        String(localized: "GUTE ORTE. BESSERE GESCHICHTEN.", bundle: bundle)
+    }
+
+    /// Kapitaelchen-Zeile im Mittelformat, Countdown.
+    static var taglineCountdown: String {
+        String(localized: "KREUZFAHRTEN VERBINDEN MENSCHEN.", bundle: bundle)
+    }
+
+    /// Handschriftliche Zeile ueber dem Bildkreis im Countdown.
+    static var taglineScript: String {
+        String(localized: "Neue Ziele. Gleicher Horizont.", bundle: bundle)
     }
 
     // MARK: - Sonstiges

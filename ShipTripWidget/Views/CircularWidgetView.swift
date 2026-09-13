@@ -2,17 +2,20 @@
 //  CircularWidgetView.swift
 //  ShipTripWidget
 //
-//  Familie `accessoryCircular` (Sperrbildschirm): ein Symbol und hoechstens
-//  ein Kurzwert. Mehr passt in den Kreis nicht ohne Abschneiden.
+//  Familie `accessoryCircular` (Sperrbildschirm) in der Richtung
+//  „Dynamic Instrument": der Kreis *ist* das Ring-Instrument. Aussen der
+//  Fortschritt der Liegezeit, innen Symbol und Kurzwert. Mehr passt in den
+//  Kreis nicht ohne Abschneiden.
 //
 //  Zuordnung: Seetag → Wellen, Hafen → Faehre plus Abfahrtszeit, Countdown →
 //  gefuelltes Segelboot plus Anzahl Tage (ueber 99 als „99+"), Leerlauf →
-//  Segelboot als Umriss, nicht verfuegbar → Aktualisieren-Pfeil.
+//  Insel, nicht verfuegbar → Aktualisieren-Pfeil.
 //
 //  Der Kreis misst feste 76 pt und waechst mit dem Schriftgrad nicht mit;
 //  deshalb ist der Schriftgrad hier bei `.large` gedeckelt. Ohne Deckel stiess
 //  bei Dynamic Type XXL der Kurzwert an die Kreiskante („17:…", ZIEL K2). Der
-//  Innenabstand haelt Symbol und Wert zusaetzlich von der Rundung fern.
+//  Innenabstand haelt Symbol und Wert zusaetzlich von der Rundung fern; der
+//  Fortschrittsring kostet weitere 4 pt, deshalb liegt er bei 10 statt 6.
 //
 //  - Note: Im aktiven Zustand steht die Abfahrtszeit statt einer Tageszahl.
 //    `ActiveInfo` fuehrt bewusst keinen vorberechneten Tageswert, und in der
@@ -29,17 +32,30 @@ struct CircularWidgetView: View {
     var body: some View {
         ZStack {
             AccessoryWidgetBackground()
+
+            if let progress {
+                Circle()
+                    .stroke(Color.primary.opacity(0.25), lineWidth: 4)
+                Circle()
+                    .trim(from: 0, to: max(0.02, min(1, progress)))
+                    .stroke(style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .foregroundStyle(.primary)
+                    .widgetAccentable()
+            }
+
             VStack(spacing: 0) {
                 Image(systemName: symbol)
                     .font(value == nil ? Font.title2 : Font.caption)
                 if let value {
                     Text(value)
                         .font(.caption.weight(.semibold))
+                        .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                 }
             }
-            .padding(6)
+            .padding(progress == nil ? 6 : 10)
         }
         .dynamicTypeSize(...DynamicTypeSize.large)
         .accessibilityElement(children: .ignore)
@@ -60,6 +76,13 @@ struct CircularWidgetView: View {
         case .unavailable:
             return WidgetSymbol.unavailable
         }
+    }
+
+    /// Anteil der verstrichenen Liegezeit; `nil` in allen anderen Zustaenden —
+    /// dann bleibt der Kreis ohne Ring.
+    private var progress: Double? {
+        guard case .active(let info) = state, let current = info.currentStop else { return nil }
+        return WidgetProgress.elapsed(current)
     }
 
     /// Kurzwert; `nil`, wenn nur das Symbol steht.

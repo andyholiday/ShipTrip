@@ -2,13 +2,14 @@
 //  SmallWidgetView.swift
 //  ShipTripWidget
 //
-//  Familie `systemSmall`: hoechstens drei Zeilen-Gruppen — Reisetitel,
-//  aktueller Wert, Ausblick.
+//  Familie `systemSmall` in der Richtung „Dynamic Instrument" (Konzept 03):
+//  oben das Ring-Instrument mit der aktuellen Uhrzeit, darunter der Name in
+//  Weiss, darunter der cyane Wert. Der Grund kommt aus `WidgetStyle.surface`.
 //
-//  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfaellt die
-//  Titelzeile und der Ausblick verliert das Datum. Der so gewonnene Platz
-//  geht an den Namen des aktuellen Stopps (dritte Zeile), damit auch ein
-//  adversarial langer Hafenname ohne „…" umbricht.
+//  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen Ring,
+//  Uhrzeit und Schmuckzeichen, der Ausblick verliert das Datum. Der so
+//  gewonnene Platz geht an den Namen des aktuellen Stopps, damit auch ein
+//  adversarial langer Hafenname ohne „…" umbricht — Text hat Vorrang vor Bild.
 //
 //  Zusaetzlich ist der Schriftgrad wie bei `RectangularWidgetView` nach oben
 //  gedeckelt — die Kachel waechst nicht mit, 170×170 pt sind fest. Ohne
@@ -30,7 +31,7 @@ struct SmallWidgetView: View {
     private var isTight: Bool { typeSize >= .xxLarge }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 3) {
             content
         }
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
@@ -49,7 +50,9 @@ struct SmallWidgetView: View {
         case .idle(let info):
             idleContent(info)
         case .unavailable:
-            centered(symbol: WidgetSymbol.unavailable, text: WidgetFormatting.unavailable)
+            instrumentHeader(symbol: WidgetSymbol.unavailable, progress: nil, title: nil)
+            Spacer(minLength: 0)
+            WidgetHeadline(text: WidgetFormatting.unavailable, size: 15, lineLimit: 4)
         }
     }
 
@@ -57,16 +60,20 @@ struct SmallWidgetView: View {
 
     @ViewBuilder
     private func activeContent(_ info: ActiveInfo) -> some View {
-        if !isTight {
-            WidgetCaption(text: info.title)
-        }
-
         if let current = info.currentStop {
-            WidgetHeadline(
+            instrumentHeader(
                 symbol: WidgetSymbol.stop(current),
+                progress: WidgetProgress.elapsed(current),
+                title: info.title,
+                clock: true
+            )
+            Spacer(minLength: 0)
+            WidgetHeadline(
                 text: WidgetFormatting.shortStopName(current),
+                size: 17,
                 lineLimit: isTight ? 3 : 2
             )
+            remaining(current)
             WidgetCaption(
                 text: isTight
                     ? WidgetFormatting.stopDetailCompact(current)
@@ -74,27 +81,49 @@ struct SmallWidgetView: View {
                 lines: 2
             )
         } else if info.nextStop != nil {
-            WidgetHeadline(symbol: WidgetSymbol.embarkation, text: WidgetFormatting.embarkation)
+            instrumentHeader(symbol: WidgetSymbol.embarkation, progress: nil, title: info.title)
+            Spacer(minLength: 0)
+            WidgetHeadline(text: WidgetFormatting.embarkation, size: 17)
         } else {
             // Reise ohne Route: Titel (oben) + Schiff + Zeitraum.
-            WidgetHeadline(symbol: WidgetSymbol.ship, text: info.ship)
+            instrumentHeader(symbol: WidgetSymbol.ship, progress: nil, title: info.title)
+            Spacer(minLength: 0)
+            WidgetHeadline(text: info.ship, size: 17, lineLimit: isTight ? 3 : 2)
             WidgetCaption(
                 text: WidgetFormatting.dateRange(from: info.cruiseStart, to: info.cruiseEnd),
                 lines: 2
             )
         }
 
-        Spacer(minLength: 0)
-
         if let next = info.nextStop {
             WidgetCaption(
                 text: isTight
                     ? WidgetFormatting.nextStopLineShort(next, compactName: true)
                     : WidgetFormatting.nextStopLine(next, compactName: true),
-                lines: 2
+                lines: 2,
+                tint: WidgetStyle.tertiaryText
             )
         } else if info.isAfterLastStop {
-            WidgetCaption(text: WidgetFormatting.cruiseEndLine(info.cruiseEnd), lines: 2)
+            WidgetCaption(
+                text: WidgetFormatting.cruiseEndLine(info.cruiseEnd),
+                lines: 2,
+                tint: WidgetStyle.tertiaryText
+            )
+        }
+    }
+
+    /// Cyane Restzeit im Hafen — live ueber `Text(_:style:)`, weil WidgetKit
+    /// die Eintraege vorrendert und ein gerechneter Wert einfrieren wuerde.
+    /// Faellt weg, sobald die Abfahrt vorbei ist (`.timer` zaehlt sonst hoch).
+    @ViewBuilder
+    private func remaining(_ stop: WidgetStopInfo) -> some View {
+        if let departure = stop.departure, departure > Date() {
+            Text("Noch \(departure, style: .timer)", bundle: WidgetFormatting.bundle)
+                .font(.system(size: 13, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(WidgetStyle.accent)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
     }
 
@@ -103,18 +132,46 @@ struct SmallWidgetView: View {
     @ViewBuilder
     private func countdownContent(_ info: CountdownInfo) -> some View {
         if !isTight {
-            WidgetCaption(text: info.title)
+            HStack(spacing: 0) {
+                Image(systemName: WidgetSymbol.calendar)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.accent)
+                Spacer(minLength: 0)
+                Image(systemName: WidgetSymbol.shipLine)
+                    .font(.system(size: 13))
+                    .foregroundStyle(WidgetStyle.tertiaryText)
+            }
+            .accessibilityHidden(true)
+            Spacer(minLength: 0)
+            WidgetCaption(text: WidgetFormatting.stillLabel, tint: WidgetStyle.tertiaryText)
         }
-        Text(WidgetFormatting.countdown(daysUntilStart: info.daysUntilStart))
-            .font(.title3.weight(.semibold))
-            .lineLimit(2)
-            .minimumScaleFactor(0.7)
-            .truncationMode(.tail)
+
+        if let parts = WidgetFormatting.countdownParts(
+            daysUntilStart: info.daysUntilStart,
+            dative: false
+        ) {
+            WidgetNumeral(value: parts.value, unit: parts.unit, size: isTight ? 24 : 32)
+        } else {
+            WidgetHeadline(
+                text: WidgetFormatting.countdown(daysUntilStart: info.daysUntilStart),
+                size: isTight ? 18 : 24,
+                lineLimit: 2
+            )
+        }
+
+        WidgetValueLine(text: info.title, size: 13, lines: 2)
+
+        if !isTight {
+            Image(systemName: WidgetSymbol.seaDay)
+                .font(.system(size: 11))
+                .foregroundStyle(WidgetStyle.accent.opacity(0.7))
+                .accessibilityHidden(true)
+        }
 
         Spacer(minLength: 0)
 
-        WidgetHeadline(symbol: WidgetSymbol.ship, text: info.ship, lineLimit: isTight ? 2 : 1)
-        WidgetCaption(text: WidgetFormatting.day(info.startDate))
+        WidgetCaption(text: info.ship, lines: isTight ? 2 : 1)
+        WidgetCaption(text: WidgetFormatting.day(info.startDate), tint: WidgetStyle.tertiaryText)
     }
 
     // MARK: - Leerlauf
@@ -122,27 +179,83 @@ struct SmallWidgetView: View {
     @ViewBuilder
     private func idleContent(_ info: IdleInfo) -> some View {
         if let days = info.daysSinceLastCruise {
-            WidgetHeadline(symbol: WidgetSymbol.idle, text: WidgetFormatting.noPlannedCruise)
+            if !isTight {
+                Image(systemName: WidgetSymbol.clock)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(WidgetStyle.accent)
+                    .accessibilityHidden(true)
+                Spacer(minLength: 0)
+                WidgetCaption(
+                    text: WidgetFormatting.lastCruiseLabel,
+                    tint: WidgetStyle.tertiaryText
+                )
+            }
+            WidgetValueLine(
+                text: WidgetFormatting.sinceLastCruise(days: days),
+                size: isTight ? 16 : 20,
+                lines: 2
+            )
+            if !isTight {
+                Image(systemName: WidgetSymbol.idle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(WidgetStyle.accent)
+                    .accessibilityHidden(true)
+            }
+            if let title = info.lastCruiseTitle {
+                WidgetHeadline(text: title, size: 14, lineLimit: 2)
+            }
             Spacer(minLength: 0)
-            WidgetCaption(text: WidgetFormatting.lastCruise(daysSince: days), lines: 3)
+            WidgetCaption(
+                text: WidgetFormatting.noPlannedCruise,
+                lines: 2,
+                tint: WidgetStyle.tertiaryText
+            )
         } else {
-            centered(symbol: WidgetSymbol.idle, text: WidgetFormatting.noCruiseAtAll)
+            Image(systemName: WidgetSymbol.idle)
+                .font(.system(size: 20))
+                .foregroundStyle(WidgetStyle.accent)
+                .accessibilityHidden(true)
+            Spacer(minLength: 0)
+            WidgetHeadline(text: WidgetFormatting.noCruiseAtAll, size: 15, lineLimit: 4)
         }
     }
 
     // MARK: - Bausteine
 
-    private func centered(symbol: String, text: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundStyle(WidgetStyle.accent)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(4)
-                .minimumScaleFactor(0.7)
-                .truncationMode(.tail)
+    /// Kopfzone: Ring links, rechts Uhrzeit und Reisetitel. Ab Dynamic Type
+    /// XXL bleibt nur der Titel — der Ring weicht dem Text.
+    @ViewBuilder
+    private func instrumentHeader(
+        symbol: String,
+        progress: Double?,
+        title: String?,
+        clock: Bool = false
+    ) -> some View {
+        if isTight {
+            if let title {
+                WidgetCaption(text: title, lines: 2, tint: WidgetStyle.tertiaryText)
+            }
+        } else {
+            HStack(alignment: .top, spacing: 6) {
+                WidgetRing(symbol: symbol, progress: progress, diameter: 46, lineWidth: 5)
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 2) {
+                    if clock {
+                        Text(Date(), style: .time)
+                            .font(.system(size: 11, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(WidgetStyle.accent)
+                    }
+                    if let title {
+                        Text(title)
+                            .font(.caption2)
+                            .foregroundStyle(WidgetStyle.tertiaryText)
+                            .multilineTextAlignment(.trailing)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.7)
+                    }
+                }
+            }
         }
     }
 }

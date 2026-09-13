@@ -2,18 +2,23 @@
 //  MediumWidgetView.swift
 //  ShipTripWidget
 //
-//  Familie `systemMedium`: zweispaltig — links der aktuelle Stopp, rechts der
-//  naechste. Reisen ohne Route und die uebrigen Zustaende bleiben einspaltig.
+//  Familie `systemMedium` in der Richtung „Dynamic Instrument" (Konzept 03).
 //
-//  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen die
-//  Spaltenueberschriften; der Platz geht an die Namen (dritte Zeile).
+//  Aktiv: links das Ring-Instrument mit dem aktuellen Hafen, rechts Datum und
+//  Ausblick, darunter die cyane Zeitleiste von Ankunft ueber jetzt bis
+//  Abfahrt, unten die Restzeit im Hafen. Hinter allem eine stark gedaempfte
+//  Schiffssilhouette (`WidgetShipGhost`).
 //
-//  Wie bei `RectangularWidgetView` ist der Schriftgrad zusaetzlich nach oben
-//  gedeckelt — die Kachel waechst nicht mit, 364×170 pt sind fest, eine Spalte
-//  ist damit rund 155 pt breit. Ohne Deckel brachen bei Dynamic Type XXL beide
-//  Namen („Puert…", „Sant…") und die Zeiten („Ankunft 8:0…") ab, was ZIEL K2
-//  verletzt. Namen laufen ausserdem ueber `shortStopName`, die Zeiten im engen
-//  Fall ueber die kompakte Form „8:00 – 17:00".
+//  Countdown: links die grosse cyane Zahl mit Reisetitel, Schiff und Abfahrt,
+//  rechts das kreisrunde Reisebild (`WidgetShipHero`) mit feinem cyanem Ring.
+//
+//  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen Ring,
+//  Bilder und Beiwerk — Text hat Vorrang. Der Schriftgrad ist wie bei
+//  `RectangularWidgetView` nach oben gedeckelt; die Kachel waechst nicht mit,
+//  364×170 pt sind fest. Ohne Deckel brachen bei Dynamic Type XXL die Namen
+//  („Puert…", „Sant…") und die Zeiten („Ankunft 8:0…") ab, was ZIEL K2
+//  verletzt. Namen laufen ausserdem ueber `shortStopName`, die Zeiten im
+//  engen Fall ueber die kompakte Form „8:00 – 17:00".
 //
 
 import SwiftUI
@@ -28,13 +33,11 @@ struct MediumWidgetView: View {
     private var nameLines: Int { isTight ? 3 : 2 }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content
-        }
-        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(WidgetFormatting.accessibilityLabel(for: state))
+        content
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(WidgetFormatting.accessibilityLabel(for: state))
     }
 
     @ViewBuilder
@@ -47,7 +50,13 @@ struct MediumWidgetView: View {
         case .idle(let info):
             idleContent(info)
         case .unavailable:
-            single(symbol: WidgetSymbol.unavailable, text: WidgetFormatting.unavailable)
+            instrument(
+                symbol: WidgetSymbol.unavailable,
+                progress: nil,
+                label: nil,
+                title: WidgetFormatting.unavailable,
+                detail: nil
+            )
         }
     }
 
@@ -55,62 +64,134 @@ struct MediumWidgetView: View {
 
     @ViewBuilder
     private func activeContent(_ info: ActiveInfo) -> some View {
-        WidgetCaption(text: info.title)
-
-        if info.currentStop == nil && info.nextStop == nil {
-            // Reise ohne Route: Titel + Schiff + Zeitraum.
-            WidgetHeadline(symbol: WidgetSymbol.ship, text: info.ship, lineLimit: nameLines)
-            WidgetCaption(
-                text: WidgetFormatting.dateRange(from: info.cruiseStart, to: info.cruiseEnd)
-            )
-        } else {
-            HStack(alignment: .top, spacing: 10) {
-                currentColumn(info)
-                Divider()
-                nextColumn(info)
+        ZStack(alignment: .trailing) {
+            if !isTight {
+                shipGhost
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 10) {
+                    currentBlock(info)
+                    Spacer(minLength: 8)
+                    outlookBlock(info)
+                }
+                Spacer(minLength: 0)
+                timelineBlock(info)
+                footerBlock(info)
             }
         }
-
-        Spacer(minLength: 0)
     }
 
     @ViewBuilder
-    private func currentColumn(_ info: ActiveInfo) -> some View {
+    private func currentBlock(_ info: ActiveInfo) -> some View {
         if let current = info.currentStop {
-            column(
-                label: WidgetFormatting.currentLabel,
+            instrument(
                 symbol: WidgetSymbol.stop(current),
+                progress: WidgetProgress.elapsed(current),
+                label: WidgetFormatting.currentInLabel,
                 title: WidgetFormatting.shortStopName(current),
-                detail: isTight
-                    ? WidgetFormatting.stopDetailCompact(current)
-                    : WidgetFormatting.stopDetail(current)
+                detail: current.country ?? info.ship
             )
-        } else {
-            column(
-                label: WidgetFormatting.currentLabel,
+        } else if info.nextStop != nil {
+            instrument(
                 symbol: WidgetSymbol.embarkation,
+                progress: nil,
+                label: WidgetFormatting.currentInLabel,
                 title: WidgetFormatting.embarkation,
                 detail: WidgetFormatting.day(info.cruiseStart)
             )
+        } else {
+            // Reise ohne Route: Schiff und Zeitraum tragen die Kachel.
+            instrument(
+                symbol: WidgetSymbol.ship,
+                progress: nil,
+                label: info.title,
+                title: info.ship,
+                detail: WidgetFormatting.dateRange(from: info.cruiseStart, to: info.cruiseEnd)
+            )
         }
     }
 
+    /// Rechte Kopfspalte: Datum oben, darunter der Ausblick. Im Konzept sitzt
+    /// hier das Wetter — dafuer gibt es in ShipTrip keine Daten, den Platz
+    /// bekommt der Pflichtinhalt „Nächster Stopp".
     @ViewBuilder
-    private func nextColumn(_ info: ActiveInfo) -> some View {
-        if let next = info.nextStop {
-            column(
-                label: WidgetFormatting.nextStopLabel,
-                symbol: WidgetSymbol.stop(next),
-                title: WidgetFormatting.shortStopName(next),
-                detail: WidgetFormatting.day(next.day)
-            )
-        } else {
-            column(
-                label: WidgetFormatting.nextStopLabel,
-                symbol: WidgetSymbol.cruiseEnd,
-                title: WidgetFormatting.cruiseEndLine(info.cruiseEnd),
-                detail: nil
-            )
+    private func outlookBlock(_ info: ActiveInfo) -> some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            WidgetCaption(text: WidgetFormatting.dayWithWeekday(dateForHeader(info)))
+            if let next = info.nextStop {
+                Text(WidgetFormatting.nextStopLine(next, compactName: true))
+                    .font(.caption2)
+                    .foregroundStyle(WidgetStyle.tertiaryText)
+                    .multilineTextAlignment(.trailing)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+            } else if info.isAfterLastStop {
+                WidgetCaption(
+                    text: WidgetFormatting.cruiseEndLine(info.cruiseEnd),
+                    lines: 2,
+                    tint: WidgetStyle.tertiaryText
+                )
+            }
+        }
+        .frame(maxWidth: 130, alignment: .trailing)
+    }
+
+    private func dateForHeader(_ info: ActiveInfo) -> Date {
+        info.currentStop?.day ?? info.cruiseStart
+    }
+
+    /// Zeitleiste mit Ankunft, jetzt und Abfahrt. Ohne Uhrzeiten bleibt der
+    /// zeitlose Eintrag bei seiner Tagesangabe.
+    @ViewBuilder
+    private func timelineBlock(_ info: ActiveInfo) -> some View {
+        if let current = info.currentStop,
+           let arrival = current.arrival,
+           let departure = current.departure,
+           let progress = WidgetProgress.elapsed(current) {
+            VStack(alignment: .leading, spacing: 2) {
+                WidgetTimeline(progress: progress)
+                HStack(spacing: 4) {
+                    timeLabel(WidgetFormatting.time(arrival))
+                    Spacer(minLength: 0)
+                    Text(Date(), style: .time)
+                        .font(.system(size: 10, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(WidgetStyle.accent)
+                    Spacer(minLength: 0)
+                    timeLabel(WidgetFormatting.time(departure))
+                }
+            }
+        }
+    }
+
+    private func timeLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 10))
+            .monospacedDigit()
+            .foregroundStyle(WidgetStyle.tertiaryText)
+            .lineLimit(1)
+    }
+
+    /// Fusszeile: links die cyane Restzeit, rechts der Reisetitel — im
+    /// Konzept steht dort die Kapitaelchen-Zeile, hier traegt derselbe Platz
+    /// den Pflichtinhalt.
+    @ViewBuilder
+    private func footerBlock(_ info: ActiveInfo) -> some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            if let departure = info.currentStop?.departure, departure > Date() {
+                Text("Noch \(departure, style: .relative) im Hafen",
+                     bundle: WidgetFormatting.bundle)
+                    .font(.system(size: 12, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(WidgetStyle.accent)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+            } else if let current = info.currentStop {
+                WidgetValueLine(text: WidgetFormatting.stopDetailCompact(current), size: 12)
+            }
+            Spacer(minLength: 4)
+            WidgetCaption(text: info.title, tint: WidgetStyle.tertiaryText)
+                .frame(maxWidth: 130, alignment: .trailing)
         }
     }
 
@@ -118,23 +199,92 @@ struct MediumWidgetView: View {
 
     @ViewBuilder
     private func countdownContent(_ info: CountdownInfo) -> some View {
-        WidgetCaption(text: info.title)
         HStack(alignment: .top, spacing: 10) {
-            column(
-                label: WidgetFormatting.currentLabel,
-                symbol: WidgetSymbol.ship,
-                title: info.ship,
-                detail: WidgetFormatting.day(info.startDate)
-            )
-            Divider()
-            Text(WidgetFormatting.countdown(daysUntilStart: info.daysUntilStart))
-                .font(.title3.weight(.semibold))
-                .lineLimit(3)
-                .minimumScaleFactor(0.7)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 2) {
+                WidgetCaption(
+                    text: WidgetFormatting.nextCruiseInLabel,
+                    tint: WidgetStyle.tertiaryText
+                )
+                if let parts = WidgetFormatting.countdownParts(
+                    daysUntilStart: info.daysUntilStart,
+                    dative: true
+                ) {
+                    WidgetNumeral(
+                        value: parts.value,
+                        unit: parts.unit,
+                        size: isTight ? 28 : 40,
+                        numeralTint: WidgetStyle.accent
+                    )
+                } else {
+                    WidgetHeadline(
+                        text: WidgetFormatting.countdown(daysUntilStart: info.daysUntilStart),
+                        size: isTight ? 20 : 28,
+                        lineLimit: 2
+                    )
+                }
+                WidgetValueLine(text: info.title, size: 14, lines: nameLines)
+                Spacer(minLength: 2)
+                detailRow(symbol: WidgetSymbol.ship, text: info.ship)
+                detailRow(
+                    symbol: WidgetSymbol.calendar,
+                    text: WidgetFormatting.departureLine(info.startDate)
+                )
+                if !isTight {
+                    WidgetTagline(text: WidgetFormatting.taglineCountdown)
+                }
+            }
+            if !isTight {
+                Spacer(minLength: 4)
+                heroBlock
+            }
         }
-        Spacer(minLength: 0)
+    }
+
+    private func detailRow(symbol: String, text: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: symbol)
+                .font(.system(size: 10))
+                .foregroundStyle(WidgetStyle.accent)
+                .frame(width: 12)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.caption2)
+                .foregroundStyle(WidgetStyle.secondaryText)
+                .lineLimit(isTight ? 2 : 1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    /// Rechte Spalte des Countdowns: Schriftzeile, Bildkreis, Wortmarke.
+    private var heroBlock: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text(WidgetFormatting.taglineScript)
+                .font(.system(size: 9, weight: .regular, design: .serif).italic())
+                .foregroundStyle(WidgetStyle.tertiaryText)
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .accessibilityHidden(true)
+            ZStack {
+                Circle().fill(WidgetStyle.surfaceBottom)
+                Image("WidgetShipHero")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 84, height: 84)
+                    .clipShape(Circle())
+                Circle().strokeBorder(WidgetStyle.accent.opacity(0.7), lineWidth: 1.5)
+            }
+            .frame(width: 84, height: 84)
+            .accessibilityHidden(true)
+            HStack(spacing: 3) {
+                Image(systemName: WidgetSymbol.ship)
+                    .font(.system(size: 8))
+                Text(verbatim: "ShipTrip")
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            .foregroundStyle(WidgetStyle.secondaryText)
+            .accessibilityHidden(true)
+        }
+        .frame(width: 108)
     }
 
     // MARK: - Leerlauf
@@ -142,47 +292,95 @@ struct MediumWidgetView: View {
     @ViewBuilder
     private func idleContent(_ info: IdleInfo) -> some View {
         if let days = info.daysSinceLastCruise {
-            WidgetHeadline(symbol: WidgetSymbol.idle, text: WidgetFormatting.noPlannedCruise)
-            WidgetCaption(text: WidgetFormatting.lastCruise(daysSince: days), lines: 2)
-            Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 10) {
+                    if !isTight {
+                        WidgetRing(
+                            symbol: WidgetSymbol.idle,
+                            progress: nil,
+                            diameter: 54,
+                            lineWidth: 6
+                        )
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        WidgetCaption(
+                            text: WidgetFormatting.lastCruiseLabel,
+                            tint: WidgetStyle.tertiaryText
+                        )
+                        WidgetValueLine(
+                            text: WidgetFormatting.sinceLastCruise(days: days),
+                            size: isTight ? 18 : 24
+                        )
+                        if let title = info.lastCruiseTitle {
+                            WidgetHeadline(text: title, size: 15, lineLimit: nameLines)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                Spacer(minLength: 0)
+                WidgetCaption(
+                    text: WidgetFormatting.noPlannedCruise,
+                    lines: 2,
+                    tint: WidgetStyle.tertiaryText
+                )
+            }
         } else {
-            single(symbol: WidgetSymbol.idle, text: WidgetFormatting.noCruiseAtAll)
+            instrument(
+                symbol: WidgetSymbol.idle,
+                progress: nil,
+                label: nil,
+                title: WidgetFormatting.noCruiseAtAll,
+                detail: nil
+            )
         }
     }
 
     // MARK: - Bausteine
 
-    @ViewBuilder
-    private func column(
-        label: String,
+    /// Ring links, Label/Name/Nebentext rechts. Ab Dynamic Type XXL faellt der
+    /// Ring weg und der Text bekommt die ganze Breite.
+    private func instrument(
         symbol: String,
+        progress: Double?,
+        label: String?,
         title: String,
         detail: String?
     ) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        HStack(alignment: .top, spacing: 10) {
             if !isTight {
-                WidgetCaption(text: label)
+                WidgetRing(symbol: symbol, progress: progress, diameter: 54, lineWidth: 6)
             }
-            WidgetHeadline(symbol: symbol, text: title, lineLimit: nameLines)
-            if let detail {
-                WidgetCaption(text: detail, lines: 2)
+            VStack(alignment: .leading, spacing: 1) {
+                if let label, !isTight {
+                    WidgetCaption(text: label, tint: WidgetStyle.tertiaryText)
+                }
+                WidgetHeadline(text: title, size: 20, lineLimit: nameLines)
+                if let detail {
+                    WidgetCaption(text: detail, lines: 2)
+                }
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func single(symbol: String, text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 6) {
-            Image(systemName: symbol)
-                .font(.title3)
-                .foregroundStyle(WidgetStyle.accent)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(.headline)
-                .lineLimit(3)
-                .minimumScaleFactor(0.7)
-                .truncationMode(.tail)
-            Spacer(minLength: 0)
-        }
+    /// Gedaempfte Schiffssilhouette am rechten Rand. Das Bild bringt seinen
+    /// eigenen Navy-Grund mit; die Maske blendet es nach links aus, damit
+    /// keine sichtbare Kante entsteht. Fehlt das Bild, bleibt die Stelle leer
+    /// — die Kachel haengt nicht daran.
+    private var shipGhost: some View {
+        Image("WidgetShipGhost")
+            .resizable()
+            .scaledToFill()
+            .frame(width: 190, height: 150)
+            .clipped()
+            .opacity(0.55)
+            .mask(
+                LinearGradient(
+                    colors: [.clear, .black, .black],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
