@@ -154,7 +154,9 @@ struct SmallWidgetView: View {
             }
             .accessibilityHidden(true)
             Spacer(minLength: 0)
-            WidgetCaption(text: WidgetFormatting.stillLabel, tint: WidgetStyle.tertiaryText)
+            // Im Konzept traegt das Label „Noch" den Akzent, die Zahl bleibt
+            // weiss (nachgemessen im Konzeptbild: „12 Tage" ist #FFFFFF).
+            WidgetCaption(text: WidgetFormatting.stillLabel, tint: WidgetStyle.accent)
         }
 
         if let parts = WidgetFormatting.countdownParts(
@@ -178,8 +180,6 @@ struct SmallWidgetView: View {
                 .foregroundStyle(WidgetStyle.accent.opacity(0.7))
                 .accessibilityHidden(true)
         }
-
-        Spacer(minLength: 0)
 
         WidgetCaption(text: info.ship, lines: isTight ? 2 : 1)
         WidgetCaption(text: WidgetFormatting.day(info.startDate), tint: WidgetStyle.tertiaryText)

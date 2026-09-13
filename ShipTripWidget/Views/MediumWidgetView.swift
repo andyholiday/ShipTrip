@@ -7,7 +7,8 @@
 //  Aktiv: links das Ring-Instrument mit dem aktuellen Hafen, rechts Datum und
 //  Ausblick, darunter die cyane Zeitleiste von Ankunft ueber jetzt bis
 //  Abfahrt, unten die Restzeit im Hafen. Hinter allem eine stark gedaempfte
-//  Schiffssilhouette (`WidgetShipGhost`).
+//  Schiffssilhouette (`WidgetShipGhost`). Die Kopfzeile teilt sich rund 60:40
+//  zwischen Ring-plus-Name und dem Datumsblock; der Name hat Vorrang.
 //
 //  Countdown: links die grosse cyane Zahl mit Reisetitel, Schiff und Abfahrt,
 //  rechts das kreisrunde Reisebild (`WidgetShipHero`) mit feinem cyanem Ring.
@@ -40,6 +41,13 @@ struct MediumWidgetView: View {
     /// Ring 42 % der Kachelhoehe (242 von 580 px nachgemessen) — auf 170 pt
     /// Kachel also rund 72 pt. Die uebrigen Zustaende bleiben bei 54 pt.
     private let heroRing: CGFloat = 72
+
+    /// Breite der rechten Kopfspalte im aktiven Zustand. Der Kopf links
+    /// bekommt den Rest — rund 60:40 statt der frueheren 45:55, sonst bleibt
+    /// dem Ortsnamen neben dem 72-pt-Ring zu wenig Platz. Bei grossem
+    /// Schriftgrad faellt die Spalte schmaler aus: dort traegt der Name bis
+    /// zu drei Zeilen und braucht die Breite dringender als das Datum.
+    private var outlookWidth: CGFloat { isTight ? 100 : 126 }
 
     var body: some View {
         content
@@ -78,9 +86,14 @@ struct MediumWidgetView: View {
     @ViewBuilder
     private func activeContent(_ info: ActiveInfo) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .top, spacing: 10) {
+            // Kein `Spacer` zwischen den Spalten: er ist unbegrenzt flexibel
+            // und nahm dem Ortsnamen — der ueber `minimumScaleFactor` eine
+            // sehr kleine Mindestbreite meldet — so viel Breite weg, dass er
+            // mit „…" abbrach („Kopenh…"). Stattdessen feste rechte Spalte,
+            // der Kopf bekommt den ganzen Rest.
+            HStack(alignment: .top, spacing: 12) {
                 currentBlock(info)
-                Spacer(minLength: 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 outlookBlock(info)
             }
             if isTight, let next = info.nextStop {
@@ -139,7 +152,13 @@ struct MediumWidgetView: View {
     @ViewBuilder
     private func outlookBlock(_ info: ActiveInfo) -> some View {
         VStack(alignment: .trailing, spacing: 2) {
-            WidgetCaption(text: WidgetFormatting.dayWithWeekday(dateForHeader(info)))
+            // Bei grossem Schriftgrad ohne Wochentag — sonst passt das Datum
+            // nicht mehr einzeilig in die schmalere Spalte.
+            WidgetCaption(
+                text: isTight
+                    ? WidgetFormatting.dayWithYear(dateForHeader(info))
+                    : WidgetFormatting.dayWithWeekday(dateForHeader(info))
+            )
             if let next = info.nextStop, !isTight {
                 Text(WidgetFormatting.nextStopLine(next, compactName: true))
                     .font(.caption2)
@@ -155,7 +174,7 @@ struct MediumWidgetView: View {
                 )
             }
         }
-        .frame(maxWidth: 130, alignment: .trailing)
+        .frame(width: outlookWidth, alignment: .trailing)
     }
 
     private func dateForHeader(_ info: ActiveInfo) -> Date {

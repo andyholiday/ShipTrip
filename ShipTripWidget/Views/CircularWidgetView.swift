@@ -81,12 +81,27 @@ struct CircularWidgetView: View {
         }
     }
 
-    /// Anteil der verstrichenen Liegezeit; `nil` in allen anderen Zustaenden —
-    /// dann bleibt der Kreis ohne Ring.
+    /// Anteil, den der Ring zeigt. Aktiv: die verstrichene Liegezeit.
+    /// Countdown: der bereits vergangene Teil des letzten Monats vor der
+    /// Abfahrt, damit der Ring in den Tagen davor sichtbar zulaeuft.
+    /// Leerlauf: ein geschlossener Ring — die Reise liegt hinter uns. Nur im
+    /// Fehlerfall bleibt der Kreis bei der blossen Ringspur.
     private var progress: Double? {
-        guard case .active(let info) = state, let current = info.currentStop else { return nil }
-        return WidgetProgress.elapsed(current)
+        switch state {
+        case .active(let info):
+            guard let current = info.currentStop else { return nil }
+            return WidgetProgress.elapsed(current)
+        case .countdown(let info):
+            return 1 - min(1, Double(max(0, info.daysUntilStart)) / countdownRingSpan)
+        case .idle:
+            return 1
+        case .unavailable:
+            return nil
+        }
     }
+
+    /// Zeitraum, ueber den sich der Countdown-Ring fuellt.
+    private let countdownRingSpan: Double = 30
 
     /// Kurzwert; `nil`, wenn nur das Symbol steht.
     private var value: String? {
