@@ -336,7 +336,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Still"
+            "value": "In"
           }
         }
       }
@@ -356,7 +356,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Still %@ in port"
+            "value": "%@ left in port"
           }
         }
       }
