@@ -1,0 +1,2 @@
+widget-ship-hero.png · Quelle: Codex Imagegen, aktuelles integriertes Image-Modell (Modellname vom Tool nicht ausgewiesen) · Fotorealistisches generisches Kreuzfahrtschiff in einem norwegischen Fjord bei kühlem Tageslicht · Einsatz: Kreisbild im Medium-Countdown
+widget-ship-ghost.png · Quelle: Codex Imagegen, aktuelles integriertes Image-Modell (Modellname vom Tool nicht ausgewiesen) · Dunkle, monochrome Seitenansicht eines generischen Kreuzfahrtschiffs mit Bug nach links auf Navy · Einsatz: Hintergrund rechts im Medium-Aktiv
