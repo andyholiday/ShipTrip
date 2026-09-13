@@ -119,6 +119,80 @@ erreicht. Belegbilder entstehen deshalb über eine Debug-Galerie in der App.
   `EnvironmentVariables`-Block der `.xctestrun`-Datei injiziert werden, sonst erreicht sie
   den Testprozess nie.
 
+## Gestaltung
+
+Die Richtung „Dynamic Instrument" stammt aus Andres Mockup-Bogen
+(`docs/design/mookup_widgets.png`, Konzept 03); der nachgebaute Ausschnitt liegt als
+[Konzeptbild](../design/assets/konzept-03-dynamic-instrument.png) im Repo. Die
+Home-Screen-Familien sind ein dunkles Instrument — Navy-Grund in hellem wie dunklem
+Erscheinungsbild, Cyan ausschließlich für Werte und Fortschritt, ein Ring um das
+Zustandssymbol als Leitmotiv. Alle Werte stehen in
+`ShipTripWidget/Views/WidgetStyle.swift`.
+
+### Farben
+
+| Token | Wert | Verwendung |
+|-------|------|------------|
+| `surfaceTop` / `surfaceBottom` | `#101E2E` / `#0B1622` | Kachelverlauf `surface` |
+| `accent` | `#22D3EE` | Werte, Ring, Zeitleiste |
+| `accentSoft` | `#38BDF8` | Startton des Verlaufs `progress`, diagonal |
+| `primaryText` / `secondaryText` | Weiß / Weiß 72 % | Namen / Land, Schiff, Datum |
+| `tertiaryText` / `track` | Weiß 55 % / Weiß 14 % | Beiwerk / offener Teil des Rings |
+
+Kontrast Cyan auf Navy: 10,2:1; Nebentext rund 9:1, Beiwerk rund 5,4:1.
+
+### Ring-Instrument je Familie
+
+| Familie | Durchmesser | Linienstärke | Besonderheit |
+|---------|-------------|--------------|--------------|
+| `systemSmall` | 52 pt | 5 pt | Kopfzeile mit Uhrzeit neben dem Ring |
+| `systemMedium` | 72 pt aktiv, sonst 54 pt | 6 pt | 42 % der Kachelhöhe, am Konzept gemessen |
+| `accessoryRectangular` | 24 pt (+ 2 pt Vorlauf) | 3,5 pt | `monochrome`, `widgetAccentable` |
+| `accessoryCircular` | Familiengröße | 4 pt | eigener Kreis über `AccessoryWidgetBackground` |
+
+Der Ring zeigt den Anteil der verstrichenen Liegezeit (`WidgetProgress.elapsed`); ohne
+Zeiten bleibt er als geschlossene, gedämpfte Spur stehen.
+
+### Typografie und Zeitleiste
+
+- Große Zahlen: `Font.widgetNumeral` — `.rounded`, `.bold`, `monospacedDigit`;
+  32 pt im Kleinformat, 40 pt im Mittelformat (eng: 24 bzw. 28 pt). Die Einheit
+  (`widgetUnit`, semibold) misst 55 % der Zahlengröße.
+- Namen: `WidgetHeadline`, bold, 14–18 pt, `minimumScaleFactor` 0,7.
+- Werte: `WidgetValueLine`, semibold, `monospacedDigit`, cyan.
+- Kapitälchen-Zeile: `WidgetTagline`, 7 pt, Laufweite 1,4.
+- Zeitleiste im Mittelformat: Spur 3 pt in `track`, Fortschritt im `progress`-Verlauf,
+  Punkt 9 pt in `accent`.
+
+### Bilder
+
+Beide Assets liegen in `ShipTripWidget/Assets.xcassets` und stammen aus Codex Imagegen;
+Kopien der Quellbilder unter `docs/design/assets/`.
+
+| Asset | Größe | Einsatz |
+|-------|-------|---------|
+| `WidgetShipHero` | 600 × 600 px | Countdown (Medium): rund auf 84 pt, 2,5 pt cyaner Rand |
+| `WidgetShipGhost` | 900 × 600 px | Silhouette hinter Medium aktiv: 150 × 142 pt, ausmaskiert |
+
+### Regeln
+
+- **Sperrbildschirm bleibt systemgerendert:** kein eigener Grund und keine eigenen
+  Farben — übernommen werden nur Ring und Hierarchie (`monochrome: true`,
+  `widgetAccentable`).
+- **Ab Dynamic Type XXL hat Text Vorrang:** Ring, Bilder und der Balken der Zeitleiste
+  entfallen, der gewonnene Platz geht an die Namen. Der Schriftgrad ist gedeckelt —
+  `...xxLarge` auf dem Home-Screen, `...large` auf dem Sperrbildschirm.
+- **Galerie-Screenshots brauchen das Asset-Katalog-Mitglied:** `Assets.xcassets` des
+  Widgets steht in der `membershipExceptions`-Liste des App-Targets
+  (`ShipTrip.xcodeproj/project.pbxproj`); ohne den Eintrag bleiben die Bilder in der
+  Debug-Galerie leer.
+
+Belege: [Kontaktbogen](../design/kontaktbogen-widget.html), Galerie-Shots unter
+`docs/design/directions/shots/dynamic/`.
+
+Stand der Abnahme: Gate r2 und Quality-Iteration 1 „go mit Backlog" (2026-09-13);
+Gerätebestätigung durch Andre offen.
+
 ## Acceptance-Status
 
 Bezug: `.planning/ZIEL.md` (v5.1) K1–K5. Testbeleg für alle „runtime-verifiziert"-Zeilen

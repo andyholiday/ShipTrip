@@ -32,6 +32,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   eine Mitteilung auf die wartende Reise hin; ihr Antippen öffnet die App.
   ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
 
+### Geändert
+
+- **Widgets im Look „Dynamic Instrument"**: Home- und Sperrbildschirm-Widgets zeigen
+  einen Navy-Grund in hellem wie dunklem Erscheinungsbild, cyane Werte und ein
+  Ring-Instrument mit dem Fortschritt der Liegezeit. Das mittlere Widget ergänzt eine
+  Zeitleiste von der Ankunft bis zur Abfahrt sowie Schiffsfoto und -silhouette.
+  ([Feature-Doku](docs/features/widget.md))
+- **Englischer Wortlaut im Widget korrigiert**: Der Countdown heißt jetzt „In 12 days"
+  statt „Still 12 days", die verbleibende Liegezeit „3 h left in port".
+
 ### Behoben
 
 - **Geteilte `.shiptrip`-Dateien lassen sich aus der Dateien-App öffnen**: Ein
