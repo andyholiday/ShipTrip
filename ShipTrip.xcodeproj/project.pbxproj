@@ -96,6 +96,7 @@
 		BF1F29202EF5A001006C7F7D /* Exceptions for "ShipTripWidget" folder in "ShipTrip" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Assets.xcassets,
 				PreviewFixtures.swift,
 				ShipTripWidget.swift,
 				Views/CircularWidgetView.swift,

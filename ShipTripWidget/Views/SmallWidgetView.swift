@@ -6,6 +6,10 @@
 //  oben das Ring-Instrument mit der aktuellen Uhrzeit, darunter der Name in
 //  Weiss, darunter der cyane Wert. Der Grund kommt aus `WidgetStyle.surface`.
 //
+//  Unter dem Ring bleibt die Hierarchie des Konzepts: Name, darunter der eine
+//  cyane Wert, darunter gedaempft Liegezeit und Ausblick. Die Liegezeit steht
+//  dafuer immer in der kompakten Form „8:00 – 17:00".
+//
 //  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen Ring,
 //  Uhrzeit und Schmuckzeichen, der Ausblick verliert das Datum. Der so
 //  gewonnene Platz geht an den Namen des aktuellen Stopps, damit auch ein
@@ -74,11 +78,13 @@ struct SmallWidgetView: View {
                 lineLimit: isTight ? 3 : 2
             )
             remaining(current)
+            // Immer die kompakte Form „8:00 – 17:00": unter dem Ring sollen
+            // moeglichst wenige Nebenzeilen stehen, sonst kippt die Hierarchie
+            // aus dem Konzept (Name gross, ein cyaner Wert, Rest gedaempft).
             WidgetCaption(
-                text: isTight
-                    ? WidgetFormatting.stopDetailCompact(current)
-                    : WidgetFormatting.stopDetail(current),
-                lines: 2
+                text: WidgetFormatting.stopDetailCompact(current),
+                lines: isTight ? 2 : 1,
+                tint: WidgetStyle.tertiaryText
             )
         } else if info.nextStop != nil {
             instrumentHeader(symbol: WidgetSymbol.embarkation, progress: nil, title: info.title)
@@ -114,12 +120,17 @@ struct SmallWidgetView: View {
 
     /// Cyane Restzeit im Hafen — live ueber `Text(_:style:)`, weil WidgetKit
     /// die Eintraege vorrendert und ein gerechneter Wert einfrieren wuerde.
-    /// Faellt weg, sobald die Abfahrt vorbei ist (`.timer` zaehlt sonst hoch).
+    /// Faellt weg, sobald die Abfahrt vorbei ist (`.relative` zaehlt sonst hoch).
+    ///
+    /// `.relative` statt `.timer`: die Sekundenstelle von `.timer`
+    /// („Noch 2:34:43") machte die Zeile fast so breit wie den Hafennamen und
+    /// nahm ihm die Fuehrung. Dieselbe Form traegt schon die Fusszeile des
+    /// Mittelformats.
     @ViewBuilder
     private func remaining(_ stop: WidgetStopInfo) -> some View {
         if let departure = stop.departure, departure > Date() {
-            Text("Noch \(departure, style: .timer)", bundle: WidgetFormatting.bundle)
-                .font(.system(size: 13, weight: .semibold))
+            Text("Noch \(departure, style: .relative)", bundle: WidgetFormatting.bundle)
+                .font(.system(size: 12, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(WidgetStyle.accent)
                 .lineLimit(1)
@@ -237,7 +248,7 @@ struct SmallWidgetView: View {
             }
         } else {
             HStack(alignment: .top, spacing: 6) {
-                WidgetRing(symbol: symbol, progress: progress, diameter: 46, lineWidth: 5)
+                WidgetRing(symbol: symbol, progress: progress, diameter: 52, lineWidth: 5)
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 2) {
                     if clock {

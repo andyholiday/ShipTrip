@@ -14,8 +14,8 @@
 //  Der Kreis misst feste 76 pt und waechst mit dem Schriftgrad nicht mit;
 //  deshalb ist der Schriftgrad hier bei `.large` gedeckelt. Ohne Deckel stiess
 //  bei Dynamic Type XXL der Kurzwert an die Kreiskante („17:…", ZIEL K2). Der
-//  Innenabstand haelt Symbol und Wert zusaetzlich von der Rundung fern; der
-//  Fortschrittsring kostet weitere 4 pt, deshalb liegt er bei 10 statt 6.
+//  Innenabstand von 10 pt haelt Symbol und Wert von der Ringspur fern, die in
+//  jedem Zustand steht.
 //
 //  - Note: Im aktiven Zustand steht die Abfahrtszeit statt einer Tageszahl.
 //    `ActiveInfo` fuehrt bewusst keinen vorberechneten Tageswert, und in der
@@ -33,9 +33,12 @@ struct CircularWidgetView: View {
         ZStack {
             AccessoryWidgetBackground()
 
+            // Die Ringspur steht in jedem Zustand — ohne sie fehlte dem
+            // Countdown und dem Leerlauf das Leitmotiv der Richtung.
+            Circle()
+                .stroke(Color.primary.opacity(0.25), lineWidth: 4)
+
             if let progress {
-                Circle()
-                    .stroke(Color.primary.opacity(0.25), lineWidth: 4)
                 Circle()
                     .trim(from: 0, to: max(0.02, min(1, progress)))
                     .stroke(style: StrokeStyle(lineWidth: 4, lineCap: .round))
@@ -55,7 +58,7 @@ struct CircularWidgetView: View {
                         .minimumScaleFactor(0.5)
                 }
             }
-            .padding(progress == nil ? 6 : 10)
+            .padding(10)
         }
         .dynamicTypeSize(...DynamicTypeSize.large)
         .accessibilityElement(children: .ignore)

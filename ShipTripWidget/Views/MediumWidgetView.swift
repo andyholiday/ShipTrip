@@ -13,7 +13,11 @@
 //  rechts das kreisrunde Reisebild (`WidgetShipHero`) mit feinem cyanem Ring.
 //
 //  Kuerzung bei grossem Schriftgrad: ab Dynamic Type XXL entfallen Ring,
-//  Bilder und Beiwerk — Text hat Vorrang. Der Schriftgrad ist wie bei
+//  Bilder und der Balken der Zeitleiste — Text hat Vorrang. Der Ausblick
+//  wandert dann aus der schmalen Kopfspalte auf die volle Breite, der
+//  Reisetitel darf zweizeilig werden; beide brachen sonst mit „…" ab.
+//
+//  Der Schriftgrad ist wie bei
 //  `RectangularWidgetView` nach oben gedeckelt; die Kachel waechst nicht mit,
 //  364×170 pt sind fest. Ohne Deckel brachen bei Dynamic Type XXL die Namen
 //  („Puert…", „Sant…") und die Zeiten („Ankunft 8:0…") ab, was ZIEL K2
@@ -31,6 +35,11 @@ struct MediumWidgetView: View {
 
     private var isTight: Bool { typeSize >= .xxLarge }
     private var nameLines: Int { isTight ? 3 : 2 }
+
+    /// Durchmesser des Leitmotivs im aktiven Zustand. Im Konzeptbild misst der
+    /// Ring 42 % der Kachelhoehe (242 von 580 px nachgemessen) — auf 170 pt
+    /// Kachel also rund 72 pt. Die uebrigen Zustaende bleiben bei 54 pt.
+    private let heroRing: CGFloat = 72
 
     var body: some View {
         content
@@ -62,22 +71,33 @@ struct MediumWidgetView: View {
 
     // MARK: - Aktiv
 
+    /// Die Silhouette liegt als `background` hinter dem Text und bestimmt die
+    /// Groesse des Blocks nicht mit — als `ZStack`-Geschwister zog sie mit
+    /// ihren 150 pt die Kachel ueber die Unterkante hinaus, was den
+    /// angeschnittenen Rest am unteren Rand erzeugte.
     @ViewBuilder
     private func activeContent(_ info: ActiveInfo) -> some View {
-        ZStack(alignment: .trailing) {
-            if !isTight {
-                shipGhost
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .top, spacing: 10) {
+                currentBlock(info)
+                Spacer(minLength: 8)
+                outlookBlock(info)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .top, spacing: 10) {
-                    currentBlock(info)
-                    Spacer(minLength: 8)
-                    outlookBlock(info)
-                }
-                Spacer(minLength: 0)
-                timelineBlock(info)
-                footerBlock(info)
+            if isTight, let next = info.nextStop {
+                // Bei grossem Schriftgrad bekommt der Ausblick die volle
+                // Breite statt der schmalen Kopfspalte — dort brach er ab.
+                WidgetCaption(
+                    text: WidgetFormatting.nextStopLine(next, compactName: true),
+                    lines: 2,
+                    tint: WidgetStyle.tertiaryText
+                )
             }
+            Spacer(minLength: 0)
+            timelineBlock(info)
+            footerBlock(info)
+        }
+        .background(alignment: .trailing) {
+            if !isTight { shipGhost }
         }
     }
 
@@ -89,7 +109,8 @@ struct MediumWidgetView: View {
                 progress: WidgetProgress.elapsed(current),
                 label: WidgetFormatting.currentInLabel,
                 title: WidgetFormatting.shortStopName(current),
-                detail: current.country ?? info.ship
+                detail: current.country ?? info.ship,
+                diameter: heroRing
             )
         } else if info.nextStop != nil {
             instrument(
@@ -97,7 +118,8 @@ struct MediumWidgetView: View {
                 progress: nil,
                 label: WidgetFormatting.currentInLabel,
                 title: WidgetFormatting.embarkation,
-                detail: WidgetFormatting.day(info.cruiseStart)
+                detail: WidgetFormatting.day(info.cruiseStart),
+                diameter: heroRing
             )
         } else {
             // Reise ohne Route: Schiff und Zeitraum tragen die Kachel.
@@ -118,7 +140,7 @@ struct MediumWidgetView: View {
     private func outlookBlock(_ info: ActiveInfo) -> some View {
         VStack(alignment: .trailing, spacing: 2) {
             WidgetCaption(text: WidgetFormatting.dayWithWeekday(dateForHeader(info)))
-            if let next = info.nextStop {
+            if let next = info.nextStop, !isTight {
                 Text(WidgetFormatting.nextStopLine(next, compactName: true))
                     .font(.caption2)
                     .foregroundStyle(WidgetStyle.tertiaryText)
@@ -149,7 +171,11 @@ struct MediumWidgetView: View {
            let departure = current.departure,
            let progress = WidgetProgress.elapsed(current) {
             VStack(alignment: .leading, spacing: 2) {
-                WidgetTimeline(progress: progress)
+                // Bei grossem Schriftgrad weicht der Balken — die drei Zeiten
+                // darunter tragen denselben Inhalt und brauchen den Platz.
+                if !isTight {
+                    WidgetTimeline(progress: progress)
+                }
                 HStack(spacing: 4) {
                     timeLabel(WidgetFormatting.time(arrival))
                     Spacer(minLength: 0)
@@ -190,8 +216,15 @@ struct MediumWidgetView: View {
                 WidgetValueLine(text: WidgetFormatting.stopDetailCompact(current), size: 12)
             }
             Spacer(minLength: 4)
-            WidgetCaption(text: info.title, tint: WidgetStyle.tertiaryText)
-                .frame(maxWidth: 130, alignment: .trailing)
+            // Bei grossem Schriftgrad darf der Reisetitel umbrechen statt
+            // abzubrechen — Text hat Vorrang vor der einzeiligen Form.
+            WidgetCaption(
+                text: info.title,
+                lines: isTight ? 2 : 1,
+                tint: WidgetStyle.tertiaryText
+            )
+                .multilineTextAlignment(.trailing)
+                .frame(maxWidth: isTight ? 150 : 130, alignment: .trailing)
         }
     }
 
@@ -271,7 +304,7 @@ struct MediumWidgetView: View {
                     .scaledToFill()
                     .frame(width: 84, height: 84)
                     .clipShape(Circle())
-                Circle().strokeBorder(WidgetStyle.accent.opacity(0.7), lineWidth: 1.5)
+                Circle().strokeBorder(WidgetStyle.accent.opacity(0.85), lineWidth: 2.5)
             }
             .frame(width: 84, height: 84)
             .accessibilityHidden(true)
@@ -344,11 +377,12 @@ struct MediumWidgetView: View {
         progress: Double?,
         label: String?,
         title: String,
-        detail: String?
+        detail: String?,
+        diameter: CGFloat = 54
     ) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             if !isTight {
-                WidgetRing(symbol: symbol, progress: progress, diameter: 54, lineWidth: 6)
+                WidgetRing(symbol: symbol, progress: progress, diameter: diameter, lineWidth: 6)
             }
             VStack(alignment: .leading, spacing: 1) {
                 if let label, !isTight {
@@ -362,22 +396,40 @@ struct MediumWidgetView: View {
         }
     }
 
-    /// Gedaempfte Schiffssilhouette am rechten Rand. Das Bild bringt seinen
-    /// eigenen Navy-Grund mit; die Maske blendet es nach links aus, damit
-    /// keine sichtbare Kante entsteht. Fehlt das Bild, bleibt die Stelle leer
-    /// — die Kachel haengt nicht daran.
+    /// Gedaempfte Schiffssilhouette am rechten Rand, Bug nach links — das
+    /// Markenzeichen der 2×1-Kachel im Konzept. Das Bild bringt seinen eigenen
+    /// Navy-Grund mit; zwei Masken blenden es nach links und an Ober- wie
+    /// Unterkante aus, damit keine sichtbare Kante entsteht. Das Schiff liegt
+    /// in der Bildmitte (30–68 % der Hoehe) und bleibt dabei unangetastet.
+    /// Fehlt das Bild, bleibt die Stelle leer — die Kachel haengt nicht daran.
     private var shipGhost: some View {
         Image("WidgetShipGhost")
             .resizable()
             .scaledToFill()
-            .frame(width: 190, height: 150)
+            .frame(width: 150, height: 142)
             .clipped()
-            .opacity(0.55)
+            .opacity(0.85)
             .mask(
                 LinearGradient(
-                    colors: [.clear, .black, .black],
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black.opacity(0.4), location: 0.3),
+                        .init(color: .black, location: 0.75)
+                    ],
                     startPoint: .leading,
                     endPoint: .trailing
+                )
+            )
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: .black, location: 0.14),
+                        .init(color: .black, location: 0.86),
+                        .init(color: .clear, location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             )
             .allowsHitTesting(false)
