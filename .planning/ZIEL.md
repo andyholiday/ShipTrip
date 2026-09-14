@@ -28,4 +28,4 @@ alles zu testflight schicken und alles auf main pushen und zu github?"
 bei Build 30–32) · große Medienordner `marketing/release-1.7.0/` und `videos/` (bleiben
 untracked, bewusst) · Gerätebestätigung (K8 der Vorläufer-Runs, Andre am Gerät).
 
-**Status:** abgeschlossen 2026-09-14 — main @ 41b29a8, Tag v1.9.0-b33, Evidenz `.winston-evidence/20260914T083247Z/gate-run.json`.
+**Status:** abgeschlossen 2026-09-14 — main @ 41b29a8, Tag v1.9.0-b33, Evidenz `.winston-evidence/20260914T083514Z/gate-run.json`.
