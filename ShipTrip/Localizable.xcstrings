@@ -65,6 +65,17 @@
       }
     },
 
+    "Alle aufklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all"
+          }
+        }
+      }
+    },
+
     "Alle ausblenden" : {
       "localizations" : {
         "en" : {
@@ -137,6 +148,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All routes hidden"
+          }
+        }
+      }
+    },
+
+    "Alle zuklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse all"
           }
         }
       }
@@ -286,6 +308,17 @@
       }
     },
 
+    "aufgeklappt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "expanded"
+          }
+        }
+      }
+    },
+
     "Ausflug" : {
       "comment" : "ExpenseCategory display name",
       "localizations" : {
@@ -403,6 +436,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rating"
+          }
+        }
+      }
+    },
+
+    "Bildunterschrift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caption"
           }
         }
       }
@@ -528,6 +572,17 @@
       }
     },
 
+    "Die angehängten Fotos bleiben in der Reise-Galerie." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The attached photos stay in the trip gallery."
+          }
+        }
+      }
+    },
+
     "Die Beispielreise kann nicht geteilt werden." : {
       "localizations" : {
         "en" : {
@@ -642,6 +697,17 @@
       }
     },
 
+    "Eckdaten" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key facts"
+          }
+        }
+      }
+    },
+
     "Einstellungen" : {
       "localizations" : {
         "en" : {
@@ -675,6 +741,50 @@
       }
     },
 
+    "Eintrag löschen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete entry"
+          }
+        }
+      }
+    },
+
+    "Eintrag nicht gefunden" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entry not found"
+          }
+        }
+      }
+    },
+
+    "Enddatum anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust end date"
+          }
+        }
+      }
+    },
+
+    "Enddatum mitverschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move end date too"
+          }
+        }
+      }
+    },
+
     "Ende" : {
       "localizations" : {
         "en" : {
@@ -692,6 +802,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "End Date"
+          }
+        }
+      }
+    },
+
+    "Erinnerung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memory"
           }
         }
       }
@@ -819,6 +940,28 @@
       }
     },
 
+    "Foto entfernen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove photo"
+          }
+        }
+      }
+    },
+
+    "Foto ohne Bildunterschrift" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo without caption"
+          }
+        }
+      }
+    },
+
     "Fotos" : {
       "localizations" : {
         "en" : {
@@ -836,6 +979,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Select Photos"
+          }
+        }
+      }
+    },
+
+    "Fotos hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add photos"
+          }
+        }
+      }
+    },
+
+    "Fotos werden geladen …" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading photos …"
           }
         }
       }
@@ -907,6 +1072,28 @@
       }
     },
 
+    "Großartig" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Great"
+          }
+        }
+      }
+    },
+
+    "Gut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good"
+          }
+        }
+      }
+    },
+
     "Hafen bearbeiten" : {
       "localizations" : {
         "en" : {
@@ -946,6 +1133,88 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Port"
+          }
+        }
+      }
+    },
+
+    "Hafen- und Seetag-Daten um %lld Tage nach hinten verschieben?" : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tag nach hinten verschieben?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tage nach hinten verschieben?"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld day later?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld days later?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "Hafen- und Seetag-Daten um %lld Tage nach vorne verschieben?" : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tag nach vorne verschieben?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Hafen- und Seetag-Daten um %lld Tage nach vorne verschieben?"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld day earlier?"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Move port and sea day dates %lld days earlier?"
+                }
+              }
+            }
           }
         }
       }
@@ -1038,12 +1307,100 @@
         }
       }
     },
+    "Kein Hafen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No port"
+          }
+        }
+      }
+    },
+
+    "Keine Stimmung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No mood"
+          }
+        }
+      }
+    },
+
     "Löscht alle Daten, deinen KI-API-Key und alle Einstellungen und zeigt das Intro wieder wie beim ersten Öffnen — die App steht danach wie frisch installiert da." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Deletes all data, your AI API key and every setting, and shows the intro again just like on first launch — the app is left as if freshly installed."
+          }
+        }
+      }
+    },
+
+    "Nächte" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nights"
+          }
+        }
+      }
+    },
+
+    "Nächte anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust nights"
+          }
+        }
+      }
+    },
+
+    "Nächte geändert" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nights changed"
+          }
+        }
+      }
+    },
+
+    "Nicht so gut" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not so good"
+          }
+        }
+      }
+    },
+
+    "Nicht verschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Don't move"
+          }
+        }
+      }
+    },
+
+    "Okay" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Okay"
           }
         }
       }
@@ -1069,6 +1426,105 @@
         }
       }
     },
+    "Schlecht" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Awful"
+          }
+        }
+      }
+    },
+
+    "Schreib etwas oder wähl mindestens ein Foto." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Write something or pick at least one photo."
+          }
+        }
+      }
+    },
+
+    "Startdatum anpassen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust start date"
+          }
+        }
+      }
+    },
+
+    "Startdatum verschoben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start date moved"
+          }
+        }
+      }
+    },
+
+    "Stimmung" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mood"
+          }
+        }
+      }
+    },
+
+    "Tag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day"
+          }
+        }
+      }
+    },
+
+    "Tag %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Day %lld"
+          }
+        }
+      }
+    },
+
+    "Tagebuch-Eintrag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Journal entry"
+          }
+        }
+      }
+    },
+
+    "Tagebuch-Eintrag hinzufügen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add journal entry"
+          }
+        }
+      }
+    },
+
     "Teilen fehlgeschlagen: %@" : {
       "localizations" : {
         "en" : {
@@ -1079,6 +1535,72 @@
         }
       }
     },
+    "Tippen zum Auf- oder Zuklappen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to expand or collapse"
+          }
+        }
+      }
+    },
+
+    "Verschieben" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move"
+          }
+        }
+      }
+    },
+
+    "Weitere Einträge" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More entries"
+          }
+        }
+      }
+    },
+
+    "Weiterlesen" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Read more"
+          }
+        }
+      }
+    },
+
+    "Woran willst du dich erinnern?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What do you want to remember?"
+          }
+        }
+      }
+    },
+
+    "zugeklappt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "collapsed"
+          }
+        }
+      }
+    },
+
     "Zurücksetzen" : {
       "localizations" : {
         "en" : {
@@ -1361,6 +1883,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "My Cruises"
+          }
+        }
+      }
+    },
+
+    "Mindestens ein Foto konnte nicht geladen werden." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one photo could not be loaded."
           }
         }
       }
@@ -1730,6 +2263,31 @@
       }
     },
 
+    "Termine nicht wiederhergestellt" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Events Not Restored"
+          }
+        }
+      }
+    },
+
+    "Der Umfang lässt sich ändern, sobald der Kalenderzugriff erteilt ist." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "You can change the scope once calendar access is granted." } } }
+    },
+    "Der Umzug ist fehlgeschlagen und die Termine im bisherigen Kalender ließen sich nicht wiederherstellen. Prüfe deinen Kalender und synchronisiere danach erneut." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The move failed and the events in the previous calendar could not be restored. Check your calendar, then sync again."
+          }
+        }
+      }
+    },
+
     "Tippe auf + um deine erste Kreuzfahrt hinzuzufügen" : {
       "localizations" : {
         "en" : {
@@ -1784,6 +2342,17 @@
         }
       }
     },
+    "Öffnet den ganzen Eintrag" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the full entry"
+          }
+        }
+      }
+    },
+
     "Übertragen" : {
       "localizations" : {
         "en" : {
@@ -3489,6 +4058,47 @@
       }
     },
 
+    "%lld Fotos" : {
+      "localizations" : {
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Foto"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Fotos"
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photo"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld photos"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
     "%lld Häfen" : {
       "localizations" : {
         "de" : {
@@ -3797,20 +4407,20 @@
     "Erlaube ShipTrip den vollständigen Kalenderzugriff, damit du einen Zielkalender auswählen und bestehende ShipTrip-Termine aktualisieren kannst." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Allow ShipTrip full calendar access so you can select a calendar and update existing ShipTrip events." } } }
     },
+    "Es werden keine Einträge angelegt." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "No entries will be created." } } }
+    },
+    "Gesamte Reise als Eintrag" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add entire trip as one entry" } } }
+    },
     "Hafen: %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Port: %@" } } }
-    },
-    "Im Detailmodus erhält jeder Hafen und Seetag einen eigenen Eintrag. Seetage nennen die Häfen davor und danach." : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "In detailed mode, each port and sea day gets its own entry. Sea days name the preceding and following ports." } } }
     },
     "Jetzt synchronisieren" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Now" } } }
     },
     "Kalender" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar" } } }
-    },
-    "Kalendereinträge" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Calendar Entries" } } }
     },
     "Kalender wird aktualisiert …" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Updating calendar…" } } }
@@ -3830,17 +4440,11 @@
     "Kreuzfahrt: %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Cruise: %@" } } }
     },
-    "Nur Reisen" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips Only" } } }
-    },
     "Reisedaten werden automatisch über deinen privaten iCloud-Account synchronisiert. Die Kalender-Synchronisation ist optional." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trip data syncs automatically through your private iCloud account. Calendar sync is optional." } } }
     },
     "Reisen mit Kalender synchronisieren" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sync Trips with Calendar" } } }
-    },
-    "Reisen, Häfen & Seetage" : {
-      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Trips, Ports & Sea Days" } } }
     },
     "Seetag: %@ → %@" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Sea Day: %@ → %@" } } }
@@ -3851,8 +4455,14 @@
     "ShipTrip-Termine wurden entfernt." : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "ShipTrip events were removed." } } }
     },
+    "Standardmäßig werden nur die einzelnen Stopps eingetragen. Die gesamte Reise als ganztägiger Eintrag ist optional." : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "By default only the individual stops are added. The whole trip as an all-day entry is optional." } } }
+    },
     "Status nicht verfügbar" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Status unavailable" } } }
+    },
+    "Stopps eintragen" : {
+      "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Add stops" } } }
     },
     "Umfang" : {
       "localizations" : { "en" : { "stringUnit" : { "state" : "translated", "value" : "Scope" } } }

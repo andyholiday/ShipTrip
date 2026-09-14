@@ -7,7 +7,202 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geplant
+
+- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
+  festlegen; Build 19 enthält noch das alte Relationship-Schema.
+- Wetter-API Integration
+- Hafen-Bilder mit KI-Generierung
+
+### Hinzugefügt
+
+- **Reisedauer in Nächten**: Das Reiseformular zeigt beim Anlegen und Bearbeiten
+  eine Zeile „Nächte"; Startdatum, Enddatum und Nächte sind miteinander
+  gekoppelt. Wird das Startdatum verschoben, fragt ShipTrip „Enddatum
+  mitverschieben" oder „Nächte anpassen" und danach — nur wenn sich die Route
+  tatsächlich ändert —, ob die Hafen- und Seetag-Daten mitwandern sollen. Der
+  Kalender-Sync übernimmt die geänderten Termine wie bisher. Bestehende Reisen
+  erhalten ihre Nächtezahl automatisch.
+  ([Feature-Doku](docs/features/reisedauer.md))
+- **ShipTrip steht im Teilen-Sheet**: Eine `.shiptrip`-Datei lässt sich aus dem
+  Teilen-Sheet — etwa aus der Dateien-App oder aus Nachrichten — über
+  „Teilen → ShipTrip" an die App übergeben.
+  Beim nächsten Öffnen von ShipTrip wird die Reise importiert und das bekannte
+  Ergebnis-Fenster erscheint. Ist die Mitteilungs-Berechtigung erteilt, weist
+  eine Mitteilung auf die wartende Reise hin; ihr Antippen öffnet die App.
+  ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
+
+### Geändert
+
+- **Widgets im Look „Dynamic Instrument"**: Home- und Sperrbildschirm-Widgets zeigen
+  einen Navy-Grund in hellem wie dunklem Erscheinungsbild, cyane Werte und ein
+  Ring-Instrument mit dem Fortschritt der Liegezeit. Das mittlere Widget ergänzt eine
+  Zeitleiste von der Ankunft bis zur Abfahrt sowie Schiffsfoto und -silhouette.
+  ([Feature-Doku](docs/features/widget.md))
+- **Englischer Wortlaut im Widget korrigiert**: Der Countdown heißt jetzt „In 12 days"
+  statt „Still 12 days", die verbleibende Liegezeit „3 h left in port".
+
+### Behoben
+
+- **Geteilte `.shiptrip`-Dateien lassen sich aus der Dateien-App öffnen**: Ein
+  Tipp auf eine per iMessage oder iCloud Drive erhaltene Reise-Datei blieb
+  wirkungslos — ShipTrip meldete den Dateityp zu eng an und erlaubte das Öffnen
+  am Ablageort nicht. Beides ist korrigiert; die Datei öffnet die App und die
+  Reise wird importiert.
+- **Die Originaldatei bleibt nach dem Import erhalten**: Bisher löschte ShipTrip
+  die importierte Datei in jedem Fall. Entfernt wird jetzt nur noch die eigene
+  Arbeitskopie im App-Ordner — eine Datei, die in iCloud Drive oder einer
+  anderen Ablage des Nutzers liegt, bleibt liegen.
+- **Import-Rückmeldung geht beim Erststart nicht mehr verloren**: Wird eine
+  Reise-Datei geöffnet, während das Intro noch läuft, erscheint das
+  Ergebnis-Fenster jetzt, sobald das Intro geschlossen ist — vorher verschwand
+  es kommentarlos.
+  ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
+
+---
+
+## [1.9.0] - 2026-09-07
+
+### Hinzugefügt
+
+- **Widget für Home- und Sperrbildschirm**: ShipTrip liefert ein Widget
+  „Reisestatus" in vier Größen (klein, mittel, rechteckig und rund auf dem
+  Sperrbildschirm). Läuft gerade eine Reise, stehen dort der aktuelle Hafen
+  mit Ankunfts- und Abfahrtszeit und der nächste Stopp — ist der aktuelle
+  oder der nächste Eintrag ein Seetag, wird der Seetag genannt; nach dem
+  letzten Hafen tritt das Reiseende an diese Stelle. Steht die nächste Reise
+  noch bevor, zeigt das Widget Titel, Schiff und den Countdown („Morgen",
+  „In 12 Tagen"). Ist keine Reise geplant, erscheint der Hinweis „Keine neue
+  Reise geplant" zusammen mit dem Abstand zur letzten Reise. Die Anzeige
+  wechselt von selbst, etwa von Hafen auf Seetag oder vom Countdown auf die
+  laufende Reise. Ein Tipp öffnet die App. Beispielreisen bleiben außen vor.
+  ([Feature-Doku](docs/features/widget.md))
+- **Geteilter Datenbereich für das Widget**: App und Widget teilen die App
+  Group `group.com.andre.ShipTrip`. Die App legt dort bei jeder Änderung an
+  Reisen und Route einen kleinen Auszug ab (Titel, Schiff, Zeitraum, Route
+  mit Zeiten — keine Fotos), aus dem das Widget liest. Der Reisebestand
+  selbst bleibt unangetastet. Hat die App länger als 14 Tage nichts
+  geschrieben, zeigt das Widget „Öffne ShipTrip zum Aktualisieren" statt
+  möglicherweise veralteter Zeiten; dasselbe gilt, solange noch kein Auszug
+  vorliegt. Änderungen von einem anderen Gerät erscheinen erst, nachdem die
+  App dort einmal im Vordergrund war.
+  ([ADR-009](docs/adr/ADR-009-widget-app-group-snapshot.md))
+- **Widget-Stand direkt beim App-Start**: Die App schreibt den Auszug für das
+  Widget schon beim Öffnen, nicht erst bei der nächsten Änderung. Ein frisch
+  installiertes Gerät zeigt damit sofort die Reiselage statt „Öffne ShipTrip
+  zum Aktualisieren".
+- **Nur Entwicklung: Widget-Galerie für Abnahmebilder**: Mit dem Startargument
+  `-widgetPreview` zeigt die App alle Widget-Größen in allen Zuständen; die
+  UI-Test-Suite `WidgetScreenshotUITests` fotografiert sie. In der ausgelieferten
+  App ist die Galerie nicht erreichbar.
+  ([Feature-Doku](docs/features/widget.md))
+
+---
+
+## [1.8.7] - 2026-09-02
+
+### Geändert
+
+- **Standardmäßig landen nur noch die Stopps im Kalender**: Neu ist der Umfang
+  auf die einzelnen Hafen- und Seetage eingestellt; der ganztägige Eintrag über
+  die komplette Reise ist ein Opt-in („Gesamte Reise als Eintrag"). Wer beim
+  Update bereits einen solchen Ganzreise-Termin im Kalender hat, behält ihn —
+  das Opt-in wird dann automatisch aktiviert, nichts verschwindet ungefragt.
+  Beide Schalter liegen unter Einstellungen → *Kalender* → *Umfang* und lassen
+  sich auch bei ausgeschaltetem Sync vorab setzen, sobald die App den Bestand
+  einmal geprüft hat. Ohne erteilten Kalenderzugriff bleiben sie gesperrt, damit
+  ein vorschneller Tipp den Bestand nicht überschreibt; die Ansicht nennt den
+  Grund unter den Schaltern.
+- **Stopp-Termine tragen einen anklickbaren Ort**: Hafeneinträge bekommen die
+  Koordinate des Hafens mit, sodass die Kalender-App Karte und Navigation
+  öffnet. Häfen ohne gepflegte Koordinate behalten den bisherigen Text-Ort.
+- **Erinnerungs-Einstellungen wirken sofort**: Ein geänderter Schalter oder
+  Vorlauf plant die Benachrichtigungen unmittelbar neu, statt erst beim
+  nächsten App-Start.
+- **Kalenderwechsel legt erst neu an, dann löscht er**: Wer den Zielkalender
+  wechselt, bekommt die Termine zuerst im neuen Kalender und verliert die alten
+  erst danach. Scheitert das Anlegen, bleibt der bisherige Bestand
+  unangetastet, statt halb übertragen zurückzubleiben.
+- **Keine Termine mehr zwischen Kalendern umgehängt**: Liegt ein verwalteter
+  Termin im falschen Kalender, entsteht er im Ziel neu und das Original wird
+  gelöscht. Das frühere Verschieben über Kalender- und Kontogrenzen hinweg
+  konnte den Termin still verlieren.
+  ([Feature-Doku](docs/features/kalender-sync.md))
+
+### Behoben
+
+- **Keine doppelten Kalendereinträge nach einer Wiederherstellung**: Nach
+  Backup-Rückspielung oder Neuinstallation erkennt der Sync seine bereits
+  vorhandenen Termine wieder, statt jeden davon ein zweites Mal anzulegen. Die
+  Suche über alle Kalender greift nur in genau diesem Fall, damit ein bewusster
+  Kalenderwechsel weiterhin wirkt.
+- **Abgebrochener Sync hinterlässt keine Karteileichen mehr**: Bricht der
+  Vorgang zwischen Anlegen und Aufräumen ab, holt der nächste App-Start das
+  Löschen der ersetzten Termine nach.
+- **Gescheiterte Wiederherstellung beim Kalenderwechsel wird gemeldet**:
+  Schlägt der Umzug in einen anderen Kalender fehl *und* lässt sich der
+  bisherige Stand nicht zurückholen, erscheint jetzt ein Hinweis mit der Bitte,
+  den Kalender zu prüfen — vorher blieb genau dieser Fall stumm.
+
+### Technisch
+
+- EventKit-Zugriff des Kalender-Syncs hinter eine schmale Fassade gelegt
+  (Testnaht für Fehlerfälle), Kalender- und Erinnerungs-Einstellungen aus
+  `SettingsView` in eigene Ansichten ausgelagert.
+
+---
+
+## [1.8.6] - 2026-08-29
+
+### Behoben
+
+- **Reise-Formular verlor frisch gewählte Fotos**: Wer im Formular „Neue
+  Kreuzfahrt" bzw. „Bearbeiten" direkt nach dem Auswählen auf „Speichern"
+  tippte, sicherte die Reise ohne die noch übertragenen Bilder — sie
+  verschwanden still mit dem geschlossenen Formular. „Speichern" bleibt jetzt
+  gesperrt, solange Fotos übertragen werden (Hinweis „Fotos werden geladen …"),
+  und ein fehlgeschlagener Transfer wird gemeldet statt kommentarlos zu fehlen.
+  Dasselbe Verhalten hatte der Journal-Editor in 1.8.5 bekommen.
+
+---
+
+## [1.8.5] - 2026-08-28
+
 ### Hinzugefuegt
+
+- **Journal-Kern, Datenschicht**: Reisen können Journal-Einträge tragen —
+  Freitext, Kalendertag, Stimmung, optionaler Hafen-Bezug und angehängte Fotos,
+  mehrere Einträge pro Tag erlaubt. Fotos bekommen zusätzlich eine
+  Bildunterschrift (`caption`); angehängte Fotos bleiben zugleich Kinder der
+  Reise, sodass Galerie, Statistiken, Export und Teilen sich unverändert
+  verhalten. Der Kalendertag ist ein Date-only-Wert (kanonisch 12:00 UTC des
+  Tag-Tripels), damit ein Zeitzonenwechsel an Bord den Tag nicht verschiebt.
+  Die Schema-Erweiterung ist rein additiv, ein Store aus 1.8.0 öffnet damit
+  ohne Datenverlust (belegt gegen eine eingefrorene 1.8.0-Store-Fixture; der
+  Nachweis auf einem echten Gerät steht noch aus). Einträge und
+  Bildunterschriften wandern in das ZIP-Backup und in die
+  `.shiptrip`-Teilen-Datei mit; ältere Dateien ohne diese Felder werden
+  weiterhin gelesen, und eine 1.8.0-Installation importiert die neuen Dateien
+  fehlerfrei, übernimmt Journal und Bildunterschriften dabei aber nicht.
+  ([Feature-Doku](docs/features/journal.md),
+  [ADR-003](docs/adr/ADR-003-journal-kern.md))
+
+- **Tagebuch im Route-Abschnitt der Reise**: Das Journal bekommt keinen eigenen
+  Bereich, sondern hängt im Routen-Abschnitt der Reise-Detailansicht. Jeder
+  Stopp — Hafen wie Seetag — ist eine aufklappbare Karte mit seinen Einträgen
+  und der Aktion „Tagebuch-Eintrag". Ein Eintrag mit Hafen-Bezug erscheint an
+  genau diesem Hafen, einer ohne Bezug am ersten Stopp seines Tages, und was
+  keinen Träger findet, sammelt der Block „Weitere Einträge" am Ende des
+  Abschnitts. Während einer laufenden Reise stehen nur die Stopps des heutigen
+  Tages offen — davor und danach alle —, Antippen übersteuert das, der Schalter
+  im Abschnitts-Kopf klappt alles auf oder zu, und über Mitternacht rechnet die
+  Ansicht die Vorgabe neu. Der Editor öffnet als Blatt mit der Erinnerung
+  zuerst; Datum, Stopp und Stimmung sind aus der Karte vorbelegt, aus der heraus
+  er gestartet wurde, Fotos lassen sich mit Bildunterschrift anhängen. Bearbeiten
+  und Löschen gibt es ausschließlich in der Eintrags-Detailansicht, die eine
+  angetippte Zeile öffnet. Alle Beschriftungen liegen in Deutsch und Englisch
+  vor. ([Feature-Doku](docs/features/journal.md),
+  [ADR-003](docs/adr/ADR-003-journal-kern.md))
 
 - **Kreuzfahrt teilen**: Eine einzelne Reise lässt sich über das Menü der
   Reise-Detailansicht („Reise teilen") verschicken. Die Aktion erzeugt eine
@@ -99,6 +294,38 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Ländernamen folgen der Gerätesprache**: Die ~1.800 Häfen der Referenzdaten
+  trugen ihr Land als deutschen Klartext, der auch auf englischsprachigen
+  Geräten so angezeigt wurde. Die 117 Bestandsnamen sind jetzt auf
+  ISO-3166-Codes abgebildet; Hafen-Auswahl, Routen-Zeilen, Karten-Stopp-Liste
+  und das zugehörige VoiceOver-Label lesen den Namen aus der Geräte-Locale
+  („Greece" statt „Griechenland"). Gespeichert, exportiert und geteilt wird
+  weiterhin der bisherige Wert — kein Schema- oder Formatwechsel. Auf deutschen
+  Geräten ändern sich dadurch **neun Beschriftungen** auf den Systemnamen: USA →
+  „Vereinigte Staaten", Großbritannien → „Vereinigtes Königreich", VAE →
+  „Vereinigte Arabische Emirate", Kap Verde → „Cabo Verde", US-Jungferninseln →
+  „Amerikanische Jungferninseln", Elfenbeinküste → „Côte d'Ivoire",
+  Demokratische Republik Kongo → „Kongo-Kinshasa", Föderierte Staaten von
+  Mikronesien → „Mikronesien", Brunei → „Brunei Darussalam". Jede davon lässt
+  sich einzeln zurücknehmen, indem die betreffende Alias-Zeile in
+  `PortCountryCatalog` entfällt — dann bleibt der Bestandsname stehen, wie schon
+  bei „China" und „Bonaire".
+  ([ADR-008](docs/adr/ADR-008-iso-laendercodes-fuer-hafen-referenzdaten.md))
+
+- **Produktrichtung: Einmalkauf statt Freemium-Abo**: Die Monetarisierung ist
+  als Einmalkauf festgeschrieben; die Reservierung für ein StoreKit-2-Freemium
+  ist damit aufgelöst. Reine Entscheidungs- und Doku-Änderung, in der App ist
+  bisher nichts davon gebaut.
+  ([ADR-004](docs/adr/ADR-004-einmalkauf.md))
+
+- **Reise-Formular in einzelne Dateien aufgeteilt**: Die vier bisher in
+  `CruiseFormView.swift` eingebetteten Dialoge (Erinnerungs-Nachfrage,
+  Hafen-Erfassung während der Reiseerstellung, KI-Import, Bewertungsauswahl)
+  liegen jetzt in eigenen Dateien unter `ShipTrip/Views/Cruises/`, und die
+  wortgleich doppelt vorhandene „Hafen-Momente"-Section existiert nur noch
+  einmal (`HafenMomenteSection`). Reines Verschieben und Zusammenführen ohne
+  Verhaltens- oder Layout-Unterschied; Vorstufe für den Journal-Editor.
+
 - **Reise-Übersicht zählt „Anläufe", die Bilanz „Häfen"**: Beide Ansichten
   trugen dieselbe Beschriftung für zwei verschiedene Kennzahlen — die
   Übersicht zählt jeden Anlauf inklusive Mehrfachbesuchen, die Bilanz nur
@@ -126,6 +353,12 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Journal-Editor verlor frisch gewählte Fotos**: Wer direkt nach dem Auswählen
+  auf „Speichern" tippte, sicherte den Eintrag ohne die noch übertragenen Bilder
+  — sie verschwanden still mit dem geschlossenen Blatt. „Speichern" bleibt jetzt
+  gesperrt, solange Fotos übertragen werden (Hinweis „Fotos werden geladen …"),
+  und ein fehlgeschlagener Transfer wird gemeldet statt kommentarlos zu fehlen.
+  ([Feature-Doku](docs/features/journal.md))
 - **Erinnerungen nach dem Soft-Ask erst beim nächsten Start**: „Erinnerungen
   aktivieren" im Erststart fragte nur die Berechtigung ab und plante nichts;
   bereits vorhandene Reisen bekamen ihre Erinnerungen deshalb verspätet. Nach
@@ -189,13 +422,14 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Screenshot-UI-Tests schrieben auf einen fest verdrahteten Pfad. Das
   Zielverzeichnis kommt jetzt aus `SHIPTRIP_SCREENSHOT_DIR`; fehlt die
   Variable, werden die Tests übersprungen statt zu scheitern.
-
-### Geplant
-
-- ADR-konforme Reihenfolge für optionale Beziehungen und CloudKit-Aktivierung
-  festlegen; Build 19 enthält noch das alte Relationship-Schema.
-- Wetter-API Integration
-- Hafen-Bilder mit KI-Generierung
+- **Gelöschte Hafen- und Foto-Bezüge eines Tagebuch-Eintrags konnten per Sync
+  zurückkehren**: Vier Wege entfernten Häfen oder Fotos direkt — das Löschen
+  eines Hafens im Reise-Detail, das Zusammenführen doppelter Häfen und der
+  Route-Abgleich beim Speichern des Reise-Formulars sowie das Abwählen eines
+  Fotos. Der betroffene Eintrag galt dabei als unverändert, sodass ein anderes
+  Gerät seinen älteren Stand mit dem gelösten Bezug hätte durchsetzen können.
+  Alle vier Wege markieren den Eintrag jetzt als geändert.
+  ([Feature-Doku](docs/features/journal.md))
 
 ---
 
@@ -957,7 +1191,11 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - **MINOR**: Neue Features, abwärtskompatibel
 - **PATCH**: Bugfixes
 
-[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/andyholiday/ShipTrip/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/andyholiday/ShipTrip/compare/v1.8.7...v1.9.0
+[1.8.7]: https://github.com/andyholiday/ShipTrip/compare/v1.8.6...v1.8.7
+[1.8.6]: https://github.com/andyholiday/ShipTrip/compare/v1.8.5...v1.8.6
+[1.8.5]: https://github.com/andyholiday/ShipTrip/compare/v1.7.1...v1.8.5
 [1.7.1]: https://github.com/andyholiday/ShipTrip/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/andyholiday/ShipTrip/compare/v1.6.3...v1.7.0
 [1.6.3]: https://github.com/andyholiday/ShipTrip/compare/v1.6.2...v1.6.3

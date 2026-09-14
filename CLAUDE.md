@@ -68,8 +68,9 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 # Projekt: ShipTrip
 
-Kreuzfahrt-Tagebuch-App (iOS). Produktrichtung „Travel Journal" (Premium-Reisetagebuch
-mit Freemium-Abo), erreicht über schrittweise visuelle Politur. Phasenplan und Produktkurs
+Kreuzfahrt-Tagebuch-App (iOS). Produktrichtung „Travel Journal" (Premium-Reisetagebuch,
+Monetarisierung als Einmalkauf — kein Freemium-Abo, siehe `docs/adr/ADR-004-einmalkauf.md`),
+erreicht über schrittweise visuelle Politur. Phasenplan und Produktkurs
 liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–S4) und
 `docs/umsetzungsplan-audit-2026-07.md` (Journal-Kern B1–B3); der jüngste Voll-Audit unter
 `audit/audit-2026-07-10.html`.
@@ -84,13 +85,35 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 
 ## Projektstruktur
 
-- `ShipTrip/Models/` — SwiftData-Modelle (Cruise, Port, Expense, Deal, Photo) +
+- `ShipTrip/Models/` — SwiftData-Modelle (Cruise, Port, Expense, Deal, Photo,
+  JournalEntry) +
   Referenzdaten (PortSuggestion ~1.800 Häfen, ShippingLine)
 - `ShipTrip/Services/` — ExportImportService, GeminiService (KI-Erfassung),
-  KeychainService, NotificationService, DemoDataService (Beispielreise, auch im
-  Release; nur der UI-Test-Reset steht unter `#if DEBUG`)
-- `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Share, Stats, Settings)
-- `ShipTrip/Utilities/` — Color+Theme, Date+Extensions
+  KeychainService, NotificationService, CalendarSyncService (Kalender-Sync,
+  siehe `docs/features/kalender-sync.md`), DemoDataService (Beispielreise, auch
+  im Release; nur der UI-Test-Reset steht unter `#if DEBUG`),
+  WidgetSnapshotPublisher/-Writer (schreibt den Widget-Snapshot in die App Group)
+- `ShipTrip/Views/` — nach Feature gegliedert (Cruises, Deals, Map, Onboarding, Share,
+  Stats, Settings). Das Journal hat **keinen eigenen Strang**: Einträge hängen im
+  Route-Abschnitt der Reise-Detailansicht, die Ansichten liegen deshalb unter
+  `Views/Cruises/` (`RouteJournalSection`, `RouteStopCard`, `JournalEntry*View`).
+  Siehe `docs/features/journal.md`.
+- `ShipTrip/WidgetShared/` — der einzige mit dem Widget geteilte Code (Snapshot-Schema,
+  Store, Zustandsableitung, Timeline-Planung). **Nur Foundation**: kein SwiftData, kein
+  SwiftUI, kein WidgetKit, keine `String(localized:)`. Jede neue Datei hier muss in der
+  `project.pbxproj` zusätzlich ins `membershipExceptions`-Set des Widget-Targets
+  eingetragen werden, sonst baut die Extension nicht.
+- `ShipTripWidget/` — WidgetKit-Extension (Bundle `com.andre.ShipTrip.Widget`, App Group
+  `group.com.andre.ShipTrip`, eigener String Catalog). Siehe `docs/features/widget.md`.
+- `ShipTrip/ShareShared/` — mit der Share-Extension geteilter Code (`ShareHandoffStore`:
+  Übergabeordner `ShareInbox/` in der App Group). Gleiche Regel wie `WidgetShared/`: nur
+  Foundation und Eintrag in `membershipExceptions` des Share-Targets.
+- `ShipTripShare/` — Share-Extension (Bundle `com.andre.ShipTrip.Share`, UIKit ohne
+  Storyboard, kein SwiftData; legt die geteilte `.shiptrip`-Datei nur in der App Group ab,
+  importiert wird in der App). Siehe `docs/adr/ADR-010-share-extension-app-group-handoff.md`.
+- `ShipTrip/Views/Debug/` — nur für Abnahmebilder: `WidgetPreviewGalleryView` erscheint
+  ausschließlich beim Start mit `-widgetPreview` (siehe `docs/features/widget.md`).
+- `ShipTrip/Utilities/` — Color+Theme, Date+Extensions, CruiseDateTriad
 - `ShipTripTests/` — Unit-Tests · `ShipTripUITests/` — UI-Tests
 - `docs/` — Architektur, Features, ADRs (`docs/adr/`) · `CHANGELOG.md` (Keep a Changelog)
 
@@ -109,6 +132,9 @@ liegen unter `docs/umsetzungsplan-audit-2026-07-10.md` (Stabilitätswellen S1–
 
 - Build/Test bevorzugt über die Xcode-MCP-Tools (`BuildProject`, `RunAllTests`) oder
   `xcodebuild -scheme ShipTrip`. Test-Builds laufen strikt seriell.
+- Screenshot-Suiten lesen `SHIPTRIP_SCREENSHOT_DIR`; bei `test-without-building` muss die
+  Variable in den `EnvironmentVariables`-Block der `.xctestrun`-Datei injiziert werden,
+  sonst überspringen sich die Tests still und der Lauf meldet trotzdem grün.
 
 ## CloudKit-Hinweis
 

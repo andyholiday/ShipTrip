@@ -26,6 +26,8 @@ struct CruiseDetailView: View {
     @State private var showingAlert = false
     /// Teilen-Aktion (C7) — Dateibau, Share-Sheet und Aufräumen liegen in `CruiseShareAction`.
     @State private var shareModel = CruiseShareModel()
+    /// Journal-Ziele (T8c) — Push und Sheet liegen in `CruiseJournalNavigation`.
+    @State private var journalNavigation = CruiseJournalNavigation()
 
     private let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -112,6 +114,7 @@ struct CruiseDetailView: View {
             PhotoZoomView(photos: cruise.sortedPhotos, initialPhoto: photo)
         }
         .cruiseSharePresentation(shareModel)
+        .cruiseJournalNavigation(journalNavigation, cruise: cruise)
         .alert("Kreuzfahrt löschen?", isPresented: $showingDeleteAlert) {
             Button("Abbrechen", role: .cancel) { }
             Button("Löschen", role: .destructive) {
@@ -298,84 +301,18 @@ struct CruiseDetailView: View {
         }
     }
     
+    /// Route als Tagesfaden mit Journal-Einträgen (Contract J3neu, T8b) –
+    /// Klapp-Zustand, Eintragszeilen und Sammelblock liegen in
+    /// `RouteJournalSection`.
     private var routeSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Route")
-                    .font(.headline)
-                Spacer()
-                Button {
-                    showingAddPortSheet = true
-                } label: {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(Color.accentColor)
-                }
-            }
-            
-            if cruise.route.isEmpty {
-                Text("Noch keine Häfen hinzugefügt")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                let sortedPorts = cruise.route.sorted(by: { $0.sortOrder < $1.sortOrder })
-                let firstSortOrder = sortedPorts.filter { !$0.isSeaDay }.first?.sortOrder
-                let lastSortOrder = sortedPorts.filter { !$0.isSeaDay }.last?.sortOrder
-                ForEach(sortedPorts) { port in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(spacing: 12) {
-                            PortPinView(type: PortPinType(
-                                isSeaDay: port.isSeaDay,
-                                isFirst: port.sortOrder == firstSortOrder,
-                                isLast: port.sortOrder == lastSortOrder
-                            ))
-
-                            VStack(alignment: .leading) {
-                                Text(port.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                if !port.isSeaDay {
-                                    Text(port.country)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            Text(port.arrival.formatted(date: .abbreviated, time: .omitted))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-
-                        // Hafen-Momente (Foto + Ausflüge) als eigene Card in voller Breite –
-                        // die Liegezeit (vormals in der Metadaten-Zeile oben) sitzt jetzt als
-                        // Badge auf dem Hero-Foto (siehe PortMemoryCard.stayBadgeText).
-                        // Bei Seetagen ohne erfasste Momente bleibt die Zeile kompakt (keine
-                        // Einladungs-Card), siehe PortMemoryCard.shouldRender.
-                        if PortMemoryCard.shouldRender(for: port) {
-                            PortMemoryCard(port: port)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedPort = port
-                    }
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            deletePort(port)
-                        } label: {
-                            Label("Löschen", systemImage: "trash")
-                        }
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: DesignRadius.sm))
+        RouteJournalSection(
+            cruise: cruise,
+            onAddPort: { showingAddPortSheet = true },
+            onSelectPort: { selectedPort = $0 },
+            onDeletePort: { deletePort($0) },
+            onOpenEntry: { journalNavigation.openEntry(id: $0) },
+            onAddEntry: { journalNavigation.addEntry(at: $0) }
+        )
     }
 
     private var expensesSection: some View {
@@ -483,39 +420,18 @@ struct CruiseDetailView: View {
     }
     
     private func deletePort(_ port: Port) {
-        modelContext.delete(port)
+        // Journal-Lösch-Pfad (T8-Auflage, J2a): hängt die Einträge des Hafens ab
+        // und bumpt jeden — SwiftData-Nullify allein täte das nicht.
+        let now = Date()
+        JournalDeletePaths.deletePort(port, in: modelContext, at: now)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
-        cruise.updatedAt = Date()
+        cruise.updatedAt = now
     }
 
     private func deleteExpense(_ expense: Expense) {
         modelContext.delete(expense)
         // Eltern-Kreuzfahrt als geändert markieren (Last-Writer-Wins unter CloudKit)
         cruise.updatedAt = Date()
-    }
-}
-
-/// Sortiert Ausgaben chronologisch aufsteigend nach Datum. Ausgaben ohne Datum
-/// stehen am Ende. Reine Funktion (kein SwiftData-Zugriff) – testbar in
-/// ShipTripTests/ExpenseSortingTests.swift.
-enum ExpenseSorting {
-    static func sorted(_ expenses: [Expense]) -> [Expense] {
-        expenses.sorted { lhs, rhs in
-            switch (lhs.expenseDate, rhs.expenseDate) {
-            case let (l?, r?):
-                if l != r { return l < r }
-            case (nil, .some):
-                return false
-            case (.some, nil):
-                return true
-            case (nil, nil):
-                break
-            }
-            // Stabiler Tie-Breaker bei gleichem/fehlendem Datum: Erstellungszeitpunkt,
-            // zuletzt die UUID (deterministisch statt undefinierter Sortierreihenfolge).
-            if lhs.createdAt != rhs.createdAt { return lhs.createdAt < rhs.createdAt }
-            return lhs.id.uuidString < rhs.id.uuidString
-        }
     }
 }
 

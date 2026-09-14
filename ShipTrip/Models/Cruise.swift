@@ -25,6 +25,13 @@ final class Cruise {
     /// Enddatum der Reise
     var endDate: Date = Date()
 
+    /// Reisedauer in Nächten (Kalendertage zwischen Start und Ende).
+    /// Additiv mit Default und ohne Unique-Constraint — CloudKit-konform
+    /// (Lightweight-Migration, ADR-002). Bestehende Reisen tragen 0 und werden
+    /// beim Laden ins Formular aus Start/Ende nachgefüllt (`CruiseDateTriad`).
+    /// `duration` (Tage = Nächte + 1) bleibt davon unberührt.
+    var nights: Int = 0
+
     /// Name der Reederei
     var shippingLine: String = ""
 
@@ -77,6 +84,10 @@ final class Cruise {
     @Relationship(deleteRule: .cascade, originalName: "photos", inverse: \Photo.cruise)
     var photosStorage: [Photo]?
 
+    /// Journal-Einträge der Reise (ADR-003/J1)
+    @Relationship(deleteRule: .cascade, inverse: \JournalEntry.cruise)
+    var journalEntriesStorage: [JournalEntry]?
+
     /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
     var route: [Port] {
         get { routeStorage ?? [] }
@@ -94,7 +105,13 @@ final class Cruise {
         get { photosStorage ?? [] }
         set { photosStorage = newValue }
     }
-    
+
+    /// Nicht-optionale App-Sicht auf die CloudKit-kompatible optionale Beziehung.
+    var journalEntries: [JournalEntry] {
+        get { journalEntriesStorage ?? [] }
+        set { journalEntriesStorage = newValue }
+    }
+
     // MARK: - Initialization
     
     init(

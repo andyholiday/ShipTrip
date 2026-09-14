@@ -31,4 +31,10 @@ enum ShareArchiveLimits {
 
     /// Ausgaben der einen Kreuzfahrt.
     static let maxExpenses = 1000
+
+    /// Journal-Einträge der einen Kreuzfahrt (ADR-003, T7b-Contract). Wie Ausgaben eine
+    /// Viele-pro-Tag-Sammlung, deshalb dieselbe Stufe der Skala: realistisch sind wenige
+    /// Einträge pro Reisetag (~150 bei einer langen Reise), 1000 liegt eine Größenordnung
+    /// darüber. Das Textvolumen deckelt zusätzlich `maxDataJSONSize`.
+    static let maxJournalEntries = 1000
 }

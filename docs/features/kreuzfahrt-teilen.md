@@ -1,16 +1,43 @@
 # Kreuzfahrt teilen
 
 **Stand:** Vollständig — W1 (Share-Export, C4/C5), W2 (Import-Flow, C3/C6/C10)
-und W3 (Teilen-Aktion, C7/C8/C9) sind gemergt.
+und W3 (Teilen-Aktion, C7/C8/C9) sind gemergt; ab Build 31 (Unreleased) kommt
+die Share-Extension als Empfangsweg dazu (ADR-010).
 **Code:** `ShipTrip/Services/ExportImportService+ShareExport.swift`,
 `ShipTrip/Services/ShareImageTranscoder.swift`,
 `ShipTrip/Services/ExportImportService+ShareImport.swift`,
 `ShipTrip/Utilities/IncomingLinkRouter.swift`,
 `ShipTrip/Views/Share/ShareImportCoordinator.swift`,
-`ShipTrip/Views/Cruises/CruiseShareAction.swift`
+`ShipTrip/Views/Cruises/CruiseShareAction.swift`,
+`ShipTrip/ShareShared/ShareHandoffStore.swift`,
+`ShipTripShare/ShareViewController.swift`, `ShipTrip/ShipTripApp.swift`
 **Tests:** `ShareExportTests`, `ShareImageTranscoderTests`, `IncomingLinkRouterTests`,
 `ShareImportPreflightTests`, `ShareImportResultTests`, `ShareRoundtripTests`,
+`ShareHandoffStoreTests`, `ShareImportHandoffScanTests`, `ShareImportCleanupTests`,
 `ReiseTeilenUITests` (UI)
+
+## Übergabe aus dem Teilen-Sheet
+
+Seit der Share-Extension `ShipTripShare` erscheint ShipTrip im iOS-Teilen-Sheet,
+sobald genau eine `.shiptrip`-Datei geteilt wird — aus iMessage, Mail, WhatsApp
+oder der Dateien-App. Der Weg ist bewusst zweistufig:
+
+1. Der Nutzer wählt im Teilen-Sheet „ShipTrip". Die Extension kopiert die Datei
+   atomar nach `<AppGroup>/ShareInbox/<UUID>.shiptrip` und meldet „An ShipTrip
+   übergeben". Sie importiert nichts, öffnet keinen SwiftData-Store und versucht
+   nicht, die App zu öffnen (dafür gibt es keine unterstützte API, ADR-010).
+2. Beim nächsten Wechsel in den Vordergrund — Szenenaufbau, `scenePhase ==
+   .active` oder Schließen des Ergebnis-Sheets — scannt
+   `ShareImportCoordinator` den Ordner und importiert die älteste Datei über den
+   bestehenden Pfad (Preflight, Dedup, Ergebnis-Sheet). Danach wird sie
+   gelöscht, bei Erfolg wie bei Fehlschlag. Im Wegwerf-Store („Daten nicht
+   verfügbar") unterbleibt der Scan, die Datei bleibt für den nächsten gesunden
+   Start liegen.
+
+Als Abkürzung plant die Extension nach erfolgreicher Ablage eine lokale
+Mitteilung („Reise bereit zum Import"), aber nur, wenn die Berechtigung bereits
+erteilt ist; fehlt sie, unterbleibt die Mitteilung still. Liegengebliebene
+Dateien räumt die Extension nach 24 Stunden weg.
 
 ## Acceptance-Status
 
@@ -41,8 +68,10 @@ Verifikationsstand: 412/412 Unit-Tests, `ShareRoundtripTests` 2/2 und
   mit Dedup über die stabile `id`. Das Ergebnis-Sheet weist eine abweichende
   Senderfassung als Versionskonflikt aus. **Fußnote:** Automatischer Import und
   Ergebnis-Sheet sind unit-verifiziert über den echten Share-Einstieg
-  (`ShareRoundtripTests`); der physische Doppeltipp auf eine Datei auf einem Gerät
-  ist nicht automatisiert getestet — die manuelle Abnahme steht aus.
+  (`ShareRoundtripTests`); der Tipp auf eine Datei ist seit dem Fix-Run vom
+  2026-09-10 zusätzlich im Simulator nachgestellt (Dateien-App → `.shiptrip` →
+  Import mit Ergebnis-Sheet). Die Abnahme auf einem physischen Gerät steht
+  weiterhin aus.
 - **4:** `shiptrip://import` wird geroutet und zeigt den Hinweis auf die
   angehängte Datei. Der Link steckt im Nachrichtentext des Share-Sheets
   (`CruiseShareModel.shareMessage`), Träger der Daten bleibt die Datei.
@@ -58,6 +87,49 @@ Nachrichtentext und die drei nun lokalisierten `ShareExportError`-Texte; der
 technische `reason` von `limitExceeded` bleibt unlokalisiert. Für die UI-Tests
 tragen drei Elemente stabile Accessibility-IDs (C9): `cruiseDetail.shareButton`,
 `shareImport.resultSheet` und `shareImport.linkHintSheet`.
+
+### Share-Extension (Run 2026-09-10)
+
+Kriterien aus `.planning/ZIEL.md` (Run „Share-Extension"). Verifikationsstand:
+Test-Build 59/59 grün, Code-Review ohne Blocker, E2E im Simulator (XCUITest) am
+2026-09-10 grün. Die Abnahmebilder liegen unversioniert unter
+`audit/screenshots/share-ext-*.png`.
+
+| Nr. | Kriterium (Kurzfassung) | Status |
+|---|---|---|
+| 1 | Target `ShipTripShare`, Prädikat-Regel, „ShipTrip" im Teilen-Sheet | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-01-sheet.png`) |
+| 2 | Extension kopiert atomar in die App Group, kein SwiftData, kein App-Öffnen | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-02-extension.png`) |
+| 3 | Vordergrund-Scan importiert über `ShareImportCoordinator`, Unit-Test vorher rot | Erfüllt |
+| 4 | `shouldRemoveAfterImport` kennt den Übergabeordner, Unit-Test vorher rot | Erfüllt |
+| 5 | ADR-010 samt Contract, Gate #4 grün | Erfüllt |
+| 6 | `fetch_profile` und Signing-Wege um `ShipTripShare` ergänzt | Erfüllt |
+| 7 | E2E im Simulator: Teilen → ShipTrip → Reise importiert | Erfüllt (Simulator-E2E 2026-09-10, `share-ext-07-after-share.png`) |
+| 8 | Geräte-Abnahme iMessage-Anhang (Build 31, TestFlight) | Offen — Geräte-Abnahme iMessage durch Andre (Build 31) |
+| 9 | Changelog, Feature-Doku, CLAUDE.md nachgezogen | Erfüllt |
+
+- **1:** `NSExtensionActivationRule` als Prädikat auf `com.andre.shiptrip.cruise`
+  (kein `TRUEPREDICATE`, kein `…SupportsFileWithMaxCount` — sonst stünde ShipTrip
+  bei jedem Dateityp im Sheet); der Sheet-Name kommt aus
+  `INFOPLIST_KEY_CFBundleDisplayName = ShipTrip`.
+- **2:** `ShareViewController` kopiert synchron im Completion-Handler nach
+  `ShareInbox/<UUID>.shiptrip` (`.tmp` + `moveItem`), prüft
+  `ShareArchiveLimits.maxArchiveFileSize` vorher und plant die Mitteilung nur bei
+  bereits erteilter Berechtigung.
+- **3/4:** `ShareImportHandoffScanTests` und `ShareImportCleanupTests` decken
+  Scan, Single-Flight, `inbox: nil` und die erweiterte Löschregel ab;
+  `ShareHandoffStoreTests` prüft Namensschema, Ordner-Scan und 24-h-Regel.
+- **7:** Der XCUITest teilt eine exportierte Reise aus der Dateien-App: Das
+  Teilen-Sheet führt „ShipTrip" als ersten Eintrag, die Extension meldet den
+  Abschluss und hinterlässt in `ShareInbox/` genau eine `.shiptrip`-Datei ohne
+  `.tmp`-Rest. Die App importiert beim Wechsel in den Vordergrund, zeigt „Reise
+  importiert" und lässt den Übergabeordner leer zurück
+  (`share-ext-07-after-share.png`); ein zweiter Durchlauf endet im
+  Duplikat-Hinweis (`share-ext-06-duplicate.png`). Ohne erteilte
+  Mitteilungs-Berechtigung erscheint erwartungsgemäß keine Mitteilung — der
+  autorisierte Fall gehört zu #8.
+- **8:** Nur am Gerät prüfbar — der Simulator hat kein iMessage; offen sind damit
+  die Prädikat-Verifikation an Nachrichten-Anhängen und die Zustellung der
+  Mitteilung.
 
 ## Known Limitations
 
@@ -79,10 +151,24 @@ tragen drei Elemente stabile Accessibility-IDs (C9): `cruiseDetail.shareButton`,
   manuelle Import in den Einstellungen bleibt bewusst beim Bestandsschutz des
   `ZipArchiveReader` (50 MB je Eintrag, Zip-Slip-Abwehr, CRC) — die Zählgrenzen
   für Häfen, Fotos und Ausgaben greifen dort über den Archiv-Preflight trotzdem.
+- **Die App muss nach dem Teilen geöffnet werden:** Eine Share-Extension darf
+  ihre Container-App nicht öffnen (keine unterstützte API, ADR-010). Nach „Teilen
+  → ShipTrip" liegt die Reise im Übergabeordner und wird erst beim nächsten
+  Öffnen der App importiert.
+- **Das Antippen der Mitteilung ist unverifiziert:** Ob eine Share-Extension die
+  Benachrichtigungs-Berechtigung der App nutzen darf und ob das Antippen ShipTrip
+  in den Vordergrund holt, ist nicht durch Apple-Referenzdoku belegt. Bleibt die
+  Mitteilung aus, ändert sich am Import-Weg nichts — nur der Abschlusstext der
+  Extension weist dann auf das Öffnen hin.
+- **Nur eine Datei je Aktivierung:** Der Scan importiert die älteste wartende
+  Datei. Werden zwei Reisen kurz hintereinander geteilt, kommt die zweite beim
+  nächsten Vordergrund-Wechsel oder nach dem Schließen des Ergebnis-Sheets dran.
 
 ## Related Decisions
 
 - [ADR-007: Kreuzfahrt-Teilen als `.shiptrip`-Datei](../adr/ADR-007-kreuzfahrt-teilen.md)
+- [ADR-010: Share-Extension mit App-Group-Übergabe](../adr/ADR-010-share-extension-app-group-handoff.md)
+- [Contracts H1–H6 der Share-Extension](../architecture/contracts/share-extension-handoff.md)
 - [Design „Kreuzfahrt teilen"](../architecture/share-cruise-design.md)
 - [Contracts C0–C10](../architecture/contracts/share-cruise-contracts.md)
 - [Export & Backup](export-backup.md) — Container, Härtung und Grenzen des Basisformats

@@ -6,7 +6,9 @@
 //
 
 import SwiftUI
+import Combine
 import SwiftData
+import CoreData
 import OSLog
 
 private let logger = Logger(subsystem: "com.andre.ShipTrip", category: "Persistence")
@@ -19,6 +21,11 @@ struct ShipTripApp: App {
     private let modelContainer: ModelContainer?
     private let usingTemporaryStore: Bool
 
+    /// Schreibt den Widget-Snapshot (ADR-009). `nil` heisst: dieser Lauf
+    /// veroeffentlicht nichts — kein Store, nur ein Notbehelf-Store, ein
+    /// UI-Test oder kein App-Group-Container.
+    private let widgetPublisher: WidgetSnapshotPublisher?
+
     /// Erststart-Entscheidung, einmal beim Start getroffen — also **vor** der
     /// ersten Praesentation des Covers.
     private let onboardingStartupDecision: OnboardingPresentation.StartupDecision
@@ -27,6 +34,7 @@ struct ShipTripApp: App {
 #if DEBUG
         Self.resetOnboardingIfNeeded()
         Self.completeOnboardingIfNeeded()
+        Self.resetCalendarSyncScopeIfNeeded()
 #endif
 
         let schema = Schema([
@@ -35,6 +43,7 @@ struct ShipTripApp: App {
             Expense.self,
             Deal.self,
             Photo.self,
+            JournalEntry.self,
             CustomShippingLine.self,
             CustomShip.self,
             HiddenCatalogItem.self
@@ -67,6 +76,11 @@ struct ShipTripApp: App {
             }
         }
 
+        widgetPublisher = Self.makeWidgetPublisher(
+            container: modelContainer,
+            usingTemporaryStore: usingTemporaryStore
+        )
+
         onboardingStartupDecision = Self.resolveOnboardingStartupDecision(
             container: modelContainer,
             usingTemporaryStore: usingTemporaryStore
@@ -76,6 +90,34 @@ struct ShipTripApp: App {
         if onboardingStartupDecision == .migrateSilently {
             UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
         }
+    }
+
+    // MARK: - Widget-Snapshot
+
+    /// Der Publisher entsteht nur, wenn es etwas zu veroeffentlichen gibt.
+    ///
+    /// Kein Store (`nil`) und der In-Memory-Notbehelf scheiden aus: beide
+    /// tragen keinen belastbaren Bestand, ein Snapshot daraus wuerde das
+    /// Widget mit Luecken fuellen. UI-Testlaeufe bleiben ebenfalls aussen vor
+    /// (sie setzen den Store zurueck und wuerden den echten Snapshot des
+    /// Geraets ueberschreiben). Fehlt das App-Group-Entitlement, gibt es kein
+    /// Ziel — das wird protokolliert, aber nie zum Startfehler.
+    private static func makeWidgetPublisher(
+        container: ModelContainer?,
+        usingTemporaryStore: Bool
+    ) -> WidgetSnapshotPublisher? {
+        guard let container, !usingTemporaryStore else { return nil }
+        guard !ProcessInfo.processInfo.arguments.contains(where: {
+            $0.hasPrefix("-uiTesting")
+        }) else { return nil }
+        guard let containerURL = WidgetSnapshotStore.appGroupURL() else {
+            logger.warning("App-Group-Container fehlt – Widget-Snapshot wird nicht geschrieben.")
+            return nil
+        }
+        return WidgetSnapshotPublisher(
+            container: container,
+            store: WidgetSnapshotStore(containerURL: containerURL)
+        )
     }
 
     // MARK: - Erststart-Entscheidung
@@ -151,6 +193,19 @@ struct ShipTripApp: App {
         UserDefaults.standard.set(true, forKey: OnboardingPresentation.hasCompletedKey)
     }
 
+    /// UI-Test-Naht (1.8.7): stellt den Sync-Umfang auf den
+    /// Auslieferungszustand zurueck — gespeicherte Wahl **und** Merker der
+    /// Bestands-Migration. `AppPreferencesReset` laesst den Merker bewusst
+    /// stehen (versionierte Buchhaltung, keine Einstellung); ein UI-Test, der
+    /// die Voreinstellung prueft, braucht dagegen beides weg, sonst haengt
+    /// sein Ergebnis am Restzustand des Simulators.
+    private static func resetCalendarSyncScopeIfNeeded() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains("-uiTestingResetCalendarSyncScope") else { return }
+        UserDefaults.standard.removeObject(forKey: CalendarSyncPreferences.modeKey)
+        UserDefaults.standard.removeObject(forKey: CalendarSyncModeMigration.markerKey)
+    }
+
     private static func prepareUITestDataIfNeeded(in container: ModelContainer) {
         guard ProcessInfo.processInfo.arguments.contains("-uiTestingResetAndLoadDemoData") else { return }
 
@@ -166,6 +221,8 @@ struct ShipTripApp: App {
 
     // MARK: - UI
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var showTemporaryStoreAlert = true
 
     /// Erststart-Flow (B2). `false`/fehlend heisst: das Onboarding steht noch aus.
@@ -177,6 +234,31 @@ struct ShipTripApp: App {
     /// Automatischer Import geteilter Reisen (ADR-007). Haelt den Zustand des
     /// laufenden/abgeschlossenen Imports; Single-Flight steckt im Coordinator.
     @State private var shareImportCoordinator = ShareImportCoordinator()
+
+    /// Vordergrund-Scan des Uebergabeordners der Share-Extension (ADR-010, H3).
+    ///
+    /// Kein Scan im Wegwerf-Store (Gate-Auflage A2): eine dorthin importierte
+    /// Reise waere nach dem Neustart weg, die Uebergabedatei aber geloescht.
+    /// Sie bleibt stattdessen liegen und kommt beim naechsten gesunden Start
+    /// dran (die 24-h-Regel der Extension begrenzt das). Alles Weitere —
+    /// Single-Flight, leerer Ordner, fehlender App-Group-Container — entscheidet
+    /// der Coordinator.
+    private func scanShareHandoff(_ container: ModelContainer) {
+        guard !usingTemporaryStore else { return }
+        shareImportCoordinator.importPendingHandoffIfIdle(
+            modelContext: container.mainContext
+        )
+    }
+
+    /// Sichtbarkeit des Onboarding-Covers — eine Naht fuer beide Leser:
+    /// das Cover selbst und das Share-Ergebnis-Sheet, das sich davor
+    /// zurueckhaelt.
+    private var onboardingCover: Binding<Bool> {
+        OnboardingPresentation.coverBinding(
+            hasCompleted: $hasCompletedOnboarding,
+            isSuppressed: onboardingStartupDecision == .postpone
+        )
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -192,12 +274,7 @@ struct ShipTripApp: App {
                     // damit die Datenverlust-Warnung allein steht — ohne den
                     // Schalter anzufassen: beim naechsten gesunden Start steht
                     // der Erststart unveraendert an.
-                    .fullScreenCover(
-                        isPresented: OnboardingPresentation.coverBinding(
-                            hasCompleted: $hasCompletedOnboarding,
-                            isSuppressed: onboardingStartupDecision == .postpone
-                        )
-                    ) {
+                    .fullScreenCover(isPresented: onboardingCover) {
                         OnboardingFlowView { hasCompletedOnboarding = true }
                     }
                     .alert(
@@ -219,15 +296,35 @@ struct ShipTripApp: App {
                     // Grund wie das Cover darueber. Der Kontext wird dem Coordinator
                     // ausdruecklich als `container.mainContext` mitgegeben, damit die
                     // Mutation im selben Store landet wie der Hauptbaum.
+                    //
+                    // Solange das Onboarding-Cover steht, bleibt das Sheet zu:
+                    // SwiftUI praesentiert nur *eine* Sache pro Ansicht und
+                    // verwarf das Ergebnis sonst kommentarlos („only presenting
+                    // a single sheet is supported"). Der Zustand liegt derweil
+                    // im Coordinator; sobald das Cover schliesst, wertet die
+                    // Bindung neu aus und das Ergebnis erscheint doch noch.
                     .sheet(
-                        item: Binding(
-                            get: { ShareImportPresentation(state: shareImportCoordinator.state) },
+                        item: Binding<ShareImportPresentation?>(
+                            get: {
+                                guard !onboardingCover.wrappedValue else { return nil }
+                                return ShareImportPresentation(state: shareImportCoordinator.state)
+                            },
                             set: { if $0 == nil { shareImportCoordinator.dismiss() } }
                         )
                     ) { presentation in
                         ShareImportResultSheet(presentation: presentation) {
                             shareImportCoordinator.dismiss()
                         }
+                        // Re-Scan fuer eine zweite wartende Datei — bewusst
+                        // hier und nicht im `set:`-Closure der Bindung oder im
+                        // Schliessen-Callback: `.onDisappear` laeuft **nach**
+                        // der Dismiss-Animation und deckt beide Schliesswege
+                        // (Wischen und Knopf) mit einer Stelle ab. Ein schnell
+                        // fehlschlagender Zweitimport wuerde sonst mitten in
+                        // die laufende Animation `.failed` setzen; SwiftUI
+                        // verwirft die Neu-Praesentation dann kommentarlos und
+                        // der Coordinator haengt bis zum Neustart (Single-Flight).
+                        .onDisappear { scanShareHandoff(container) }
                     }
                     // Datei-Oeffnen (.shiptrip) und `shiptrip://import` laufen beide
                     // hierdurch — Kalt- und Warmstart identisch (C3).
@@ -235,6 +332,52 @@ struct ShipTripApp: App {
                         shareImportCoordinator.handleIncomingURL(
                             url, modelContext: container.mainContext
                         )
+                    }
+                    // Widget-Snapshot (ADR-009): ein zentraler Hook statt
+                    // Aufrufen in jedem Mutationspfad. `didSave` deckt jede
+                    // persistierte Aenderung ab — und zwar erst *nach* dem
+                    // Speichern, nie mitten in einem offenen Kontext.
+                    .onReceive(
+                        NotificationCenter.default.publisher(
+                            for: ModelContext.didSave, object: container.mainContext
+                        )
+                    ) { _ in
+                        widgetPublisher?.publish()
+                    }
+                    // Sicherheitsnetz fuer CloudKit-Merges: die Aenderung kommt
+                    // aus einem anderen Prozess, `didSave` sieht sie nie.
+                    // `receive(on:)`, weil die Benachrichtigung im Hintergrund
+                    // gepostet wird.
+                    .onReceive(
+                        NotificationCenter.default
+                            .publisher(for: .NSPersistentStoreRemoteChange)
+                            .receive(on: RunLoop.main)
+                    ) { _ in
+                        widgetPublisher?.publish()
+                    }
+                    // Zweites Sicherheitsnetz: beim Wechsel in den Vordergrund
+                    // steht der Snapshot auf jeden Fall wieder auf dem Ist-Stand.
+                    .onChange(of: scenePhase) { _, phase in
+                        if phase == .active {
+                            widgetPublisher?.publish()
+                            // Tragender Weg der Share-Extension (ADR-010):
+                            // die Extension legt nur ab, importiert wird beim
+                            // naechsten Wechsel in den Vordergrund.
+                            scanShareHandoff(container)
+                        }
+                    }
+                    // Kaltstart-Netz: die drei Hooks daruaeber haengen alle an
+                    // einem *Ereignis* — ein Save, ein CloudKit-Merge oder ein
+                    // Wechsel von `scenePhase`. Oeffnet der Nutzer die App nur
+                    // und liest, tritt keines davon ein und das Widget bliebe
+                    // ohne Snapshot. `.task` laeuft genau einmal beim Aufbau
+                    // der Szene und schreibt bedingungslos den Ist-Stand.
+                    .task {
+                        await widgetPublisher?.publishNow()
+                        // Kaltstart: die App wurde ueber die Mitteilung der
+                        // Extension geoeffnet, `scenePhase` wechselt dabei
+                        // nicht mehr auf `.active`.
+                        scanShareHandoff(container)
                     }
                     // Bewusst **nach** dem Cover: eine Praesentation erbt die
                     // Umgebung an der Stelle ihres Modifiers, nicht die der
@@ -247,8 +390,12 @@ struct ShipTripApp: App {
                     // haengt: Hauptbaum, Cover und Alert teilen denselben
                     // `mainContext`.
                     .modelContainer(container)
+                    // Debug-Abzweig fuer die Widget-Screenshots (LE 10):
+                    // `-widgetPreview` zeigt statt des Hauptbaums die Galerie.
+                    .widgetPreviewOverride()
             } else {
                 StoreUnavailableView()
+                    .widgetPreviewOverride()
             }
         }
     }

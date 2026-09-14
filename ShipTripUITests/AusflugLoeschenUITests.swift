@@ -114,10 +114,24 @@ final class AusflugLoeschenUITests: XCTestCase {
         XCTAssertTrue(cruiseEntry.waitForExistence(timeout: 10), "Neu angelegte Reise nicht in der Liste gefunden")
         cruiseEntry.tap()
 
-        let portRow = app.staticTexts[portName]
-        XCTAssertTrue(portRow.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts[excursionName].waitForExistence(timeout: 5), "Ausflug nach dem Speichern nicht mehr vorhanden")
-        portRow.tap()
+        // Seit dem Route-Journal (Contract J3neu (b)) sind die Trefferflächen getrennt:
+        // die Stopp-Kopfzeile klappt, nur der Karteninhalt (PortMemoryCard) navigiert ins
+        // Hafen-Formular. Der Stopp muss dafür aufgeklappt sein.
+        let stopHeader = app.buttons["routeStop.header.\(portName)"]
+        XCTAssertTrue(stopHeader.waitForExistence(timeout: 10))
+        if stopHeader.value as? String == "zugeklappt" {
+            stopHeader.tap()
+        }
+        XCTAssertEqual(stopHeader.value as? String, "aufgeklappt",
+                       "Stopp liess sich nicht aufklappen – die Karte waere nicht erreichbar")
+
+        // Der Ausflugs-Chip liegt in der PortMemoryCard; ein Tap darauf löst deren
+        // Navigation ins Formular aus. Elementtyp-unabhängig, weil der Karteninhalt seit
+        // dem A11y-Pass (T8d-2) den Button-Trait trägt.
+        let excursionChip = kartenElement(app, label: excursionName)
+        XCTAssertTrue(excursionChip.waitForExistence(timeout: 5), "Ausflug nach dem Speichern nicht mehr vorhanden")
+        XCTAssertTrue(scrollUntilHittable(excursionChip, in: app), "Hafen-Karte nicht erreichbar")
+        excursionChip.tap()
 
         // 4. Ausflug über die sichtbare Schaltfläche löschen
         // S1.2 (Audit H2) ergänzt im manuellen Modus eine "Zur Suche"-Zeile oberhalb der
@@ -143,8 +157,9 @@ final class AusflugLoeschenUITests: XCTestCase {
         savePortAgainButton.tap()
 
         // 5. Roundtrip verifizieren: Ausflug bleibt nach dem Speichern gelöscht
-        XCTAssertTrue(portRow.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts[excursionName].exists, "Ausflug ist nach dem Speichern wieder da")
+        XCTAssertTrue(stopHeader.waitForExistence(timeout: 10))
+        XCTAssertFalse(kartenElement(app, label: excursionName).exists,
+                       "Ausflug ist nach dem Speichern wieder da")
     }
 
     // MARK: - B7.1/A2: Reorder-Toggle + sichtbare native Reorder-Affordance (Gate #2)
@@ -302,5 +317,35 @@ final class AusflugLoeschenUITests: XCTestCase {
             NSPredicate(format: "label CONTAINS[c] %@", "Lege sie hier selbst an")
         ).firstMatch
         XCTAssertTrue(detailHint.waitForExistence(timeout: 5), "Hinweis in ShippingLineManagementView (B6.3) nicht sichtbar")
+    }
+
+    // MARK: - Bausteine
+
+    /// Element in der Hafen-Karte über sein Label, unabhängig vom Elementtyp: der
+    /// Karteninhalt trägt seit dem A11y-Pass (T8d-2) den Button-Trait, war davor aber
+    /// StaticText.
+    private func kartenElement(_ app: XCUIApplication, label: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", label))
+            .firstMatch
+    }
+
+    /// Wartet erst auf die Existenz und scrollt **danach** – andersherum scrollt der Test
+    /// an einem noch nicht gerenderten Element vorbei (Idiom aus JournalRouteFadenUITests).
+    @discardableResult
+    private func scrollUntilHittable(
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        timeout: TimeInterval = 15,
+        maxSwipes: Int = 8
+    ) -> Bool {
+        guard element.waitForExistence(timeout: timeout) else { return false }
+        var swipes = 0
+        while !element.isHittable && swipes < maxSwipes {
+            let form = app.collectionViews.firstMatch
+            if form.exists && form.isHittable { form.swipeUp() } else { app.swipeUp() }
+            swipes += 1
+        }
+        return element.isHittable
     }
 }
