@@ -331,3 +331,4 @@
 - [minor][p2] marketing/release-1.9.0/app-store-connect/screenshots/*/0{1,3,4,5}-*.png — Footer „VERSION 1.7" beim nächsten Screenshot-Refresh angleichen
 - [minor][p3] marketing/release-1.9.0/app-store-connect/screenshots/*/02-widgets.png — Lock-Screen-Panel-Label linksbündig wie Home-Panel
 - [minor][p3] marketing/release-1.9.0/app-store-connect/screenshots/en-US/02-widgets.png — EN-Fixture mit englischen Reisenamen rendern
+- [major][p2] ShipTripWidget/Views/WidgetStyle.swift — Light-Variante der Widgets: Home-Screen-Familien zeigen heute auch im hellen Erscheinungsbild den Navy-Grund (Dark-Only-Look); eine echte helle Fassung ist nötig (Andre, 2026-09-14)
