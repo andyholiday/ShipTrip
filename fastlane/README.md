@@ -79,6 +79,14 @@ Update App Store privacy URLs from the prepared localized metadata
 
 Read-only: verify localized App Store privacy URLs
 
+### ios sync_aso_metadata
+
+```sh
+[bundle exec] fastlane ios sync_aso_metadata
+```
+
+Untertitel und Keywords des 1.8.0-Entwurfs setzen (kein Submit)
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

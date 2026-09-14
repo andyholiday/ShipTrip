@@ -15,6 +15,20 @@ APP_STORE_ASSET_ROOT = File.expand_path(
   __dir__
 )
 
+# ASO-Politur laut .planning/aso-vorschlag-1.8.0.md: Untertitel liegt auf der
+# App-Info, Keywords auf der Versions-Lokalisierung des Entwurfs.
+ASO_VERSION = "1.8.0"
+ASO_LISTING = {
+  "de-DE" => {
+    subtitle: "Kreuzfahrt-Urlaub & Tagebuch",
+    keywords: "reise,schiff,hafen,ausflug,fotos,planer,tracker,route,mein,aida,msc,costa,kabine,reederei,ausgaben"
+  },
+  "en-US" => {
+    subtitle: "Cruise Log, Ports & Expenses",
+    keywords: "travel,ship,voyage,excursions,photos,planner,tracker,diary,itinerary,budget,cabin,line,route,atlas"
+  }
+}.freeze
+
 def connect_api_client
   Spaceship::ConnectAPI.client.tunes_request_client
 end
@@ -268,6 +282,87 @@ def verify_app_store_privacy_urls
   UI.success("Verified localized App Store privacy URLs")
 end
 
+def ensure_aso_version(app)
+  platform = Spaceship::ConnectAPI::Platform::IOS
+  version = app.get_edit_app_store_version(platform: platform)
+  if version.nil?
+    app.ensure_version!(ASO_VERSION, platform: platform)
+    version = app.get_edit_app_store_version(platform: platform)
+    UI.user_error!("Could not create App Store version #{ASO_VERSION}") if version.nil?
+    UI.success("Created App Store version #{ASO_VERSION}")
+  else
+    UI.user_error!(
+      "Expected editable version #{ASO_VERSION}, found #{version.version_string}"
+    ) unless version.version_string == ASO_VERSION
+    UI.success("Editable App Store version #{ASO_VERSION} already exists")
+  end
+  version
+end
+
+def aso_localization(localizations, locale, kind)
+  entry = localizations.find { |item| item.locale == locale }
+  UI.user_error!("No #{kind} localization for #{locale}") if entry.nil?
+  entry
+end
+
+def sync_aso_subtitles(app)
+  app_info = app.fetch_edit_app_info
+  UI.user_error!(
+    "No editable app information found — subtitle cannot be changed"
+  ) if app_info.nil?
+
+  localizations = app_info.get_app_info_localizations
+  ASO_LISTING.each do |locale, values|
+    subtitle = values[:subtitle]
+    UI.user_error!("Subtitle for #{locale} exceeds 30 characters") if subtitle.length > 30
+    entry = aso_localization(localizations, locale, "app info")
+    if entry.subtitle.to_s == subtitle
+      UI.success("Subtitle for #{locale} already current")
+      next
+    end
+
+    entry.update(attributes: { subtitle: subtitle })
+    UI.success("Updated #{locale} subtitle")
+  end
+end
+
+def sync_aso_keywords(version)
+  localizations = version.get_app_store_version_localizations
+  ASO_LISTING.each do |locale, values|
+    keywords = values[:keywords]
+    UI.user_error!("Keywords for #{locale} exceed 100 characters") if keywords.length > 100
+    entry = aso_localization(localizations, locale, "app store version")
+    if entry.keywords.to_s == keywords
+      UI.success("Keywords for #{locale} already current")
+      next
+    end
+
+    entry.update(attributes: { keywords: keywords })
+    UI.success("Updated #{locale} keywords")
+  end
+end
+
+def verify_aso_listing(app, version)
+  app_info = app.fetch_edit_app_info
+  UI.user_error!("No editable app information found") if app_info.nil?
+
+  info_localizations = app_info.get_app_info_localizations
+  version_localizations = version.get_app_store_version_localizations
+  ASO_LISTING.each do |locale, values|
+    subtitle = aso_localization(info_localizations, locale, "app info").subtitle.to_s
+    keywords = aso_localization(version_localizations, locale, "app store version").keywords.to_s
+    UI.user_error!(
+      "Subtitle mismatch for #{locale}: expected #{values[:subtitle].inspect}, found #{subtitle.inspect}"
+    ) unless subtitle == values[:subtitle]
+    UI.user_error!(
+      "Keywords mismatch for #{locale}: expected #{values[:keywords].inspect}, found #{keywords.inspect}"
+    ) unless keywords == values[:keywords]
+    UI.success("#{locale} subtitle: #{subtitle}")
+    UI.success("#{locale} keywords: #{keywords}")
+  end
+  UI.success("Verified #{ASO_VERSION} listing (state: #{version.app_store_state})")
+end
+
 platform :ios do
 
   private_lane :asc_api_key do
@@ -408,6 +503,18 @@ platform :ios do
   lane :verify_privacy_urls do
     asc_api_key
     verify_app_store_privacy_urls
+  end
+
+  desc "Untertitel und Keywords des #{ASO_VERSION}-Entwurfs setzen (kein Submit)"
+  lane :sync_aso_metadata do
+    asc_api_key
+    app = Spaceship::ConnectAPI::App.find(APP_IDENTIFIER)
+    UI.user_error!("ShipTrip was not found in App Store Connect") if app.nil?
+
+    version = ensure_aso_version(app)
+    sync_aso_subtitles(app)
+    sync_aso_keywords(version)
+    verify_aso_listing(app, version)
   end
 
 end
