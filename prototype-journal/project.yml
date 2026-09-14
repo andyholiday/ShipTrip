@@ -1,0 +1,46 @@
+name: ProtoJournal
+options:
+  bundleIdPrefix: com.proto.journal
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+settings:
+  base:
+    # Bewusst Swift-5-Sprachmodus: ein Prototyp braucht die Swift-6-Strenge nicht,
+    # und der Build soll an nichts scheitern, das nichts mit dem Design zu tun hat.
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  ProtoJournal:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.proto.journal.protoJournal
+        PRODUCT_NAME: ProtoJournal
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        TARGETED_DEVICE_FAMILY: "1"
+        # Der Prototyp hat kein AppIcon-Set; ohne diese Zeile bricht actool ab.
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        SWIFT_STRICT_CONCURRENCY: minimal
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+schemes:
+  ProtoJournal:
+    build:
+      targets:
+        ProtoJournal: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    archive:
+      config: Release

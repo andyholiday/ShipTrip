@@ -1,0 +1,59 @@
+Attributes: Alert, 0x11335cdc0, {{41.0, 344.0}, {320.0, 214.0}}, label: 'Termine in den neuen Kalender übertragen?'
+Element subtree:
+ →Alert, 0x11335cdc0, {{41.0, 344.0}, {320.0, 214.0}}, label: 'Termine in den neuen Kalender übertragen?'
+    Other, 0x11335cf00, {{41.0, 344.0}, {320.0, 214.0}}
+      Other, 0x11335d040, {{41.0, 344.0}, {320.0, 214.0}}
+        Other, 0x11335d180, {{41.0, 344.0}, {320.0, 214.0}}
+        Other, 0x11335d2c0, {{41.0, 344.0}, {320.0, 214.0}}
+          ScrollView, 0x11335d400, {{41.0, 344.0}, {320.0, 134.0}}
+            Other, 0x11335d540, {{41.0, 344.0}, {320.0, 134.0}}
+              StaticText, 0x11335d680, {{71.0, 366.0}, {260.0, 42.3}}, label: 'Termine in den neuen Kalender übertragen?'
+              StaticText, 0x11335d7c0, {{71.0, 415.7}, {260.0, 58.0}}, label: 'Alle bestehenden ShipTrip-Termine werden im neuen Kalender angelegt und im bisherigen Kalender gelöscht.'
+            Other, 0x11335d900, {{41.0, 476.0}, {320.0, 2.0}}
+            Other, 0x11335da40, {{328.0, 344.0}, {30.0, 134.0}}, label: 'Vertikaler Rollbalken, 2 Seiten', value: 0 %
+              Other, 0x11335db80, {{355.0, 305.0}, {3.0, 36.0}}
+            Other, 0x11335dcc0, {{41.0, 445.0}, {320.0, 30.0}}, label: 'Horizontaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335de00, {{2.0, 472.0}, {36.0, 3.0}}
+            Other, 0x11335df40, {{328.0, 344.0}, {30.0, 134.0}}, label: 'Vertikaler Rollbalken, 2 Seiten', value: 0 %
+              Other, 0x11335e080, {{355.0, 305.0}, {3.0, 36.0}}
+            Other, 0x11335e1c0, {{41.0, 445.0}, {320.0, 30.0}}, label: 'Horizontaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335e300, {{2.0, 472.0}, {36.0, 3.0}}
+          ScrollView, 0x11335e440, {{41.0, 478.0}, {320.0, 80.0}}
+            Other, 0x11335e580, {{41.0, 478.0}, {320.0, 80.0}}
+              Other, 0x11335e6c0, {{57.0, 494.0}, {288.0, 48.0}}
+                Button, 0x11335e800, {{57.0, 494.0}, {140.0, 48.0}}, label: 'Abbrechen'
+                Button, 0x11335e940, {{205.0, 494.0}, {140.0, 48.0}}, label: 'Übertragen'
+            Other, 0x11335ea80, {{328.0, 478.0}, {30.0, 80.0}}, label: 'Vertikaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335ebc0, {{355.0, 568.0}, {3.0, 7.0}}
+            Other, 0x11335ed00, {{41.0, 525.0}, {320.0, 30.0}}, label: 'Horizontaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335ee40, {{131.0, 552.0}, {7.0, 3.0}}
+            Other, 0x11335ef80, {{328.0, 478.0}, {30.0, 80.0}}, label: 'Vertikaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335f0c0, {{355.0, 568.0}, {3.0, 7.0}}
+            Other, 0x11335f200, {{41.0, 525.0}, {320.0, 30.0}}, label: 'Horizontaler Rollbalken, 1 Seite', value: 0 %
+              Other, 0x11335f340, {{131.0, 552.0}, {7.0, 3.0}}
+    Other, 0x11335f480, {{41.0, 344.0}, {320.0, 214.0}}
+      Other, 0x11335f5c0, {{41.0, 344.0}, {320.0, 214.0}}
+        Other, 0x11335f700, {{41.0, 344.0}, {320.0, 214.0}}
+          Other, 0x11335f840, {{41.0, 344.0}, {320.0, 214.0}}
+            Other, 0x11335f980, {{41.0, 344.0}, {320.0, 214.0}}
+              Other, 0x11335fac0, {{41.0, 344.0}, {402.0, 874.0}}
+          Other, 0x11335fc00, {{41.0, 344.0}, {320.0, 214.0}}
+            Other, 0x11335fd40, {{41.0, 344.0}, {402.0, 874.0}}
+Path to element:
+ →Application, 0x112ef1540, pid: 75011, label: 'ShipTrip'
+  ↳Window (Main), 0x112ef1680, {{0.0, 0.0}, {402.0, 874.0}}
+   ↳Other, 0x11335ca00, {{0.0, 0.0}, {402.0, 874.0}}
+    ↳Alert, 0x11335cdc0, {{41.0, 344.0}, {320.0, 214.0}}, label: 'Termine in den neuen Kalender übertragen?'
+Query chain:
+ →Find: Target Application 'com.andre.ShipTrip'
+  Output: {
+    Application, 0x1133d30c0, pid: 75011, label: 'ShipTrip'
+  }
+  ↪︎Find: Descendants matching type Alert
+    Output: {
+      Alert, 0x1133cbc00, {{41.0, 344.0}, {320.0, 214.0}}, label: 'Termine in den neuen Kalender übertragen?'
+    }
+    ↪︎Find: First Match
+      Output: {
+        Alert, 0x11339c280, {{41.0, 344.0}, {320.0, 214.0}}, label: 'Termine in den neuen Kalender übertragen?'
+      }

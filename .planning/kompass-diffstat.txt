@@ -1,0 +1,8 @@
+ ShipTrip/Localizable.xcstrings                  | 181 +++++++++++++++++
+ ShipTrip/Models/Cruise.swift                    |   7 +
+ ShipTrip/Utilities/CruiseDateTriad.swift        | 145 ++++++++++++++
+ ShipTrip/Views/Cruises/CruiseDatesSection.swift | 249 ++++++++++++++++++++++++
+ ShipTrip/Views/Cruises/CruiseFormView.swift     |  57 +++++-
+ ShipTripTests/CalendarSyncPlannerTests.swift    |  30 +++
+ ShipTripTests/CruiseDateTriadTests.swift        | 121 ++++++++++++
+ 7 files changed, 785 insertions(+), 5 deletions(-)

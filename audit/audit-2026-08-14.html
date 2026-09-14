@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projekt-Audit — ShipTrip — 14.08.2026</title>
+<style>
+  :root {
+    --bg: #0f1117; --surface: #181b24; --surface-2: #1f2330; --border: #2a2f3e;
+    --text: #e8eaf0; --muted: #9aa1b5; --accent: #6c8cff;
+    --critical: #ff5a6a; --high: #ff9f43; --medium: #ffd166; --low: #7bd88f;
+    --ist: #ff5a6a; --soll: #4cd97b; --radius: 12px;
+    /* ShipTrip-Originalpalette (ShipTrip/Utilities/Color+Theme.swift) */
+    --ocean: #0C8CE9; --ocean-light: #36A9F0; --navy: #1A365D;
+    --sunset: #FF6B35; --sea-green: #34C759; --journal: #FBF7F0;
+    --ios-bg: #F2F2F7; --ios-sec: #8E8E93;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 0 0 80px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 28px; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; }
+  h2 { font-size: 1.4rem; margin: 56px 0 16px; padding-top: 24px; border-top: 1px solid var(--border); letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 24px 0 10px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .lead { font-size: 1.05rem; }
+  code { background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 0.85em; }
+
+  header { padding: 48px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .meta-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 14px; font-size: 0.82rem; color: var(--muted); }
+  .meta-chip strong { color: var(--text); font-weight: 600; }
+
+  .scorecard { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; margin: 20px 0; }
+  .score-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .score-tile .domain { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .score-tile .score { font-size: 1.6rem; font-weight: 700; margin: 4px 0 2px; }
+  .score-tile .note { font-size: 0.84rem; color: var(--muted); }
+  .score-5, .score-4 { color: var(--low); } .score-3 { color: var(--medium); }
+  .score-2 { color: var(--high); } .score-1 { color: var(--critical); }
+
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .badge.critical { background: rgba(255,90,106,.15); color: var(--critical); }
+  .badge.high { background: rgba(255,159,67,.15); color: var(--high); }
+  .badge.medium { background: rgba(255,209,102,.15); color: var(--medium); }
+  .badge.low { background: rgba(123,216,143,.15); color: var(--low); }
+  .badge.ok { background: rgba(76,217,123,.15); color: var(--soll); }
+  details.finding { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 10px 0; overflow: hidden; }
+  details.finding summary { cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px; font-weight: 600; list-style: none; }
+  details.finding summary::-webkit-details-marker { display: none; }
+  details.finding[open] summary { border-bottom: 1px solid var(--border); }
+  details.finding .body { padding: 14px 18px; font-size: 0.92rem; }
+  .finding .body dt { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 10px; }
+  .finding .body dd { margin: 2px 0 0; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0 34px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .card.ist { border-top: 3px solid var(--ist); } .card.soll { border-top: 3px solid var(--soll); }
+  .card .tag { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+  .card.ist .tag { color: var(--ist); } .card.soll .tag { color: var(--soll); }
+  .card h4 { margin: 6px 0 8px; font-size: 1.02rem; }
+  .card p { font-size: 0.92rem; }
+  .card .evidence { font-size: 0.8rem; color: var(--muted); border-left: 2px solid var(--border); padding-left: 10px; margin-top: 10px; }
+  .pair-title { font-size: 1.1rem; font-weight: 700; margin: 30px 0 0; }
+  .factrow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .fact { background: var(--surface-2); border-radius: 7px; padding: 3px 10px; font-size: 0.78rem; color: var(--muted); }
+  .fact strong { color: var(--text); }
+
+  .proto { margin-top: 14px; border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+  .proto .stage { position: relative; overflow: hidden; background: #0a0a0f; padding: 10px; display: flex; justify-content: center; }
+  .proto.diagram .stage { background: var(--surface-2); padding: 12px; }
+  .proto .caption { font-size: 0.72rem; color: var(--muted); padding: 6px 10px; border-top: 1px solid var(--border); }
+
+  /* iPhone-Attrappe in ShipTrips echter Palette */
+  .phone { width: 178px; background: var(--ios-bg); border: 4px solid #3a4152; border-radius: 20px; padding: 7px 8px 4px; font-size: 7.5px; line-height: 1.35; color: #000; }
+  .phone.dark { background: #000; color: #fff; border-color: #2a2f3e; }
+  .ph-title { font-size: 13px; font-weight: 800; letter-spacing: -0.4px; margin-bottom: 1px; }
+  .ph-sub { color: var(--ios-sec); font-size: 7px; margin-bottom: 6px; }
+  .ph-tiles { display: grid; grid-template-columns: repeat(4,1fr); gap: 3px; margin-bottom: 6px; }
+  .ph-tile { border-radius: 6px; padding: 4px 2px; text-align: center; }
+  .ph-tile b { display: block; font-size: 9px; font-weight: 800; }
+  .ph-tile span { font-size: 5.5px; color: #5a5a5f; }
+  .t-blue { background: #E4EEF9; } .t-blue2 { background: #DDE9F8; }
+  .t-green { background: #E4F2E7; } .t-red { background: #F8E7E4; }
+  .ph-hero { position: relative; height: 74px; border-radius: 10px; overflow: hidden; margin-bottom: 6px;
+             background: linear-gradient(160deg,#7FA8C9 0%,#A9C4D8 38%,#5E7F9B 70%,#33506B 100%); }
+  .ph-hero.dark { background: linear-gradient(160deg,#2b4258 0%,#3d5c74 40%,#1f3346 100%); }
+  .ph-hero .shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.68) 0%, rgba(0,0,0,.15) 52%, transparent 78%); }
+  .ph-hero .inner { position: absolute; left: 6px; right: 6px; bottom: 5px; color: #fff; }
+  .ph-hero h5 { font-size: 11px; font-weight: 800; letter-spacing: -0.3px; }
+  .ph-hero .meta { font-size: 5.5px; opacity: .92; }
+  .ph-badge { position: absolute; top: 7px; left: 6px; background: var(--sunset); color: #fff; border-radius: 999px; padding: 2px 6px; font-size: 6px; font-weight: 700; }
+  .ph-pill { display: inline-block; background: #fff; color: var(--navy); border-radius: 999px; padding: 2px 7px; font-size: 6px; font-weight: 700; float: right; }
+  .ph-tabs { display: flex; justify-content: space-between; border-top: 1px solid rgba(0,0,0,.08); padding-top: 4px; margin-top: 5px; font-size: 5.5px; color: var(--ios-sec); text-align: center; }
+  .ph-tabs .on { color: var(--ocean); font-weight: 700; }
+  .ph-row { background: #fff; border-radius: 7px; padding: 4px 6px; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
+  .phone.dark .ph-row { background: #1c1c1e; }
+  .ph-sec { font-size: 5.5px; letter-spacing: .08em; color: var(--ios-sec); text-transform: uppercase; margin: 5px 0 3px; }
+  .ph-btn { background: var(--ocean); color: #fff; border-radius: 7px; padding: 4px 0; text-align: center; font-weight: 700; font-size: 7px; margin-top: 5px; }
+  .ph-btn.grey { background: #d8d8dd; color: #6a6a70; }
+  .ph-note { border-radius: 6px; padding: 4px 5px; font-size: 5.8px; line-height: 1.35; }
+  .ph-note.warn { background: #FFF3E4; color: #7a4a12; border: 1px solid #F3D6AE; }
+  .ph-note.info { background: #E4EEF9; color: #14456e; border: 1px solid #BFD8F0; }
+  .ph-editor { background: #fff; border: 1px solid #d8d8dd; border-radius: 6px; height: 40px; margin: 4px 0; }
+  .phone.dark .ph-editor { background: #1c1c1e; border-color: #333; }
+
+  /* Kartenausschnitt für Pin-Mockups */
+  .map { position: relative; height: 96px; border-radius: 8px; overflow: hidden; background: linear-gradient(150deg,#dfeaf3,#c9dcea 60%,#b6cfe2); }
+  .map .land { position: absolute; background: #e8efe4; border-radius: 40% 55% 45% 60%; }
+  .pin { position: absolute; width: 9px; height: 9px; border-radius: 50%; border: 1.6px solid #fff; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .pin.port { background: var(--ocean); } .pin.home { background: var(--sunset); } .pin.end { background: var(--sea-green); }
+  .pin.ghost { background: transparent; border: 1.6px dashed var(--critical); }
+  .route { position: absolute; stroke: var(--ocean); stroke-width: 1.6; fill: none; stroke-linecap: round; }
+
+  svg.diag { width: 100%; height: auto; display: block; }
+  svg.diag text { font: 8px -apple-system, sans-serif; fill: #cfd4e2; }
+  svg.diag .lbl { font-size: 7px; fill: #9aa1b5; }
+  svg.diag .box { fill: #232838; stroke: #39405400; }
+  svg.diag .bad { fill: rgba(255,90,106,.16); stroke: #ff5a6a; stroke-width: 1; }
+  svg.diag .good { fill: rgba(76,217,123,.14); stroke: #4cd97b; stroke-width: 1; }
+  svg.diag .neutral { fill: #262b3a; stroke: #3a4054; }
+  svg.diag .arr { stroke: #6c8cff; stroke-width: 1.4; fill: none; marker-end: url(#a); }
+
+  .tabs { display: flex; gap: 8px; margin: 18px 0 0; flex-wrap: wrap; }
+  .tabs button { background: var(--surface); border: 1px solid var(--border); color: var(--muted); border-radius: 999px; padding: 8px 18px; font-size: 0.9rem; cursor: pointer; font-weight: 600; }
+  .tabs button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .direction { display: none; padding-top: 8px; } .direction.active { display: block; }
+  .leitidee { background: linear-gradient(135deg, rgba(108,140,255,.12), transparent); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin: 16px 0; font-size: 1rem; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.07em; }
+  tr.recommended td { background: rgba(76,217,123,.07); }
+  .gate-ok { color: var(--soll); font-weight: 700; } .gate-skip { color: var(--medium); font-weight: 700; } .gate-fail { color: var(--critical); font-weight: 700; }
+  ul.good { list-style: none; } ul.good li { padding: 8px 0 8px 28px; position: relative; }
+  ul.good li::before { content: "✓"; position: absolute; left: 0; color: var(--soll); font-weight: 800; }
+  ul.plain { margin: 0 0 12px 20px; } ul.plain li { margin-bottom: 6px; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 20px; margin: 24px 0; font-size: 0.9rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; margin-right: 18px; }
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 12px; margin: 18px 0; }
+  .kpi div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; }
+  .kpi b { display: block; font-size: 1.5rem; }
+</style>
+</head>
+<body>
+<!-- Pfeilspitze dokumentweit definiert, damit sie auch in ausgeblendeten Richtungs-Tabs auflöst -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="a" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#6c8cff"/></marker>
+</defs></svg>
+<div class="wrap">
+
+  <header>
+    <p class="muted" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.12em;">Projekt-Audit</p>
+    <h1>ShipTrip</h1>
+    <div class="meta-row">
+      <span class="meta-chip">Datum <strong>14.08.2026</strong></span>
+      <span class="meta-chip">Stand <strong>1.7.0 (23) · main@1819274</strong></span>
+      <span class="meta-chip">Modus <strong>Workflow · nur Claude</strong></span>
+      <span class="meta-chip">Tiefe <strong>Voll (35 Agenten)</strong></span>
+      <span class="meta-chip">Richtungen <strong>3</strong></span>
+    </div>
+    <p class="muted" style="margin-top:14px;"><strong style="color:var(--text)">Briefing:</strong> Komplettes und umfangreiches Audit der App — zusätzlicher Schwerpunkt auf der Frage, ob die Coding-Standards und Grenzen aus der globalen <code>~/.claude/CLAUDE.md</code> und der Projekt-<code>CLAUDE.md</code> tatsächlich eingehalten wurden.</p>
+  </header>
+
+  <nav class="toc">
+    <a href="#summary">Summary</a><a href="#scorecard">Scorecard</a><a href="#claudemd">CLAUDE.md-Compliance</a><a href="#good">Was gut läuft</a><a href="#findings">Befunde</a><a href="#improvements">Verbesserungen</a><a href="#roadmap">Roadmap</a><a href="#gates">Gate-Log</a><a href="#appendix">Anhang</a>
+  </nav>
+
+  <h2 id="summary">Executive Summary</h2>
+  <p class="lead">ShipTrip ist in bemerkenswert gutem Zustand. Das Audit hat <strong>keinen einzigen kritischen Befund</strong> gefunden — keine Sicherheitslücke, keinen Datenverlust im Normalbetrieb, keinen kaputten Kernfluss. Die Substanz der App ist überdurchschnittlich diszipliniert gebaut: 23.800 Zeilen Swift ohne eine einzige Notlösung (null <code>print</code>, null <code>TODO</code>, null abgeschaltete Prüfregeln), eine ungewöhnlich harte Absicherung des Import-Pfads gegen manipulierte Dateien, und über 300 grüne Tests.</p>
+  <p>Die Schwächen liegen woanders, und sie liegen alle am selben Ort: <strong>auf der letzten Meile zwischen fertiger App und ausgeliefertem Produkt.</strong> Drei Dinge solltest du wissen:</p>
+  <ul class="plain">
+    <li><strong>Dem Apple-Prüfer wurde etwas zugesagt, das die App nicht tut.</strong> In den eingereichten Review Notes steht auf Deutsch und Englisch, vor der Übertragung an Google werde ein Hinweis angezeigt. Im KI-Import-Dialog gibt es diesen Hinweis nicht. Das ist ein Ein-String-Fix — aber solange er offen ist, steht eine nachprüfbar falsche Aussage im Einreichungspaket.</li>
+    <li><strong>Englische Nutzer bekommen eine halb deutsche App.</strong> Nicht als Schönheitsfehler: Es trifft Lösch- und Datenverlust-Dialoge, den kompletten Reederei-Verwaltungsscreen — und über die Hafendatenbank rund 1.675 Häfen, die dauerhaft „Dänemark" statt „Denmark" anzeigen und diesen Wert per iCloud auf alle Geräte synchronisieren.</li>
+    <li><strong>Ein stiller Datenverlust im Alltag:</strong> Wer einen Hafen mit selbst gesetzten Koordinaten später über „Reise bearbeiten" antippt und nur die Uhrzeit ändert, verliert die Koordinaten — der Hafen verschwindet wortlos von der Karte.</li>
+  </ul>
+  <p>Zu deiner Kernfrage — <strong>ja, die Regeln wurden eingehalten, und zwar besser als in den meisten Projekten dieser Größe.</strong> Die harten Regeln (CloudKit-Vorgaben, Währung an Gerätesprache, Demo-Daten nur im Debug-Build, Testpflicht bei Bugfixes, keine stillen Ausnahmen) sind lückenlos belegt. Gebrochen wird die zweite Reihe: die Zweisprachigkeit reißt in neueren Features wieder auf, das CHANGELOG hinkt vier Builds hinterher, und die selbst aufgeschriebene Größengrenze für Views wird von 18 der 31 View-Dateien überschritten. Details in der <a href="#claudemd" style="color:var(--accent)">Compliance-Tabelle</a>.</p>
+  <p><strong>Zu entscheiden hast du drei Dinge:</strong> (1) ob die Gemini-Disclosure vor der nächsten Einreichung in die App kommt oder die Review Notes korrigiert werden — beides offen zu lassen ist die einzige schlechte Option; (2) ob du die Altersfreigabe 4+ beibehältst, obwohl deine eigene Datenschutzerklärung für das KI-Feature 18+ verlangt; (3) ob nach dem Release Infrastruktur (CI, geteiltes Schema, Lokalisierungs-Gate) oder Produktsubstanz (Journal-Kern, Freemium) Vorrang bekommt.</p>
+
+  <div class="kpi">
+    <div><b>0</b><span class="muted">Critical</span></div>
+    <div><b>3</b><span class="muted">High (adversarial bestätigt)</span></div>
+    <div><b>46</b><span class="muted">Medium</span></div>
+    <div><b>32</b><span class="muted">Low</span></div>
+    <div><b>300+</b><span class="muted">Unit-Tests grün</span></div>
+    <div><b>0</b><span class="muted">Third-Party-Abhängigkeiten</span></div>
+  </div>
+
+  <h2 id="scorecard">Scorecard</h2>
+  <div class="scorecard">
+    <div class="score-tile"><div class="domain">Architektur</div><div class="score score-4">4 / 5</div><div class="note">CloudKit-Regeln in allen 8 Modellen erfüllt und per Test einzementiert; Sammel-Views trüben das Bild.</div></div>
+    <div class="score-tile"><div class="domain">Code-Qualität</div><div class="score score-4">4 / 5</div><div class="note">Null Notlösungen auf 23.800 Zeilen, strenge Nebenläufigkeit — dagegen 1.499-Zeilen-Monolith und 200 Zeilen Copy-Paste.</div></div>
+    <div class="score-tile"><div class="domain">Tests</div><div class="score score-4">4 / 5</div><div class="note">Härtungstests auf Profi-Niveau, Karten-Logik vollständig abgedeckt; UI-Tests brüchig, drei Utilities ungetestet.</div></div>
+    <div class="score-tile"><div class="domain">Dokumentation</div><div class="score score-3">3 / 5</div><div class="note">Hervorragende ADRs und Datenschutz-Doku; CHANGELOG vier Builds im Rückstand, ARCHITECTURE.md strukturell zerschossen.</div></div>
+    <div class="score-tile"><div class="domain">UI / UX</div><div class="score score-4">4 / 5</div><div class="note">Leerzustände, Bestätigungen und Dark Mode systematisch gebaut; Pluralformen und EN-Lücken kratzen an der Premium-Anmutung.</div></div>
+    <div class="score-tile"><div class="domain">Security &amp; Privacy</div><div class="score score-4">4 / 5</div><div class="note">Keychain korrekt, ZIP-Import vorbildlich gehärtet, keine Secrets im Repo; in der App fehlt jede Datenschutz-Transparenz.</div></div>
+    <div class="score-tile"><div class="domain">Performance</div><div class="score score-3">3 / 5</div><div class="note">Karte und Thumbnails haben ein echtes Budget; Backup baut das ganze Archiv im Speicher auf dem Haupt-Thread.</div></div>
+    <div class="score-tile"><div class="domain">Delivery / DX</div><div class="score score-2">2 / 5</div><div class="note">Reife Fastlane-Kette, aber kein geteiltes Schema, keine CI, kein Testplan — der Release hängt an einem Rechner.</div></div>
+  </div>
+
+  <h2 id="claudemd">CLAUDE.md-Compliance — die Antwort auf deine Frage</h2>
+  <p>Geprüft wurden beide Regelwerke vollständig gegen den Repo-Stand <code>main@1819274</code>: 16 substanzielle Commits per <code>git show</code>, alle 8 Datenmodelle einzeln, der komplette String-Katalog per Skript, plus Greps über den gesamten App-Code. <strong>Gesamturteil: 9 von 12 Regeln nachweislich eingehalten, 3 verletzt — und die drei Verstöße sind allesamt Drift in der zweiten Reihe, kein Bruch der harten Regeln.</strong></p>
+  <table>
+    <tr><th>Regel</th><th>Urteil</th><th>Beleg</th></tr>
+    <tr><td><strong>Simplicity First</strong> (global §2)</td><td><span class="badge ok">befolgt</span></td><td>Null Protokolle, null <code>associatedtype</code> im gesamten App-Code — keine spekulative Abstraktion. Die Karten-Planner sind kleine, pure, testbare Funktionen (<code>MapZoomBucketPlanner.swift</code>: 40 Zeilen mit begründetem Schwellenwert). Die eigene ZIP-Implementierung ist durch die Null-Fremdcode-Vorgabe gedeckt, nicht overengineert.</td></tr>
+    <tr><td><strong>Surgical Changes</strong> (global §3)</td><td><span class="badge ok">befolgt</span> <span class="muted">· mit Drift</span></td><td>Die Diffs selbst sind sauber — kein fremdes Refactoring, kein Formatierungs-Rauschen. Commit-Messages decken sich mit dem Inhalt und deklarieren Nebenänderungen ehrlich (<code>e7e9060</code>: „Dazu: …"). Drift auf Commit-Ebene: <code>324e9c2</code> bündelt 8 unabhängige Findings in 26 Dateien und +3.691 Zeilen — <code>git bisect</code> und selektives Zurücknehmen sind damit praktisch unmöglich.</td></tr>
+    <tr><td><strong>Testpflicht je Change-Klasse</strong> (global §4)</td><td><span class="badge ok">befolgt</span></td><td>Bugfixes tragen den Repro-Test im selben Commit: <code>976486d</code> (Cover-Fix) bringt einen benannten Regressionstest mit, der Kalenderwechsel-Fix <code>e7e9060</code> bringt +270 Testzeilen und extrahiert die Logik eigens als puren <code>CalendarTargetChangePlanner</code>. Jede geprüfte Feature-Welle enthält Unit- <em>und</em> UI-Tests plus Feature-Doku.</td></tr>
+    <tr><td><strong>Ausnahme-Tag-Regel</strong> (global)</td><td><span class="badge ok">befolgt</span></td><td>Es gibt schlicht nichts zu taggen: null <code>swiftlint:disable</code>, null <code>@unchecked Sendable</code>, null <code>try!</code>, null <code>as!</code>, null <code>TODO/FIXME/HACK</code> im App-Code. Einziges <code>fatalError</code> liegt im Debug-only-Testpfad. Einzige ungetaggte Fundstelle überhaupt: ein <code>try!</code> im Testhelfer (<code>GeminiServiceTests.swift:199</code>) — formal eine stille Ausnahme, faktisch risikofrei.</td></tr>
+    <tr><td><strong>CloudKit-Regeln</strong> (Projekt + ADR-002)</td><td><span class="badge ok">befolgt</span></td><td>Alle 8 <code>@Model</code>-Klassen einzeln geprüft: kein einziges <code>@Attribute(.unique)</code>, jedes nicht-optionale Attribut mit Default, alle Relationships optional mit nicht-optionaler App-Fassade. Zusätzlich als Regressionstest einzementiert (<code>CloudKitSchemaCompatibilityTests</code>).</td></tr>
+    <tr><td><strong>Währung an Geräte-Locale</strong> (Projekt)</td><td><span class="badge ok">befolgt</span></td><td>Kein einziges hartkodiertes EUR im App-Code. <code>Expense.swift:95-99</code> und <code>ExpenseFormView.swift:85-90</code> binden an <code>Locale.current.currency</code> und dokumentieren sogar, warum es keinen EUR-Fallback gibt.</td></tr>
+    <tr><td><strong>Demo-Daten: isDemo + nur Debug</strong> (Projekt)</td><td><span class="badge ok">befolgt</span></td><td><code>DemoDataService.swift</code> vollständig in <code>#if DEBUG</code>, alle Aufrufer ebenfalls geklammert, <code>isDemo</code>-Tag im Modell, Entfernung über echte Cascade-Regeln. Nachweis: <code>allSeededObjectsAreTaggedIsDemo()</code> und <code>loadIsTwiceIdempotent()</code> laufen grün.</td></tr>
+    <tr><td><strong>Codestil: deutsche Doc-Kommentare</strong> (Projekt)</td><td><span class="badge ok">befolgt</span></td><td>Durchgängig deutsche <code>///</code>-Kommentare auch in neuen Dateien; Begründungen stehen dort, wo sie hingehören (etwa der 20-Grad-Schwellenwert der Karte).</td></tr>
+    <tr><td><strong>Think Before Coding</strong> (global §1)</td><td><span class="badge ok">befolgt</span> <span class="muted">· indirekt</span></td><td>Nicht direkt aus dem Repo prüfbar, aber die Spuren sind da: ADRs vor Umsetzung, Umsetzungspläne mit Erfolgskriterien, Quality-Reviews in <code>.planning/</code>, und ein <code>ZIEL.md</code> mit messbaren Abnahmekriterien pro Run.</td></tr>
+    <tr style="background:rgba(255,90,106,.06)"><td><strong>Zweisprachigkeit DE/EN</strong> (Projekt)</td><td><span class="badge high">verletzt</span></td><td><strong>36 user-sichtbare Fundstellen ohne EN-Übersetzung</strong>, konsolidiert und nachgezählt — Schwerpunkte: Reederei-Verwaltung (10), Einstellungen (8), Erinnerungs-Flow (7), Start-Fehlerschirme (6), Push-Texte (4). Betroffen sind ausgerechnet Lösch- und Datenverlust-Dialoge. Genau die Lücke, die Audit-Befund H6 im Juli schließen sollte, ist in später gebauten Features neu entstanden.</td></tr>
+    <tr style="background:rgba(255,90,106,.06)"><td><strong>CHANGELOG nach Keep a Changelog</strong> (Projekt)</td><td><span class="badge high">verletzt</span></td><td>Der gesamte ausgelieferte Umfang der Builds 20–23 — inklusive iCloud-Sync — steht weiter unter <code>[Unreleased]</code>, während <code>[1.7.0]</code> auf den 10.07.2026 datiert ist und nur bis Build 18/19 reicht. Ein Commit (<code>1054f94</code>) hat gar keinen Eintrag. Zusätzlich vermischt ein nicht-standardisierter Abschnitt „Geplant" Roadmap mit Changelog.</td></tr>
+    <tr style="background:rgba(255,90,106,.06)"><td><strong>Eigener Dateigrößen-Standard</strong><br><span class="muted">(.codingstandards: „Max. 100 Zeilen pro View")</span></td><td><span class="badge high">verletzt</span></td><td><strong>18 von 31 View-Dateien</strong> überschreiten die selbst aufgeschriebene Grenze. Spitzenreiter <code>CruiseFormView.swift</code> mit 1.499 Zeilen (15-fach) und 7 Top-Level-Typen, <code>SettingsView.swift</code> mit 987 Zeilen und genau <em>einem</em> <code>// MARK:</code>. Dass der Standard gilt, belegt das Projekt selbst: <code>MapZoomBucketPlanner.swift</code> wurde ausdrücklich „(F01, swift-standards Datei-Größenlimit)" aus MapView herausgelöst. Er wird also gekannt und punktuell angewendet — nur nicht dort, wo er am meisten wehtut. Genau die „unsichtbare Policy-Drift", vor der die globale CLAUDE.md warnt.</td></tr>
+  </table>
+
+  <h2 id="good">Was gut läuft</h2>
+  <ul class="good">
+    <li><strong>Null Notlösungen auf 23.800 Zeilen.</strong> Keine <code>print</code>-Statements, keine <code>TODO</code>/<code>FIXME</code>/<code>HACK</code>, keine abgeschalteten Lint-Regeln, keine <code>as!</code>-Casts, kein <code>@unchecked Sendable</code>. Logging läuft über OSLog. Das ist in dieser Konsequenz selten.</li>
+    <li><strong>Swift-6-Nebenläufigkeit ernst genommen:</strong> <code>SWIFT_STRICT_CONCURRENCY = complete</code> auf allen fünf Build-Konfigurationen — nicht die abgeschwächte Variante, die die meisten Projekte wählen.</li>
+    <li><strong>Der Import-Pfad ist auf Angriffsniveau gehärtet.</strong> Zip-Slip-Schutz prüft die Roh-Komponenten <em>vor</em> jeder Normalisierung, dazu Dekompressionsbomben-Limits auf drei Ebenen, CRC-32-Verifikation, Manipulationsschutz am Archiv-Verzeichnis, und Bilddaten werden inhaltlich validiert statt dem Dateinamen zu glauben. Abgesichert von 26 Tests mit einem eigenen manipulierbaren ZIP-Builder (1.438 Zeilen).</li>
+    <li><strong>Die CloudKit-Regeln sind maschinell einzementiert,</strong> nicht nur dokumentiert: <code>CloudKitSchemaCompatibilityTests</code> prüft Relationship-Optionalität über das echte Schema, die Container-Identität und dass Testläufe niemals gegen den produktiven iCloud-Container schreiben.</li>
+    <li><strong>Fehlerbehandlung folgt einem projektweiten Muster:</strong> expliziter Save, Rollback bei Fehler, sichtbares Nutzer-Feedback — konsistent in allen destruktiven Pfaden. Der App-Start hat sogar eine dreistufige Rückfallkette bis zum Fehlerschirm.</li>
+    <li><strong>Karten-Geometrie vollständig testabgedeckt:</strong> alle 7 Planner-Dateien haben eigene Testdateien mit zusammen über 90 Tests — die Logik ist bewusst SwiftUI-frei gehalten, damit sie testbar bleibt.</li>
+    <li><strong>Keine Secrets im Repo, saubere Release-Signierung.</strong> Der Gemini-Key lebt ausschließlich im Keychain (korrekte Zugriffsklasse, kein iCloud-Sync), der App-Store-Key kommt nur aus Umgebungsvariablen. Die exportierte IPA trägt Production-Umgebung und <code>get-task-allow=false</code>.</li>
+    <li><strong>Die Fastlane-Kette validiert statt zu hoffen:</strong> Store-Assets werden vor dem Upload geprüft, Screenshots per Prüfsumme dedupliziert, Copyright, Preispunkt und alle 175 Territorien verifiziert — mit hartem Abbruch statt stillem Weiterlaufen.</li>
+    <li><strong>Testvorbedingungen sind ehrlich dokumentiert:</strong> <code>SETUP.md</code> nennt das exakte Kommando für die Kalenderrechte und sagt vorher, dass ohne es genau vier Tests hart fehlschlagen. Genau so ist es dann auch eingetreten.</li>
+    <li><strong>Die ADR-Disziplin hält:</strong> ADR-003/004/005 sind seit Monaten für geplante Wellen reserviert — und keine dieser Wellen wurde am ADR vorbei implementiert. Es gibt kein StoreKit-Symbol, kein Journal-Modell, keinen Proxy-Code im Repo.</li>
+  </ul>
+
+  <h2 id="findings">Befunde</h2>
+  <p class="muted">Alle Critical/High-Kandidaten wurden von unabhängigen Gegen-Prüfern adversarial getestet, die den Auftrag hatten, sie zu <em>widerlegen</em>. Von 13 gemeldeten High-Befunden haben 3 standgehalten; 10 wurden auf Medium heruntergestuft, weil Substanz zwar korrekt, aber die Auswirkung überzeichnet war. Die drei folgenden sind bestätigt.</p>
+
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> Hafen-Bearbeiten löscht selbst gesetzte Koordinaten — der Pin verschwindet wortlos von der Karte</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip/Views/Cruises/CruiseFormView.swift:1138-1166</code> (<code>TempPortFormSheet.savePort</code>)</dd>
+      <dt>Evidenz</dt><dd>Selbst nachgelesen: <code>savePort()</code> berechnet Koordinaten bei <em>jedem</em> Speichern ausschließlich per <code>PortSuggestion.findBestMatch</code> neu und schreibt anschließend bedingungslos <code>port.latitude = lat; port.longitude = lon</code> — die in <code>originalPort</code> vorhandenen Originalwerte werden nie zurückgeschrieben. Für katalogfremde Namen liefert <code>findBestMatch</code> <code>nil</code>, <code>reconcileRoute</code> macht daraus 0/0, und <code>hasValidCoordinates</code> wertet (0,0) als ungültig — der Hafen fällt damit aus Kartenmarkern und Geo-Fallback heraus. Der Schwesterpfad <code>PortFormView</code> macht es richtig und erhält manuelle Koordinaten explizit.</dd>
+      <dt>Auswirkung</dt><dd>Wer einen Hafen mit selbst erfassten Koordinaten (eigene Eingabe oder ZIP-Import) später über „Reise bearbeiten" antippt und nur die Ankunftszeit ändert, verliert die Koordinaten stillschweigend. Zusätzlich kann der unscharfe Namensabgleich einen katalogfremden Hafen unbemerkt auf einen falschen Katalog-Hafen umsetzen — der Pin wandert dann an den falschen Ort. Kein Warnhinweis, kein Rückgängig.</dd>
+      <dt>Empfehlung</dt><dd><code>findBestMatch</code> nur ausführen, wenn sich Name oder Land gegenüber <code>originalPort</code> geändert haben; sonst die Originalkoordinaten übernehmen. Regressionstest analog zu den vorhandenen <code>PortFormViewTests</code>.</dd>
+      <dt>Konfidenz</dt><dd>Hoch — Code selbst gelesen, Gegen-Prüfer bestätigte High nach eigenem Widerlegungsversuch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> Backup friert die App ein — und große Backups kann die App nicht mehr einlesen</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip/Services/ExportImportService.swift:128-174</code> · <code>ZipArchiveWriter.swift:36-46</code> · <code>SettingsView.swift:845-847</code></dd>
+      <dt>Evidenz</dt><dd>Der Export sammelt die Bilddaten <em>aller</em> Reisen in einer Liste, und der ZIP-Bauer hängt dieselben Bytes zusätzlich an ein einziges Daten-Objekt an — beide Kopien leben gleichzeitig, Spitzenverbrauch also rund das Doppelte der Fotobibliothek. Der Service ist <code>@MainActor</code>, der Aufruf erbt diese Isolation: der gesamte Export inklusive Prüfsummenbildung über jedes Foto läuft ohne einen einzigen Unterbrechungspunkt auf dem Haupt-Thread, weshalb der angezeigte Fortschrittsbalken einfriert. Entscheidend ist die Asymmetrie: Der Import lehnt Archive über 550 MB ab, der Export kennt kein Limit.</dd>
+      <dt>Auswirkung</dt><dd>Bei größeren Fotobibliotheken hängt die App beim Backup sekunden- bis minutenlang und riskiert einen Speicher-Abschuss durch das System. Schwerer wiegt: Ein erfolgreich erzeugtes Backup über 550 MB kann von der eigenen App nie wieder eingelesen werden — das Backup-Versprechen bricht ausgerechnet für die Nutzer mit den meisten Erinnerungen. Da Fotos in Originalauflösung gespeichert werden, ist diese Größe realistisch erreichbar.</dd>
+      <dt>Empfehlung</dt><dd>Export streamen: Einträge Foto für Foto direkt in eine temporäre Datei schreiben und den Speicher wieder freigeben, die Arbeit vom Haupt-Thread lösen. Zusätzlich vor Überschreiten der Importgrenze warnen — oder die Grenze für eigene Exporte anheben.</dd>
+      <dt>Konfidenz</dt><dd>Hoch — Gegen-Prüfer bestätigte High und fand zusätzlich ein 50-MB-Limit pro Einzelfoto, das der Befund noch gar nicht erwähnt hatte.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding" open>
+    <summary><span class="badge high">High</span> Rund 1.675 Häfen zeigen englischen Nutzern deutsche Ländernamen — und speichern sie dauerhaft</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip/Models/PortSuggestion.swift</code> (1.956 Einträge, 117 Länder) — angezeigt in Hafensuche, Reise-Detail, Routen-Sheet und Karten-Sprachausgabe</dd>
+      <dt>Evidenz</dt><dd>Alle 1.956 Hafeneinträge tragen deutsche Ländernamen; rund 1.675 davon (85,6 %) schreiben sich im Englischen anders — „Dänemark", „Frankreich", „Griechenland", „Großbritannien", „Türkei", „Südkorea". Die Anzeige läuft über die nicht lokalisierende <code>Text</code>-Überladung für Variablen (per Apple-Dokumentation gegengeprüft, nicht aus dem Gedächtnis). Eine Länder-Übersetzungsschicht existiert nirgends: Die Suche nach <code>forRegionCode</code>, <code>countryCode</code> und Verwandten liefert null Treffer im gesamten Projekt.</dd>
+      <dt>Auswirkung</dt><dd>Betroffen ist der Einstiegspunkt jeder Routenerfassung: Ein englischer Nutzer sucht „Denmark" und bekommt Vorschläge mit „Dänemark". Danach steht der deutsche Ländername dauerhaft in den Reisedaten, wird per iCloud auf alle Geräte synchronisiert und in Detailansicht, Routen-Sheet und Sprachausgabe wieder ausgegeben. Englisch ist eine real ausgelieferte Store-Sprache — es ist der größte Einzelposten der Lokalisierungslücke.</dd>
+      <dt>Empfehlung</dt><dd>Ländernamen nicht übersetzen (117 Schlüssel Pflegeaufwand), sondern die Referenzdaten um einen ISO-Ländercode erweitern und zur Anzeige <code>Locale.current.localizedString(forRegionCode:)</code> nutzen. Das löst DE und EN in einem Schritt und ist migrationsfrei, weil der bestehende Wert als Rückfall bleibt. Wegen der Änderung an der Referenzdatenstruktur als ADR festhalten.</dd>
+      <dt>Konfidenz</dt><dd>Hoch — Gegen-Prüfer griff den Befund an vier Punkten an und bestätigte alle vier, inklusive der Nachzählung.</dd>
+    </dl></div>
+  </details>
+
+  <h3>Wesentliche Medium-Befunde</h3>
+  <p class="muted">46 Medium-Befunde insgesamt; hier die, die etwas kosten oder blockieren. Die vollständige Liste steht im Anhang.</p>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Den Apple-Prüfern wurde eine Disclosure zugesagt, die es in Build 23 nicht gibt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>marketing/release-1.7.0/app-store-connect/review/review_notes_de.txt:7</code> und <code>_en.txt:7</code> vs. <code>CruiseFormView.swift:1405-1465</code></dd>
+      <dt>Evidenz</dt><dd>Selbst nachgelesen. Review Notes (DE): „Vor der Übermittlung wird ein Disclosure angezeigt"; EN: „A disclosure is shown before transmission." Der KI-Import-Dialog zeigt tatsächlich nur „Füge den Text deiner Buchungsbestätigung ein:" und den Button „Analysieren"; Google wird erst <em>nach</em> dem Absenden erwähnt („Analysiere mit Gemini AI…"). Kein Katalog-Schlüssel enthält einen Übertragungshinweis. Die zugehörige Plan-Aufgabe S2.4 steht im Umsetzungsplan ausdrücklich als offen markiert — inklusive des geforderten Wortlauts.</dd>
+      <dt>Auswirkung</dt><dd>Gegenüber App Review steht eine nachprüfbar unzutreffende Aussage im eingereichten Paket — das gefährdet nicht nur diese Einreichung, sondern die Glaubwürdigkeit künftiger Review Notes. Fachlich schwerer: Der Nutzer fügt einen Buchungstext mit Namen, Buchungsnummer und Reisedaten ein und löst die Übertragung an Google aus, ohne dass die App das vorher sagt — genau die Transparenz zum Erhebungszeitpunkt, die die eigene Datenschutzerklärung bereits korrekt beschreibt.</dd>
+      <dt>Empfehlung</dt><dd>Einen lokalisierten Hinweis direkt über den „Analysieren"-Button setzen (Wortlaut steht im Plan) — <em>oder</em> Punkt 4 beider Review-Notes-Dateien auf den Ist-Zustand korrigieren. Nicht beides offen lassen. Der Ein-String-Fix ist der billigere Weg und schließt zugleich den Security-Befund zur fehlenden In-App-Transparenz.</dd>
+      <dt>Konfidenz</dt><dd>Hoch — beide Seiten selbst gelesen.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Altersfreigabe 4+ trifft auf ein Feature, das laut eigener Datenschutzerklärung 18+ verlangt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>marketing/.../release-configuration.md:32</code> · <code>PRIVACY_POLICY.md:85-88</code> · <code>SettingsView.swift:562-603</code></dd>
+      <dt>Evidenz</dt><dd>Die live veröffentlichte Datenschutzerklärung sagt: Google verlangt für die API-Nutzung ein Mindestalter von 18 Jahren und im EWR einen kostenpflichtigen Tarif. Die Release-Konfiguration führt genau das unter „Remaining blocking checks before submission" auf. Trotzdem ist die App als 4+ konfiguriert, und der Key-Eingabe-Screen enthält keinerlei Alters- oder Tarifhinweis.</dd>
+      <dt>Auswirkung</dt><dd>Ein als 4+ eingestuftes Produkt bewirbt prominent eine Funktion, deren Nutzungsbedingungen der Anbieter selbst auf Volljährige beschränkt — gleichzeitig ein Ablehnungsrisiko bei Apple und ein Vertragsrisiko gegenüber Google. Der Blocker steht seit dem Release-Commit unverändert offen, während das Paket als „finalized" eingecheckt wurde.</dd>
+      <dt>Empfehlung</dt><dd>Entscheiden und dokumentieren: entweder kurzer lokalisierter Hinweis im Key-Dialog (18+, im EWR kostenpflichtiger Tarif) bei Beibehaltung von 4+, oder Altersfreigabe anheben. Danach den Blocker abhaken statt ihn stehen zu lassen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch (Blockerliste selbst verifiziert). Keine Rechtsberatung.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Das empfohlene Backup sichert nur 3 der 8 synchronisierten Datentypen</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ExportImportService.swift:16,33,49</code> · <code>ADR-002:119-121</code></dd>
+      <dt>Evidenz</dt><dd>ADR-002 macht den manuellen Export ausdrücklich zum Sicherheitsnetz für dieses Release („In den Release-Notes wird explizit empfohlen, vor dem Update einen manuellen Export als Backup anzulegen"). Der Export kennt aber nur Reise, Hafen und Ausgabe. Wunschreisen, eigene Reedereien, eigene Schiffe und ausgeblendete Katalogeinträge — 4 der 8 in Produktion live geschalteten Datentypen — haben keinerlei Sicherungs- oder Wiederherstellungspfad. Die UI formuliert immerhin ehrlich eng („Exportiert alle Kreuzfahrten"), die ADR-Entscheidung tut das nicht.</dd>
+      <dt>Auswirkung</dt><dd>Das dokumentierte Rückfallnetz für den riskantesten Schritt des Release trägt nur zur Hälfte. Beschädigt der Sync Daten, stellt das empfohlene Backup ausgerechnet das nicht wieder her, was der Nutzer von Hand gepflegt hat — während er ein ZIP in der Hand hält, das er für vollständig hält.</dd>
+      <dt>Empfehlung</dt><dd>Die vier fehlenden Typen ergänzen (alle flach und beziehungsfrei, je ein zusätzliches Codable-Objekt, rückwärtskompatibel lesbar) — oder ADR-002 und die Release-Notes auf den tatsächlichen Umfang korrigieren. Ergänzen ist vorzuziehen, da Produktion bereits live ist.</dd>
+      <dt>Konfidenz</dt><dd>Hoch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Ein hartkodierter fremder Benutzerpfad legt 9 von 24 UI-Tests lahm — bekannt, gemeldet, ungefixt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTripUITests/HauptansichtScreenshotTests.swift:16</code></dd>
+      <dt>Evidenz</dt><dd>Im eigenen Testlauf dieses Audits reproduziert: Die Datei enthält <code>URL(filePath: "/Users/andreja/Documents/0.Projekte/ShipTrip/audit/screenshots")</code> — ein Pfad, der auf dieser Maschine nicht existiert. <code>setUpWithError</code> versucht das Verzeichnis anzulegen und wirft, weshalb alle 9 Screenshot-Tests deterministisch nach ~0,03 Sekunden fehlschlagen. Der Befund steht seit dem 04.08.2026 als „major" im eigenen Release-Gate (<code>.planning/BACKLOG.md</code>, F17) und ist seit Juni im Code.</dd>
+      <dt>Auswirkung</dt><dd>Ein Drittel der UI-Test-Suite ist auf jedem anderen Rechner als dem ursprünglichen tot — und damit auch in jeder künftigen CI. Der eigene Qualitäts-Prozess hat den Befund korrekt erkannt und dann nicht abgearbeitet; er ist mit dem als „finalized" markierten App-Store-Paket eingecheckt.</dd>
+      <dt>Empfehlung</dt><dd>Ausgabeordner per Umgebungsvariable setzen mit <code>XCTSkip</code>, wenn sie fehlt. Damit laufen die Tests überall und schreiben nur dort Screenshots, wo es gewünscht ist.</dd>
+      <dt>Konfidenz</dt><dd>Hoch — im Testlauf dieses Audits direkt reproduziert.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Kein geteiltes Xcode-Schema, kein Testplan, keine CI — der Release hängt an einem Rechner</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip.xcodeproj</code> (kein <code>xcshareddata/xcschemes</code>) · Repo-Wurzel (kein <code>.github/</code>, kein <code>Gemfile</code>)</dd>
+      <dt>Evidenz</dt><dd>Im Repo existiert keine einzige <code>.xcscheme</code>- und keine <code>.xctestplan</code>-Datei; getrackt sind nur die Projektdatei und der Workspace. Die Ignorier-Ausnahme für geteilte Schemas ist in der <code>.gitignore</code> sogar vorbereitet, aber ungenutzt. Es gibt keine CI-Konfiguration und kein <code>Gemfile</code>, das die Fastlane-Version festnagelt.</dd>
+      <dt>Auswirkung</dt><dd>Auf einem frischen Clone schlägt der in der Projekt-CLAUDE.md dokumentierte Standard-Build-Weg fehl, bis jemand das Projekt einmal in Xcode öffnet. Zusammen mit dem toten Screenshot-Pfad heißt das: Es gibt keine reproduzierbare Umgebung, in der die Suite vollständig grün ist. Jede Qualitätsaussage hängt an der Handarbeit auf genau einem Mac.</dd>
+      <dt>Empfehlung</dt><dd>Schema als „Shared" markieren und einchecken, einen Testplan anlegen, <code>Gemfile</code> mit gepinnter Fastlane ergänzen, danach eine schlanke CI, die Build und Unit-Tests bei jedem Push fährt.</dd>
+      <dt>Konfidenz</dt><dd>Hoch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> „1 Reisen · 0 Länder": Pluralformen fehlen auf dem Startbildschirm</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CruiseListView.swift:75-77</code> · <code>CruiseHeroCardView.swift:52</code> · 7 weitere Stellen</dd>
+      <dt>Evidenz</dt><dd>Die Zusammenfassungszeile setzt Zahlen direkt in feste Texte ein; nur 2 von 324 Katalog-Schlüsseln nutzen überhaupt Pluralregeln. Bei genau einer Reise steht dort „1 Reisen · 1 Länder", auf der Hero-Karte „In 1 Tagen". An sieben Stellen wird Pluralisierung durch Wort-Aneinanderreihung umgangen — im Englischen bricht dasselbe Muster zusätzlich, weil dort andere Regeln gelten.</dd>
+      <dt>Auswirkung</dt><dd>Es trifft die erste Zeile, die ein neuer Nutzer nach dem Anlegen seiner ersten Reise sieht — also genau den Moment, in dem sich die Premium-Anmutung entscheidet. Der Rest der App ist visuell sorgfältig gebaut; dieser Fehler wirkt deshalb umso stärker.</dd>
+      <dt>Empfehlung</dt><dd>Die betroffenen Schlüssel im String-Katalog auf Pluralvarianten umstellen (DE und EN) und die Wort-Aneinanderreihungen durch vollständige Sätze mit Platzhaltern ersetzen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Die App enthält keinen Weg zur Datenschutzerklärung und keinen Support-Kontakt</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>SettingsView.swift:178-189</code> (Bereich „Info")</dd>
+      <dt>Evidenz</dt><dd>Der Info-Bereich enthält genau zwei Einträge: die Versionsnummer und einen Link auf das GitHub-Repository. Über den gesamten Swift-Code gibt es nur drei externe URLs — diese, den Google-AI-Studio-Link und den Sprung in die Systemeinstellungen. Weder „privacy" noch die Adresse der Datenschutzseite kommen irgendwo im Code oder im String-Katalog vor. Die im Store hinterlegte Support-URL zeigt auf den GitHub-Issue-Tracker.</dd>
+      <dt>Auswirkung</dt><dd>Ein zahlender Nutzer hat in der App keinen Weg zur Datenschutzerklärung — die inhaltlich sehr gute Erklärung liegt ausschließlich hinter dem Store-Eintrag. Wer Hilfe sucht, braucht einen GitHub-Account. Zusammen mit der fehlenden KI-Disclosure ergibt das ein Muster: Die App sagt an keiner Stelle, wohin Daten fließen, und bietet keinen Weg, es nachzulesen.</dd>
+      <dt>Empfehlung</dt><dd>Zwei Zeilen im Info-Bereich: sprachabhängiger Link auf die Datenschutzseite und eine Support-Mailadresse. Danach die Store-Support-URL auf eine endnutzertaugliche Seite umstellen.</dd>
+      <dt>Konfidenz</dt><dd>Hoch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> 84 Reederei-Cover ohne dokumentierte Herkunft — öffentlich unter MIT-Lizenz mitveröffentlicht</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip/Assets.xcassets/cover_line_*.imageset</code> (84 Sets, 77 MB) · <code>LICENSE:1-3</code></dd>
+      <dt>Evidenz</dt><dd>84 markenbezogene Cover für 14 Reedereien, sämtlich in git getrackt. Eine Herkunfts- oder Lizenzangabe existiert nirgends — die Suche über Doku, Planung und Marketing nach Quellen- oder Urheberhinweisen liefert keinen Treffer, und die Dateien tragen keine Urheber-Metadaten. Das Repository ist öffentlich und steht unter MIT-Lizenz, was formal auch diese Bilder als frei verwendbar deklariert. Ein Stichprobenblick zeigt generische Schiffe ohne Logos — das entschärft die Markenfrage, nicht die Lizenzfrage.</dd>
+      <dt>Auswirkung</dt><dd>77 MB Bildmaterial unbekannter Herkunft werden unter einer Lizenz weitergegeben, die zu vergeben du möglicherweise nicht berechtigt bist. Nebenbefund: Das Copyright in der LICENSE („2024 ShipTrip") widerspricht dem Store-Copyright („2026 André Jaszka").</dd>
+      <dt>Empfehlung</dt><dd>Herkunft einmalig festhalten (Quelle, Lizenz, Datum je Bildgruppe) und in der LICENSE einen Abschnitt ergänzen, der Bild-Assets ausdrücklich von der MIT-Freigabe ausnimmt.</dd>
+      <dt>Konfidenz</dt><dd>Hoch für den Sachverhalt; die Rechtsfolge ist keine Rechtsberatung.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> CHANGELOG und Umsetzungspläne bilden den Auslieferungsstand nicht mehr ab</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>CHANGELOG.md:8-111</code> · <code>docs/umsetzungsplan-audit-2026-07-10.md</code> · <code>docs/ARCHITECTURE.md:183-219</code> · <code>docs/MODELS.md</code> · <code>docs/CONTRIBUTING.md:155-165</code></dd>
+      <dt>Evidenz</dt><dd>Der gesamte Umfang der Builds 20–23 inklusive iCloud-Sync steht unter „Unreleased". Im Umsetzungsplan ist kein einziges Kästchen abgehakt, obwohl Teile erledigt sind. <code>MODELS.md</code> dokumentiert nur 5 der 8 Datenmodelle. In <code>ARCHITECTURE.md</code> ist der Abschnitt „Datenfluss" strukturell zerschossen — Abschnitte wurden mitten in bestehende Blöcke eingefügt. <code>CONTRIBUTING.md</code> lehrt Neueinsteiger das falsche Test-Framework (XCTest statt Swift Testing) und Commit-Konventionen, die das Projekt nicht verwendet.</dd>
+      <dt>Auswirkung</dt><dd>Wer den Release-Stand nachvollziehen will, findet dessen wichtigste Änderung an der falschen Stelle; beim nächsten Versionsschnitt droht sie der falschen Version zugeordnet zu werden. Die Doku ist inhaltlich stark, aber sie erzählt eine Version der Wahrheit, die zwei Monate alt ist.</dd>
+      <dt>Empfehlung</dt><dd>Einmal nachziehen: 1.7.0-Abschnitt korrekt datieren und den Unreleased-Inhalt überführen, drei fehlende Modelle ergänzen, den Datenfluss-Abschnitt reparieren, CONTRIBUTING auf Swift Testing korrigieren.</dd>
+      <dt>Konfidenz</dt><dd>Hoch.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Thumbnail-Reparaturlauf kann in eine Endlosschleife geraten</summary>
+    <div class="body"><dl>
+      <dt>Ort</dt><dd><code>ShipTrip/Utilities/ThumbnailBackfill.swift:27-58</code></dd>
+      <dt>Evidenz</dt><dd>Selbst nachgelesen: Der Lauf ist eine <code>while true</code>-Schleife, die Fotos ohne Vorschaubild in 20er-Blöcken holt und pro Foto ein Vorschaubild erzeugt. Liefert die Erzeugung <code>nil</code> — was der Downsampler an vier Stellen tun kann —, wird erneut <code>nil</code> zugewiesen; der nächste Durchlauf holt dieselben Fotos, und die Schleife endet nie. <strong>Entlastend:</strong> Ich habe den naheliegenden Auslöser geprüft und <em>widerlegt</em> — der ZIP-Import validiert Bilddaten inhaltlich, bevor ein Foto entsteht, und der System-Bildwähler liefert dekodierbare Daten. Es bleibt ein latenter Defekt ohne bekannten Auslöserpfad.</dd>
+      <dt>Auswirkung</dt><dd>Tritt der Fall ein, dreht die Schleife dauerhaft auf dem Haupt-Actor: Akku- und CPU-Last ohne Ende, und kein weiteres Foto bekommt je ein Vorschaubild. Drei unabhängige Prüfrollen haben diese Stelle gefunden.</dd>
+      <dt>Empfehlung</dt><dd>Fehlgeschlagene Fotos markieren und überspringen (etwa Vorschaubild auf leere Daten setzen statt <code>nil</code>) oder eine Obergrenze für Durchläufe einziehen. Erster Test für die derzeit völlig ungetestete Datei.</dd>
+      <dt>Konfidenz</dt><dd>Hoch für den Defekt, niedrig für die Eintrittswahrscheinlichkeit.</dd>
+    </dl></div>
+  </details>
+
+  <details class="finding">
+    <summary><span class="badge medium">Medium</span> Weitere Medium-Befunde in Kurzform</summary>
+    <div class="body">
+      <ul class="plain">
+        <li><strong>~200 Zeilen wortgleiche Duplikation</strong> der „Hafen-Momente"-Sektion in zwei Hafen-Formularen — inklusive identischer Kommentare; Änderungen müssen doppelt gepflegt werden.</li>
+        <li><strong>UI-Tests hängen an deutschen Texten:</strong> 8 von 11 Test-Dateien suchen Elemente über deutsche Beschriftungen, ohne die App-Sprache zu erzwingen — sie brechen, sobald jemand mit englischem System testet.</li>
+        <li><strong>CloudKit-Spiegelung in UI-Tests:</strong> Der Schutz, der Testläufe vom produktiven iCloud-Container fernhält, greift bei sieben UI-Test-Starts nicht.</li>
+        <li><strong>Erinnerungs-Einstellungen wirken nur auf künftige Speichervorgänge</strong> — Bestandsreisen und importierte Reisen bekommen keine Benachrichtigung.</li>
+        <li><strong>Push-Texte hart deutsch codiert:</strong> vier Benachrichtigungstexte im Service, die englische Nutzer auf Deutsch erreichen.</li>
+        <li><strong>Export/Import verliert Details:</strong> halbe Sterne werden abgeschnitten, ein Zeitstempel geht verloren.</li>
+        <li><strong>Fotos werden in Originalauflösung gespeichert;</strong> das Formular lädt beim Neuzeichnen alle Vollbilder — nur um zu prüfen, ob überhaupt eines da ist.</li>
+        <li><strong>Kalender-Hintergrund-Sync schluckt Fehler dauerhaft still</strong> und läuft synchron auf dem Haupt-Thread.</li>
+        <li><strong>Hartkodiertes deutsches Datumsformat</strong> in der Detailansicht statt Gerätesprache.</li>
+        <li><strong>Nachbesserung am Katalog-Dedup:</strong> Der Abgleich nach dem Sync läuft wegen eines Erledigt-Merkers effektiv nur einmal pro Installation — auf einem zweiten Gerät entstehende Duplikate werden nicht mehr aufgeräumt.</li>
+        <li><strong>Git-Historie bei 458 MB</strong> nach nur 56 Commits, getrieben von eingecheckten Marketing-Videos (2 × 23,5 MB) und wiederholt neu erzeugten Screenshots.</li>
+        <li><strong>Drei konkurrierende Metadaten-Quellen</strong> für den Store-Eintrag im Repo; die getrackten Doku-Dateien sind gegenüber dem eingereichten Paket veraltet.</li>
+        <li><strong>Deutsche Store-Beschreibung verspricht eine Suche</strong> im Reiselogbuch, die es nicht gibt (die englische Fassung formuliert korrekt „Browse").</li>
+      </ul>
+    </div>
+  </details>
+
+  <h2 id="improvements">Verbesserungen</h2>
+  <p>Drei Richtungen, bewusst weit auseinander: von „nur das, was die Einreichung blockiert" bis „Produktkurs neu denken". Jede Karte zeigt links den heutigen Zustand mit Beleg, rechts das Ziel mit Aufwand und Risiko.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="active" onclick="showDir(0,this)">Richtung 1 · Einreichung wasserdicht</button>
+    <button onclick="showDir(1,this)">Richtung 2 · Wiederholbar ausliefern</button>
+    <button onclick="showDir(2,this)">Richtung 3 · Vom Formular zum Reisetagebuch</button>
+  </div>
+
+  <!-- ================= RICHTUNG 1 ================= -->
+  <section class="direction active">
+    <div class="leitidee"><strong>Leitidee:</strong> Nichts Neues bauen. Nur das schließen, was zwischen dem heutigen Build und einer sauberen, ehrlichen App-Store-Einreichung steht — und den einen stillen Datenverlust beheben, den ein Nutzer im Alltag treffen kann. Voll auf dem aktuellen Kurs, kein Architektureingriff, alles in Tagen statt Wochen messbar.</div>
+
+    <p class="pair-title">1.1 · Der KI-Import sagt nicht, wohin die Daten gehen</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Buchungstext geht ohne Hinweis an Google</h4>
+        <p>Der Dialog fordert zum Einfügen auf und bietet „Analysieren". Google wird erst genannt, während die Übertragung schon läuft. Den Apple-Prüfern wurde in DE und EN das Gegenteil zugesagt.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">KI-Import</div>
+            <div class="ph-sub">Füge den Text deiner Buchungsbestätigung ein:</div>
+            <div class="ph-editor"></div>
+            <div style="height:26px"></div>
+            <div class="ph-btn">Analysieren</div>
+            <div class="ph-sub" style="margin-top:6px;text-align:center;font-size:5.5px">kein Hinweis auf Datenübertragung</div>
+          </div>
+        </div><div class="caption">AIImportSheet, Build 23 — nachgebaut aus CruiseFormView.swift:1405-1465</div></div>
+        <div class="evidence">review_notes_de.txt:7 „Vor der Übermittlung wird ein Disclosure angezeigt" · im Code an keiner Stelle vorhanden · Plan-Aufgabe S2.4 steht offen</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Ein Satz über dem Button — Zusage eingelöst</h4>
+        <p>Ein lokalisierter Hinweis direkt am Sende-Knopf, Wortlaut aus dem eigenen Umsetzungsplan. Damit stimmt die Aussage gegenüber App Review, und der Nutzer erfährt es <em>vor</em> dem Absenden, nicht danach.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">KI-Import</div>
+            <div class="ph-sub">Füge den Text deiner Buchungsbestätigung ein:</div>
+            <div class="ph-editor"></div>
+            <div class="ph-note info" style="margin-top:4px">Der eingefügte Text wird zur Auswertung an Google Gemini übertragen.</div>
+            <div class="ph-btn" style="margin-top:4px">Analysieren</div>
+          </div>
+        </div><div class="caption">Ein String im Katalog (DE/EN) + eine Textzeile im Sheet</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Einreichung ehrlich, DSGVO-Transparenz am Erhebungspunkt</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">1.2 · Der Hafen, der von der Karte verschwindet</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Uhrzeit ändern kostet die Koordinaten</h4>
+        <p>Beim Speichern im Bearbeiten-Dialog werden die Koordinaten immer neu aus dem Hafenkatalog gesucht. Ist der Hafen nicht im Katalog, werden die selbst gesetzten Werte durch „unbekannt" ersetzt — der Pin verschwindet.</p>
+        <div class="proto"><div class="stage" style="display:block;padding:12px">
+          <div class="map">
+            <div class="land" style="left:6px;top:10px;width:56px;height:44px"></div>
+            <div class="land" style="right:8px;bottom:8px;width:70px;height:40px"></div>
+            <svg style="position:absolute;inset:0" viewBox="0 0 240 96" preserveAspectRatio="none">
+              <path class="route" d="M28,66 Q70,40 104,52" stroke-dasharray="3 3"/>
+            </svg>
+            <div class="pin home" style="left:24px;top:62px"></div>
+            <div class="pin ghost" style="left:100px;top:48px"></div>
+            <div style="position:absolute;left:88px;top:24px;font-size:6.5px;color:#b3283a;font-weight:700">Pin weg</div>
+            <div class="pin end" style="right:44px;bottom:26px"></div>
+          </div>
+        </div><div class="caption">Der bearbeitete Hafen fällt aus Route und Karte — ohne Meldung</div></div>
+        <div class="evidence">CruiseFormView.swift:1165-1166 überschreibt <code>latitude/longitude</code> bedingungslos; <code>originalPort</code> wird nie zurückgeschrieben. Gegen-Prüfer bestätigte High.</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Koordinaten überleben das Bearbeiten</h4>
+        <p>Die Katalogsuche läuft nur, wenn sich Name oder Land geändert haben. Sonst bleiben die vorhandenen Koordinaten stehen. Ein Regressionstest hält es fest.</p>
+        <div class="proto"><div class="stage" style="display:block;padding:12px">
+          <div class="map">
+            <div class="land" style="left:6px;top:10px;width:56px;height:44px"></div>
+            <div class="land" style="right:8px;bottom:8px;width:70px;height:40px"></div>
+            <svg style="position:absolute;inset:0" viewBox="0 0 240 96" preserveAspectRatio="none">
+              <path class="route" d="M28,66 Q70,40 104,52 Q150,62 196,70"/>
+            </svg>
+            <div class="pin home" style="left:24px;top:62px"></div>
+            <div class="pin port" style="left:100px;top:48px"></div>
+            <div class="pin end" style="right:44px;bottom:26px"></div>
+          </div>
+        </div><div class="caption">Route bleibt vollständig, auch nach dem Bearbeiten</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Kein stiller Datenverlust im meistgenutzten Flow</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">1.3 · „1 Reisen" — der erste Satz, den ein neuer Nutzer liest</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Zahlen werden in feste Texte gesetzt</h4>
+        <p>Nach der ersten angelegten Reise steht auf dem Startbildschirm „1 Reisen · 1 Länder · nächste Reise in 1 Tagen". Im Englischen bricht dasselbe Muster zusätzlich.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title">Meine Reisen</div>
+            <div class="ph-sub" style="color:#b3283a">1 Reisen · 1 Länder · nächste Reise in 1 Tagen</div>
+            <div class="ph-tiles">
+              <div class="ph-tile t-blue"><b>1</b><span>Reisen</span></div>
+              <div class="ph-tile t-blue2"><b>8</b><span>Tage</span></div>
+              <div class="ph-tile t-green"><b>1</b><span>Länder</span></div>
+              <div class="ph-tile t-red"><b>5</b><span>Häfen</span></div>
+            </div>
+            <div class="ph-hero"><div class="shade"></div><div class="ph-badge">In 1 Tagen</div>
+              <div class="inner"><h5>Norwegische Fjorde</h5><div class="meta">AIDAnova · 3.–11. Aug. 2026</div></div>
+            </div>
+            <div class="ph-tabs"><span class="on">Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span>Mehr</span></div>
+          </div>
+        </div><div class="caption">Startbildschirm mit genau einer Reise — echte Farben und Layout der App</div></div>
+        <div class="evidence">CruiseListView.swift:75-77, CruiseHeroCardView.swift:52 · nur 2 von 324 Katalog-Schlüsseln nutzen Pluralregeln</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Pluralregeln im String-Katalog</h4>
+        <p>Die betroffenen Schlüssel bekommen Ein-/Mehrzahlvarianten in DE und EN. Der Katalog kann das bereits — es wurde nur an zwei Stellen genutzt.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title">Meine Reisen</div>
+            <div class="ph-sub" style="color:#2b7a3d">1 Reise · 1 Land · nächste Reise morgen</div>
+            <div class="ph-tiles">
+              <div class="ph-tile t-blue"><b>1</b><span>Reise</span></div>
+              <div class="ph-tile t-blue2"><b>8</b><span>Tage</span></div>
+              <div class="ph-tile t-green"><b>1</b><span>Land</span></div>
+              <div class="ph-tile t-red"><b>5</b><span>Häfen</span></div>
+            </div>
+            <div class="ph-hero"><div class="shade"></div><div class="ph-badge">Morgen</div>
+              <div class="inner"><h5>Norwegische Fjorde</h5><div class="meta">AIDAnova · 3.–11. Aug. 2026</div></div>
+            </div>
+            <div class="ph-tabs"><span class="on">Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span>Mehr</span></div>
+          </div>
+        </div><div class="caption">Gleiche Screens, korrekte Grammatik — inklusive „morgen" statt „in 1 Tagen"</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>S</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Premium-Anmutung im ersten Moment</strong></span></div>
+      </div>
+    </div>
+
+    <p class="muted"><strong>Ebenfalls in dieser Richtung, ohne eigene Karte:</strong> Altersfreigabe-Entscheidung dokumentieren (oder Hinweis im Key-Dialog), Datenschutz-Link und Support-Adresse in den Info-Bereich, Screenshot-Testpfad über Umgebungsvariable reparieren, CHANGELOG-Schnitt auf 1.7.0 nachziehen.</p>
+  </section>
+
+  <!-- ================= RICHTUNG 2 ================= -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Der Kern bleibt unangetastet — investiert wird in die Maschine dahinter. Heute hängt jede Qualitätsaussage an Handarbeit auf genau einem Mac, das Backup-Versprechen trägt nur zur Hälfte, und Lokalisierungslücken fallen erst im Store auf. Diese Richtung macht die Auslieferung wiederholbar, damit der nächste Release nicht wieder ein Einzelstück ist.</div>
+
+    <p class="pair-title">2.1 · Qualität ist nicht reproduzierbar</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Ein Rechner, Handarbeit, tote Tests</h4>
+        <p>Kein geteiltes Schema, kein Testplan, keine CI, keine gepinnte Fastlane-Version. Ein hartkodierter fremder Benutzerpfad legt 9 von 24 UI-Tests still — auf jeder anderen Maschine.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 140">
+            <rect class="bad" x="8" y="14" width="94" height="52" rx="7"/>
+            <text x="18" y="34">Ein Mac</text><text class="lbl" x="18" y="46">Xcode von Hand</text><text class="lbl" x="18" y="57">Schema lokal</text>
+            <path class="arr" d="M104,40 L128,40"/>
+            <rect class="neutral" x="130" y="14" width="70" height="52" rx="7" fill="#262b3a" stroke="#3a4054"/>
+            <text x="140" y="34">Build</text><text class="lbl" x="140" y="46">manuell</text>
+            <path class="arr" d="M202,40 L226,40"/>
+            <rect class="neutral" x="228" y="14" width="64" height="52" rx="7" fill="#262b3a" stroke="#3a4054"/>
+            <text x="238" y="34">TestFlight</text>
+            <rect class="bad" x="8" y="82" width="284" height="46" rx="7"/>
+            <text x="18" y="100">Testlage</text>
+            <text class="lbl" x="18" y="113">9 von 24 UI-Tests brechen sofort · frischer Clone baut nicht ·</text>
+            <text class="lbl" x="18" y="123">4 Unit-Tests scheitern ohne manuell erteilte Kalenderrechte</text>
+          </svg>
+        </div><div class="caption">Kein automatisierter Pfad zwischen Commit und Testergebnis</div></div>
+        <div class="evidence">Keine <code>.xcscheme</code>, keine <code>.xctestplan</code>, kein <code>.github/</code>, kein <code>Gemfile</code> im Repo · F17 seit 04.08. im eigenen Backlog als „major"</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Jeder Push beweist sich selbst</h4>
+        <p>Geteiltes Schema und Testplan im Repo, gepinnte Fastlane, schlanke CI für Build und Unit-Tests. Der Screenshot-Pfad kommt aus einer Umgebungsvariable, die Kalenderrechte erteilt der Testlauf selbst.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 140">
+            <rect class="good" x="8" y="14" width="74" height="52" rx="7"/>
+            <text x="18" y="34">Push</text><text class="lbl" x="18" y="46">Schema +</text><text class="lbl" x="18" y="57">Testplan im Repo</text>
+            <path class="arr" d="M84,40 L106,40"/>
+            <rect class="good" x="108" y="14" width="90" height="52" rx="7"/>
+            <text x="118" y="34">CI</text><text class="lbl" x="118" y="46">Build · Unit-Tests</text><text class="lbl" x="118" y="57">Rechte automatisch</text>
+            <path class="arr" d="M200,40 L222,40"/>
+            <rect class="good" x="224" y="14" width="68" height="52" rx="7"/>
+            <text x="234" y="34">Fastlane</text><text class="lbl" x="234" y="46">gepinnt</text>
+            <rect class="good" x="8" y="82" width="284" height="46" rx="7"/>
+            <text x="18" y="100">Testlage</text>
+            <text class="lbl" x="18" y="113">24 von 24 UI-Tests laufen überall · frischer Clone baut ·</text>
+            <text class="lbl" x="18" y="123">grün heißt grün, auch auf einem zweiten Rechner</text>
+          </svg>
+        </div><div class="caption">Ergebnis: eine Zusage, die nicht an einer Person hängt</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Jede künftige Release-Aussage wird überprüfbar</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">2.2 · Das Backup, das nur die Hälfte sichert</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>3 von 8 Datentypen im Export</h4>
+        <p>ADR-002 empfiehlt vor dem Update ausdrücklich ein manuelles Backup. Gesichert werden Reisen, Häfen, Ausgaben und Fotos — Wunschreisen, eigene Reedereien, eigene Schiffe und Ausblendungen nicht.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 130">
+            <text class="lbl" x="8" y="14">In iCloud synchronisiert · 8 Typen</text>
+            <rect class="good" x="8" y="20" width="66" height="24" rx="5"/><text x="16" y="35">Reise</text>
+            <rect class="good" x="80" y="20" width="66" height="24" rx="5"/><text x="88" y="35">Hafen</text>
+            <rect class="good" x="152" y="20" width="66" height="24" rx="5"/><text x="160" y="35">Ausgabe</text>
+            <rect class="good" x="224" y="20" width="68" height="24" rx="5"/><text x="232" y="35">Foto</text>
+            <rect class="bad" x="8" y="50" width="66" height="24" rx="5"/><text x="16" y="65">Wunschreise</text>
+            <rect class="bad" x="80" y="50" width="66" height="24" rx="5"/><text x="88" y="65">Reederei</text>
+            <rect class="bad" x="152" y="50" width="66" height="24" rx="5"/><text x="160" y="65">Schiff</text>
+            <rect class="bad" x="224" y="50" width="68" height="24" rx="5"/><text x="232" y="65">Ausblendung</text>
+            <rect class="bad" x="8" y="86" width="284" height="36" rx="6"/>
+            <text x="18" y="103">Backup-ZIP</text>
+            <text class="lbl" x="18" y="115">enthält die vier roten Typen nicht — 28 von 70 Feldern fehlen</text>
+          </svg>
+        </div><div class="caption">Rot = synchronisiert, aber nicht sicherbar</div></div>
+        <div class="evidence">ExportImportService kennt nur drei Objekte; Suche nach „Deal" in der Datei: 0 Treffer · ADR-002:119-121 macht den Export zum Sicherheitsnetz</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Alles, was synchronisiert wird, ist auch sicherbar</h4>
+        <p>Vier zusätzliche Objekte im Export — alle flach und beziehungsfrei, rückwärtskompatibel lesbar. Alternativ ehrlich machen: ADR und Release-Notes auf den echten Umfang korrigieren.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 130">
+            <text class="lbl" x="8" y="14">In iCloud synchronisiert · 8 Typen</text>
+            <rect class="good" x="8" y="20" width="66" height="24" rx="5"/><text x="16" y="35">Reise</text>
+            <rect class="good" x="80" y="20" width="66" height="24" rx="5"/><text x="88" y="35">Hafen</text>
+            <rect class="good" x="152" y="20" width="66" height="24" rx="5"/><text x="160" y="35">Ausgabe</text>
+            <rect class="good" x="224" y="20" width="68" height="24" rx="5"/><text x="232" y="35">Foto</text>
+            <rect class="good" x="8" y="50" width="66" height="24" rx="5"/><text x="16" y="65">Wunschreise</text>
+            <rect class="good" x="80" y="50" width="66" height="24" rx="5"/><text x="88" y="65">Reederei</text>
+            <rect class="good" x="152" y="50" width="66" height="24" rx="5"/><text x="160" y="65">Schiff</text>
+            <rect class="good" x="224" y="50" width="68" height="24" rx="5"/><text x="232" y="65">Ausblendung</text>
+            <rect class="good" x="8" y="86" width="284" height="36" rx="6"/>
+            <text x="18" y="103">Backup-ZIP</text>
+            <text class="lbl" x="18" y="115">vollständig — das Sicherheitsnetz aus ADR-002 trägt wirklich</text>
+          </svg>
+        </div><div class="caption">Das Versprechen und der Inhalt decken sich</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Low</strong></span><span class="fact">Nutzen <strong>Handgepflegte Daten überleben einen Sync-Zwischenfall</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">2.3 · Backup baut das ganze Archiv im Arbeitsspeicher</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Doppelter Speicher, eingefrorene Oberfläche, unlesbares Ergebnis</h4>
+        <p>Alle Fotos landen zuerst in einer Liste, dann noch einmal im fertigen Archiv — beide Kopien gleichzeitig im Speicher, alles auf dem Haupt-Thread. Über 550 MB kann die App das eigene Backup nicht mehr einlesen.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 140">
+            <rect class="neutral" x="8" y="16" width="60" height="30" rx="5" fill="#262b3a" stroke="#3a4054"/><text x="16" y="35">Fotos</text>
+            <path class="arr" d="M70,31 L92,31"/>
+            <rect class="bad" x="94" y="16" width="76" height="30" rx="5"/><text x="102" y="30">Liste</text><text class="lbl" x="102" y="41">1× alle Bytes</text>
+            <path class="arr" d="M172,31 L194,31"/>
+            <rect class="bad" x="196" y="16" width="96" height="30" rx="5"/><text x="204" y="30">Archiv</text><text class="lbl" x="204" y="41">2× alle Bytes</text>
+            <rect class="bad" x="8" y="56" width="284" height="28" rx="6"/>
+            <text class="lbl" x="18" y="74">Haupt-Thread blockiert · Fortschrittsbalken friert ein · Speicher-Abschuss möglich</text>
+            <rect class="bad" x="8" y="94" width="284" height="34" rx="6"/>
+            <text x="18" y="110">Rückweg</text>
+            <text class="lbl" x="18" y="122">Import lehnt über 550 MB ab — Export kennt kein Limit</text>
+          </svg>
+        </div><div class="caption">Der Export kann etwas erzeugen, das der Import ablehnt</div></div>
+        <div class="evidence">ExportImportService.swift:128-174 · ZipArchiveWriter.swift:36-46 · Grenzen im Reader: 50 MB je Datei, 500 MB kumuliert, 550 MB Archiv</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Foto für Foto direkt in die Datei</h4>
+        <p>Einträge werden gestreamt geschrieben und der Speicher sofort freigegeben, die Arbeit läuft neben der Oberfläche. Vor Überschreiten der Importgrenze warnt die App — oder die Grenze wird für eigene Exporte angehoben.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 140">
+            <rect class="neutral" x="8" y="16" width="60" height="30" rx="5" fill="#262b3a" stroke="#3a4054"/><text x="16" y="35">Fotos</text>
+            <path class="arr" d="M70,31 L92,31"/>
+            <rect class="good" x="94" y="16" width="76" height="30" rx="5"/><text x="102" y="30">1 Foto</text><text class="lbl" x="102" y="41">dann freigeben</text>
+            <path class="arr" d="M172,31 L194,31"/>
+            <rect class="good" x="196" y="16" width="96" height="30" rx="5"/><text x="204" y="30">Datei</text><text class="lbl" x="204" y="41">wächst auf Platte</text>
+            <rect class="good" x="8" y="56" width="284" height="28" rx="6"/>
+            <text class="lbl" x="18" y="74">Oberfläche bleibt bedienbar · Fortschritt läuft echt · Speicher konstant</text>
+            <rect class="good" x="8" y="94" width="284" height="34" rx="6"/>
+            <text x="18" y="110">Rückweg</text>
+            <text class="lbl" x="18" y="122">Jedes erzeugte Backup ist auch wieder einlesbar</text>
+          </svg>
+        </div><div class="caption">Speicherbedarf unabhängig von der Bibliotheksgröße</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Med</strong></span><span class="fact">Nutzen <strong>Backup funktioniert auch für die treuesten Nutzer</strong></span></div>
+      </div>
+    </div>
+
+    <p class="muted"><strong>Ebenfalls in dieser Richtung:</strong> Lokalisierungs-Prüfung als Vor-Release-Schritt (das Skript aus diesem Audit taugt als Basis), die 36 fehlenden Strings nachziehen, Git-Historie entlasten (Marketing-Videos auslagern), <code>.gitignore</code>-Lücken schließen, Doku-Nachzug.</p>
+  </section>
+
+  <!-- ================= RICHTUNG 3 ================= -->
+  <section class="direction">
+    <div class="leitidee"><strong>Leitidee:</strong> Die Produktrichtung heißt „Premium-Reisetagebuch" — der Code sagt etwas anderes. Das größte Einzelstück der App ist mit 1.499 Zeilen das <em>Erfassungsformular</em>; das Reiseerlebnis selbst ist die kleinere Fläche. Diese Richtung dreht den Schwerpunkt um: Erfassen wird zur Nebensache, das Erinnern zur Hauptsache — und schließt dabei die drei seit Monaten reservierten, nie gebauten ADR-Entscheidungen.</div>
+
+    <p class="pair-title">3.1 · Die App ist ein Formular mit Reisetagebuch-Anstrich</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>Erfassen dominiert, Erinnern ist ein Nebenraum</h4>
+        <p>Der Schwerpunkt liegt auf Eingabefeldern: Titel, Reederei, Schiff, Daten, Häfen, Ausgaben. Fotos und Hafen-Momente sind vorhanden, aber untergeordnet — die Reise wird verwaltet, nicht erzählt.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">Neue Reise</div>
+            <div class="ph-sec">Eckdaten</div>
+            <div class="ph-row"><span>Titel</span><span style="color:#8E8E93">—</span></div>
+            <div class="ph-row"><span>Reederei</span><span style="color:#8E8E93">wählen</span></div>
+            <div class="ph-row"><span>Schiff</span><span style="color:#8E8E93">wählen</span></div>
+            <div class="ph-row"><span>Von – bis</span><span style="color:#8E8E93">Datum</span></div>
+            <div class="ph-sec">Route</div>
+            <div class="ph-row"><span>Hafen hinzufügen</span><span style="color:var(--ocean)">+</span></div>
+            <div class="ph-sec">Ausgaben</div>
+            <div class="ph-row"><span>Ausgabe erfassen</span><span style="color:var(--ocean)">+</span></div>
+            <div class="ph-tabs"><span class="on">Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span>Mehr</span></div>
+          </div>
+        </div><div class="caption">CruiseFormView — 1.499 Zeilen, 7 Typen, größte Datei der App</div></div>
+        <div class="evidence">1.499 Zeilen gegen einen selbst gesetzten Standard von „max. 100 Zeilen pro View" · 18 von 31 View-Dateien überschreiten ihn · ADR-003 (Journal-Kern) seit Monaten reserviert, nie gebaut</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Die Reise erzählt sich, das Formular verschwindet</h4>
+        <p>Einstieg ist die Erinnerung: Tag für Tag, Foto, Ort, Notiz. Die Pflichtfelder rutschen in einen kompakten Zweitschritt. Die vier eingebetteten Dialoge werden eigene Dateien — der Monolith löst sich als Nebeneffekt auf.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">Norwegische Fjorde</div>
+            <div class="ph-sub">8 Tage · 5 Häfen · 3 Länder</div>
+            <div class="ph-hero" style="height:52px"><div class="shade"></div>
+              <div class="inner"><h5 style="font-size:9px">Tag 3 · Geiranger</h5><div class="meta">4 Fotos · Wanderung Dalsnibba</div></div>
+            </div>
+            <div class="ph-row"><span><b>Tag 4</b> · Seetag</span><span style="color:#8E8E93">Notiz +</span></div>
+            <div class="ph-row"><span><b>Tag 5</b> · Bergen</span><span style="color:var(--sunset)">2 Fotos</span></div>
+            <div class="ph-row" style="opacity:.55"><span>Eckdaten &amp; Ausgaben</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-tabs"><span class="on">Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span>Mehr</span></div>
+          </div>
+        </div><div class="caption">Journal-Kern: die Reise als Abfolge von Momenten, Verwaltung sekundär</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>XL</strong></span><span class="fact">Risiko <strong>High</strong></span><span class="fact">Nutzen <strong>Produktversprechen und Produkt decken sich</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">3.2 · Referenzdaten als 2.265 Zeilen Hand-Swift</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>1.956 Häfen, fest im Code, deutsch beschriftet</h4>
+        <p>Die Hafendatenbank ist eine Swift-Datei. Pflege heißt Code ändern und neu ausliefern. Die Ländernamen sind deutsche Zeichenketten — daher die Anzeige „Dänemark" für englische Nutzer, dauerhaft in den Reisedaten gespeichert.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 128">
+            <rect class="bad" x="8" y="12" width="120" height="50" rx="6"/>
+            <text x="18" y="28">PortSuggestion.swift</text><text class="lbl" x="18" y="40">2.265 Zeilen Hand-Swift</text><text class="lbl" x="18" y="51">country: "Dänemark"</text>
+            <path class="arr" d="M130,37 L156,37"/>
+            <rect class="bad" x="158" y="12" width="134" height="50" rx="6"/>
+            <text x="168" y="28">Anzeige &amp; Speicherung</text><text class="lbl" x="168" y="40">deutscher Name landet</text><text class="lbl" x="168" y="51">dauerhaft in den Reisedaten</text>
+            <rect class="bad" x="8" y="70" width="284" height="46" rx="6"/>
+            <text x="18" y="88">Folgen</text>
+            <text class="lbl" x="18" y="100">85,6 % der Einträge im EN-Build falsch · Pflege nur per Release ·</text>
+            <text class="lbl" x="18" y="111">deutscher Wert wird per iCloud auf alle Geräte verteilt</text>
+          </svg>
+        </div><div class="caption">Referenzdaten ohne Pipeline und ohne Sprachschicht</div></div>
+        <div class="evidence">1.956 Einträge, 117 Länder, davon rund 1.675 im Englischen abweichend · Suche nach <code>forRegionCode</code>/<code>countryCode</code> im Projekt: 0 Treffer</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Ländercode statt Ländername</h4>
+        <p>Die Referenzdaten tragen einen ISO-Ländercode; angezeigt wird, was das System in der Sprache des Nutzers daraus macht. Löst DE und EN in einem Schritt, ohne Datenmigration — der alte Wert bleibt als Rückfall.</p>
+        <div class="proto diagram"><div class="stage">
+          <svg class="diag" viewBox="0 0 300 128">
+            <rect class="good" x="8" y="12" width="120" height="50" rx="6"/>
+            <text x="18" y="28">Referenzdaten</text><text class="lbl" x="18" y="40">countryCode: "DK"</text><text class="lbl" x="18" y="51">Altwert bleibt Rückfall</text>
+            <path class="arr" d="M130,37 L156,37"/>
+            <rect class="good" x="158" y="12" width="134" height="50" rx="6"/>
+            <text x="168" y="28">System übersetzt</text><text class="lbl" x="168" y="40">„Dänemark" oder „Denmark"</text><text class="lbl" x="168" y="51">je nach Gerätesprache</text>
+            <rect class="good" x="8" y="70" width="284" height="46" rx="6"/>
+            <text x="18" y="88">Folgen</text>
+            <text class="lbl" x="18" y="100">alle 117 Länder in jeder Systemsprache korrekt · null Pflegeaufwand ·</text>
+            <text class="lbl" x="18" y="111">migrationsfrei, weil der bestehende Wert Rückfall bleibt</text>
+          </svg>
+        </div><div class="caption">Eine Strukturänderung ersetzt 117 Übersetzungsschlüssel</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>M</strong></span><span class="fact">Risiko <strong>Med</strong></span><span class="fact">Nutzen <strong>Größter Einzelposten der EN-Lücke fällt weg</strong></span></div>
+      </div>
+    </div>
+
+    <p class="pair-title">3.3 · Freemium ist geplant, reserviert — und nicht vorhanden</p>
+    <div class="pair">
+      <div class="card ist"><span class="tag">IST · heute</span>
+        <h4>0,99 € Einmalkauf, kein Abo, ADR-004 leer</h4>
+        <p>Die Produktrichtung nennt ein Freemium-Abo. Im Code gibt es kein einziges StoreKit-Symbol; ADR-004 ist seit Juli für genau diese Welle reserviert und nie geschrieben worden. Alle Funktionen sind für alle da.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">Mehr</div>
+            <div class="ph-sec">Daten</div>
+            <div class="ph-row"><span>Export / Import</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-row"><span>iCloud-Sync</span><span style="color:var(--sea-green)">aktiv</span></div>
+            <div class="ph-sec">KI</div>
+            <div class="ph-row"><span>Gemini-API-Key</span><span style="color:#8E8E93">eigener Key</span></div>
+            <div class="ph-sec">Info</div>
+            <div class="ph-row"><span>Version</span><span style="color:#8E8E93">1.7.0 (23)</span></div>
+            <div class="ph-row"><span>GitHub</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-sub" style="margin-top:6px;font-size:5.5px;text-align:center">kein Premium-Bereich, kein Datenschutz-Link</div>
+            <div class="ph-tabs"><span>Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span class="on">Mehr</span></div>
+          </div>
+        </div><div class="caption">Einstellungen heute — nachgebaut aus SettingsView.swift</div></div>
+        <div class="evidence">Suche über den App-Code: kein StoreKit-Symbol · ADR-004 „reserviert — Welle C2 StoreKit-2-Freemium" seit 04.07.2026 unbeschrieben</div>
+      </div>
+      <div class="card soll"><span class="tag">SOLL · Ziel</span>
+        <h4>Entscheiden statt reservieren</h4>
+        <p>Entweder Freemium bauen (ADR-004 schreiben, Grenze festlegen, StoreKit anbinden) — oder den Einmalkauf zur bewussten Entscheidung erklären und die Reservierung auflösen. Beim gleichen Durchgang bekommt der Info-Bereich Datenschutz-Link und Support.</p>
+        <div class="proto"><div class="stage">
+          <div class="phone">
+            <div class="ph-title" style="font-size:10px">Mehr</div>
+            <div class="ph-note info">ShipTrip Plus · unbegrenzte Reisen, KI-Import ohne eigenen Key</div>
+            <div class="ph-btn" style="margin-bottom:5px">Plus ausprobieren</div>
+            <div class="ph-sec">Daten</div>
+            <div class="ph-row"><span>Export / Import</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-row"><span>iCloud-Sync</span><span style="color:var(--sea-green)">aktiv</span></div>
+            <div class="ph-sec">Info</div>
+            <div class="ph-row"><span>Datenschutz</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-row"><span>Support kontaktieren</span><span style="color:#8E8E93">›</span></div>
+            <div class="ph-tabs"><span>Reisen</span><span>Karte</span><span>Wunsch</span><span>Bilanz</span><span class="on">Mehr</span></div>
+          </div>
+        </div><div class="caption">Premium-Einstieg plus die fehlenden Pflicht-Links an einer Stelle</div></div>
+        <div class="factrow"><span class="fact">Aufwand <strong>L</strong></span><span class="fact">Risiko <strong>High</strong></span><span class="fact">Nutzen <strong>Geschäftsmodell entschieden statt aufgeschoben</strong></span></div>
+      </div>
+    </div>
+  </section>
+
+  <h3>Richtungs-Vergleich &amp; Empfehlung</h3>
+  <table>
+    <tr><th>Richtung</th><th>Wirkung</th><th>Aufwand</th><th>Risiko</th><th>Kurstreue</th></tr>
+    <tr class="recommended"><td><strong>1 · Einreichung wasserdicht</strong> ★ zuerst</td><td>Hoch — beseitigt die einzige unwahre Aussage im Einreichungspaket und den einzigen Alltags-Datenverlust</td><td>S (Tage)</td><td>Low</td><td>voll auf Kurs</td></tr>
+    <tr><td><strong>2 · Wiederholbar ausliefern</strong></td><td>Mittel kurzfristig, hoch ab dem nächsten Release — macht Qualitätsaussagen überprüfbar</td><td>M–L (1–2 Wochen)</td><td>Low–Med</td><td>leichte Abweichung, Kern intakt</td></tr>
+    <tr><td><strong>3 · Vom Formular zum Reisetagebuch</strong></td><td>Sehr hoch auf Produktebene — löst zugleich die EN-Lücke an der Wurzel</td><td>XL (Monate)</td><td>High</td><td>Neuausrichtung im Rahmen der erklärten Produktvision</td></tr>
+  </table>
+  <p><strong>Empfehlung: 1 sofort, 2 als Nächstes, 3 als Zielbild für 1.8/2.0.</strong> Richtung 1 ist keine Wahl, sondern Pflicht — solange den Review Notes eine Disclosure zugesagt wird, die es nicht gibt, ist jede Einreichung angreifbar, und der Aufwand liegt bei Tagen. Richtung 2 lohnt sich, sobald ein weiterer Release ansteht: Ohne geteiltes Schema und CI wiederholt sich bei jedem Mal dieselbe Handarbeit, und der eigene Prozess hat mit F17 bereits bewiesen, dass er Befunde zwar findet, aber ohne Automatik nicht abarbeitet. Richtung 3 ist die inhaltlich stärkste, aber sie braucht Richtung 2 als Unterbau — ein Umbau dieser Größe ohne reproduzierbare Testlage wäre fahrlässig. Ein Baustein aus Richtung 3 lohnt sich allerdings sofort: der Ländercode (3.2), weil er den größten Einzelposten der Lokalisierungslücke mit mittlerem Aufwand an der Wurzel löst.</p>
+
+  <h2 id="roadmap">Roadmap</h2>
+  <table>
+    <tr><th>Phase</th><th>Inhalt</th><th>Abhängigkeit</th><th>Aufwand</th></tr>
+    <tr><td><strong>P0 · Vor der nächsten Einreichung</strong></td><td>Gemini-Disclosure in den KI-Import <em>oder</em> Review Notes korrigieren · Altersfreigabe-Entscheidung treffen und Blocker abhaken · Koordinatenverlust beim Hafen-Bearbeiten beheben (mit Regressionstest)</td><td>keine</td><td>S</td></tr>
+    <tr><td><strong>P1 · Quick Wins</strong></td><td>Pluralformen auf dem Startbildschirm · Datenschutz-Link und Support in den Info-Bereich · Screenshot-Testpfad über Umgebungsvariable (macht 9 UI-Tests wieder lauffähig) · CHANGELOG-Schnitt auf 1.7.0</td><td>keine</td><td>S</td></tr>
+    <tr><td><strong>P2 · Fundament</strong></td><td>Geteiltes Schema + Testplan einchecken · <code>Gemfile</code> mit gepinnter Fastlane · schlanke CI für Build und Unit-Tests · Kalenderrechte im Testlauf automatisieren</td><td>P1 (Testpfad-Fix)</td><td>M</td></tr>
+    <tr><td><strong>P3 · Lokalisierung an der Wurzel</strong></td><td>ISO-Ländercode in den Referenzdaten (ADR schreiben) · die 36 fehlenden Strings nachziehen · Katalog-Abgleich als Vor-Release-Prüfung in die CI</td><td>P2 (CI)</td><td>M–L</td></tr>
+    <tr><td><strong>P4 · Datensicherheit</strong></td><td>Export um die vier fehlenden Typen ergänzen · Export streamen und vom Haupt-Thread lösen · Thumbnail-Reparaturlauf gegen Endlosschleife absichern (erster Test der Datei)</td><td>P2</td><td>M</td></tr>
+    <tr><td><strong>P5 · Aufräumen</strong></td><td>Vier Dialoge aus <code>CruiseFormView</code> in eigene Dateien (reine Verschiebung, wie seinerzeit bei MapView) · 200-Zeilen-Duplikation zusammenführen · Doku-Nachzug (MODELS, ARCHITECTURE, CONTRIBUTING) · Git-Historie entlasten</td><td>P2</td><td>M</td></tr>
+    <tr><td><strong>P6 · Produktkurs</strong></td><td>Journal-Kern (ADR-003) · Freemium entscheiden (ADR-004 schreiben oder Reservierung auflösen)</td><td>P2–P5</td><td>XL</td></tr>
+  </table>
+
+  <h2 id="gates">Gate-Log</h2>
+  <p>Auf deine Vorgabe hin lief das Audit im <strong>Workflow-Modus mit ausschließlich Claude-Agenten</strong> — Codex war ausdrücklich nicht Teil des Auftrags. Die Codex-Gates des Skills entfallen damit nicht wegen Nichterreichbarkeit, sondern per Entscheidung. Ersetzt wurden sie durch eine adversariale Verifikationsschicht aus unabhängigen Claude-Prüfern und durch echte Testläufe.</p>
+  <table>
+    <tr><th>Gate</th><th>Status</th><th>Umsetzung</th><th>Ergebnis / Änderung</th></tr>
+    <tr><td>A · Plan</td><td class="gate-ok">gelaufen</td><td>Projektkarte vor dem Fan-out erhoben, 11 Rollen mit begrenztem Scope beauftragt</td><td>Rollen ohne Fläche entfielen; Abhängigkeits-Checks als N/A eingestuft (0 Fremdabhängigkeiten)</td></tr>
+    <tr><td>B · Befunde</td><td class="gate-ok">gelaufen</td><td>20 unabhängige Gegen-Prüfer mit dem Auftrag zu <em>widerlegen</em>; Critical-Kandidaten doppelt (Reproduzierbarkeit + Auswirkung)</td><td><strong>Von 13 gemeldeten High-Befunden hielten 3 stand</strong>, 10 wurden auf Medium/Low heruntergestuft. Kein Befund wurde vollständig widerlegt — überzeichnet war jeweils die Auswirkung, nicht die Substanz.</td></tr>
+    <tr><td>B+ · Laufzeit</td><td class="gate-ok">gelaufen</td><td>Eigene Testläufe auf iPhone-17-Pro-Simulator (Unit + UI), plus eigenes Nachlesen aller drei High-Befunde</td><td>Unit-Suite grün (4 Kalender-Tests scheiterten erst ohne Rechte, nach dokumentiertem Grant grün). UI-Suite: 9 Fehlschläge durch F17 direkt reproduziert. Eine eigene Verdachtshypothese zum Thumbnail-Loop habe ich dabei <em>widerlegt</em>.</td></tr>
+    <tr><td>C · Vorschläge</td><td class="gate-skip">nicht als eigener Gate gelaufen</td><td>Der Skill sieht hier einen frischen fremden Reviewer vor</td><td>Entfällt im gewählten Modus. Die IST/SOLL-Paare beruhen auf verifizierten Befunden, sind aber nicht durch eine zweite Instanz gegengelesen.</td></tr>
+    <tr><td>C+ · Vollständigkeit</td><td class="gate-ok">gelaufen</td><td>Vollständigkeits-Kritiker über alle 88 Befunde, danach 4 gezielte Lücken-Nachpässe</td><td>Deckte 4 blinde Flecken auf, darunter die beiden folgenreichsten Befunde überhaupt: die zugesagte Gemini-Disclosure und die deutschen Ländernamen. Löste außerdem einen Zahlenwiderspruch zwischen Rollen auf (3 vs. 28 vs. 4 → belastbar 36).</td></tr>
+    <tr><td>D · Final (Codex)</td><td class="gate-skip">per Auftrag entfallen</td><td>—</td><td>Kein externes Sign-off. Das ist bewusst so gewählt und keine Panne — bei der nächsten Einreichung wäre ein Codex-Durchgang über P0 trotzdem sinnvoll.</td></tr>
+  </table>
+
+  <h2 id="appendix">Anhang</h2>
+
+  <details class="finding"><summary>Projekt-Map</summary><div class="body">
+    <p><strong>Stack:</strong> Swift 6.0 (strenge Nebenläufigkeit „complete"), SwiftUI, SwiftData mit CloudKit-Spiegelung in den privaten Container <code>iCloud.com.andre.ShipTrip</code>, MapKit, Swift Charts, EventKit, UserNotifications. iOS 18.5+, Bundle <code>com.andre.ShipTrip</code>, Version 1.7.0 (23). <strong>Null Fremdabhängigkeiten</strong> — keine einzige SPM-Referenz.</p>
+    <p><strong>Einstieg:</strong> <code>ShipTripApp.swift</code> baut ein 8-Modell-Schema und fällt bei Store-Fehlern gestaffelt auf In-Memory und einen Fehlerschirm zurück. <strong>Oberflächen:</strong> 5 Tabs — Reisen, Karte, Wunschreisen, Bilanz, Mehr.</p>
+    <p><strong>Datenmodelle (8):</strong> Cruise, Port, Expense, Photo, Deal, CustomShippingLine, CustomShip, HiddenCatalogItem. Reise hat Kaskaden-Beziehungen zu Hafen, Ausgabe und Foto; Bilder liegen extern.</p>
+    <p><strong>Externe Dienste:</strong> CloudKit (Production-Schema promotet), Google Gemini <code>gemini-2.5-flash</code> mit nutzereigenem Key aus dem Keychain, EventKit für Kalender-Sync, lokale Benachrichtigungen.</p>
+    <p><strong>Auslieferung:</strong> fastlane mit 8 Lanes (validate, upload_testflight, prepare_app_store u. a.), App-Store-Connect-Key ausschließlich aus Umgebungsvariablen. Keine CI.</p>
+    <p><strong>Umfang:</strong> ~23.800 Zeilen Swift in 62 Dateien, davon ~2.265 Zeilen statische Hafen-Referenzdaten. Repo: 648 getrackte Dateien, 56 Commits, <code>.git</code> 458 MB.</p>
+  </div></details>
+
+  <details class="finding"><summary>Checks gelaufen / nicht gelaufen</summary><div class="body">
+    <p><strong>Gelaufen:</strong></p>
+    <ul class="plain">
+      <li>Vollständiger Unit-Test-Lauf auf iPhone 17 Pro (Simulator) — grün, nachdem die in <code>SETUP.md</code> dokumentierten Kalenderrechte erteilt waren. Ohne Grant scheitern exakt die vier angekündigten Migrationstests.</li>
+      <li>Vollständiger UI-Test-Lauf — grün bis auf die 9 durch F17 blockierten Screenshot-Tests. Drei weitere Fehlschläge (0,000 s) waren Simulator-Infrastruktur unter Last („No matching device"), kein App-Defekt.</li>
+      <li>11 Spezialisten-Pässe, 20 adversariale Verifikationen, 1 Vollständigkeits-Kritik, 4 Lücken-Nachpässe — insgesamt 35 Agenten, 958 Werkzeugaufrufe.</li>
+      <li>Eigenes Nachlesen aller drei High-Befunde sowie der Store-Compliance-Punkte am Original-Code.</li>
+      <li>Abgleich der Live-Datenschutzseiten gegen das App-Verhalten; Apple-Dokumentation zur nicht lokalisierenden <code>Text</code>-Überladung gegengeprüft.</li>
+    </ul>
+    <p><strong>Nicht gelaufen:</strong></p>
+    <ul class="plain">
+      <li>Abhängigkeits- und Sicherheitslücken-Prüfung — gegenstandslos, das Projekt hat keine Fremdabhängigkeiten (verifiziert).</li>
+      <li>Test auf echtem Gerät und echter iCloud-Sync zwischen zwei Geräten (ADR-002 verlangt diesen Smoke-Test; er ist bis heute nicht belegt).</li>
+      <li>Messung tatsächlicher Speicher-/Zeitwerte beim Export — die Aussage beruht auf Code-Analyse, nicht auf einem Profiling-Lauf.</li>
+      <li>Kein externes Modell als Gegeninstanz (per Auftrag).</li>
+    </ul>
+  </div></details>
+
+  <details class="finding"><summary>Unsicherheiten &amp; offene Fragen</summary><div class="body">
+    <ul class="plain">
+      <li><strong>Rot-zu-Grün-Nachweis der Bugfixes</strong> ist aus dem Repo nicht belegbar — belegbar ist nur, dass Fix und Repro-Test im selben Commit liegen. Für den Kalenderfix existiert zusätzlich eine Gate-Evidenz in <code>.planning/</code>, die aber untracked ist.</li>
+      <li><strong>Die 36 unlokalisierten Fundstellen</strong> wurden per Skript über die Literale ermittelt und stichprobenhaft geprüft; einzelne könnten theoretisch über abweichende Schlüssel doch angebunden sein.</li>
+      <li><strong>Eintrittswahrscheinlichkeit der Thumbnail-Endlosschleife</strong> bleibt offen: Der Defekt ist sicher, ein realer Auslöserpfad wurde gesucht und nicht gefunden.</li>
+      <li><strong>Bewertung der Commit-Granularität</strong> hängt am jeweiligen Auftrag — die ursprünglichen Briefings liegen nicht im Repo, bewertet wurde Commit-Message gegen Diff.</li>
+      <li><strong>Regeln galten nicht immer:</strong> CLAUDE.md existiert erst seit v1.5.0; ältere Commits wurden nicht dagegen bewertet.</li>
+    </ul>
+  </div></details>
+
+  <details class="finding"><summary>Befund-Index (alle 88 + 22 aus Lücken-Nachpässen)</summary><div class="body">
+    <p class="muted">Verteilung nach Verifikation: 0 Critical · 3 High · 46 Medium · 32 Low (Spezialisten-Pässe) plus 22 Befunde aus den vier Lücken-Nachpässen. Rollen: Projekt-Map/Repo-Hygiene, Architektur, Code-Qualität, CLAUDE.md-Compliance, Funktionalität, Tests, Dokumentation, UI/UX, Security &amp; Privacy, Performance, Developer Experience.</p>
+    <p>Die vollständigen Rohdaten aller Befunde inklusive Evidenz, Prüfer-Verdikte und Begründungen liegen im Workflow-Journal unter <code>~/.claude/projects/…/subagents/workflows/wf_39e1eb73-2a5/journal.jsonl</code>. Mehrfach unabhängig gefundene Stellen (starkes Signal): der Thumbnail-Reparaturlauf von 3 Rollen, das fehlende geteilte Schema von 2, die CHANGELOG-Drift von 3.</p>
+  </div></details>
+
+</div>
+<script>
+  function showDir(i, btn) {
+    document.querySelectorAll('.direction').forEach((d, j) => d.classList.toggle('active', i === j));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{
+  "$schema-note": "Karten-Redesign v2 'Journal Atlas' (Richtung 2, empfohlen). Companion zu karten-redesign-v2-spec.md — bindend fuer den Developer. 'bestehend' = unveraendert aus Color+Theme.swift uebernommen, 'neu' = in dieser Welle zu ergaenzen.",
+  "color": {
+    "chrome": {
+      "solidBackground": { "light": "#1A365D", "dark": "#1A365D", "status": "bestehend (Color.navyDark)" },
+      "solidIcon": { "light": "#FFFFFF", "dark": "#FFFFFF", "status": "neu" }
+    },
+    "sheet": {
+      "surface": { "light": "#FBF7F0", "dark": "#15212E", "status": "neu (Color.journalSurface)" },
+      "timelineLine": { "light": "rgba(26,54,93,0.18)", "dark": "rgba(255,255,255,0.14)", "status": "neu (Color.journalTimeline)" },
+      "presentationBackgroundV1": { "light": "regularMaterial", "dark": "regularMaterial", "status": "v1-Kompromiss statt vollem Solid, siehe Spec Abschnitt 5" }
+    },
+    "pin": {
+      "halo": { "light": "#FBF7F0", "dark": "#15212E", "status": "geaendert (Ist: hartkodiert .white)" },
+      "portPin": { "light": "#0C8CE9", "dark": "#0C8CE9", "status": "bestehend" },
+      "homePortPin": { "light": "#FF6B35", "dark": "#FF6B35", "status": "bestehend" },
+      "endPortPin": { "light": "#34C759", "dark": "#34C759", "status": "bestehend" },
+      "seaDayPin": { "light": "#36A9F0", "dark": "#36A9F0", "status": "bestehend" }
+    },
+    "routeColors": {
+      "values": ["#0C8CE9", "#FF6B35", "#34C759", "#AF52DE", "#FF2D92", "#32ADE6", "#5856D6", "#00C7BE"],
+      "status": "bestehend, unveraendert (Color.routeColors / routeColor(at:))"
+    },
+    "routeShadow": {
+      "color": "routeColor.opacity(0.30)",
+      "status": "neu — Underlay-Polyline als Schatten-Workaround, Politur-Nice-to-have"
+    }
+  },
+  "typography": {
+    "family": "system (SF Pro)",
+    "sheetTitle": "headline (17pt semibold)",
+    "sheetSubtitle": "caption (12pt)",
+    "stopName": "body semibold (16-17pt)",
+    "stopSubline": "caption secondary (12pt)"
+  },
+  "spacing": {
+    "sheetPeekHeight": 140,
+    "sheetRowMinHeight": 56,
+    "touchTargetMin": 44,
+    "chromeButtonDiameter": 42
+  },
+  "radius": {
+    "sheet": 28,
+    "chromeButton": 21,
+    "note": "map to DesignRadius.lg / Circle() — see Color+Theme.swift"
+  },
+  "route": {
+    "widthFocused": 4.5,
+    "widthOther": 2.5,
+    "opacityFocused": 0.85,
+    "opacityOther": 0.35,
+    "lineCap": "round",
+    "lineJoin": "round",
+    "curveAlgorithm": "Catmull-Rom spline through validPorts, degenerate 2-3 point fallback via mirrored endpoints",
+    "pointBudgetTotal": 280,
+    "pointsPerSegmentRange": [6, 24]
+  },
+  "elevation": {
+    "chromeButtonShadow": { "color": "rgba(0,0,0,0.28)", "radius": 10, "y": 4 },
+    "sheetShadow": "system default via .sheet()"
+  },
+  "motion": {
+    "cameraZoom": { "duration": 500, "easing": "easeInOut", "status": "bestehend (zoomTo)" },
+    "sheetDetentCollapse": { "note": "implizit ueber SwiftUI presentationDetents selection-Binding beim Stop-Tap" }
+  }
+}

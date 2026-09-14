@@ -1,0 +1,8 @@
+{
+  "platform": "swiftui",
+  "entry": "karte-1",
+  "screens": ["karte-1", "karte-2", "karte-3", "karte-4"],
+  "device": "iPhone 17 Pro",
+  "scheme": "ProtoOnboarding",
+  "bundleId": "com.proto.onboarding.protoOnboarding"
+}

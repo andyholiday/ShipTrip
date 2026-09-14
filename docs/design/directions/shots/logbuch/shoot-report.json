@@ -1,0 +1,741 @@
+{
+  "tool": "shoot",
+  "report_version": 2,
+  "platform": "swiftui",
+  "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+  "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-journal",
+  "target": "shoot-logbuch-76855 (iOS-26-5)",
+  "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch",
+  "started_at": "2026-08-27T07:31:49Z",
+  "finished_at": "2026-08-27T07:32:43Z",
+  "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-journal --all --mode both --device 56ED8DFE-F4FC-4E03-BDE0-7AAC14588AFB --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch",
+  "screens": [
+    "journal--light",
+    "journal--dark",
+    "journal.tag3--light",
+    "journal.tag3--dark",
+    "journal.tag5--light",
+    "journal.tag5--dark",
+    "journal.motion--light",
+    "journal.motion--dark",
+    "editor--light",
+    "editor--dark",
+    "editor.scrolled--light",
+    "editor.scrolled--dark"
+  ],
+  "shots": [
+    {
+      "screen": "journal",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.png",
+        "bytes": 1099649,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 769,
+        "dominance": 0.469004329004329,
+        "mean_luminance": 222.73,
+        "stddev_luminance": 47.21,
+        "frame": {
+          "distinct_colors": 904,
+          "dominance": 0.4300114111829593,
+          "mean_luminance": 221.84,
+          "stddev_luminance": 51.55
+        }
+      },
+      "changed_fraction": 0.00367,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.thumb.png"
+    },
+    {
+      "screen": "journal",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.png",
+        "bytes": 1085880,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 770,
+        "dominance": 0.4697835497835498,
+        "mean_luminance": 49.39,
+        "stddev_luminance": 49.95,
+        "frame": {
+          "distinct_colors": 903,
+          "dominance": 0.4305819703309243,
+          "mean_luminance": 47.73,
+          "stddev_luminance": 52.31
+        }
+      },
+      "changed_fraction": 0.00348,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.thumb.png"
+    },
+    {
+      "screen": "journal.tag3",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.png",
+        "bytes": 711687,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 186,
+        "dominance": 0.5743290043290044,
+        "mean_luminance": 230.86,
+        "stddev_luminance": 34.04,
+        "frame": {
+          "distinct_colors": 585,
+          "dominance": 0.5144922023583112,
+          "mean_luminance": 225.53,
+          "stddev_luminance": 44.37
+        }
+      },
+      "changed_fraction": 0.00292,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.thumb.png"
+    },
+    {
+      "screen": "journal.tag3",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.png",
+        "bytes": 711428,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 222,
+        "dominance": 0.5702597402597402,
+        "mean_luminance": 42.69,
+        "stddev_luminance": 33.25,
+        "frame": {
+          "distinct_colors": 640,
+          "dominance": 0.5096614682388741,
+          "mean_luminance": 42.44,
+          "stddev_luminance": 37.0
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.thumb.png"
+    },
+    {
+      "screen": "journal.tag5",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.png",
+        "bytes": 896958,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 799,
+        "dominance": 0.5475324675324675,
+        "mean_luminance": 221.78,
+        "stddev_luminance": 54.76,
+        "frame": {
+          "distinct_colors": 818,
+          "dominance": 0.5084823126664131,
+          "mean_luminance": 220.94,
+          "stddev_luminance": 57.7
+        }
+      },
+      "changed_fraction": 0.00322,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.thumb.png"
+    },
+    {
+      "screen": "journal.tag5",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.png",
+        "bytes": 899295,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 779,
+        "dominance": 0.5416450216450216,
+        "mean_luminance": 47.12,
+        "stddev_luminance": 46.39,
+        "frame": {
+          "distinct_colors": 802,
+          "dominance": 0.5027006466337011,
+          "mean_luminance": 43.98,
+          "stddev_luminance": 45.64
+        }
+      },
+      "changed_fraction": 0.00133,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.thumb.png"
+    },
+    {
+      "screen": "journal.motion",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.png",
+        "bytes": 1099649,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 769,
+        "dominance": 0.469004329004329,
+        "mean_luminance": 222.73,
+        "stddev_luminance": 47.21,
+        "frame": {
+          "distinct_colors": 904,
+          "dominance": 0.4300114111829593,
+          "mean_luminance": 221.84,
+          "stddev_luminance": 51.55
+        }
+      },
+      "changed_fraction": 0.00367,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.thumb.png"
+    },
+    {
+      "screen": "journal.motion",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.png",
+        "bytes": 1085879,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 770,
+        "dominance": 0.4697835497835498,
+        "mean_luminance": 49.39,
+        "stddev_luminance": 49.95,
+        "frame": {
+          "distinct_colors": 903,
+          "dominance": 0.4305819703309243,
+          "mean_luminance": 47.73,
+          "stddev_luminance": 52.31
+        }
+      },
+      "changed_fraction": 0.00348,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.thumb.png"
+    },
+    {
+      "screen": "editor",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.png",
+        "bytes": 583619,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 684,
+        "dominance": 0.3225974025974026,
+        "mean_luminance": 231.36,
+        "stddev_luminance": 34.4,
+        "frame": {
+          "distinct_colors": 707,
+          "dominance": 0.28345378470901483,
+          "mean_luminance": 229.85,
+          "stddev_luminance": 41.93
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.thumb.png"
+    },
+    {
+      "screen": "editor",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.png",
+        "bytes": 558620,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 679,
+        "dominance": 0.32575757575757575,
+        "mean_luminance": 39.42,
+        "stddev_luminance": 33.6,
+        "frame": {
+          "distinct_colors": 699,
+          "dominance": 0.28623050589577786,
+          "mean_luminance": 36.51,
+          "stddev_luminance": 33.99
+        }
+      },
+      "changed_fraction": 0.00144,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.thumb.png"
+    },
+    {
+      "screen": "editor.scrolled",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.png",
+        "bytes": 718301,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 733,
+        "dominance": 0.30372294372294373,
+        "mean_luminance": 233.74,
+        "stddev_luminance": 30.22,
+        "frame": {
+          "distinct_colors": 752,
+          "dominance": 0.28098136173449983,
+          "mean_luminance": 232.28,
+          "stddev_luminance": 38.74
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.thumb.png"
+    },
+    {
+      "screen": "editor.scrolled",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.png",
+        "bytes": 691117,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 709,
+        "dominance": 0.2677056277056277,
+        "mean_luminance": 34.62,
+        "stddev_luminance": 29.57,
+        "frame": {
+          "distinct_colors": 726,
+          "dominance": 0.23560289083301636,
+          "mean_luminance": 31.3,
+          "stddev_luminance": 29.93
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.thumb.png"
+    }
+  ],
+  "videos": [],
+  "notes": [
+    "1 screen(s) in this run are registered as self-animating entries: journal.motion. What is shot of each is its still - the pre-motion first frame - and a still cannot show the movement. The stability reading on such a shot describes the animation, not a defect.\n  What to do: judge the movement live on the running prototype (Stage 4); take the plain <screen> entry wherever a still has to stand as evidence.",
+    "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at."
+  ],
+  "ok": true,
+  "all_runs_ok": true,
+  "runs": [
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-journal",
+      "target": "shoot-logbuch-76855 (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch",
+      "started_at": "2026-08-27T07:31:49Z",
+      "finished_at": "2026-08-27T07:32:43Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-journal --all --mode both --device 56ED8DFE-F4FC-4E03-BDE0-7AAC14588AFB --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch",
+      "screens": [
+        "journal--light",
+        "journal--dark",
+        "journal.tag3--light",
+        "journal.tag3--dark",
+        "journal.tag5--light",
+        "journal.tag5--dark",
+        "journal.motion--light",
+        "journal.motion--dark",
+        "editor--light",
+        "editor--dark",
+        "editor.scrolled--light",
+        "editor.scrolled--dark"
+      ],
+      "shots": [
+        {
+          "screen": "journal",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.png",
+            "bytes": 1099649,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 769,
+            "dominance": 0.469004329004329,
+            "mean_luminance": 222.73,
+            "stddev_luminance": 47.21,
+            "frame": {
+              "distinct_colors": 904,
+              "dominance": 0.4300114111829593,
+              "mean_luminance": 221.84,
+              "stddev_luminance": 51.55
+            }
+          },
+          "changed_fraction": 0.00367,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--light.thumb.png"
+        },
+        {
+          "screen": "journal",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.png",
+            "bytes": 1085880,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 770,
+            "dominance": 0.4697835497835498,
+            "mean_luminance": 49.39,
+            "stddev_luminance": 49.95,
+            "frame": {
+              "distinct_colors": 903,
+              "dominance": 0.4305819703309243,
+              "mean_luminance": 47.73,
+              "stddev_luminance": 52.31
+            }
+          },
+          "changed_fraction": 0.00348,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal--dark.thumb.png"
+        },
+        {
+          "screen": "journal.tag3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.png",
+            "bytes": 711687,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 186,
+            "dominance": 0.5743290043290044,
+            "mean_luminance": 230.86,
+            "stddev_luminance": 34.04,
+            "frame": {
+              "distinct_colors": 585,
+              "dominance": 0.5144922023583112,
+              "mean_luminance": 225.53,
+              "stddev_luminance": 44.37
+            }
+          },
+          "changed_fraction": 0.00292,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--light.thumb.png"
+        },
+        {
+          "screen": "journal.tag3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.png",
+            "bytes": 711428,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 222,
+            "dominance": 0.5702597402597402,
+            "mean_luminance": 42.69,
+            "stddev_luminance": 33.25,
+            "frame": {
+              "distinct_colors": 640,
+              "dominance": 0.5096614682388741,
+              "mean_luminance": 42.44,
+              "stddev_luminance": 37.0
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag3--dark.thumb.png"
+        },
+        {
+          "screen": "journal.tag5",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.png",
+            "bytes": 896958,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 799,
+            "dominance": 0.5475324675324675,
+            "mean_luminance": 221.78,
+            "stddev_luminance": 54.76,
+            "frame": {
+              "distinct_colors": 818,
+              "dominance": 0.5084823126664131,
+              "mean_luminance": 220.94,
+              "stddev_luminance": 57.7
+            }
+          },
+          "changed_fraction": 0.00322,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--light.thumb.png"
+        },
+        {
+          "screen": "journal.tag5",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.png",
+            "bytes": 899295,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 779,
+            "dominance": 0.5416450216450216,
+            "mean_luminance": 47.12,
+            "stddev_luminance": 46.39,
+            "frame": {
+              "distinct_colors": 802,
+              "dominance": 0.5027006466337011,
+              "mean_luminance": 43.98,
+              "stddev_luminance": 45.64
+            }
+          },
+          "changed_fraction": 0.00133,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.tag5--dark.thumb.png"
+        },
+        {
+          "screen": "journal.motion",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.png",
+            "bytes": 1099649,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 769,
+            "dominance": 0.469004329004329,
+            "mean_luminance": 222.73,
+            "stddev_luminance": 47.21,
+            "frame": {
+              "distinct_colors": 904,
+              "dominance": 0.4300114111829593,
+              "mean_luminance": 221.84,
+              "stddev_luminance": 51.55
+            }
+          },
+          "changed_fraction": 0.00367,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--light.thumb.png"
+        },
+        {
+          "screen": "journal.motion",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.png",
+            "bytes": 1085879,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 770,
+            "dominance": 0.4697835497835498,
+            "mean_luminance": 49.39,
+            "stddev_luminance": 49.95,
+            "frame": {
+              "distinct_colors": 903,
+              "dominance": 0.4305819703309243,
+              "mean_luminance": 47.73,
+              "stddev_luminance": 52.31
+            }
+          },
+          "changed_fraction": 0.00348,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/journal.motion--dark.thumb.png"
+        },
+        {
+          "screen": "editor",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.png",
+            "bytes": 583619,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 684,
+            "dominance": 0.3225974025974026,
+            "mean_luminance": 231.36,
+            "stddev_luminance": 34.4,
+            "frame": {
+              "distinct_colors": 707,
+              "dominance": 0.28345378470901483,
+              "mean_luminance": 229.85,
+              "stddev_luminance": 41.93
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--light.thumb.png"
+        },
+        {
+          "screen": "editor",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.png",
+            "bytes": 558620,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 679,
+            "dominance": 0.32575757575757575,
+            "mean_luminance": 39.42,
+            "stddev_luminance": 33.6,
+            "frame": {
+              "distinct_colors": 699,
+              "dominance": 0.28623050589577786,
+              "mean_luminance": 36.51,
+              "stddev_luminance": 33.99
+            }
+          },
+          "changed_fraction": 0.00144,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor--dark.thumb.png"
+        },
+        {
+          "screen": "editor.scrolled",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.png",
+            "bytes": 718301,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 733,
+            "dominance": 0.30372294372294373,
+            "mean_luminance": 233.74,
+            "stddev_luminance": 30.22,
+            "frame": {
+              "distinct_colors": 752,
+              "dominance": 0.28098136173449983,
+              "mean_luminance": 232.28,
+              "stddev_luminance": 38.74
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--light.thumb.png"
+        },
+        {
+          "screen": "editor.scrolled",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.png",
+            "bytes": 691117,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 709,
+            "dominance": 0.2677056277056277,
+            "mean_luminance": 34.62,
+            "stddev_luminance": 29.57,
+            "frame": {
+              "distinct_colors": 726,
+              "dominance": 0.23560289083301636,
+              "mean_luminance": 31.3,
+              "stddev_luminance": 29.93
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/shots/logbuch/editor.scrolled--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "1 screen(s) in this run are registered as self-animating entries: journal.motion. What is shot of each is its still - the pre-motion first frame - and a still cannot show the movement. The stability reading on such a shot describes the animation, not a defect.\n  What to do: judge the movement live on the running prototype (Stage 4); take the plain <screen> entry wherever a still has to stand as evidence.",
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at."
+      ],
+      "ok": true
+    }
+  ]
+}

@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ShipTrip — Code-, Struktur- und Performance-Audit · 23.08.2026</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #0d1a2b;
+      --panel-2: #122238;
+      --line: #263a54;
+      --text: #ecf4ff;
+      --muted: #9cb0c8;
+      --accent: #69d5ff;
+      --good: #51d69b;
+      --warn: #ffc66d;
+      --bad: #ff7f86;
+      --purple: #b7a2ff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 85% 0%, #17304a 0, var(--bg) 36rem);
+      color: var(--text);
+      font: 16px/1.58 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 80px; }
+    h1, h2, h3 { line-height: 1.16; letter-spacing: -0.025em; }
+    h1 { margin: 10px 0 14px; font-size: clamp(2.25rem, 6vw, 4.8rem); max-width: 950px; }
+    h2 { margin: 0 0 22px; font-size: clamp(1.65rem, 3vw, 2.5rem); }
+    h3 { margin: 0 0 8px; font-size: 1.16rem; }
+    p { margin: 0 0 12px; }
+    a { color: var(--accent); }
+    code { font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; color: #ccecff; }
+    section { margin-top: 64px; }
+    .eyebrow { color: var(--accent); font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; font-weight: 800; }
+    .lead { max-width: 860px; color: #d5e3f3; font-size: clamp(1.05rem, 2vw, 1.35rem); }
+    .meta, .grid, .scores, .proposals { display: grid; gap: 14px; }
+    .meta { grid-template-columns: repeat(4, 1fr); margin-top: 30px; }
+    .grid { grid-template-columns: repeat(2, 1fr); }
+    .scores { grid-template-columns: repeat(5, 1fr); }
+    .proposals { grid-template-columns: repeat(2, 1fr); }
+    .card, .meta > div, .score, .finding, .proposal {
+      background: linear-gradient(145deg, rgba(18,34,56,.96), rgba(11,24,40,.96));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 14px 38px rgba(0,0,0,.16);
+    }
+    .meta span, .score span { display: block; color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+    .meta strong { display: block; margin-top: 5px; }
+    .score strong { display: block; margin-top: 4px; font-size: 2rem; }
+    .score small, .muted { color: var(--muted); }
+    .verdict { border-left: 5px solid var(--warn); padding-left: 18px; }
+    .badge { display: inline-block; border: 1px solid currentColor; border-radius: 999px; padding: 3px 9px; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .critical, .high { color: var(--bad); }
+    .medium { color: var(--warn); }
+    .low { color: var(--accent); }
+    .resolved, .good { color: var(--good); }
+    .partial { color: var(--warn); }
+    .unresolved { color: var(--bad); }
+    .risk { color: var(--purple); }
+    .finding { margin-bottom: 14px; }
+    .finding header, .proposal header { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .finding h3, .proposal h3 { margin: 0; flex: 1 1 280px; }
+    .finding dl, .proposal dl { display: grid; grid-template-columns: 8rem 1fr; gap: 7px 12px; margin: 12px 0 0; }
+    dt { color: var(--muted); font-weight: 700; }
+    dd { margin: 0; }
+    table { width: 100%; border-collapse: collapse; background: rgba(13,26,43,.75); border: 1px solid var(--line); }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #c8d9ec; background: #122238; font-size: .8rem; text-transform: uppercase; letter-spacing: .055em; }
+    tr:last-child td { border-bottom: 0; }
+    ul, ol { margin: 8px 0 0; padding-left: 22px; }
+    li + li { margin-top: 7px; }
+    .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .flow > div { position: relative; padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); }
+    .flow strong { display: block; color: var(--accent); margin-bottom: 6px; }
+    .roadmap { counter-reset: wave; }
+    .wave { counter-increment: wave; display: grid; grid-template-columns: 7rem 1fr; gap: 18px; padding: 22px 0; border-top: 1px solid var(--line); }
+    .wave:first-child { border-top: 0; }
+    .wave .when { color: var(--accent); font-weight: 800; }
+    .note { margin-top: 18px; padding: 16px 18px; border: 1px dashed #45617f; border-radius: 14px; color: #c5d5e7; }
+    footer { margin-top: 70px; color: var(--muted); font-size: .9rem; }
+    @media (max-width: 880px) {
+      .meta, .scores { grid-template-columns: repeat(2, 1fr); }
+      .grid, .proposals, .flow { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      main { width: min(100% - 20px, 1180px); padding-top: 28px; }
+      .meta, .scores { grid-template-columns: 1fr; }
+      .finding dl, .proposal dl { grid-template-columns: 1fr; }
+      .wave { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+    @media print {
+      :root { color-scheme: light; --bg: white; --text: #142033; --muted: #566579; --panel: white; --panel-2: #f3f6fa; --line: #ccd5df; }
+      body { background: white; }
+      .card, .meta > div, .score, .finding, .proposal { box-shadow: none; background: white; break-inside: avoid; }
+      section { break-inside: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Unabhängiger technischer Audit · Swift 6 / SwiftUI / SwiftData</div>
+    <h1>ShipTrip ist solide gebaut – aber noch nicht belastbar als „High Performance“ belegt.</h1>
+    <p class="lead">Die App besitzt gute Domänenmodelle, gehärtete Importlogik und mehrere sauber extrahierte Planer. Vier Risiken dominieren dennoch: Backups können außerhalb des eigenen Restore-Vertrags liegen, der Foto-Save blockiert potenziell den Main Actor, der Reise-Editor bündelt zu viele Verantwortungen und dynamische Ländernamen bleiben im englischen Kernfluss deutsch.</p>
+    <div class="meta">
+      <div><span>Audit-Stichtag</span><strong>23. August 2026</strong></div>
+      <div><span>Geprüfter Stand</span><strong><code>751f6ce</code> · v1.7.1 (24)</strong></div>
+      <div><span>Umfang</span><strong>63 Produktdateien · 15.433 Swift-LoC</strong></div>
+      <div><span>Innovationsniveau</span><strong>Balanced (Annahme)</strong></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Executive Verdict</h2>
+    <div class="card verdict">
+      <h3>Freigabe: bedingt – P0 vor dem nächsten großen Daten-/Foto-Release schließen</h3>
+      <p>Keine statisch bewiesene Critical-Schwachstelle und kein aktueller Compile-Fehler. Release- und Test-Build sowie der Xcode-Analyzer laufen erfolgreich. Die App ist für den üblichen Umfang plausibel performant, aber weder große Fotoarchive noch reale Gerätepfade wurden profiliert. Der Backup-Vertrag ist aktuell asymmetrisch und kann ein erfolgreich erzeugtes Archiv beim späteren Restore ablehnen.</p>
+      <p class="muted">„Bedingt“ ist kein App-Store-Stop für einen unveränderten Hotfix. Es ist ein klares NO-GO für Aussagen wie „vollständig gesichertes Tagebuch“ oder „nachgewiesen hohe Performance“, bis die genannten Gates erbracht sind.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bewertung</h2>
+    <div class="scores">
+      <div class="score"><span>Performance</span><strong>6,5/10</strong><small>gute Bausteine, keine Runtime-Messung</small></div>
+      <div class="score"><span>Codequalität</span><strong>7,2/10</strong><small>Swift 6, Tests, klare Utilities</small></div>
+      <div class="score"><span>Codestruktur</span><strong>6,3/10</strong><small>Feature-Ordner gut, Form-Monolith teuer</small></div>
+      <div class="score"><span>Robustheit</span><strong>6,2/10</strong><small>gute Guards, relevante Vertragslücken</small></div>
+      <div class="score"><span>Gesamt</span><strong>6,6/10</strong><small>solide Basis, fokussierter Hardening-Bedarf</small></div>
+    </div>
+    <p class="note">Die Zahlen sind eine nachvollziehbare Audit-Heuristik, kein Benchmark. Sie gewichten Nutzerwirkung, Eintrittswahrscheinlichkeit, Wartungskosten und vorhandene Schutzmechanismen.</p>
+  </section>
+
+  <section>
+    <h2>Was geprüft wurde – und was nicht</h2>
+    <table>
+      <thead><tr><th>Beweisebene</th><th>Status</th><th>Aktuelle Evidenz</th><th>Grenze</th></tr></thead>
+      <tbody>
+        <tr><td>Statische Analyse</td><td class="good">Erbracht</td><td>Produktcode, Tests, ADRs, Audit-/Planungsdokumente; drei unabhängige Fachprüfungen; <code>xcodebuild analyze</code> erfolgreich.</td><td>Kann keine Frametimes, RSS-Spitzen oder CloudKit-Rennen beweisen.</td></tr>
+        <tr><td>Build</td><td class="good">Erbracht</td><td>Release-Simulator-Build und Debug-Build-for-Testing mit <code>CODE_SIGNING_ALLOWED=NO</code> erfolgreich.</td><td>Kein signiertes Gerätearchiv, keine App-Store-Verifikation.</td></tr>
+        <tr><td>Tests</td><td class="partial">Nur kompiliert</td><td>319 Swift-Testing-Tests und 24 UI-Testmethoden statisch erfasst; Testprodukte erfolgreich gebaut.</td><td>Keine aktuelle Testausführung: zwei bereits fremd gebootete Simulatoren wurden bewusst nicht angefasst und kein dritter gestartet.</td></tr>
+        <tr><td>Runtime / Performance</td><td class="unresolved">Offen</td><td>Codepfade, Datenflüsse und Größen statisch geprüft; Simulator-App 89 MB, davon <code>Assets.car</code> 73 MB.</td><td>Keine Instruments-Spur, keine Geräte-Frametime, kein Memory Graph, kein Großbackup-Roundtrip.</td></tr>
+        <tr><td>Real User / Release</td><td class="unresolved">Offen</td><td>Aktueller Git-Stand und Release-Metadaten geprüft.</td><td>Kein Zwei-Geräte-CloudKit-Test, kein VoiceOver-Lauf, kein TestFlight-/Store-Proof.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Stärken, die erhalten bleiben sollten</h2>
+    <div class="grid">
+      <div class="card"><h3>Datensicherheit im Import</h3><p>ZIP-Slip-, Pfad-, Größen-, Header-, CRC- und Bildvalidierungen sind für eine Consumer-App überdurchschnittlich. Gestagte Imports werden gemeinsam gespeichert und bei Fehler zurückgerollt.</p></div>
+      <div class="card"><h3>CloudKit-fähiges Schema</h3><p>Defaults, optionale Relationships und stabile UUIDs statt Unique-Constraints entsprechen den SwiftData/CloudKit-Anforderungen. Schema- und Migrationsprüfungen existieren.</p></div>
+      <div class="card"><h3>Gute Performance-Bausteine</h3><p>ImageIO-Downsampling, externe Bildspeicherung, Thumbnails, <code>LazyVStack</code>, begrenztes Kartenbudget und Kamera-Ende-Clustering zeigen bewusstes Performance-Design.</p></div>
+      <div class="card"><h3>Testbare Kernlogik</h3><p>Routen-Reconciliation, Notification-Reconcile, Kartenplaner und mehrere Migrationspfade sind als pure beziehungsweise injizierbare Logik separiert und umfangreich getestet.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Top-Findings</h2>
+
+    <article class="finding">
+      <header><span class="badge high">High · bestätigt</span><h3>F01 — Export kann ein Archiv erzeugen, das der eigene Import ablehnt</h3></header>
+      <p>Der Reader limitiert Einträge auf 50 MB, unkomprimierte Gesamtdaten auf 500 MB und das ZIP auf 550 MB. Der Writer erlaubt dagegen ZIP32-Größen bis knapp 4 GB; <code>exportToZip</code> erzwingt den Restore-Vertrag nicht.</p>
+      <dl><dt>Fundstellen</dt><dd><code>ZipArchiveReader.swift:16–24, 66–79, 136–159</code>; <code>ZipArchiveWriter.swift:36–45, 108–185</code>; <code>ExportImportService.swift:128–173</code></dd><dt>Auswirkung</dt><dd>Ein erfolgreich gemeldetes Backup kann im Ernstfall nicht wiederhergestellt werden.</dd><dt>Fix</dt><dd>Gemeinsamer versionsgebundener Archivvertrag; Writer-Grenzen symmetrisch machen; Export per Self-Validation und Grenz-Roundtrip testen.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge high">High · bestätigt</span><h3>F02 — Mehrfach-Foto-Save verarbeitet Originaldaten synchron vor dem Busy-State</h3></header>
+      <p>Bis zu zehn ausgewählte Bilder bleiben als volle <code>Data</code> im Form-State. Beim Speichern werden Downsampling und JPEG-Erzeugung nacheinander im Main-Actor-Pfad ausgeführt; <code>isSaving</code> wird erst danach gesetzt.</p>
+      <dl><dt>Fundstellen</dt><dd><code>CruiseFormView.swift:382–405, 818–831</code>; <code>ImageDownsampler.swift:20–51</code></dd><dt>Auswirkung</dt><dd>UI-Hänger und hohe Speicherspitzen sind bei großen Fotos plausibel. Die konkrete Dauer ist ohne Geräte-Trace nicht bewiesen.</dd><dt>Fix</dt><dd>Fotos vor dem Persistieren begrenzt parallel außerhalb des Main Actors vorbereiten; sofortiges Progress-/Cancel-Feedback; zehn große HEIC/JPEGs als Performance-Fixture.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge high">High · strukturell</span><h3>F03 — <code>CruiseFormView</code> ist ein Wartungs- und Regressionshotspot</h3></header>
+      <p>1.538 Zeilen, fünf Views und 42 State-Properties bündeln Formzustand, Katalogsuche, Route, Fotos, Gemini, SwiftData, Notifications und Navigation. <code>processAIImport</code> und <code>saveCruise</code> sind jeweils sehr große Koordinationsblöcke.</p>
+      <dl><dt>Fundstellen</dt><dd><code>CruiseFormView.swift</code>, besonders <code>:575–735</code> und <code>:768–879</code></dd><dt>Auswirkung</dt><dd>Änderungen koppeln ansonsten getrennte Features; Review, Tests und Fehlersuche werden unnötig teuer.</dd><dt>Fix</dt><dd>Kein neues Framework: <code>CruiseDraft</code>, pure Import-/Save-Mappings und kleine Sektionen extrahieren; SwiftData-Modelle nicht in ein paralleles MVVM-Modell spiegeln.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge high">High · bestätigt</span><h3>F04 — Englische Kernflüsse zeigen und speichern deutsche Ländernamen</h3></header>
+      <p>1.956 Hafenreferenzen aus 117 Ländern tragen überwiegend deutsche Freitext-Ländernamen. Diese werden direkt gerendert und in <code>Port.country</code> persistiert; ein ISO-Region-Code fehlt.</p>
+      <dl><dt>Fundstellen</dt><dd><code>PortSuggestion.swift:13–18, 37–43, 159–175</code>; <code>PortFormView.swift:108–119</code>; <code>CruiseDetailView.swift:320–326</code></dd><dt>Auswirkung</dt><dd>Die veröffentlichte EN-Produktoberfläche bleibt im zentralen Reise-/Hafenfluss deutsch; Altwerte wandern über CloudKit und Export weiter.</dd><dt>Fix</dt><dd>ISO-3166-Code ergänzen, Anzeige via <code>Locale.localizedString(forRegionCode:)</code>; Freitext als Legacy-Fallback behalten.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge risk">High · Vertragsrisiko</span><h3>F05 — Dokumentiertes „Last Writer Wins“ ist im App-Code nicht implementiert</h3></header>
+      <p>ADR-002 verspricht Konfliktentscheidung über <code>updatedAt</code>. Im geprüften Code werden Zeitstempel geschrieben, aber es existiert keine vergleichende Merge-/Reconcile-Logik. Das kann ein Dokumentationsfehler sein; tatsächlicher Datenverlust ist ohne Zwei-Geräte-Test nicht bewiesen.</p>
+      <dl><dt>Fundstellen</dt><dd><code>docs/adr/ADR-002-*:50–59</code>; produktweite <code>updatedAt</code>-Schreibpfade</dd><dt>Auswirkung</dt><dd>Das Team verlässt sich möglicherweise auf eine stärkere Konfliktgarantie als SwiftData/CloudKit tatsächlich liefert.</dd><dt>Fix</dt><dd>ADR auf den realen Framework-Vertrag korrigieren oder eine echte Reconciliation implementieren; danach simultanen Zwei-Geräte-Edit testen.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge medium">Medium · bestätigt</span><h3>F06 — Notification-Einstellungen ändern bestehende Requests nicht sofort</h3></header>
+      <p>Toggle und Stepper ändern nur <code>@AppStorage</code>. Bestehende Requests behalten Trigger und Inhalt bis zum nächsten Reconcile, etwa beim erneuten Erscheinen der Reiseliste oder beim Speichern.</p>
+      <dl><dt>Fundstellen</dt><dd><code>SettingsView.swift:662–737</code>; <code>CruiseListView.swift:111–124</code>; <code>CruiseFormView.swift:847–868</code></dd><dt>Auswirkung</dt><dd>Eine deaktivierte oder verschobene Erinnerung kann weiterhin auslösen.</dd><dt>Fix</dt><dd>Vorhandenen Reconciler direkt an jede Änderung hängen und Fehlerzustand in Settings sichtbar machen.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge medium">Medium · bestätigt</span><h3>F07 — API-Key-Wechsel löscht den funktionierenden Schlüssel vor der Validierung</h3></header>
+      <p>Der Candidate wird gespeichert, bevor er validiert ist; der Keychain-Service löscht den Altwert zuerst. Jeder Validierungsfehler – auch offline oder Timeout – räumt anschließend den neuen Wert ab. Damit ist auch der alte funktionierende Key verloren.</p>
+      <dl><dt>Fundstellen</dt><dd><code>SettingsView.swift:628–657</code>; <code>KeychainService.swift:22–39</code>; <code>GeminiService.swift:41–49, 155–180</code></dd><dt>Auswirkung</dt><dd>Temporäre Netzprobleme deaktivieren ein zuvor funktionierendes Feature.</dd><dt>Fix</dt><dd>Candidate ohne Persistierung validieren; erst bei Erfolg atomar aktualisieren; Transport-, Credential- und Providerfehler unterscheiden.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge medium">Medium · bestätigt</span><h3>F08 — Bereichsfehler bei Koordinaten werden gespeichert und später still verworfen</h3></header>
+      <p>Das Formular prüft Parsebarkeit, aber nicht ±90/±180. Die Karte filtert ungültige Werte später defensiv heraus. Auch der Import übernimmt außerhalb liegende Werte.</p>
+      <dl><dt>Fundstellen</dt><dd><code>PortFormView.swift:91–95, 284–316</code>; <code>MapMarkerPlanner.swift:37–49</code>; <code>ExportImportService.swift:378–386</code></dd><dt>Auswirkung</dt><dd>Ein vermeintlich erfolgreich gespeicherter Hafen bleibt auf der Karte unsichtbar.</dd><dt>Fix</dt><dd>Eine gemeinsame semantische Koordinatenvalidierung in Form und Import verwenden; konkrete Fehlermeldung statt stiller Speicherung.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge medium">Medium · latent</span><h3>F09 — Thumbnail-Backfill kann bei nicht dekodierbaren Daten endlos laufen</h3></header>
+      <p>Bleibt das erzeugte Thumbnail <code>nil</code>, erfüllt derselbe Datensatz im nächsten <code>while true</code>-Durchlauf erneut die Fetch-Bedingung. Retry-Limit und Failure-Marker fehlen.</p>
+      <dl><dt>Fundstellen</dt><dd><code>ThumbnailBackfill.swift:27–58</code>; <code>ImageDownsampler.swift:20–51</code></dd><dt>Auswirkung</dt><dd>Wiederholte Hintergrundarbeit und Main-Actor-Schreibphasen; nachfolgende Startmigrationen können blockieren.</dd><dt>Grenze</dt><dd>Normale PhotosPicker- und Importpfade liefern validierte Bilder. Produktionsvorkommen ist nicht belegt, Terminierungsfehler im Code aber eindeutig.</dd></dl>
+    </article>
+
+    <article class="finding">
+      <header><span class="badge medium">Medium · bestätigt</span><h3>F10 — „Backup“ umfasst nur vier von acht produktiven Modelltypen</h3></header>
+      <p>Gesichert werden Cruise, Port, Expense und eingebettete Fotos. Deals sowie benutzerdefinierte Reedereien, Schiffe und ausgeblendete Katalogeinträge fehlen.</p>
+      <dl><dt>Fundstellen</dt><dd><code>ExportImportService.swift:15–57, 176–240</code>; <code>SettingsView.swift:740–747, 865–883</code></dd><dt>Auswirkung</dt><dd>Ein Restore stellt nicht den vollständigen persönlichen App-Zustand wieder her.</dd><dt>Fix</dt><dd>Alle acht Modelltypen in ein versioniertes Envelope aufnehmen oder die Funktion eindeutig als „Reiseexport“ bezeichnen.</dd></dl>
+    </article>
+
+    <details class="card">
+      <summary><strong>Weitere Medium-/Low-Befunde</strong></summary>
+      <ul>
+        <li><strong>KI-Import:</strong> Wiederholtes Analysieren hängt Ports erneut an statt eine definierte Replace-/Merge-Semantik zu verwenden (<code>CruiseFormView.swift:575–735</code>).</li>
+        <li><strong>Notification Permission:</strong> Nach <code>.denied</code> führt „Berechtigung anfordern“ erneut in eine Sackgasse; System-Settings-Link fehlt (<code>SettingsView.swift:668–737</code>).</li>
+        <li><strong>Accessibility:</strong> Kartencluster sprechen wie ein Einzelstopp; Aktion „Zoom“ und Clustergröße fehlen im VoiceOver-Label (<code>MapView+RouteInteraction.swift:55–92, 136–166</code>).</li>
+        <li><strong>Import:</strong> Ein Fehler beim Laden vorhandener Cruise-IDs wird mit <code>(try? fetch) ?? []</code> verschluckt und kann Deduplizierung aushebeln (<code>ExportImportService.swift:291–297</code>).</li>
+        <li><strong>Persistenz:</strong> Port-, Expense- und mehrere Deal-Pfade verlassen sich uneinheitlich auf Autosave, ohne Rollback oder Fehlerfeedback.</li>
+        <li><strong>Kalender:</strong> Remote-only Port-Änderungen sind nicht Teil des Observer-Tokens; Sync-Fehler werden mit <code>try?</code> still verschluckt. Das Remote-Szenario ist statisch inferiert, nicht runtime-bewiesen.</li>
+        <li><strong>Backupspeicher:</strong> <code>ExportImportService</code> ist <code>@MainActor</code> und sammelt Medien plus Archiv vollständig im Speicher. Eine RSS-Spitze ist plausibel, aber ungemessen.</li>
+        <li><strong>Testportabilität:</strong> Ein UI-Test enthält den absoluten Pfad <code>/Users/andreja/…</code>; ein shared Scheme, Testplan und CI fehlen.</li>
+        <li><strong>Warnungen:</strong> Build-for-Testing meldet 44 Warnungen, überwiegend Swift-6-Actor-Isolation in Tests; im Produktcode bleiben zwei einfache Warnungen.</li>
+        <li><strong>Dokumentation:</strong> README zeigt noch v1.7.0 (21), geprüft ist v1.7.1 (24). Die Modellübersicht ist unvollständig.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section>
+    <h2>Performance: wahrscheinlichste Engpässe</h2>
+    <table>
+      <thead><tr><th>Rang</th><th>Pfad</th><th>Wahrscheinlichkeit</th><th>Beweisstatus</th><th>Zielmetrik</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Großbackup: vollständige Medien- und ZIP-Puffer auf Main Actor</td><td>Hoch</td><td>Codebeweis; Dauer/RSS offen</td><td>Peak RSS, Main-thread stalls, 50/500/550-MB-Roundtrip</td></tr>
+        <tr><td>2</td><td>Save mit bis zu zehn Originalfotos</td><td>Hoch</td><td>Synchroner Pfad belegt; Dauer offen</td><td>p95 Save, Hang Diagnostics, Peak RSS</td></tr>
+        <tr><td>3</td><td>Body-seitiges <code>UIImage(data:)</code> / volle Bilddaten als Task-ID</td><td>Mittel</td><td>Code-Smell, kein Jank-Beweis</td><td>Frame Hitches, Decode-Zeit, Cache-Miss</td></tr>
+        <tr><td>4</td><td>Kartenplanung bei stark wachsender Route</td><td>Mittel</td><td>Skalierungsrisiko; 280-Punkt-Budget mitigiert</td><td>100/280/1000 Stopps, Kamera-Ende bis Render</td></tr>
+        <tr><td>5</td><td>Kalender-Vollreconcile auf Main Actor</td><td>Mittel</td><td>Pfad belegt; reale Kalendergröße offen</td><td>EventKit-Dauer bei 10/100/500 Events</td></tr>
+        <tr><td>6</td><td>Lineare Hafensuche über 1.956 Einträge</td><td>Niedrig</td><td>Codebeweis, Datensatz klein</td><td>Keystroke-to-results p95</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Struktur: wo Modularität endet</h2>
+    <div class="flow" aria-label="Architekturübersicht">
+      <div><strong>SwiftUI Feature Views</strong>Gute Ordnerstruktur; mehrere große Composition Roots. Zehn View-Dateien liegen über 300 Zeilen.</div>
+      <div><strong>Pure Planner / Utilities</strong>Stärkste Schicht: Route, Karte, Notification-Planung, ZIP-Prüfung und Bild-Downsampling sind gut separierbar.</div>
+      <div><strong>Services</strong>Teilweise sauber injizierbar; Export, Kalender und Keychain vermischen jedoch Orchestrierung, Side Effects und Fehlerdarstellung.</div>
+      <div><strong>SwiftData / CloudKit</strong>Schema solide. Expliziter Persistenzvertrag und belegte Konfliktsemantik fehlen.</div>
+    </div>
+    <p class="note">Empfehlung: keine Paket- oder „Clean Architecture“-Großsanierung. Der höchste Hebel liegt in zwei chirurgischen Schnitten: Cruise-Form-Orchestrierung und versionierter Export/Import-Vertrag.</p>
+  </section>
+
+  <section>
+    <h2>Recheck des Audits vom 14.08.</h2>
+    <table>
+      <thead><tr><th>Früherer Befund</th><th>Status 23.08.</th><th>Aktuelle Einordnung</th></tr></thead>
+      <tbody>
+        <tr><td>Koordinatenverlust beim Port-Edit</td><td class="resolved">RESOLVED</td><td>Wiring bewahrt Koordinaten; neue TempPort-Tests vorhanden.</td></tr>
+        <tr><td>Gemini-Datenschutzhinweis vor Versand</td><td class="resolved">RESOLVED</td><td>Hinweis ist vor der Aktion im Form-Pfad vorhanden und lokalisiert.</td></tr>
+        <tr><td>Privacy-/Support-Links</td><td class="resolved">RESOLVED</td><td>Aktuelle Settings enthalten beide Ziele.</td></tr>
+        <tr><td>Pluralisierung / dynamische EN-Texte</td><td class="partial">PARTIAL</td><td>Hauptstellen verbessert; „In 0 Tagen“, Notification-Texte und einzelne dynamische Detailtexte bleiben.</td></tr>
+        <tr><td>Reminder für importierte/gespeicherte Reisen</td><td class="partial">PARTIAL</td><td>Startup-Reconciler existiert; Settings-Änderungen greifen nicht unmittelbar.</td></tr>
+        <tr><td>Release-Changelog</td><td class="partial">PARTIAL</td><td>CHANGELOG aktuell; README-Version weiterhin v1.7.0 (21).</td></tr>
+        <tr><td>Backup Main Actor / Speicher / Roundtrip</td><td class="unresolved">UNRESOLVED</td><td>Zusätzlich ist die Writer-/Reader-Grenze nachweislich asymmetrisch.</td></tr>
+        <tr><td>Länder-Lokalisierung</td><td class="unresolved">UNRESOLVED</td><td>1.956 Referenzwerte bleiben freie deutsche Strings ohne ISO-Code.</td></tr>
+        <tr><td>Absoluter Screenshot-Pfad</td><td class="unresolved">UNRESOLVED</td><td><code>HauptansichtScreenshotTests.swift:16</code> bleibt maschinengebunden.</td></tr>
+        <tr><td>Shared Scheme / CI</td><td class="unresolved">UNRESOLVED</td><td>Kein geteiltes Scheme, kein Testplan und keine CI-Konfiguration gefunden.</td></tr>
+        <tr><td>Thumbnail-Endlosschleife</td><td class="unresolved">UNRESOLVED</td><td>Fehlgeschlagene Thumbnail-Erzeugung garantiert keinen Fortschritt.</td></tr>
+        <tr><td>Vollständiger Export aller Modelle</td><td class="unresolved">UNRESOLVED</td><td>Vier von acht Modelltypen werden nicht gesichert.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>Verbesserungsvorschläge mit Produktvertrag</h2>
+    <p class="muted">Prioritätsscore = (Impact × Confidence) / max(Effort, Risk), Skala jeweils 1–5. Hoher Score bedeutet hoher Nutzen pro Umsetzungseinheit, nicht automatisch höchste zeitliche Dringlichkeit.</p>
+    <div class="proposals">
+      <article class="proposal">
+        <header><span class="badge high">P0 · Score 20,0</span><h3>Koordinaten an einer Grenze validieren</h3></header>
+        <p><strong>User Story:</strong> Als Reisender möchte ich nur geografisch gültige Häfen speichern, damit jeder bestätigte Stopp auf der Karte erscheint.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F08; Form und Import akzeptieren außerhalb liegende Werte.</dd><dt>Lösung / UI</dt><dd>Gemeinsamer <code>CoordinateValidator</code>; Inline-Fehler im Formular, Importwarnung mit Datensatzbezug.</dd><dt>Nutzen</dt><dd>Keine „verschwundenen“ Häfen; weniger Support.</dd><dt>Technik / Prozess</dt><dd>Pure Funktion, Grenzwerttests, Import-Contract-Test.</dd><dt>Aufwand / Risiko</dt><dd>S / niedrig · Abhängigkeiten: keine.</dd><dt>Validierung</dt><dd>±90/±180 gültig; darüber, NaN und Infinity abgelehnt.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge high">P0 · Score 20,0</span><h3>Thumbnail-Backfill muss terminieren</h3></header>
+        <p><strong>User Story:</strong> Als Nutzer möchte ich, dass beschädigte Altbilder die App-Migration nicht dauerhaft beschäftigen.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F09; nil-Ergebnis bleibt sofort wieder fetchbar.</dd><dt>Lösung / UI</dt><dd>Fehlgeschlagene IDs pro Lauf überspringen oder persistierten Status setzen; Fehler gesammelt diagnostizieren.</dd><dt>Nutzen</dt><dd>Deterministischer Start, kein Energieverbrauch durch Retry-Schleifen.</dd><dt>Technik / Prozess</dt><dd>Batch-Vertrag „jeder Datensatz fortschreitend“; Tests für invalid Data, Save-/Fetch-Fehler, Cancellation.</dd><dt>Aufwand / Risiko</dt><dd>S / niedrig.</dd><dt>Validierung</dt><dd>Backfill terminiert bei gemischtem validem/invalidem Fixture garantiert.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge high">P0 · Score 15,0</span><h3>API-Key zweiphasig wechseln</h3></header>
+        <p><strong>User Story:</strong> Als Nutzer möchte ich einen neuen Key testen, ohne meinen funktionierenden Zugang bei einem Netzwerkfehler zu verlieren.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F07; Delete/Add vor Validierung.</dd><dt>Lösung / UI</dt><dd>Candidate flüchtig validieren, danach atomar aktualisieren; „offline“, „ungültig“ und „Providerfehler“ separat anzeigen.</dd><dt>Nutzen</dt><dd>Kein unbeabsichtigter Feature-Ausfall.</dd><dt>Technik / Prozess</dt><dd>Keychain-Updatepfad plus injizierbare Candidate-Validierung.</dd><dt>Aufwand / Risiko</dt><dd>S / niedrig.</dd><dt>Validierung</dt><dd>Altkey bleibt bei 401, Timeout, Offline und Keychain-Write-Fehler erhalten.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge high">P0 · Score 10,0</span><h3>Notification-Settings sofort reconciliieren</h3></header>
+        <p><strong>User Story:</strong> Als Nutzer erwarte ich, dass „aus“ unmittelbar aus bedeutet.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F06 und Permission-Sackgasse.</dd><dt>Lösung / UI</dt><dd>Änderungen direkt anwenden; Busy/Error-Status; bei <code>.denied</code> Link in System-Settings.</dd><dt>Nutzen</dt><dd>Verlässliche Privatsphäre und Erwartungstreue.</dd><dt>Technik / Prozess</dt><dd>Vorhandenen Reconciler nutzen, kein zweiter Scheduler.</dd><dt>Aufwand / Risiko</dt><dd>S–M / niedrig.</dd><dt>Validierung</dt><dd>Pending Requests nach Toggle/Stepper prüfen; denied-CTA UI-Test.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge medium">P1 · Score 8,3</span><h3>Streaming-Backup mit symmetrischem Vertrag</h3></header>
+        <p><strong>User Story:</strong> Als Nutzer möchte ich sicher sein, dass jedes erfolgreich erzeugte ShipTrip-Backup wiederherstellbar ist.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F01, F10 und Main-Actor-/Speicherrisiko.</dd><dt>Lösung / UI</dt><dd>Versioniertes Manifest, alle acht Modelle, inkrementelles Schreiben/Lesen, Self-Validation; Fortschritt und verständliche Kapazitätsgrenze.</dd><dt>Nutzen</dt><dd>Vertrauen, geringere Restore- und Support-Risiken.</dd><dt>Technik / Prozess</dt><dd>Pure DTO-Mappings; Datei-Streaming außerhalb Main Actor; Legacy-v1-Decoder.</dd><dt>Aufwand / Risiko</dt><dd>M–L / mittel · Migration und Rückwärtskompatibilität.</dd><dt>Validierung</dt><dd>Roundtrip aller Modelle, IDs, Metadaten und Grenzgrößen; Peak-RSS-Gate.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge medium">P1 · Score 8,0</span><h3>Foto-Pipeline vor dem Save entkoppeln</h3></header>
+        <p><strong>User Story:</strong> Als Nutzer möchte ich zehn Reisefotos hinzufügen, ohne dass die Oberfläche einfriert.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F02; volle Daten im State, serielle Arbeit vor Busy-State.</dd><dt>Lösung / UI</dt><dd>Früher Progress-State, begrenzt paralleles Downsampling, Cancellation und atomarer Commit der fertigen Ergebnisse.</dd><dt>Nutzen</dt><dd>Reaktionsfähiger Save, kontrollierter Speicher.</dd><dt>Technik / Prozess</dt><dd>Sendable Input/Output, keine SwiftData-Objekte im Worker.</dd><dt>Aufwand / Risiko</dt><dd>M / mittel.</dd><dt>Validierung</dt><dd>Release-Gerätetest mit 1/5/10 großen Fotos; p95, Hitches und RSS dokumentieren.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge medium">P2 · Score 6,7</span><h3>ISO-Länder und dynamische EN-Abdeckung</h3></header>
+        <p><strong>User Story:</strong> Als englischsprachiger Nutzer möchte ich Häfen, Länder und Erinnerungen vollständig in meiner Sprache sehen.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F04 plus rohe deutsche Notification-Texte.</dd><dt>Lösung / UI</dt><dd>ISO-Code als kanonischer Wert; Locale-Anzeige; lokalisierte Notification-Formatstrings; Legacy-Fallback.</dd><dt>Nutzen</dt><dd>Konsistente internationale Produktqualität.</dd><dt>Technik / Prozess</dt><dd>Datenmigration ohne Verlust von Freitext; EN-Smoke um Hafenroute und Notification-Content erweitern.</dd><dt>Aufwand / Risiko</dt><dd>M / niedrig.</dd><dt>Validierung</dt><dd>DE/EN-Snapshots plus Import/CloudKit-Legacy-Fixtures.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge medium">P2 · Score 6,3</span><h3>Cruise-Form chirurgisch zerlegen</h3></header>
+        <p><strong>User Story:</strong> Als Produktteam möchte ich Reise-, Foto- und KI-Funktionen ändern können, ohne benachbarte Flows zu destabilisieren.</p>
+        <dl><dt>Problem / Quelle</dt><dd>F03; hohe State- und Side-Effect-Kopplung.</dd><dt>Lösung / UI</dt><dd>UI unverändert lassen; <code>CruiseDraft</code>, ImportMapper, SaveCoordinator und fokussierte Formsektionen extrahieren.</dd><dt>Nutzen</dt><dd>Schnellere Reviews, gezieltere Tests, weniger Regressionen.</dd><dt>Technik / Prozess</dt><dd>Schrittweise Seam-by-Seam, jeweils Verhaltenstests vorher/nachher; kein Big Bang.</dd><dt>Aufwand / Risiko</dt><dd>L / mittel.</dd><dt>Validierung</dt><dd>Touched Suite grün; UI-Snapshots und Route-/Foto-/KI-Flows unverändert.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge low">P2 · Score 6,7</span><h3>Reproduzierbares Release-Gate</h3></header>
+        <p><strong>User Story:</strong> Als Maintainer möchte ich auf jedem Rechner denselben Build- und Testnachweis erhalten.</p>
+        <dl><dt>Problem / Quelle</dt><dd>Absoluter Screenshot-Pfad, kein Shared Scheme/Testplan/CI, 44 Test-Build-Warnungen.</dd><dt>Lösung / UI</dt><dd>Geteiltes Scheme und Testplan, relative Artifacts, serielle CI, Warnungsbudget.</dd><dt>Nutzen</dt><dd>Weniger lokale Überraschungen, belastbare Releaseaussage.</dd><dt>Technik / Prozess</dt><dd>Bestehende Teststruktur nutzen; keine zusätzliche Testarchitektur.</dd><dt>Aufwand / Risiko</dt><dd>M / niedrig.</dd><dt>Validierung</dt><dd>Clean checkout: Build, Analyzer und alle Tests seriell; Artifact-Pfade portabel.</dd></dl>
+      </article>
+
+      <article class="proposal">
+        <header><span class="badge low">P3 · Score 5,3</span><h3>Performance-Budget statt Bauchgefühl</h3></header>
+        <p><strong>User Story:</strong> Als Produktteam möchte ich Performance-Regressions vor dem Release erkennen.</p>
+        <dl><dt>Problem / Quelle</dt><dd>Keine Signposts, MetricKit-Baseline oder skalierte Foto-/Karten-/Kalender-Fixtures.</dd><dt>Lösung / UI</dt><dd>Release-Geräteprofil für drei kritische Journeys; wenige OSSignposts an Save, Backup und Map-Planung.</dd><dt>Nutzen</dt><dd>„Schnell“ wird messbar und regressionsfähig.</dd><dt>Technik / Prozess</dt><dd>Budget z. B. p95 und Peak RSS gerätespezifisch dokumentieren; keine Telemetrie-Pflicht im ersten Schritt.</dd><dt>Aufwand / Risiko</dt><dd>M / niedrig.</dd><dt>Validierung</dt><dd>Baseline-Report mit Gerät/OS/Fixture/Commit; Wiederholung vor großen Medienreleases.</dd></dl>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>Empfohlene Reihenfolge</h2>
+    <div class="card roadmap">
+      <div class="wave"><div class="when">Welle 0<br>1–2 Tage</div><div><h3>Deterministische Kleinfixes</h3><p>Koordinatenvalidierung, Thumbnail-Termination, zweiphasiger Key-Wechsel und sofortiges Notification-Reconcile. Jeweils zuerst ein reproduzierender Test.</p></div></div>
+      <div class="wave"><div class="when">Welle 1<br>3–6 Tage</div><div><h3>Daten- und Performancevertrag</h3><p>Backup v2 spezifizieren, Writer/Reader symmetrisch machen, Self-Roundtrip und alle acht Modelle abdecken. Parallel Foto-Save-Profil erstellen und Pipeline entkoppeln.</p></div></div>
+      <div class="wave"><div class="when">Welle 2<br>3–5 Tage</div><div><h3>Internationalisierung und Release-Gate</h3><p>ISO-Länder, Notification-Lokalisierung, shared Scheme/Testplan, portable Screenshots und serielles CI-Gate.</p></div></div>
+      <div class="wave"><div class="when">Welle 3<br>inkrementell</div><div><h3>Wartbarkeit und verifizierte Sync-Semantik</h3><p>Cruise-Form an bestehenden Seams teilen; ADR-002 klären und Zwei-Geräte-Konflikttest durchführen; Persistenz-/Rollback-Kontrakt vereinheitlichen.</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Audit-Protokoll</h2>
+    <div class="grid">
+      <div class="card"><h3>Rollen</h3><ul><li>Performance-Spezialist: Main Actor, Bilder, Karten, Kalender, Skalierung.</li><li>Architektur-/Qualitätsspezialist: Modularität, Contracts, SwiftData, Dokumentation.</li><li>Bug-/Daten-Spezialist: End-to-End-Pfade, Import, Notification, Keychain, Accessibility.</li><li>Winston: Scope, Evidenz-Gates, Deduplizierung und adversariales Severity-Review.</li></ul></div>
+      <div class="card"><h3>Geladene Fachmethoden</h3><ul><li><code>project-audit</code> für evidenzgebundene Findings.</li><li><code>project-improvement</code> für priorisierte Produktverträge.</li><li><code>swiftui-performance-audit</code> für Update-, Render- und Bildpfade.</li><li><code>swiftui-view-refactor</code> für Zustands- und Strukturprüfung.</li><li><code>ios-debugger-agent</code> für Build-/Runtime-Grenzen.</li></ul></div>
+      <div class="card"><h3>Erfolgreiche Checks</h3><ul><li>Release-Simulator-Build.</li><li>Debug Build-for-Testing.</li><li>Xcode Static Analyzer.</li><li><code>Info.plist</code> und Privacy Manifest syntaktisch gültig.</li><li>Arbeitsbaum vor/nach Prüfung beobachtet; bestehende Änderungen nicht angefasst.</li></ul></div>
+      <div class="card"><h3>Offene Abnahme-Gates</h3><ul><li>Vollständiger serieller Testlauf.</li><li>Release-Geräteprofil für Foto, Backup und Karte.</li><li>Großbackup-Roundtrip an Vertragsgrenzen.</li><li>Englischer Hafen-/Notification-Lauf.</li><li>Zwei-Geräte-CloudKit-Konflikttest.</li></ul></div>
+    </div>
+  </section>
+
+  <footer>
+    <p>Dieser Bericht bewertet ausschließlich den geprüften Stand <code>751f6ce</code>. Statische Befunde sind als bestätigt markiert; Runtime- und Zwei-Geräte-Hypothesen ausdrücklich nicht. Vorhandene uncommitted Screenshots und untracked Planungs-/Auditdateien wurden nicht verändert.</p>
+  </footer>
+</main>
+</body>
+</html>

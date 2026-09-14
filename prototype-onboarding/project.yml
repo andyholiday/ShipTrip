@@ -1,0 +1,34 @@
+name: ProtoOnboarding
+options:
+  bundleIdPrefix: com.proto.onboarding
+  deploymentTarget:
+    iOS: "18.5"
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.38"
+targets:
+  ProtoOnboarding:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.proto.onboarding.protoOnboarding
+        PRODUCT_NAME: ProtoOnboarding
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_UILaunchScreen_Generation: "YES"
+        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: "YES"
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        SUPPORTS_MACCATALYST: "NO"
+        SUPPORTED_PLATFORMS: iphonesimulator iphoneos
+schemes:
+  ProtoOnboarding:
+    build:
+      targets:
+        ProtoOnboarding: all
+    run:
+      config: Debug

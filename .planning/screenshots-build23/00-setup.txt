@@ -1,0 +1,3 @@
+oldCalendarTitle=Kalender
+newCalendarDisplayName=Release Gate B · Default
+allCalendars=["Geburtstage|Other|writable=false", "Kalender|Default|writable=true", "Deutsche Feiertage|Subscribed Calendars|writable=false", "Release Gate B|Default|writable=true"]

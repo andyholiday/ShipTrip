@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ShipTrip Follow-up-Audit · 11. Juli 2026</title>
+  <style>
+    :root{--bg:#07101d;--panel:#101d2d;--panel2:#15263a;--text:#f5f7fb;--muted:#aebbd0;--line:#2a3d55;--blue:#48a9ff;--green:#51d493;--yellow:#ffd166;--orange:#ff9f43;--red:#ff6274;--shadow:0 18px 50px rgba(0,0,0,.28)}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 85% 0,#12365a 0,transparent 35%),var(--bg);color:var(--text);font:16px/1.58 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    a{color:var(--blue)}code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#d6e8ff;background:#081322;padding:.12rem .35rem;border-radius:5px;overflow-wrap:anywhere}
+    nav{position:sticky;top:0;z-index:5;display:flex;gap:18px;overflow:auto;padding:12px max(18px,calc((100vw - 1180px)/2));background:rgba(7,16,29,.9);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);white-space:nowrap}nav a{text-decoration:none;color:var(--muted);font-size:14px}
+    main{width:min(1180px,calc(100% - 36px));margin:auto;padding:52px 0 90px}section{margin:58px 0}h1{font-size:clamp(42px,7vw,78px);line-height:1.03;letter-spacing:-.05em;margin:12px 0 22px}h2{font-size:clamp(28px,4vw,42px);letter-spacing:-.03em;margin:0 0 18px}h3{font-size:20px;margin:0 0 8px}.eyebrow{color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:13px}.lede{max-width:850px;color:#d8e2f0;font-size:clamp(19px,2.2vw,25px);line-height:1.45}.muted{color:var(--muted)}
+    .verdict{display:inline-flex;align-items:center;gap:9px;margin:12px 0 4px;padding:9px 14px;border:1px solid rgba(255,159,67,.5);border-radius:999px;color:#ffd3a6;background:rgba(255,159,67,.1);font-weight:750}.dot{width:9px;height:9px;border-radius:50%;background:var(--orange)}
+    .grid{display:grid;gap:16px}.cols-4{grid-template-columns:repeat(4,1fr)}.cols-3{grid-template-columns:repeat(3,1fr)}.cols-2{grid-template-columns:repeat(2,1fr)}.card{background:linear-gradient(145deg,rgba(21,38,58,.98),rgba(12,25,41,.98));border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow)}.metric strong{display:block;font-size:31px;letter-spacing:-.04em}.metric span{color:var(--muted);font-size:14px}
+    .callout{border-left:4px solid var(--orange);padding:14px 18px;background:rgba(255,159,67,.08);border-radius:0 12px 12px 0}.good{border-left-color:var(--green);background:rgba(81,212,147,.08)}
+    details{background:rgba(16,29,45,.95);border:1px solid var(--line);border-radius:14px;margin:10px 0;overflow:hidden}summary{cursor:pointer;display:flex;gap:12px;align-items:flex-start;padding:16px 18px;font-weight:720;list-style:none}summary::-webkit-details-marker{display:none}details[open] summary{border-bottom:1px solid var(--line)}.body{padding:16px 18px}.body p{margin:.35rem 0 .8rem}.badge{flex:none;font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:4px 8px;border-radius:999px}.fixed{color:#c5f6dd;background:rgba(81,212,147,.15)}.partial{color:#ffe0b3;background:rgba(255,159,67,.17)}.open{color:#ffd1d7;background:rgba(255,98,116,.18)}
+    table{width:100%;border-collapse:collapse;background:rgba(16,29,45,.7);border:1px solid var(--line);border-radius:14px;overflow:hidden}th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em}tr:last-child td{border:0}
+    footer{margin-top:70px;padding-top:22px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}@media(max-width:850px){.cols-4,.cols-3,.cols-2{grid-template-columns:1fr}main{padding-top:34px}}@media print{nav{display:none}body{background:#fff;color:#111}.card,details,table{box-shadow:none;background:#fff;border-color:#bbb}.muted{color:#555}code{color:#111;background:#eee}main{width:100%;padding:0}}
+  </style>
+</head>
+<body>
+<nav><a href="#summary">Summary</a><a href="#closure">Closure</a><a href="#open">Offen</a><a href="#verification">Verifikation</a><a href="#next">Nächste Schritte</a></nav>
+<main>
+  <header id="summary">
+    <div class="eyebrow">ShipTrip · Follow-up-Audit · 11. Juli 2026</div>
+    <h1>Die acht Highs sind zu.<br>Die Release-Arbeit nicht.</h1>
+    <div class="verdict"><span class="dot"></span>GO-WITH-CHANGES</div>
+    <p class="lede">Alle acht High-Befunde des Audits vom 10. Juli sind im aktuellen Checkout geschlossen und die wichtigsten Nutzerpfade wurden erneut ausgeführt. Von 23 Altbefunden sind neun vollständig behoben, einer teilweise behoben und 13 weiterhin offen. Für interne TestFlight-Nutzung ist der Stand tragfähig; vor einer breiten App-Store-Freigabe bleiben Datenumfang, Release-Prozess, Metadatenwahrheit und Gemini-Transparenz zu schließen.</p>
+    <div class="grid cols-4" style="margin-top:28px">
+      <div class="card metric"><strong>9 behoben</strong><span>H1–H8 plus M5</span></div>
+      <div class="card metric"><strong>1 teilweise</strong><span>M8 Dokumentation/Metadaten</span></div>
+      <div class="card metric"><strong>13 offen</strong><span>8 Medium · 5 Low</span></div>
+      <div class="card metric"><strong>286 + 4</strong><span>Unit-Tests + gezielte UI-Tests grün</span></div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Entscheidung</h2>
+    <div class="callout good"><strong>Die P0-Reparaturen sind belastbar.</strong> Filter-Dead-End, Hafen-Editor, Seetag-Import, Hero-Deal-Löschen, Reise-Löschung, englische Kernnavigation, Privacy-Manifest und ZIP-Integrität sind geschlossen. Der Debug-Simulator-Build ist grün und das Manifest liegt im gebauten App-Bundle.</div>
+    <div class="callout" style="margin-top:16px"><strong>Noch kein uneingeschränktes App-Store-GO.</strong> Besonders M1, M4, M7, M8 und M11 betreffen Nutzervertrauen, Submission-Wahrheit oder reproduzierbare Freigaben. Der signierte Archive-Privacy-Report wurde in diesem Follow-up nicht erzeugt.</div>
+  </section>
+
+  <section id="closure">
+    <h2>Geschlossene Befunde</h2>
+    <details open><summary><span class="badge fixed">H1 · behoben</span>Filter ohne Treffer hat einen Rückweg</summary><div class="body"><p><code>CruiseListView.swift:87–95</code> zeigt im Nulltreffer-Zustand „Filter zurücksetzen“ und leert beide Filter. Der komplette UI-Weg wurde grün ausgeführt.</p></div></details>
+    <details open><summary><span class="badge fixed">H2 · behoben</span>Manuelle Hafen-Eingabe bleibt stabil sichtbar</summary><div class="body"><p><code>PortFormView.swift:64–66, 101–182, 242–258</code> trennt Suche und manuelle Eingabe über <code>isManualEntry</code>; Bestandsports starten editierbar. Parser-Tests sind grün. Restbeweis: Es fehlt weiterhin ein dedizierter UI-Test, der mehrere Zeichen tippt und einen Bestandsport korrigiert.</p></div></details>
+    <details open><summary><span class="badge fixed">H3 · behoben</span>Koordinatenlose Häfen bleiben Häfen</summary><div class="body"><p><code>ExportImportService.swift:33–47, 189–203, 368–396</code> führt ein optionales <code>isSeaDay</code>-Flag ein. Fehlende Koordinaten klassifizieren nicht mehr als Seetag; Legacy- und Neuformat-Roundtrips sind in der grünen Unit-Suite enthalten.</p></div></details>
+    <details open><summary><span class="badge fixed">H4 · behoben</span>Hero-Deal ist bestätigt löschbar</summary><div class="body"><p><code>DealsView.swift:96–106, 169–203</code> ergänzt Context-Menü, Bestätigung und Save/Rollback. Der End-to-End-UI-Test ist grün. Restkonsistenz: Nicht-Hero-Zeilen nutzen weiterhin den alten <code>.onDelete</code>-Pfad ohne denselben Confirm-/Save-Mechanismus.</p></div></details>
+    <details open><summary><span class="badge fixed">H5 · behoben</span>Reise-Löschung ist bestätigt und save-before-side-effect</summary><div class="body"><p><code>CruiseListView.swift:114–130, 350–392</code> und <code>CruiseDetailView.swift:431–448</code> nutzen dieselbe Sequenz: löschen, speichern, bei Fehler rollback, erst danach Erinnerungen entfernen. Unit- und UI-Nachweise sind grün.</p></div></details>
+    <details open><summary><span class="badge fixed">H6 · behoben</span>Englische Kernoberfläche ist konsistent</summary><div class="body"><p>Der String Catalog enthält 286 Keys mit nicht-leeren englischen Werten. Der gezielte EN-Smoke durchläuft Reisen, Karte, Wunschreisen, Bilanz und Einstellungen und ist grün. Grenze: Der Marker-Smoke beweist nicht jeden dynamischen oder interpolierten Laufzeitpfad.</p></div></details>
+    <details open><summary><span class="badge fixed">H7 · behoben</span>Privacy-Manifest liegt im App-Bundle</summary><div class="body"><p><code>ShipTrip/PrivacyInfo.xcprivacy</code> ist valide und deklariert UserDefaults (<code>CA92.1</code>) sowie FileTimestamp (<code>3B52.1</code>). Der aktuelle Build kopiert es nach <code>ShipTrip.app/PrivacyInfo.xcprivacy</code>. Grenze: kein signiertes Device-Archive und kein Archive-/ASC-Privacy-Report.</p></div></details>
+    <details open><summary><span class="badge fixed">H8 · behoben</span>ZIP-Restore prüft Struktur, Größen und Inhalt</summary><div class="body"><p><code>ZipArchiveReader.swift:99–249</code> erzwingt Entry-Anzahl, Signaturen, Local-/Central-Namen, Bounds, dekomprimierte Größe und CRC. <code>ExportImportService.swift:405–509</code> zählt ungültige Medien sichtbar. Die vollständige aktuelle Unit-Suite einschließlich der Hardening-Fälle ist grün.</p></div></details>
+    <details open><summary><span class="badge fixed">M5 · behoben</span>Beide Hafen-Editoren validieren Koordinaten und Zeitfolge</summary><div class="body"><p><code>PortFormView.swift:31–46, 91–95, 163–189</code> akzeptiert Dezimalkomma und -punkt ohne stilles 0/0. <code>CruiseFormView.swift:1068–1072, 1138–1164</code> begrenzt und klemmt Abfahrt auf mindestens Ankunft. Die Parser- und Clamp-Tests sind grün.</p></div></details>
+  </section>
+
+  <section id="open">
+    <h2>Teilweise und offene Befunde</h2>
+    <details open><summary><span class="badge partial">M8 · teilweise</span>Dokumentation und Store-Metadaten widersprechen dem Checkout</summary><div class="body"><p>Der alte Plan verweist nun auf den Stabilitätsplan, doch der Drift bleibt: Build 19 vs. README 1.5.1, fünf dokumentierte vs. acht persistente Modelle, JSON- statt ZIP-Aussagen sowie alte „What’s New“-Texte. Zusätzlich behauptet <code>docs/features/audit-highs-2026-07-10.md</code> 290 Unit-Tests; der aktuelle echte Lauf enthält 286. Auch die dort behauptete Gemini-Disclosure existiert im UI nicht.</p></div></details>
+    <details><summary><span class="badge open">M1 · offen</span>Export ist kein vollständiges, metadatentreues Backup</summary><div class="body"><p><code>SettingsView.swift:518–524</code> exportiert nur Reisen. Deals, eigene Katalogdaten, Ausblendungen und Einstellungen fehlen; Foto-IDs und mehrere Zeitstempel überleben den Roundtrip nicht. UI und Datenschutztexte nennen den Scope weiterhin zu breit.</p></div></details>
+    <details><summary><span class="badge open">M3 · offen</span>Import/Export bleibt Main-Actor- und speicherlastig</summary><div class="body"><p><code>ExportImportService.swift:71–75, 128–171</code> materialisiert Bilder und Archiv auf dem Main Actor; <code>ZipArchiveReader.swift:66–86</code> liest und kopiert große Archive mehrfach. Streaming, Fortschritt und Cancellation fehlen.</p></div></details>
+    <details><summary><span class="badge open">M4 · offen</span>Notification-Einstellungen wirken nicht auf bestehende Requests</summary><div class="body"><p><code>SettingsView.swift:315–389</code> ändert nur AppStorage und behandelt „denied“ wie „not determined“. Neuplanung passiert erst beim erneuten Speichern einer Reise; ein <code>rescheduleAll</code>-Pfad fehlt.</p></div></details>
+    <details><summary><span class="badge open">M6 · offen</span>Testlauf bleibt nicht hermetisch</summary><div class="body"><p><code>HauptansichtScreenshotTests.swift:5–20, 283–287</code> schreibt weiter in einen absoluten, versionierten Repo-Pfad. Es gibt keine Testplan-Trennung; der bekannte kombinierte Host-Flake wurde nicht durch einen vollständigen Unit+UI-Gesamtlauf neu bewertet.</p></div></details>
+    <details><summary><span class="badge open">M7 · offen</span>Keine reproduzierbare Release-Kette</summary><div class="body"><p>Keine Shared Scheme/Testpläne, kein gepinntes Fastlane-Bundle und kein Release-Runbook. <code>fastlane/Fastfile:37–50</code> erwartet weiterhin eine bereits fertige IPA.</p></div></details>
+    <details><summary><span class="badge open">M9 · offen</span>Temporärer Store bleibt voll bearbeitbar</summary><div class="body"><p><code>ShipTripApp.swift:45–54, 84–102</code> zeigt nach einmaligem OK die volle App auf einem flüchtigen Store. Dauerbanner, Retry und Schreibschutz fehlen.</p></div></details>
+    <details><summary><span class="badge open">M10 · offen</span>„Beste Option“ und gespeicherte URL bleiben irreführend</summary><div class="body"><p><code>DealsView.swift:14, 72–82, 118–128</code> nennt den neuesten rabattierten Eintrag ohne Vergleich „Beste Option“. Die gespeicherte URL lässt sich im Anzeige-Flow nicht öffnen.</p></div></details>
+    <details><summary><span class="badge open">M11 · offen</span>Gemini-Disclosure und atomarer Key-Wechsel fehlen</summary><div class="body"><p><code>CruiseFormView.swift:1405–1460</code> sendet ohne Drittanbieterhinweis. <code>KeychainService.swift:22–39</code> löscht vor dem Ersetzen; ein ungültiger Kandidat kann den funktionierenden Schlüssel zerstören.</p></div></details>
+    <details><summary><span class="badge open">L1–L5 · offen</span>Testtiefe, Struktur und planbare Politur</summary><div class="body"><p><strong>L1:</strong> Notification-Center nicht injizierbar, keine echte Zustellung. <strong>L2:</strong> Screenshot-Capture ohne visuelle Baseline. <strong>L3:</strong> große, duplizierte Form-/View-Dateien. <strong>L4:</strong> stille Foto-Ladefehler, kein Rating-Reset, großer kontrastarmer Port-Zero-State. <strong>L5:</strong> einmaliges Dedup-Flag bleibt vor CloudKit-Aktivierung ein bewusst testbelegtes Folgerisiko.</p></div></details>
+  </section>
+
+  <section id="verification">
+    <h2>Aktuelle Verifikation</h2>
+    <table>
+      <tr><th>Check</th><th>Ergebnis</th><th>Grenze</th></tr>
+      <tr><td>Checkout</td><td><code>main</code> · <code>6b267d1</code> · Version 1.7.0 Build 19</td><td>Vorhandenes untracked <code>.planning/</code> blieb unberührt</td></tr>
+      <tr><td>Debug Simulator Build</td><td>Bestanden</td><td>iOS-26.5-SDK, iOS-18.5-Deployment; bestehender unused-value-Warning in <code>CruiseGeoFallbackView.swift:68</code></td></tr>
+      <tr><td>PrivacyInfo im Build</td><td>Vorhanden und plist-valide</td><td>Kein signiertes Device-Archive/ASC-Report</td></tr>
+      <tr><td>Unit-Tests</td><td>286/286 in 57 Suites bestanden</td><td>Temporärer iPhone-16-Pro-Simulator, seriell</td></tr>
+      <tr><td>Gezielte UI-Closure</td><td>4/4 bestanden</td><td>Filter-Reset, Reise-Löschung, Hero-Deal-Löschung, EN-Kernnavigation</td></tr>
+      <tr><td>Vollständiger UI-/Kombilauf</td><td>Nicht ausgeführt</td><td>Screenshot-Capture würde weiterhin Repo-PNGs verändern; M6 bleibt offen</td></tr>
+      <tr><td>Arbeitsbaum nach Checks</td><td>Keine testbedingten Änderungen</td><td>Nur vorbestehendes <code>?? .planning/</code> plus dieser neue Audit-Bericht</td></tr>
+    </table>
+  </section>
+
+  <section id="next">
+    <h2>Empfohlene Reihenfolge</h2>
+    <div class="grid cols-3">
+      <div class="card"><h3>1 · Vertrauen und Ehrlichkeit</h3><p>M1 Scope ehrlich benennen oder Full-Backup bauen; M4 bestehende Notifications neu planen; M11 Disclosure + atomaren Key-Wechsel schließen.</p></div>
+      <div class="card"><h3>2 · Release-Wahrheit</h3><p>M8 Metadaten, Privacy, Modelle und Versionen synchronisieren; M6 Capture trennen; M7 reproduzierbare serielle Build/Test/Archive-Kette schaffen.</p></div>
+      <div class="card"><h3>3 · Submission-Preflight</h3><p>Signiertes Device-Archive, Privacy-Report, Validate/Test-Upload und Live-Metadaten-Abgleich. Erst danach uneingeschränktes App-Store-GO.</p></div>
+    </div>
+  </section>
+
+  <footer>ShipTrip Follow-up-Audit · erstellt mit Winston + <code>project-audit</code> · Scope: Closure aller 23 Befunde des Audits vom 10.07.2026 gegen Checkout <code>6b267d1</code> · keine Produktionscode-Änderungen.</footer>
+</main>
+</body>
+</html>

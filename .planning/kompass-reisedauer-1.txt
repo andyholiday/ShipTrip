@@ -1,0 +1,5 @@
+ENGINE: gemini/gemini-3.6-flash (REST-Bridge)
+1. on-track: ja, ja, ja, ja, ja, ja, ja, ja
+2. einfachere Loesung uebersehen: nein
+3. scope gewachsen: nein
+exit 0

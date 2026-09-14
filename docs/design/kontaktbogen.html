@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kontaktbogen — Logbuch r3</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #f2f2f4; color: #1c1c1e;
+    padding: 24px 28px 60px;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1a1c; color: #ececee; }
+    .cell { background: #26262a; border-color: #3a3a3e; }
+    .cell.selected { outline-color: #6ea8ff; }
+    footer, .kontext { color: #9a9aa0; }
+    th { color: #9a9aa0; }
+  }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .kontext { font-size: 13px; color: #6e6e73; margin-bottom: 20px; }
+  table { border-collapse: separate; border-spacing: 14px 18px; }
+  th { font-size: 12px; font-weight: 600; color: #6e6e73;
+       text-transform: uppercase; letter-spacing: 0.04em; text-align: left; }
+  th.rowhead { vertical-align: top; padding-top: 8px; white-space: nowrap;
+               text-transform: none; font-size: 13px; letter-spacing: 0; }
+  th.rowhead small { display: block; font-weight: 400; color: inherit;
+                     opacity: 0.75; margin-top: 2px; max-width: 180px;
+                     white-space: normal; }
+  .cell {
+    background: #fff; border: 1px solid #dcdce0; border-radius: 10px;
+    padding: 8px; cursor: pointer; text-align: center;
+  }
+  .cell img { display: block; width: 210px; height: auto; border-radius: 6px; }
+  .cell .label { font-size: 11px; color: #8e8e93; margin-top: 6px; }
+  .cell.selected { outline: 3px solid #0a66ff; outline-offset: 2px; }
+  #overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    z-index: 10; justify-content: center; align-items: flex-start;
+    overflow: auto; padding: 24px;
+  }
+  #overlay.open { display: flex; }
+  #overlay img { max-width: min(94vw, 620px); height: auto; border-radius: 10px; }
+  footer { margin-top: 26px; font-size: 12px; color: #6e6e73; }
+  kbd { font-family: inherit; border: 1px solid currentColor; border-radius: 4px;
+        padding: 0 4px; font-size: 11px; opacity: 0.85; }
+</style>
+</head>
+<body>
+<h1>Kontaktbogen — Richtung „Logbuch" (Runde r3)</h1>
+<p class="kontext">Alle Bilder sind Screenshots des laufenden Prototyps
+(<code>prototype-journal/</code>, Shots: <code>directions/shots/logbuch-r3/</code>).
+Andrea, 54, hält am Seetag fest, wie der Morgen war — der Tagebuch-Strang ist der
+Screen, wegen dem die App nach der Reise noch geöffnet wird.</p>
+
+<table>
+  <tr><th></th><th>Hell</th><th>Dunkel</th></tr>
+  <tr>
+    <th class="rowhead">Tagebuch-Strang · oben<small>Einstieg, Tag 1–2</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal--light.png"><img src="directions/shots/logbuch-r3/journal--light.png" alt="Journal oben, hell"><div class="label">journal--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal--dark.png"><img src="directions/shots/logbuch-r3/journal--dark.png" alt="Journal oben, dunkel"><div class="label">journal--dark</div></td>
+  </tr>
+  <tr>
+    <th class="rowhead">Tagebuch-Strang · Tag 3<small>Härtefall: Seetag, drei Einträge, ein langer mit Fotos</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.tag3--light.png"><img src="directions/shots/logbuch-r3/journal.tag3--light.png" alt="Journal Tag 3, hell"><div class="label">journal.tag3--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.tag3--dark.png"><img src="directions/shots/logbuch-r3/journal.tag3--dark.png" alt="Journal Tag 3, dunkel"><div class="label">journal.tag3--dark</div></td>
+  </tr>
+  <tr>
+    <th class="rowhead">Tagebuch-Strang · Tag 5<small>leerer Tag (blasse Ziffer, gestrichelter Kasten)</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.tag5--light.png"><img src="directions/shots/logbuch-r3/journal.tag5--light.png" alt="Journal Tag 5, hell"><div class="label">journal.tag5--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.tag5--dark.png"><img src="directions/shots/logbuch-r3/journal.tag5--dark.png" alt="Journal Tag 5, dunkel"><div class="label">journal.tag5--dark</div></td>
+  </tr>
+  <tr>
+    <th class="rowhead">Tagebuch-Strang · Ruhelage<small>Endzustand nach Einlauf-Animation (Standbild, deckungsgleich mit „oben")</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.motion--light.png"><img src="directions/shots/logbuch-r3/journal.motion--light.png" alt="Journal Ruhelage, hell"><div class="label">journal.motion--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/journal.motion--dark.png"><img src="directions/shots/logbuch-r3/journal.motion--dark.png" alt="Journal Ruhelage, dunkel"><div class="label">journal.motion--dark</div></td>
+  </tr>
+  <tr>
+    <th class="rowhead">Editor · Schritt 1<small>Erinnerung zuerst: Text + Fotos</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/editor--light.png"><img src="directions/shots/logbuch-r3/editor--light.png" alt="Editor oben, hell"><div class="label">editor--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/editor--dark.png"><img src="directions/shots/logbuch-r3/editor--dark.png" alt="Editor oben, dunkel"><div class="label">editor--dark</div></td>
+  </tr>
+  <tr>
+    <th class="rowhead">Editor · Schritt 2<small>gescrollt: Eckdaten (Tag, Hafen, Stimmung)</small></th>
+    <td class="cell" data-src="directions/shots/logbuch-r3/editor.scrolled--light.png"><img src="directions/shots/logbuch-r3/editor.scrolled--light.png" alt="Editor gescrollt, hell"><div class="label">editor.scrolled--light</div></td>
+    <td class="cell" data-src="directions/shots/logbuch-r3/editor.scrolled--dark.png"><img src="directions/shots/logbuch-r3/editor.scrolled--dark.png" alt="Editor gescrollt, dunkel"><div class="label">editor.scrolled--dark</div></td>
+  </tr>
+</table>
+
+<p style="margin-top:18px;font-size:12px;color:#8e8e93">Nicht gerendert (bewusste Lücken dieses Prototyps): Leer-, Lade- und Fehlerzustände des Editors — die entstehen erst im nativen Bau (T8).</p>
+
+<footer>
+  <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> Auswahl bewegen ·
+  <kbd>Enter</kbd>/<kbd>Leertaste</kbd> groß öffnen · <kbd>Esc</kbd> schließen ·
+  Klick auf ein Bild öffnet es in voller Größe
+</footer>
+
+<div id="overlay"><img id="overlayImg" src="" alt=""></div>
+
+<script>
+  var cells = Array.prototype.slice.call(document.querySelectorAll('.cell'));
+  var sel = 0;
+  var overlay = document.getElementById('overlay');
+  var overlayImg = document.getElementById('overlayImg');
+  function select(i) {
+    cells[sel].classList.remove('selected');
+    sel = (i + cells.length) % cells.length;
+    cells[sel].classList.add('selected');
+    cells[sel].scrollIntoView({block: 'nearest'});
+  }
+  function open(i) { overlayImg.src = cells[i].dataset.src; overlay.classList.add('open'); }
+  function close() { overlay.classList.remove('open'); }
+  cells.forEach(function (c, i) {
+    c.addEventListener('click', function () { select(i); open(i); });
+  });
+  overlay.addEventListener('click', close);
+  select(0);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { close(); return; }
+    if (overlay.classList.contains('open') &&
+        (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      select(sel + (e.key === 'ArrowRight' ? 1 : -1)); open(sel);
+      e.preventDefault(); return;
+    }
+    if (e.key === 'ArrowRight') { select(sel + 1); e.preventDefault(); }
+    else if (e.key === 'ArrowLeft') { select(sel - 1); e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { select(sel + 2); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { select(sel - 2); e.preventDefault(); }
+    else if (e.key === 'Enter' || e.key === ' ') { open(sel); e.preventDefault(); }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1768 @@
+{
+  "tool": "shoot",
+  "report_version": 2,
+  "platform": "swiftui",
+  "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+  "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+  "target": "proto-onb-regate (iOS-26-5)",
+  "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+  "started_at": "2026-08-24T11:27:03Z",
+  "finished_at": "2026-08-24T11:27:57Z",
+  "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device 2B50A706-36DD-4DEE-8129-C3003EB650CF --derived-data /private/tmp/claude-501/-Users-andre-studio-Documents-0-Projekte-ShipTrip/14b7f885-0aba-491e-8076-0ccebbf28697/scratchpad/dd --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+  "screens": [
+    "karte-1--light",
+    "karte-1--dark",
+    "karte-2--light",
+    "karte-2--dark",
+    "karte-3--light",
+    "karte-3--dark",
+    "karte-4--light",
+    "karte-4--dark"
+  ],
+  "shots": [
+    {
+      "screen": "karte-1",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+        "bytes": 1523615,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 921,
+        "dominance": 0.575930735930736,
+        "mean_luminance": 191.37,
+        "stddev_luminance": 71.2,
+        "frame": {
+          "distinct_colors": 934,
+          "dominance": 0.6093952073031571,
+          "mean_luminance": 194.26,
+          "stddev_luminance": 71.78
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+    },
+    {
+      "screen": "karte-1",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+        "bytes": 1511450,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 909,
+        "dominance": 0.5751082251082251,
+        "mean_luminance": 42.86,
+        "stddev_luminance": 63.11,
+        "frame": {
+          "distinct_colors": 921,
+          "dominance": 0.6226321795359452,
+          "mean_luminance": 38.03,
+          "stddev_luminance": 60.93
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+    },
+    {
+      "screen": "karte-2",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+        "bytes": 221727,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 155,
+        "dominance": 0.5052380952380953,
+        "mean_luminance": 228.73,
+        "stddev_luminance": 42.35,
+        "frame": {
+          "distinct_colors": 169,
+          "dominance": 0.5472803347280335,
+          "mean_luminance": 227.09,
+          "stddev_luminance": 47.26
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+    },
+    {
+      "screen": "karte-2",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+        "bytes": 218020,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 154,
+        "dominance": 0.5113852813852814,
+        "mean_luminance": 27.16,
+        "stddev_luminance": 41.19,
+        "frame": {
+          "distinct_colors": 169,
+          "dominance": 0.5666413084823126,
+          "mean_luminance": 24.24,
+          "stddev_luminance": 39.96
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+    },
+    {
+      "screen": "karte-3",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+        "bytes": 210121,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 152,
+        "dominance": 0.6413419913419913,
+        "mean_luminance": 228.7,
+        "stddev_luminance": 39.47,
+        "frame": {
+          "distinct_colors": 163,
+          "dominance": 0.6668695321414987,
+          "mean_luminance": 227.06,
+          "stddev_luminance": 45.02
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+    },
+    {
+      "screen": "karte-3",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+        "bytes": 206587,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 145,
+        "dominance": 0.6440259740259741,
+        "mean_luminance": 21.54,
+        "stddev_luminance": 40.65,
+        "frame": {
+          "distinct_colors": 161,
+          "dominance": 0.6831875237732978,
+          "mean_luminance": 19.3,
+          "stddev_luminance": 39.14
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+    },
+    {
+      "screen": "karte-4",
+      "mode": "light",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+        "bytes": 1378983,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 861,
+        "dominance": 0.4134199134199134,
+        "mean_luminance": 190.11,
+        "stddev_luminance": 75.96,
+        "frame": {
+          "distinct_colors": 874,
+          "dominance": 0.46660327120578166,
+          "mean_luminance": 193.16,
+          "stddev_luminance": 76.0
+        }
+      },
+      "changed_fraction": 0.00436,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+    },
+    {
+      "screen": "karte-4",
+      "mode": "dark",
+      "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+      "ok": true,
+      "problems": [],
+      "stabilised": true,
+      "metrics": {
+        "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+        "bytes": 1348493,
+        "patterns": [],
+        "decoded": true,
+        "sample_width": 110,
+        "sample_height": 239,
+        "distinct_colors": 857,
+        "dominance": 0.49783549783549785,
+        "mean_luminance": 41.32,
+        "stddev_luminance": 61.06,
+        "frame": {
+          "distinct_colors": 873,
+          "dominance": 0.5547356409281096,
+          "mean_luminance": 36.68,
+          "stddev_luminance": 58.96
+        }
+      },
+      "changed_fraction": 0.00284,
+      "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+    }
+  ],
+  "videos": [],
+  "notes": [
+    "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+    "12 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png. The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+  ],
+  "ok": true,
+  "all_runs_ok": true,
+  "runs": [
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "ci-b1-onboarding (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T09:38:08Z",
+      "finished_at": "2026-08-24T09:39:00Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device BE276472-85B0-4EEA-B581-9D55533FA7C0 --skip-build --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1895420,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 989,
+            "dominance": 0.4667965367965368,
+            "mean_luminance": 175.44,
+            "stddev_luminance": 76.97,
+            "frame": {
+              "distinct_colors": 1002,
+              "dominance": 0.5135032331685051,
+              "mean_luminance": 180.26,
+              "stddev_luminance": 77.54
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1892207,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 987,
+            "dominance": 0.46606060606060606,
+            "mean_luminance": 55.98,
+            "stddev_luminance": 68.42,
+            "frame": {
+              "distinct_colors": 998,
+              "dominance": 0.5268162799543553,
+              "mean_luminance": 49.55,
+              "stddev_luminance": 66.75
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 218951,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 159,
+            "dominance": 0.5068831168831169,
+            "mean_luminance": 229.38,
+            "stddev_luminance": 42.15,
+            "frame": {
+              "distinct_colors": 173,
+              "dominance": 0.5487257512362115,
+              "mean_luminance": 227.66,
+              "stddev_luminance": 47.13
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 218389,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 156,
+            "dominance": 0.5117316017316017,
+            "mean_luminance": 27.29,
+            "stddev_luminance": 41.47,
+            "frame": {
+              "distinct_colors": 171,
+              "dominance": 0.5669456066945606,
+              "mean_luminance": 24.35,
+              "stddev_luminance": 40.22
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 215166,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 112,
+            "dominance": 0.6138961038961039,
+            "mean_luminance": 226.46,
+            "stddev_luminance": 38.67,
+            "frame": {
+              "distinct_colors": 126,
+              "dominance": 0.6427538988208444,
+              "mean_luminance": 225.1,
+              "stddev_luminance": 44.34
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 214064,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 113,
+            "dominance": 0.6261904761904762,
+            "mean_luminance": 21.76,
+            "stddev_luminance": 40.55,
+            "frame": {
+              "distinct_colors": 133,
+              "dominance": 0.6675161658425257,
+              "mean_luminance": 19.49,
+              "stddev_luminance": 39.06
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1391883,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 716,
+            "dominance": 0.47545454545454546,
+            "mean_luminance": 190.66,
+            "stddev_luminance": 68.89,
+            "frame": {
+              "distinct_colors": 730,
+              "dominance": 0.5211106884747052,
+              "mean_luminance": 193.65,
+              "stddev_luminance": 69.81
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1387886,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 721,
+            "dominance": 0.4775757575757576,
+            "mean_luminance": 49.03,
+            "stddev_luminance": 65.51,
+            "frame": {
+              "distinct_colors": 739,
+              "dominance": 0.5369341955116014,
+              "mean_luminance": 43.45,
+              "stddev_luminance": 63.56
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at."
+      ],
+      "ok": true
+    },
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "ci-b1-onboarding (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T09:40:20Z",
+      "finished_at": "2026-08-24T09:40:51Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device BE276472-85B0-4EEA-B581-9D55533FA7C0 --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1657002,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 973,
+            "dominance": 0.520995670995671,
+            "mean_luminance": 184.89,
+            "stddev_luminance": 73.88,
+            "frame": {
+              "distinct_colors": 986,
+              "dominance": 0.5611259033853176,
+              "mean_luminance": 188.57,
+              "stddev_luminance": 74.39
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1649399,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 957,
+            "dominance": 0.5223809523809524,
+            "mean_luminance": 49.74,
+            "stddev_luminance": 67.14,
+            "frame": {
+              "distinct_colors": 966,
+              "dominance": 0.5763027767211868,
+              "mean_luminance": 44.08,
+              "stddev_luminance": 65.1
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 218927,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5068831168831169,
+            "mean_luminance": 229.38,
+            "stddev_luminance": 41.99,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5487257512362115,
+              "mean_luminance": 227.66,
+              "stddev_luminance": 47.0
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 218382,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5117316017316017,
+            "mean_luminance": 27.29,
+            "stddev_luminance": 41.32,
+            "frame": {
+              "distinct_colors": 170,
+              "dominance": 0.5669456066945606,
+              "mean_luminance": 24.35,
+              "stddev_luminance": 40.08
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 215175,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 113,
+            "dominance": 0.6124675324675325,
+            "mean_luminance": 226.46,
+            "stddev_luminance": 38.67,
+            "frame": {
+              "distinct_colors": 127,
+              "dominance": 0.6414986686953215,
+              "mean_luminance": 225.1,
+              "stddev_luminance": 44.34
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 214048,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 114,
+            "dominance": 0.6262770562770563,
+            "mean_luminance": 21.76,
+            "stddev_luminance": 40.55,
+            "frame": {
+              "distinct_colors": 134,
+              "dominance": 0.6675922403955876,
+              "mean_luminance": 19.49,
+              "stddev_luminance": 39.07
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1305670,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 712,
+            "dominance": 0.5124242424242424,
+            "mean_luminance": 194.19,
+            "stddev_luminance": 67.51,
+            "frame": {
+              "distinct_colors": 726,
+              "dominance": 0.5535945226321796,
+              "mean_luminance": 196.74,
+              "stddev_luminance": 68.49
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1301160,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 708,
+            "dominance": 0.5142857142857142,
+            "mean_luminance": 45.69,
+            "stddev_luminance": 64.07,
+            "frame": {
+              "distinct_colors": 726,
+              "dominance": 0.5691898060098897,
+              "mean_luminance": 40.52,
+              "stddev_luminance": 62.0
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+        "16 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png .... The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+      ],
+      "ok": true
+    },
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "proto-onb-repair (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T10:16:30Z",
+      "finished_at": "2026-08-24T10:17:02Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device 98075402-F6A2-402A-BD48-8D06F40D1C38 --derived-data /private/tmp/claude-501/-Users-andre-studio-Documents-0-Projekte-ShipTrip/a5567d6f-34fc-4dc6-8f21-d2852fecadb8/scratchpad/DD --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1521346,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 923,
+            "dominance": 0.5761038961038961,
+            "mean_luminance": 191.65,
+            "stddev_luminance": 71.21,
+            "frame": {
+              "distinct_colors": 936,
+              "dominance": 0.6095473564092811,
+              "mean_luminance": 194.51,
+              "stddev_luminance": 71.79
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1510919,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 914,
+            "dominance": 0.5752380952380952,
+            "mean_luminance": 42.85,
+            "stddev_luminance": 63.1,
+            "frame": {
+              "distinct_colors": 926,
+              "dominance": 0.6227462913655383,
+              "mean_luminance": 38.02,
+              "stddev_luminance": 60.92
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 218927,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5068831168831169,
+            "mean_luminance": 229.38,
+            "stddev_luminance": 41.99,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5487257512362115,
+              "mean_luminance": 227.66,
+              "stddev_luminance": 47.0
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 218382,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5117316017316017,
+            "mean_luminance": 27.29,
+            "stddev_luminance": 41.32,
+            "frame": {
+              "distinct_colors": 170,
+              "dominance": 0.5669456066945606,
+              "mean_luminance": 24.35,
+              "stddev_luminance": 40.08
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 208074,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 160,
+            "dominance": 0.6548484848484849,
+            "mean_luminance": 228.67,
+            "stddev_luminance": 38.91,
+            "frame": {
+              "distinct_colors": 171,
+              "dominance": 0.6787371624191708,
+              "mean_luminance": 227.04,
+              "stddev_luminance": 44.59
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 206086,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 166,
+            "dominance": 0.6615151515151515,
+            "mean_luminance": 21.1,
+            "stddev_luminance": 40.62,
+            "frame": {
+              "distinct_colors": 182,
+              "dominance": 0.698554583491822,
+              "mean_luminance": 18.91,
+              "stddev_luminance": 39.09
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1380758,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 740,
+            "dominance": 0.462034632034632,
+            "mean_luminance": 189.44,
+            "stddev_luminance": 69.94,
+            "frame": {
+              "distinct_colors": 753,
+              "dominance": 0.5093191327500951,
+              "mean_luminance": 192.57,
+              "stddev_luminance": 70.77
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1378654,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 750,
+            "dominance": 0.46805194805194805,
+            "mean_luminance": 53.1,
+            "stddev_luminance": 67.1,
+            "frame": {
+              "distinct_colors": 766,
+              "dominance": 0.5285659946747813,
+              "mean_luminance": 47.03,
+              "stddev_luminance": 65.32
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+        "16 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png .... The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+      ],
+      "ok": true
+    },
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "proto-onb-iter3 (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T10:43:46Z",
+      "finished_at": "2026-08-24T10:44:39Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device 05F548BD-E65B-4C4B-ACE6-44E12CAC64FE --derived-data /private/tmp/claude-501/-Users-andre-studio-Documents-0-Projekte-ShipTrip/a5567d6f-34fc-4dc6-8f21-d2852fecadb8/scratchpad/dd --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1523611,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 923,
+            "dominance": 0.575974025974026,
+            "mean_luminance": 191.37,
+            "stddev_luminance": 71.19,
+            "frame": {
+              "distinct_colors": 936,
+              "dominance": 0.6094332445796881,
+              "mean_luminance": 194.27,
+              "stddev_luminance": 71.78
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1511630,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 914,
+            "dominance": 0.5752380952380952,
+            "mean_luminance": 42.86,
+            "stddev_luminance": 63.11,
+            "frame": {
+              "distinct_colors": 926,
+              "dominance": 0.6227462913655383,
+              "mean_luminance": 38.03,
+              "stddev_luminance": 60.93
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 221878,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5052813852813853,
+            "mean_luminance": 228.73,
+            "stddev_luminance": 42.34,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5473183720045645,
+              "mean_luminance": 227.09,
+              "stddev_luminance": 47.26
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 217938,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5115584415584415,
+            "mean_luminance": 27.16,
+            "stddev_luminance": 41.19,
+            "frame": {
+              "distinct_colors": 170,
+              "dominance": 0.5667934575884367,
+              "mean_luminance": 24.24,
+              "stddev_luminance": 39.96
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 210334,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 159,
+            "dominance": 0.6367099567099567,
+            "mean_luminance": 228.22,
+            "stddev_luminance": 39.67,
+            "frame": {
+              "distinct_colors": 170,
+              "dominance": 0.6627995435526817,
+              "mean_luminance": 226.65,
+              "stddev_luminance": 45.16
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 206649,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 157,
+            "dominance": 0.6440259740259741,
+            "mean_luminance": 21.58,
+            "stddev_luminance": 40.68,
+            "frame": {
+              "distinct_colors": 173,
+              "dominance": 0.6831875237732978,
+              "mean_luminance": 19.33,
+              "stddev_luminance": 39.18
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1318286,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 744,
+            "dominance": 0.5038528138528139,
+            "mean_luminance": 195.33,
+            "stddev_luminance": 68.59,
+            "frame": {
+              "distinct_colors": 757,
+              "dominance": 0.5460631418790415,
+              "mean_luminance": 197.74,
+              "stddev_luminance": 69.39
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1289440,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 740,
+            "dominance": 0.5711255411255411,
+            "mean_luminance": 43.85,
+            "stddev_luminance": 66.44,
+            "frame": {
+              "distinct_colors": 758,
+              "dominance": 0.6191327500950932,
+              "mean_luminance": 38.9,
+              "stddev_luminance": 64.04
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+        "16 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png .... The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+      ],
+      "ok": true
+    },
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "proto-onb-repair (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T11:06:08Z",
+      "finished_at": "2026-08-24T11:07:01Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device 1A94F44C-ABE9-4440-9BD8-49898A3EC8F4 --derived-data /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding/.dd --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1523615,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 921,
+            "dominance": 0.575930735930736,
+            "mean_luminance": 191.37,
+            "stddev_luminance": 71.2,
+            "frame": {
+              "distinct_colors": 934,
+              "dominance": 0.6093952073031571,
+              "mean_luminance": 194.26,
+              "stddev_luminance": 71.78
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1511450,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 909,
+            "dominance": 0.5751082251082251,
+            "mean_luminance": 42.86,
+            "stddev_luminance": 63.11,
+            "frame": {
+              "distinct_colors": 921,
+              "dominance": 0.6226321795359452,
+              "mean_luminance": 38.03,
+              "stddev_luminance": 60.93
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 221727,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5052380952380953,
+            "mean_luminance": 228.73,
+            "stddev_luminance": 42.35,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5472803347280335,
+              "mean_luminance": 227.09,
+              "stddev_luminance": 47.26
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 218020,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 154,
+            "dominance": 0.5113852813852814,
+            "mean_luminance": 27.16,
+            "stddev_luminance": 41.19,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5666413084823126,
+              "mean_luminance": 24.24,
+              "stddev_luminance": 39.96
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 210121,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 152,
+            "dominance": 0.6413419913419913,
+            "mean_luminance": 228.7,
+            "stddev_luminance": 39.47,
+            "frame": {
+              "distinct_colors": 163,
+              "dominance": 0.6668695321414987,
+              "mean_luminance": 227.06,
+              "stddev_luminance": 45.02
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 206587,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 145,
+            "dominance": 0.6440259740259741,
+            "mean_luminance": 21.54,
+            "stddev_luminance": 40.65,
+            "frame": {
+              "distinct_colors": 161,
+              "dominance": 0.6831875237732978,
+              "mean_luminance": 19.3,
+              "stddev_luminance": 39.14
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1353185,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 865,
+            "dominance": 0.5025974025974026,
+            "mean_luminance": 191.53,
+            "stddev_luminance": 74.19,
+            "frame": {
+              "distinct_colors": 878,
+              "dominance": 0.5449600608596424,
+              "mean_luminance": 194.4,
+              "stddev_luminance": 74.39
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1319638,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 860,
+            "dominance": 0.5715151515151515,
+            "mean_luminance": 40.06,
+            "stddev_luminance": 63.98,
+            "frame": {
+              "distinct_colors": 876,
+              "dominance": 0.6194750855838722,
+              "mean_luminance": 35.57,
+              "stddev_luminance": 61.54
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+        "16 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png .... The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+      ],
+      "ok": true
+    },
+    {
+      "platform": "swiftui",
+      "backend_status": "NOT VERIFIED - never run against a live Xcode project. Only the xcodebuild step differs from the proven Flutter path, but that step is exactly where it can break",
+      "project": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding",
+      "target": "proto-onb-regate (iOS-26-5)",
+      "out": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "started_at": "2026-08-24T11:27:03Z",
+      "finished_at": "2026-08-24T11:27:57Z",
+      "command": "shoot.py --project /Users/andre-studio/Documents/0.Projekte/ShipTrip/prototype-onboarding --all --mode both --device 2B50A706-36DD-4DEE-8129-C3003EB650CF --derived-data /private/tmp/claude-501/-Users-andre-studio-Documents-0-Projekte-ShipTrip/14b7f885-0aba-491e-8076-0ccebbf28697/scratchpad/dd --out /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots",
+      "screens": [
+        "karte-1--light",
+        "karte-1--dark",
+        "karte-2--light",
+        "karte-2--dark",
+        "karte-3--light",
+        "karte-3--dark",
+        "karte-4--light",
+        "karte-4--dark"
+      ],
+      "shots": [
+        {
+          "screen": "karte-1",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.png",
+            "bytes": 1523615,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 921,
+            "dominance": 0.575930735930736,
+            "mean_luminance": 191.37,
+            "stddev_luminance": 71.2,
+            "frame": {
+              "distinct_colors": 934,
+              "dominance": 0.6093952073031571,
+              "mean_luminance": 194.26,
+              "stddev_luminance": 71.78
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--light.thumb.png"
+        },
+        {
+          "screen": "karte-1",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.png",
+            "bytes": 1511450,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 909,
+            "dominance": 0.5751082251082251,
+            "mean_luminance": 42.86,
+            "stddev_luminance": 63.11,
+            "frame": {
+              "distinct_colors": 921,
+              "dominance": 0.6226321795359452,
+              "mean_luminance": 38.03,
+              "stddev_luminance": 60.93
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-1--dark.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.png",
+            "bytes": 221727,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 155,
+            "dominance": 0.5052380952380953,
+            "mean_luminance": 228.73,
+            "stddev_luminance": 42.35,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5472803347280335,
+              "mean_luminance": 227.09,
+              "stddev_luminance": 47.26
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--light.thumb.png"
+        },
+        {
+          "screen": "karte-2",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.png",
+            "bytes": 218020,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 154,
+            "dominance": 0.5113852813852814,
+            "mean_luminance": 27.16,
+            "stddev_luminance": 41.19,
+            "frame": {
+              "distinct_colors": 169,
+              "dominance": 0.5666413084823126,
+              "mean_luminance": 24.24,
+              "stddev_luminance": 39.96
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-2--dark.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.png",
+            "bytes": 210121,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 152,
+            "dominance": 0.6413419913419913,
+            "mean_luminance": 228.7,
+            "stddev_luminance": 39.47,
+            "frame": {
+              "distinct_colors": 163,
+              "dominance": 0.6668695321414987,
+              "mean_luminance": 227.06,
+              "stddev_luminance": 45.02
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--light.thumb.png"
+        },
+        {
+          "screen": "karte-3",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.png",
+            "bytes": 206587,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 145,
+            "dominance": 0.6440259740259741,
+            "mean_luminance": 21.54,
+            "stddev_luminance": 40.65,
+            "frame": {
+              "distinct_colors": 161,
+              "dominance": 0.6831875237732978,
+              "mean_luminance": 19.3,
+              "stddev_luminance": 39.14
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-3--dark.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "light",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.png",
+            "bytes": 1378983,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 861,
+            "dominance": 0.4134199134199134,
+            "mean_luminance": 190.11,
+            "stddev_luminance": 75.96,
+            "frame": {
+              "distinct_colors": 874,
+              "dominance": 0.46660327120578166,
+              "mean_luminance": 193.16,
+              "stddev_luminance": 76.0
+            }
+          },
+          "changed_fraction": 0.00436,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--light.thumb.png"
+        },
+        {
+          "screen": "karte-4",
+          "mode": "dark",
+          "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+          "ok": true,
+          "problems": [],
+          "stabilised": true,
+          "metrics": {
+            "file": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.png",
+            "bytes": 1348493,
+            "patterns": [],
+            "decoded": true,
+            "sample_width": 110,
+            "sample_height": 239,
+            "distinct_colors": 857,
+            "dominance": 0.49783549783549785,
+            "mean_luminance": 41.32,
+            "stddev_luminance": 61.06,
+            "frame": {
+              "distinct_colors": 873,
+              "dominance": 0.5547356409281096,
+              "mean_luminance": 36.68,
+              "stddev_luminance": 58.96
+            }
+          },
+          "changed_fraction": 0.00284,
+          "thumb": "/Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots/karte-4--dark.thumb.png"
+        }
+      ],
+      "videos": [],
+      "notes": [
+        "no --benchmark directory given, so no odd-one-out strip was built. The gate's second step then has nothing to look at.",
+        "12 file(s) in /Users/andre-studio/Documents/0.Projekte/ShipTrip/docs/design/directions/onboarding/shots already existed and were written over by this run: karte-1--dark.png, karte-1--dark.thumb.png, karte-1--light.png, karte-1--light.thumb.png, karte-2--dark.png, karte-2--dark.thumb.png, karte-2--light.png, karte-2--light.thumb.png, karte-3--dark.png, karte-3--dark.thumb.png, karte-3--light.png, karte-3--light.thumb.png. The earlier run's version of each is gone - it was overwritten, not left behind, so it cannot be recovered from this directory. Shoot into a directory of its own when the earlier images still have to stand as evidence."
+      ],
+      "ok": true
+    }
+  ]
+}

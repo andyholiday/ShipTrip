@@ -1,0 +1,15 @@
+{
+  "platform": "swiftui",
+  "entry": "journal",
+  "screens": [
+    "journal",
+    "journal.tag3",
+    "journal.tag5",
+    "journal.motion",
+    "editor",
+    "editor.scrolled"
+  ],
+  "device": "iPhone 17 Pro",
+  "scheme": "ProtoJournal",
+  "bundleId": "com.proto.journal.protoJournal"
+}
