@@ -41,3 +41,5 @@ Kategorie) · Version 1.8.0-Entwurf wird zu 1.9.0 umbenannt statt neu angelegt �
 (Videos) bleiben unverändert (1.7.0) · Einreichen bleibt Andres Klick.
 
 **Nicht im Scope:** Submit for Review · Preis/Verfügbarkeit · neue Previews · Gerätebestätigung.
+
+**Status:** abgeschlossen 2026-09-14 — main @ 6c6727f, Gate `.planning/gate-store-1.9.0.md` (go-mit-backlog), Evidenz `.winston-evidence/20260914T094529Z/gate-run.json`. Submit for Review bleibt Andres Klick.
