@@ -45,7 +45,7 @@ Upload IPA to TestFlight
 [bundle exec] fastlane ios prepare_app_store
 ```
 
-Prepare App Store Connect 1.7.0, excluding app preview videos
+Prepare App Store Connect 1.9.0, excluding app preview videos, price and availability
 
 ### ios sync_worldwide_availability
 
@@ -85,7 +85,7 @@ Read-only: verify localized App Store privacy URLs
 [bundle exec] fastlane ios sync_aso_metadata
 ```
 
-Untertitel und Keywords des 1.8.0-Entwurfs setzen (kein Submit)
+Untertitel und Keywords des 1.9.0-Entwurfs setzen (kein Submit)
 
 ----
 

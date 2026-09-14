@@ -1,31 +1,43 @@
-# ZIEL — Release 1.9.0 Build 33: Widgets „Dynamic Instrument" auf TestFlight und main (Run 2026-09-14)
+# ZIEL — App-Store-Release 1.9.0 in App Store Connect vorbereiten, Widgets im Vordergrund (Run 2026-09-14)
 
-**Ziel (1 Satz):** Der geprüfte Widget-Stand von `feature/widget-politur` wird in `main`
-integriert, als Build 33 (1.9.0) auf TestFlight hochgeladen und samt Tags nach GitHub gepusht.
+**Ziel (1 Satz):** Der Entwurf in App Store Connect steht als Version 1.9.0 mit Build 33,
+neuen Release-Notes und Beschreibung (DE/EN), die die Widgets deutlich nennen, und einer
+Screenshot-Serie, in der ein eigenes Bild die Widgets hervorhebt — bereit zum Einreichen,
+ohne dass eingereicht wird.
 
-**Original-Anfrage (Andre, wörtlich, 2026-09-14):** „Winston, ich habe mir die widgets
-angeschaut und ich finde sie gut. kannst du sie einbauen (falls noch nicht geschehen) und mir
-alles zu testflight schicken und alles auf main pushen und zu github?"
+**Original-Anfrage (Andre, wörtlich, 2026-09-14):** „ok ich möchte die neue version
+veröffentlichen. bereite bitte alles in app store connect vor. zusätzlich sollen die widgets auch
+deutlich erwähnt und auch in einem bild hervorgehoben werden"
 
-**Marktlösung:** entfällt — Release-Lauf, keine Bauarbeit.
+**Marktlösung:** entfällt — Store-Vorbereitung mit dem bestehenden Fastlane/deliver-Weg (1.7.0).
 
-**Basis:** `feature/widget-politur` @ 3c3a355 (Quality approve go-mit-backlog,
-`.planning/quality-review-widget-dynamic-iter1.md`; Widget-Code liegt bereits im Target
-`ShipTripWidget/`). Kein neuer Produktionscode in diesem Run.
+**Ist (ASC, 2026-09-14, read-only abgefragt):** live 1.7.0 (Build 23) · Entwurf 1.8.0
+`PREPARE_FOR_SUBMISSION` ohne Build, „Neue Funktionen" leer, je 4 Screenshots 6,9" (1320×2868)
+in de-DE/en-US · Untertitel und Keywords (ASO 1.8.0) bereits gesetzt · Build 33 (1.9.0) `VALID`.
 
 **Kriterien (messbar):**
 
-1. **Merge:** `main` enthält 3c3a355 (`git merge-base --is-ancestor 3c3a355 main` → 0), ohne Konflikt.
-2. **Build 33:** `CURRENT_PROJECT_VERSION = 33` an allen 6 Stellen der 1.9.0-Targets in
-   `project.pbxproj`; Commit + Tag `v1.9.0-b33`.
-3. **TestFlight:** `fastlane ios upload_testflight` Exit 0 und `fastlane ios validate` meldet
-   latest TestFlight build = 33; `gate-run.json` mit Exit 0 (release-verifiziert).
-4. **GitHub:** `origin/main` = lokales `main`, `origin/feature/widget-politur` vorhanden,
-   Tags `v1.9.0-b30…b33` auf origin (`git ls-remote --tags origin`).
-5. **Roadmap/ZIEL:** Stand-Satz neu, Run-Zeile `[x]`, ZIEL-Status gesetzt.
+1. **Metadaten 1.9.0** unter `marketing/release-1.9.0/app-store-connect/metadata/{de-DE,en-US}/`:
+   `release_notes.txt` (alles seit 1.7.0, Widgets im ersten Punkt, ≤ 4000 Zeichen),
+   `description.txt` mit eigenem Widget-Absatz (≤ 4000), `promotional_text.txt` nennt Widgets
+   (≤ 170), `keywords.txt` = ASO-Stand aus dem Fastfile (≤ 100), `subtitle.txt` = ASC-Stand.
+   Prüfbar per `wc -m` + grep „Widget".
+2. **Widget-Bild:** je Locale ein Screenshot `02-widgets*.png` (1320×2868, kein Alpha) im Stil
+   der 1.7.0-Serie (`app-store-v2/template.html`), der echte Galerie-Renderings (Medium + Small
+   und ein Lock-Screen-Widget) zeigt; EN-Bild mit englischen Widget-Texten (Harness-Lauf). Die
+   vier 1.7.0-Bilder folgen als 01, 03–05. Prüfbar per `sips` + Bild-Gate (frischer Prüfer).
+3. **ASC-Entwurf:** editierbare Version heißt 1.9.0, Build 33 zugeordnet, Lokalisierungen
+   de-DE/en-US tragen die Texte aus (1), Screenshot-Set `APP_IPHONE_67` je Locale = 5 Bilder in
+   der Reihenfolge 01–05, Zustand weiter `PREPARE_FOR_SUBMISSION` (kein Submit). Prüfbar per
+   read-only Spaceship-Abfrage (`scratchpad/asc_state.rb`-Muster) nach dem deliver-Lauf.
+4. **Fastfile** trägt `APP_STORE_VERSION = "1.9.0"`, `APP_STORE_BUILD = 33`, Asset-Root 1.9.0;
+   `CHANGELOG.md` hat den 1.9.0-Schnitt mit den bisher „Unreleased"-Einträgen; alles committed
+   und auf `origin/main`. Prüfbar per grep + `git status`/`git rev-parse origin/main`.
+5. **Gate:** ein frischer Prüfer sichtet alle 10 Screenshots und die Zeichenlimits: 0 Bilder mit
+   abgeschnittenem Text, 0 Limit-Verstöße. Prüfbar per Gate-Report `.planning/gate-store-1.9.0.md`.
 
-**Nicht im Scope:** App-Store-Einreichung · Changelog-Release-Schnitt (bleibt [Unreleased] wie
-bei Build 30–32) · große Medienordner `marketing/release-1.7.0/` und `videos/` (bleiben
-untracked, bewusst) · Gerätebestätigung (K8 der Vorläufer-Runs, Andre am Gerät).
+**Entscheidungen (Winston):** Widget-Bild an Position 2 (Position 1 verkauft laut Benchmark die
+Kategorie) · Version 1.8.0-Entwurf wird zu 1.9.0 umbenannt statt neu angelegt · App-Previews
+(Videos) bleiben unverändert (1.7.0) · Einreichen bleibt Andres Klick.
 
-**Status:** abgeschlossen 2026-09-14 — main @ 41b29a8, Tag v1.9.0-b33, Evidenz `.winston-evidence/20260914T083514Z/gate-run.json`.
+**Nicht im Scope:** Submit for Review · Preis/Verfügbarkeit · neue Previews · Gerätebestätigung.

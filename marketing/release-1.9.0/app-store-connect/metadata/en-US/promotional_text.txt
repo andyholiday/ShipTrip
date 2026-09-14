@@ -1,0 +1,1 @@
+New: Home and Lock Screen widgets with a countdown, current port and next stop. Plus a travel journal, cruise sharing and calendar sync.

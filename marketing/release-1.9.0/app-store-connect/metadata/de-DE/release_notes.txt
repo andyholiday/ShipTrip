@@ -1,0 +1,13 @@
+ShipTrip macht aus jeder Kreuzfahrt ein persönliches Reisetagebuch – jetzt mit Widgets und einem runderen Alltag.
+
+• Neu: Widgets für Home- und Sperrbildschirm – Countdown bis zur nächsten Reise, aktueller Hafen mit Liegezeit und nächster Stopp auf einen Blick, im Look „Dynamic Instrument"
+• Reisedauer in Nächten: Start, Ende und Nächte sind jetzt gekoppelt und passen sich beim Verschieben automatisch an
+• ShipTrip steht im Teilen-Sheet: eine Reise-Datei per iMessage, Mail oder aus der Dateien-App direkt an ShipTrip übergeben
+• Reise teilen: eine einzelne Kreuzfahrt als Datei verschicken – Empfänger importieren sie mit einem Tipp
+• Reisetagebuch: Texte, Stimmung und Fotos zu jedem Hafen und Seetag festhalten
+• Kalender-Sync: standardmäßig landen nur noch die einzelnen Stopps im Kalender, der Ganzreise-Eintrag ist optional; Stopp-Termine tragen jetzt einen anklickbaren Ort
+• Erststart-Intro mit Beispielreise zum Ausprobieren
+• Backup sichert jetzt den kompletten Bestand, inklusive Wunschreisen und eigenen Reedereien/Schiffen
+• Zahlreiche Fehlerbehebungen bei Fotos im Formular, Kalenderwechsel, Import geteilter Dateien und Ländernamen
+
+Viel Freude beim Festhalten deiner nächsten Reise!

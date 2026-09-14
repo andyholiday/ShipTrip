@@ -4,6 +4,8 @@
 
 ## Läuft
 
+- [~] App-Store-Release 1.9.0: ASC-Entwurf mit Build 33, Store-Texten und Widget-Screenshot — gestartet 2026-09-14 · Ziel: `.planning/ZIEL.md`
+
 
 ## Offen
 

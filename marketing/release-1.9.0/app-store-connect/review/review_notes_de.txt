@@ -1,0 +1,11 @@
+Version 1.9.0 (Build 33) erweitert ShipTrip um Home- und Sperrbildschirm-Widgets, Reisedauer in Nächten sowie das Teilen und Importieren einzelner Kreuzfahrten als .shiptrip-Datei.
+
+Wichtige Prüfschritte:
+1. Es ist kein Login erforderlich. Die App speichert Reisedaten lokal und optional im privaten iCloud-Bereich des angemeldeten Apple-Accounts.
+2. Widget prüfen: Unter Einstellungen → Beispielreise die Beispielreise laden, damit Inhalte vorliegen. Danach auf dem Home- oder Sperrbildschirm lange drücken → „+" → „ShipTrip" auswählen, um das Widget „Reisestatus" in einer der vier Größen hinzuzufügen. Ohne aktive oder bevorstehende Reise zeigt das Widget den Hinweis „Keine neue Reise geplant".
+3. Reise teilen/importieren: Über das Menü einer Reise-Detailansicht „Reise teilen" erzeugt eine .shiptrip-Datei im System-Share-Sheet. Wird diese Datei — etwa aus der Dateien-App oder iMessage — über „Teilen → ShipTrip" an die App übergeben oder direkt angetippt, importiert ShipTrip sie beim nächsten Öffnen automatisch und zeigt ein Ergebnis-Fenster.
+4. Unter Mehr → Kalender-Sync kann vollständiger Kalenderzugriff erteilt und ein beschreibbarer Zielkalender gewählt werden. Die Funktion ist optional.
+5. Der KI-Import ist optional und erfordert einen eigenen Gemini-API-Key. Vor der Übermittlung wird ein Disclosure angezeigt; das Ergebnis muss vor dem Speichern bestätigt werden.
+6. Es gibt keine eigenen ShipTrip-Server und kein Benutzerkonto.
+
+Zum Testen können Prüfer zusätzlich eine neue Reise manuell anlegen und Häfen, Fotos, Ausflüge sowie Ausgaben ergänzen. Kalender- und Fotozugriff werden erst nach einer entsprechenden Nutzeraktion angefragt.

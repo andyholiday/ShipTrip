@@ -1,0 +1,13 @@
+ShipTrip turns every cruise into a personal travel journal — now with widgets and a smoother everyday flow.
+
+• New: Home and Lock Screen widgets — a countdown to your next cruise, the current port with time in port, and the next stop at a glance, in the "Dynamic Instrument" look
+• Trip length in nights: start date, end date and nights are now linked and adjust automatically when you move a date
+• ShipTrip appears in the Share Sheet: hand a cruise file straight to ShipTrip from iMessage, Mail or the Files app
+• Share a cruise: send a single voyage as a file — recipients import it with one tap
+• Travel journal: capture notes, mood and photos for every port and sea day
+• Calendar sync: only individual stops land in the calendar by default now, the whole-trip entry is opt-in; stop events now carry a tappable location
+• First-launch intro with a sample cruise to explore
+• Backup now covers your full data, including wishlist cruises and custom cruise lines/ships
+• Numerous fixes for photos in forms, calendar switching, shared file import and country names
+
+Enjoy capturing your next voyage!

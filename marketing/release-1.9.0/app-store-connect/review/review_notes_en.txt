@@ -1,0 +1,11 @@
+Version 1.9.0 (Build 33) adds Home and Lock Screen widgets, trip length in nights, and sharing/importing a single cruise as a .shiptrip file.
+
+Important review steps:
+1. No login is required. The app stores travel data locally and optionally in the signed-in user's private iCloud area.
+2. Check the widget: In Settings → Sample Cruise, load the sample cruise so there is content to show. Then long-press the Home or Lock Screen → "+" → select "ShipTrip" to add the "Cruise Status" widget in any of its four sizes. Without an active or upcoming cruise, the widget shows "No cruise planned".
+3. Share/import a cruise: The menu on a cruise detail screen offers "Share Cruise", which creates a .shiptrip file in the system share sheet. If that file — for example from the Files app or iMessage — is handed to the app via "Share → ShipTrip" or tapped directly, ShipTrip imports it automatically the next time it opens and shows a result screen.
+4. In More → Calendar Sync, users can grant full calendar access and choose a writable destination calendar. This feature is optional.
+5. AI import is optional and requires the user's own Gemini API key. A disclosure is shown before transmission, and the extracted result must be reviewed before saving.
+6. ShipTrip operates no own servers and has no user accounts.
+
+For testing, reviewers can also create a cruise manually and add ports, photos, excursions, and expenses. Calendar and photo access are requested only after the corresponding user action.

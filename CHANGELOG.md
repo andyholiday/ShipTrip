@@ -14,8 +14,43 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 - Wetter-API Integration
 - Hafen-Bilder mit KI-Generierung
 
+---
+
+## [1.9.0] - 2026-09-14
+
 ### Hinzugefügt
 
+- **Widget für Home- und Sperrbildschirm**: ShipTrip liefert ein Widget
+  „Reisestatus" in vier Größen (klein, mittel, rechteckig und rund auf dem
+  Sperrbildschirm). Läuft gerade eine Reise, stehen dort der aktuelle Hafen
+  mit Ankunfts- und Abfahrtszeit und der nächste Stopp — ist der aktuelle
+  oder der nächste Eintrag ein Seetag, wird der Seetag genannt; nach dem
+  letzten Hafen tritt das Reiseende an diese Stelle. Steht die nächste Reise
+  noch bevor, zeigt das Widget Titel, Schiff und den Countdown („Morgen",
+  „In 12 Tagen"). Ist keine Reise geplant, erscheint der Hinweis „Keine neue
+  Reise geplant" zusammen mit dem Abstand zur letzten Reise. Die Anzeige
+  wechselt von selbst, etwa von Hafen auf Seetag oder vom Countdown auf die
+  laufende Reise. Ein Tipp öffnet die App. Beispielreisen bleiben außen vor.
+  ([Feature-Doku](docs/features/widget.md))
+- **Geteilter Datenbereich für das Widget**: App und Widget teilen die App
+  Group `group.com.andre.ShipTrip`. Die App legt dort bei jeder Änderung an
+  Reisen und Route einen kleinen Auszug ab (Titel, Schiff, Zeitraum, Route
+  mit Zeiten — keine Fotos), aus dem das Widget liest. Der Reisebestand
+  selbst bleibt unangetastet. Hat die App länger als 14 Tage nichts
+  geschrieben, zeigt das Widget „Öffne ShipTrip zum Aktualisieren" statt
+  möglicherweise veralteter Zeiten; dasselbe gilt, solange noch kein Auszug
+  vorliegt. Änderungen von einem anderen Gerät erscheinen erst, nachdem die
+  App dort einmal im Vordergrund war.
+  ([ADR-009](docs/adr/ADR-009-widget-app-group-snapshot.md))
+- **Widget-Stand direkt beim App-Start**: Die App schreibt den Auszug für das
+  Widget schon beim Öffnen, nicht erst bei der nächsten Änderung. Ein frisch
+  installiertes Gerät zeigt damit sofort die Reiselage statt „Öffne ShipTrip
+  zum Aktualisieren".
+- **Nur Entwicklung: Widget-Galerie für Abnahmebilder**: Mit dem Startargument
+  `-widgetPreview` zeigt die App alle Widget-Größen in allen Zuständen; die
+  UI-Test-Suite `WidgetScreenshotUITests` fotografiert sie. In der ausgelieferten
+  App ist die Galerie nicht erreichbar.
+  ([Feature-Doku](docs/features/widget.md))
 - **Reisedauer in Nächten**: Das Reiseformular zeigt beim Anlegen und Bearbeiten
   eine Zeile „Nächte"; Startdatum, Enddatum und Nächte sind miteinander
   gekoppelt. Wird das Startdatum verschoben, fragt ShipTrip „Enddatum
@@ -58,44 +93,6 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
   Ergebnis-Fenster jetzt, sobald das Intro geschlossen ist — vorher verschwand
   es kommentarlos.
   ([Feature-Doku](docs/features/kreuzfahrt-teilen.md))
-
----
-
-## [1.9.0] - 2026-09-07
-
-### Hinzugefügt
-
-- **Widget für Home- und Sperrbildschirm**: ShipTrip liefert ein Widget
-  „Reisestatus" in vier Größen (klein, mittel, rechteckig und rund auf dem
-  Sperrbildschirm). Läuft gerade eine Reise, stehen dort der aktuelle Hafen
-  mit Ankunfts- und Abfahrtszeit und der nächste Stopp — ist der aktuelle
-  oder der nächste Eintrag ein Seetag, wird der Seetag genannt; nach dem
-  letzten Hafen tritt das Reiseende an diese Stelle. Steht die nächste Reise
-  noch bevor, zeigt das Widget Titel, Schiff und den Countdown („Morgen",
-  „In 12 Tagen"). Ist keine Reise geplant, erscheint der Hinweis „Keine neue
-  Reise geplant" zusammen mit dem Abstand zur letzten Reise. Die Anzeige
-  wechselt von selbst, etwa von Hafen auf Seetag oder vom Countdown auf die
-  laufende Reise. Ein Tipp öffnet die App. Beispielreisen bleiben außen vor.
-  ([Feature-Doku](docs/features/widget.md))
-- **Geteilter Datenbereich für das Widget**: App und Widget teilen die App
-  Group `group.com.andre.ShipTrip`. Die App legt dort bei jeder Änderung an
-  Reisen und Route einen kleinen Auszug ab (Titel, Schiff, Zeitraum, Route
-  mit Zeiten — keine Fotos), aus dem das Widget liest. Der Reisebestand
-  selbst bleibt unangetastet. Hat die App länger als 14 Tage nichts
-  geschrieben, zeigt das Widget „Öffne ShipTrip zum Aktualisieren" statt
-  möglicherweise veralteter Zeiten; dasselbe gilt, solange noch kein Auszug
-  vorliegt. Änderungen von einem anderen Gerät erscheinen erst, nachdem die
-  App dort einmal im Vordergrund war.
-  ([ADR-009](docs/adr/ADR-009-widget-app-group-snapshot.md))
-- **Widget-Stand direkt beim App-Start**: Die App schreibt den Auszug für das
-  Widget schon beim Öffnen, nicht erst bei der nächsten Änderung. Ein frisch
-  installiertes Gerät zeigt damit sofort die Reiselage statt „Öffne ShipTrip
-  zum Aktualisieren".
-- **Nur Entwicklung: Widget-Galerie für Abnahmebilder**: Mit dem Startargument
-  `-widgetPreview` zeigt die App alle Widget-Größen in allen Zuständen; die
-  UI-Test-Suite `WidgetScreenshotUITests` fotografiert sie. In der ausgelieferten
-  App ist die Galerie nicht erreichbar.
-  ([Feature-Doku](docs/features/widget.md))
 
 ---
 

@@ -1,0 +1,1 @@
+Neu: Widgets für Home- und Sperrbildschirm mit Countdown, aktuellem Hafen und nächstem Stopp. Plus Reisetagebuch, Reise teilen und Kalender-Sync.

@@ -324,3 +324,10 @@
 - [minor][p3] ShipTripWidget/WidgetFormatting.swift:288-290 — taglineActive deklariert und lokalisiert, aber nie verwendet
 - [minor][p3] ShipTripWidget/Views/WidgetStyle.swift:92 — WidgetSymbol.place neu eingefuehrt, nie verwendet
 - [minor][p3] ShipTripWidget/Views/MediumWidgetView.swift:285-292,373 — Leerband in der unteren Kachelhaelfte bei medium-countdown XXL und medium-idle
+
+## App-Store-Release 1.9.0 (Store-Gate, 2026-09-14)
+
+- [major][p1] marketing/release-1.9.0/app-store-connect/metadata/de-DE/keywords.txt — Reederei-Marken aida/msc/costa: Restrisiko 2.3.7 bewusst entscheiden
+- [minor][p2] marketing/release-1.9.0/app-store-connect/screenshots/*/0{1,3,4,5}-*.png — Footer „VERSION 1.7" beim nächsten Screenshot-Refresh angleichen
+- [minor][p3] marketing/release-1.9.0/app-store-connect/screenshots/*/02-widgets.png — Lock-Screen-Panel-Label linksbündig wie Home-Panel
+- [minor][p3] marketing/release-1.9.0/app-store-connect/screenshots/en-US/02-widgets.png — EN-Fixture mit englischen Reisenamen rendern
